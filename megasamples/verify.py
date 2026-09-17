@@ -16,8 +16,8 @@ A dataset marked `live: true` in its dataset.yaml is built from a feed that chan
 files describe a snapshot rather than a pin: counts are floors (a feed grows, and a short download
 shows as a shortfall), the content digests of tables and views are compared for their column sets
 only, and the smoke queries are run but their results not compared. Everything structural -- foreign
-keys, indexes, routines, triggers, query plans -- is held exactly. A port is still checked against
-the hub on the same machine, so the three engines hold the same rows.
+keys, indexes, routines, triggers, query plans -- is held exactly. The hub's build records what it
+holds under build/live/, and a port is held to that exactly, so the three engines hold the same rows.
 
 `--pin` writes the observed values into the tests/ files instead of comparing, and is allowed on
 MySQL only: expectations come from the hub, never from a port. It is how a native-SQL dataset with
@@ -27,10 +27,32 @@ import argparse, json, os, sys
 
 import yaml
 
-from megasamples.paths import ROOT
+from megasamples.paths import BUILD, ROOT
 
 
 def dataset_dir(name):
+
+
+def live_hub_observed(cfg, ad, stage, observed, res):
+    """A live dataset's rows are today's, so the tests/ files cannot hold a port to them. On the hub
+    (MySQL) this records what this machine's build holds, per stage, under build/live/; on a port it
+    returns that record as the expectation, so the ports are held to the hub built beside them --
+    exactly, as every other dataset's are to the tests/ files. None on the hub; None on a port with
+    a failure noted when the hub has not been built on this machine."""
+    path = os.path.join(BUILD, "live", f"{cfg.get('name') or cfg['database']}.observed.yaml")
+    if ad.name == "mysql":
+        data = (load_yaml(path) or {}) if os.path.exists(path) else {}
+        data[stage] = observed
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        dump_yaml(path, data, "# What this machine's MySQL build of a live dataset holds, stage by stage: its ports are\n"
+                              "# verified against this, since the tests/ files describe a snapshot of another day.")
+        return None
+    data = load_yaml(path) or {}
+    if stage not in data:
+        res.fail(f"live dataset: no record of the hub's {stage} on this machine ({os.path.relpath(path, ROOT)}); "
+                 "build it on MySQL first")
+        return None
+    return data[stage]
     return os.path.join(ROOT, "datasets", name)
 
 
@@ -103,6 +125,12 @@ def stage_counts(ad, cfg, schema, d, pin, res):
     if expected is None:
         res.fail(f"no expected_counts.yaml for {cfg['database']}; run with --pin"); return
     live = bool(cfg.get("live"))
+    if live:
+        hub = live_hub_observed(cfg, ad, "counts", observed, res)
+        if ad.name != "mysql":
+            if hub is None:
+                return
+            expected, live = hub, False      # a port is held to the hub's rows, exactly
     for table, want in sorted(expected.items()):
         got = observed.get(table)
         if got is None:
@@ -145,6 +173,12 @@ def stage_digests(ad, cfg, schema, d, pin, res):
     if expected is None:
         res.fail(f"no checksums.yaml for {cfg['database']}; run with --pin"); return
     live = bool(cfg.get("live"))
+    if live:
+        hub = live_hub_observed(cfg, ad, "digests", observed, res)
+        if ad.name != "mysql":
+            if hub is None:
+                return
+            expected, live = hub, False      # a port is held to the hub's digests, exactly
     for table, want in sorted(expected.items()):
         got = observed.get(table)
         if not got:
@@ -274,6 +308,13 @@ def stage_views(ad, cfg, schema, d, pin, res):
         if observed:
             res.fail(f"no views.yaml for {cfg['database']}; run with --pin"); return
         res.note("no views"); return
+    live = bool(cfg.get("live"))
+    if live:
+        hub = live_hub_observed(cfg, ad, "views", observed, res)
+        if ad.name != "mysql":
+            if hub is None:
+                return
+            expected, live = hub, False      # a port is held to the hub's views, exactly
     absent = ad.views_not_ported(schema)
     checked, by_count, without = 0, [], []
     for view, want in sorted(expected.items()):
@@ -284,9 +325,9 @@ def stage_views(ad, cfg, schema, d, pin, res):
             res.fail(f"view {view} missing"); continue
         if got["columns"] != want["columns"]:
             res.fail(f"view {view}: digested column set changed {want['columns']} -> {got['columns']}"); continue
-        if cfg.get("live"):
+        if live:
             checked += 1
-            continue   # the rows are today's; the snapshot's digest describes another day's
+            continue   # the hub's rows are today's; the snapshot's digest describes another day's
         # a GROUP_CONCAT with no ORDER BY concatenates in whatever order the engine reads the rows,
         # which MySQL itself leaves unspecified; such a view is held to its row count
         if ad.view_has_unordered_aggregate(schema, view):
@@ -301,7 +342,7 @@ def stage_views(ad, cfg, schema, d, pin, res):
             if got.get(k) != want.get(k):
                 res.fail(f"view {view}: digest {k} {got.get(k)} != expected {want.get(k)}")
         checked += 1
-    res.note(f"views OK for {checked} views" + (" (live feed: column sets only)" if cfg.get("live") else "")
+    res.note(f"views OK for {checked} views" + (" (live feed: column sets only)" if live else "")
              + (f"; {len(by_count)} compared by row count only (unordered GROUP_CONCAT): {', '.join(by_count)}" if by_count else "")
              + (f"; {len(without)} compared without their computed decimals (no decimal arithmetic on {ad.name}): {', '.join(without)}" if without else "")
              + (f"; {len(absent)} not ported on {ad.name}" if absent else ""))

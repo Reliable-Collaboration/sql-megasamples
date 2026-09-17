@@ -42,7 +42,7 @@ The city amends past years (the record above: 259,267 rows on 2026-09-02, 259,26
 # Outcome
 
 * `manifest.yaml`: `live: true` on the 26 `chicago_crimes/` artifacts. `megasamples/fetch.py` takes what a live feed serves, records the observed digest and size in the marker and the `.meta.json`, never rewrites the manifest (whose `sha256` and `size_bytes` now describe the snapshot the tests were written against), keeps what a machine fetched once, and fetches again under `MEGASAMPLES_REFRESH_LIVE=1`.
-* `datasets/chicago_crimes/dataset.yaml` and `chicago_crimes_full/dataset.yaml`: `live: true`. `megasamples/verify.py` holds a live dataset to floors on counts, to column sets on the content digests of tables and views, runs the smoke queries without comparing their results, and holds everything structural exactly.
+* `datasets/chicago_crimes/dataset.yaml` and `chicago_crimes_full/dataset.yaml`: `live: true`. `megasamples/verify.py` holds a live dataset on the hub to floors on counts, to column sets on the content digests of tables and views, runs the smoke queries without comparing their results, and holds everything structural exactly; the hub's build records what it holds under `build/live/`, and a port is held to that exactly, so the three engines hold the same rows.
 * The catalogue and the README's databases table say which dataset is a live feed; the README's downloads section says what a build does with it.
 * `tests/test_fetch.py`: a live artifact is taken as served, kept, and refetched on request; and the progress line of a fetched job, which crashed every worker on a fresh clone until 2026-09-16 (`fix/fetch-start-time`).
 
