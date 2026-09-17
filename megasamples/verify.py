@@ -30,7 +30,21 @@ import yaml
 from megasamples.paths import BUILD, ROOT
 
 
-def dataset_dir(name):
+def dataset_dir(name):    return os.path.join(ROOT, "datasets", name)
+
+
+def load_yaml(path, default=None):
+    if not os.path.exists(path):
+        return default
+    with open(path, encoding="utf-8") as fh:
+        return yaml.safe_load(fh)
+
+
+def dump_yaml(path, data, header):
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        fh.write(header.rstrip("\n") + "\n")
+        yaml.safe_dump(data, fh, sort_keys=True, default_flow_style=False, allow_unicode=True)
 
 
 def live_hub_observed(cfg, ad, stage, observed, res):
@@ -53,21 +67,6 @@ def live_hub_observed(cfg, ad, stage, observed, res):
                  "build it on MySQL first")
         return None
     return data[stage]
-    return os.path.join(ROOT, "datasets", name)
-
-
-def load_yaml(path, default=None):
-    if not os.path.exists(path):
-        return default
-    with open(path, encoding="utf-8") as fh:
-        return yaml.safe_load(fh)
-
-
-def dump_yaml(path, data, header):
-    os.makedirs(os.path.dirname(path), exist_ok=True)
-    with open(path, "w", encoding="utf-8") as fh:
-        fh.write(header.rstrip("\n") + "\n")
-        yaml.safe_dump(data, fh, sort_keys=True, default_flow_style=False, allow_unicode=True)
 
 
 class Result:
