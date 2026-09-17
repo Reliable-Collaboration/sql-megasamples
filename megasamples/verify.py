@@ -30,7 +30,8 @@ import yaml
 from megasamples.paths import BUILD, ROOT
 
 
-def dataset_dir(name):    return os.path.join(ROOT, "datasets", name)
+def dataset_dir(name):
+    return os.path.join(ROOT, "datasets", name)
 
 
 def load_yaml(path, default=None):
