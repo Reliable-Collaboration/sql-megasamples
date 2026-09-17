@@ -2,6 +2,7 @@
 
 ## 2026-09-17
 * **Creation**: [a live feed is taken as served](/decisions/live-artifacts.md) -- the maintainer's decision after a clean-room build from GitHub stopped on `chicago_crimes`' drifted extract: `live: true` on its 26 artifacts and on the dataset, the fetch takes what the portal serves and records it, the verifier holds the dataset to floors and structure; [the dataset record](/datasets/chicago-crimes.md) carries the observation.
+* **Verification**: the live-feed path end to end in a clean-room checkout of this branch: `chicago_crimes` fetched as the portal served it on 2026-09-17 (74,889,263 bytes, 259,623 rows, against the snapshot's 74,885,948 and 259,607), built and verified on MySQL with floors, then on SQLite and PostgreSQL held to the hub's record under `build/live/` -- 0 failures on each. The first run of that test failed on the SQLite port, which had restored the previous image bake's dump of the dataset: the hub's build now re-dumps after a verified load ([the decision](/decisions/live-artifacts.md)).
 * **Verification**: a fresh clone's first download crashed every fetch worker (`job.started` was never set; `fix/fetch-start-time`), found by the same clean-room build; a test now covers the progress line of a fetched job.
 
 ## 2026-09-10
