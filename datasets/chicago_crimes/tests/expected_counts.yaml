@@ -1,6 +1,6 @@
-# S3: row count per table. Pinned from a verified load of the portal's 2024 extract as fetched on
-# 2026-09-09 (74,885,948 bytes, sha256 5e67e386...). The city amends past years, so the figure
-# identifies that snapshot: a later extract differs, and MEGASAMPLES_ACCEPT_DRIFT=1 plus
-# `megasamples verify chicago_crimes --pin` moves the pins to it (README, "Downloads").
+# S3: row count per table, from a verified load of the portal's 2024 extract as fetched on
+# 2026-09-09 (74,885,948 bytes, sha256 5e67e386...). This is a live dataset: a build takes the
+# current extract, and these counts are floors it must reach, not values it must equal
+# (megasamples/verify.py; knowledge/decisions/live-artifacts.md).
 crimes: 259607
 iucr: 434

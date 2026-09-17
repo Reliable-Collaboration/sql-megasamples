@@ -12,6 +12,13 @@ database as the MySQL corpus. explain and smoke are MySQL-only, since their quer
 MySQL's dialect; routines and triggers scenarios are written in MySQL's dialect too, and the ports
 translate them with the same translator that ported the objects (megasamples/port/sqltranslate.py).
 
+A dataset marked `live: true` in its dataset.yaml is built from a feed that changes, so its tests/
+files describe a snapshot rather than a pin: counts are floors (a feed grows, and a short download
+shows as a shortfall), the content digests of tables and views are compared for their column sets
+only, and the smoke queries are run but their results not compared. Everything structural -- foreign
+keys, indexes, routines, triggers, query plans -- is held exactly. A port is still checked against
+the hub on the same machine, so the three engines hold the same rows.
+
 `--pin` writes the observed values into the tests/ files instead of comparing, and is allowed on
 MySQL only: expectations come from the hub, never from a port. It is how a native-SQL dataset with
 no converter-side baseline gets its first values (knowledge/decisions/test-checksum-method.md).
@@ -95,11 +102,14 @@ def stage_counts(ad, cfg, schema, d, pin, res):
     expected = load_yaml(path)
     if expected is None:
         res.fail(f"no expected_counts.yaml for {cfg['database']}; run with --pin"); return
+    live = bool(cfg.get("live"))
     for table, want in sorted(expected.items()):
         got = observed.get(table)
         if got is None:
             res.fail(f"table {table} missing (expected {want} rows)")
-        elif got != want:
+        elif live and got < want:
+            res.fail(f"{table}: {got} rows, below the snapshot's {want} (a live feed grows; a short download?)")
+        elif not live and got != want:
             res.fail(f"{table}: {got} rows, expected {want}")
     if cfg.get("append"):
         res.note(f"counts OK for {len(expected)} table(s) added to `{cfg['database']}` "
@@ -112,7 +122,7 @@ def stage_counts(ad, cfg, schema, d, pin, res):
         res.fail(f"unexpected table {extra} ({observed[extra]} rows)")
     if shared:
         res.note(f"ignoring {len(shared)} extended-tier table(s) also loaded here: " + ", ".join(shared))
-    res.note(f"counts OK for {len(expected)} tables")
+    res.note(f"counts OK for {len(expected)} tables" + (" (live feed: floors)" if live else ""))
 
 
 def stage_digests(ad, cfg, schema, d, pin, res):
@@ -134,16 +144,19 @@ def stage_digests(ad, cfg, schema, d, pin, res):
     expected = load_yaml(path)
     if expected is None:
         res.fail(f"no checksums.yaml for {cfg['database']}; run with --pin"); return
+    live = bool(cfg.get("live"))
     for table, want in sorted(expected.items()):
         got = observed.get(table)
         if not got:
             res.fail(f"table {table} missing for digest"); continue
         if got["columns"] != want["columns"]:
             res.fail(f"{table}: digested column set changed {want['columns']} -> {got['columns']}"); continue
+        if live:
+            continue   # the rows are today's; the snapshot's digest describes another day's
         for k in ("n", "x", "s"):
             if got[k] != want[k]:
                 res.fail(f"{table}: digest {k} {got[k]} != expected {want[k]}")
-    res.note(f"digests OK for {len(expected)} tables")
+    res.note(f"digests OK for {len(expected)} tables" + (" (live feed: column sets only)" if live else ""))
 
 
 def stage_fks(ad, cfg, schema, d, pin, res):
@@ -222,6 +235,8 @@ def stage_smoke(ad, cfg, schema, d, pin, res):
     expected = load_yaml(path)
     if expected is None:
         res.fail(f"no smoke.expected.yaml for {cfg['database']}; run with --pin"); return
+    if cfg.get("live"):
+        res.note(f"smoke: {len(observed)} queries ran (live feed: results not compared)"); return
     for name, want in sorted(expected.items()):
         got = observed.get(name)
         if got != want:
@@ -269,6 +284,9 @@ def stage_views(ad, cfg, schema, d, pin, res):
             res.fail(f"view {view} missing"); continue
         if got["columns"] != want["columns"]:
             res.fail(f"view {view}: digested column set changed {want['columns']} -> {got['columns']}"); continue
+        if cfg.get("live"):
+            checked += 1
+            continue   # the rows are today's; the snapshot's digest describes another day's
         # a GROUP_CONCAT with no ORDER BY concatenates in whatever order the engine reads the rows,
         # which MySQL itself leaves unspecified; such a view is held to its row count
         if ad.view_has_unordered_aggregate(schema, view):
@@ -283,7 +301,7 @@ def stage_views(ad, cfg, schema, d, pin, res):
             if got.get(k) != want.get(k):
                 res.fail(f"view {view}: digest {k} {got.get(k)} != expected {want.get(k)}")
         checked += 1
-    res.note(f"views OK for {checked} views"
+    res.note(f"views OK for {checked} views" + (" (live feed: column sets only)" if cfg.get("live") else "")
              + (f"; {len(by_count)} compared by row count only (unordered GROUP_CONCAT): {', '.join(by_count)}" if by_count else "")
              + (f"; {len(without)} compared without their computed decimals (no decimal arithmetic on {ad.name}): {', '.join(without)}" if without else "")
              + (f"; {len(absent)} not ported on {ad.name}" if absent else ""))

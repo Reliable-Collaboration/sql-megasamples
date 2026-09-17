@@ -289,15 +289,15 @@ its upstream to your machine. Two core datasets need a hand from you:
   (<https://sabr.box.com/s/y1prhc795jk8zvmelfd3jq7tl389y6cd>), put it at
   `downloads/lahman/lahman_1871-2025_csv.zip`, and the next `make run` verifies its checksum like
   every other artifact.
-* **`chicago_crimes`** comes from a portal that amends past years, so its 2024 extract changes
-  from time to time and stops matching the pinned digest. The pin is the extract of 2026-09-09.
-  When the fetch reports a mismatch, decide whether you want the newer extract:
-  `MEGASAMPLES_ACCEPT_DRIFT=1 make chicago_crimes` accepts it, re-pins `manifest.yaml`, and the
-  verification then fails on the pinned counts and digests, which
-  `python3 -m megasamples verify chicago_crimes --pin` moves to what you loaded. Your numbers will
-  differ from the documented ones by whatever the city changed. The same switch works for any
-  artifact whose upstream has moved, and for a file you obtained yourself and placed under
-  `downloads/`.
+* **`chicago_crimes`** is a live feed: the portal amends past years, so its 2024 extract changes
+  from time to time. A build takes whatever the portal serves that day and records what it got; the
+  dataset's tests describe the snapshot of 2026-09-09 and hold a build to floors and structure --
+  at least that many rows, the same tables, indexes, keys and routines -- rather than to those
+  bytes, so your row counts may exceed the documented ones and the content digests are not
+  compared. What a machine fetched once it keeps; `MEGASAMPLES_REFRESH_LIVE=1 make fetch` takes
+  the feed again. For any other artifact whose upstream has moved, and for a file you obtained
+  yourself and placed under `downloads/`, `MEGASAMPLES_ACCEPT_DRIFT=1` accepts the bytes and
+  re-pins the manifest.
 
 A dataset whose download is not in place is left out of every engine's build and image and named
 at the end of `make run`, which then exits 1; leave it out of your dataset list if you would rather

@@ -2,6 +2,9 @@ name: chicago_crimes
 database: chicago_crimes
 tier: core
 record: knowledge/datasets/chicago-crimes.md
+# a live feed: the portal amends past years, so a build takes the current extract and the tests
+# describe a snapshot (megasamples/verify.py)
+live: true
 licenses: [chicago-data-portal-terms]
 artifacts: [chicago_crimes/crimes_2024.csv, chicago_crimes/iucr.csv]
 stage: {input: dir}

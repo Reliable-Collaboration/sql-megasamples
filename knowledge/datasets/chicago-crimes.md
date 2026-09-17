@@ -159,3 +159,9 @@ manifest and every expectation (counts, digests, views, smoke results) now pin t
 extract, verified on MySQL with 0 failures and re-ported. The next amendment fails the digest
 check by design; `MEGASAMPLES_ACCEPT_DRIFT=1` accepts the newer bytes, re-pins the manifest, and
 `megasamples verify chicago_crimes --pin` moves the expectations after the MySQL build.
+
+# A live feed, by decision (2026-09-17)
+The extract served on 2026-09-16 was 74,888,189 bytes, 2,241 more than the 2026-09-09 snapshot,
+and a clean-room build from GitHub stopped on it. The maintainer decided the data should evolve:
+a build takes what the portal serves that day, the tests describe the 2026-09-09 snapshot and
+hold a build to floors and structure, and nothing is mirrored ([the decision](/decisions/live-artifacts.md)).

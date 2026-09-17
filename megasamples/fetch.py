@@ -21,6 +21,12 @@ never answers: a transfer that makes no progress for `--stall` seconds (120) is 
 over IPv4, the fallback is recorded in the artifact's .meta.json, and `ipv4_first: true` in the
 manifest skips straight to IPv4 for hosts known to do this (ARCHITECTURE.md section 2).
 
+An artifact marked `live: true` comes from a feed that changes (a query against a live portal): the
+build takes what it serves today, records the observed digest and size in the marker and the
+.meta.json, and never rewrites the manifest, whose sha256 and size then describe the snapshot the
+dataset's tests were written against. What a machine fetched once it keeps (a verified file is
+never fetched twice); MEGASAMPLES_REFRESH_LIVE=1 fetches the feed again.
+
 An artifact whose manifest `sha256` is empty has never been fetched here; the build refuses it
 unless MEGASAMPLES_TRUST_FIRST_FETCH=1 is set, in which case the observed digest is written back
 into the manifest and printed for the executor to record as a Verification in knowledge/log.md. An
@@ -197,6 +203,9 @@ def fetch_one(job, dest_root, manifest_path, trust_first, stall):
 
     if os.path.exists(ok_marker) and os.path.exists(dest):
         recorded = open(ok_marker, encoding="utf-8").read().strip()
+        if art.get("live") and not refresh_live():
+            job.verdict = "cached: what this machine took from the live feed (MEGASAMPLES_REFRESH_LIVE=1 fetches it again)"
+            return "cached"
         if expected and recorded == expected:
             job.verdict = "verified earlier"
             return "cached"
@@ -243,6 +252,13 @@ def fetch_one(job, dest_root, manifest_path, trust_first, stall):
         job.size = os.path.getsize(tmp)
         job._window = (time.time(), 0)
         verified, reason = verify_file(tmp, art)
+        if reason and art.get("live"):
+            # a live feed: what it serves today is what the build uses. The manifest's digest and size
+            # describe the snapshot the dataset's tests were written against and are not re-pinned.
+            digest, size = sha256_of(tmp), os.path.getsize(tmp)
+            drift = (f"live feed: took the current extract (sha256 {digest[:12]}, {size:,} bytes; "
+                     f"the snapshot the tests describe was {art.get('size_bytes') or '?'} bytes)")
+            verified, reason = (digest, size), None
         if reason and (expected or (art.get("size_bytes") or 0)):
             if accept_drift():
                 # the upstream has moved since it was pinned and the caller said so is fine: the
@@ -295,6 +311,10 @@ def fetch_one(job, dest_root, manifest_path, trust_first, stall):
 
 def accept_drift():
     return os.environ.get("MEGASAMPLES_ACCEPT_DRIFT") == "1"
+
+
+def refresh_live():
+    return os.environ.get("MEGASAMPLES_REFRESH_LIVE") == "1"
 
 
 # --- the monitor ------------------------------------------------------------------------------------

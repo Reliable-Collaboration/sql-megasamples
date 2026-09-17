@@ -1,5 +1,9 @@
 # Update Log
 
+## 2026-09-17
+* **Creation**: [a live feed is taken as served](/decisions/live-artifacts.md) -- the maintainer's decision after a clean-room build from GitHub stopped on `chicago_crimes`' drifted extract: `live: true` on its 26 artifacts and on the dataset, the fetch takes what the portal serves and records it, the verifier holds the dataset to floors and structure; [the dataset record](/datasets/chicago-crimes.md) carries the observation.
+* **Verification**: a fresh clone's first download crashed every fetch worker (`job.started` was never set; `fix/fetch-start-time`), found by the same clean-room build; a test now covers the progress line of a fetched job.
+
 ## 2026-09-10
 * **Deviation**: [no release assets](/decisions/no-release-assets.md) -- the maintainer publishes only the repository, so the `data-v1` and `sqlite` asset staging (`megasamples/release.py`, `release/`, `make release`) and the five manifest mirrors pointing at the unpublished release are removed; a `manual` artifact's message tells the user where to download it and where to put it, and `MEGASAMPLES_ACCEPT_DRIFT=1` accepts an upstream that has moved, re-pinning the manifest. `chicago_crimes` is re-pinned to the portal's 2026-09-09 extract (259,607 rows) and verified on all three engines ([record](/datasets/chicago-crimes.md)).
 * **Verification**: the SQLite service's first start was OOM-killed copying its 900 MB of files into the consoles' volume under a 64 MB limit, and its health check passed on the first file copied, before the rest were; it now copies each file under a temporary name, writes a `.complete` marker last that the health check waits for (with a start period for a slow disk), under a 256 MB limit -- `make up` then reports it healthy with all 22 files in place. Dollars in the generated command are doubled, since Compose interpolates single ones.
