@@ -14,5 +14,9 @@
 !LICENSES.md
 !CATALOGUE.md
 !README.md
+# The datasets' licence files, re-included through their directory: BuildKit honours a bare
+# `!datasets/*/LICENSE` under `*`, Buildah (Podman's builder) does not re-include the parent.
+!datasets/
+datasets/*/*
 !datasets/*/LICENSE
 !datasets/*/PROVENANCE.md

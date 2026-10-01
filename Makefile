@@ -83,7 +83,7 @@ screenshots:
 # reaches any published image.
 loader-image:
 	@$(MS) pull-image debian:12-slim
-	@DOCKER_BUILDKIT=1 docker build -f engines/mysql/loader.Dockerfile -t sql-megasamples-loader:dev .
+	@$(if $(shell docker version -f "{{json .Server.Components}}" 2>/dev/null | grep -q Podman && echo podman),,DOCKER_BUILDKIT=1 )docker build -f engines/mysql/loader.Dockerfile -t sql-megasamples-loader:dev .
 
 #   MEGASAMPLES_ACCEPT_MSSQL_EULA=1 make wwi-export
 wwi-export:
