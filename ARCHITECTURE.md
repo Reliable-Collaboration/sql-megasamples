@@ -312,7 +312,8 @@ one-line description taken from its knowledge record, links into the consoles th
 database in their URL, the connection details and both accounts.
 
 **Transient containers** — the build server, the SQL Server behind `wwi-export`, the Oracle behind
-`verify-oracle`, the loader, the servers the tests start — carry the label
+`verify-oracle`, the loader, the servers the tests start, the pristine copy a reset restores from —
+carry the label
 `megasamples.transient=true`. `make status` lists them beside the stack; `make clean` removes them;
 `make clean-all` takes the stack down too.
 
@@ -324,6 +325,12 @@ runs, in order: `fetch` → `stage` → `load` → `verify` → `dump` for MySQL
 `build` (through verify, for the configured datasets of an engine), `image`, and `run` (build and
 image for every configured engine, `--up` to start the stack afterwards). `make <dataset>` is
 `build --engine mysql <dataset>`; `make restore` reloads the MySQL build server from its dumps.
+`reset` (`megasamples/reset.py`) puts the running stack back as its images ship it: `all`, an engine,
+or `engine:dataset` pairs, or `--engines`/`--datasets` with `configure`'s selectors. A whole engine
+is recreated with a fresh data directory (`up --force-recreate --renew-anon-volumes`, then the
+replaced anonymous volume removed by name); a single database is dumped from a transient container
+of the image and loaded over the running copy (SQLite: the image's file copied into the shared
+volume), then checked against the pristine copy.
 
 | gate | command | cost | when |
 |---|---|---|---|

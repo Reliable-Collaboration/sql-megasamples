@@ -230,6 +230,31 @@ Run `PRAGMA foreign_keys=ON` to enforce the foreign keys the file declares; a fu
 FTS5 table named `<table>_<index>_fts`. Ports and passwords are yours to change in
 `megasamples.yaml` and `.env`, and every page and console follows.
 
+## Putting the data back
+
+`admin` and the superusers can change anything, and nothing a client writes reaches the images, so
+the out-of-the-box state is always one command away. `make reset` returns what you name to exactly
+what the images ship; it is chosen the way `make configure` chooses, by engine and dataset, and
+nothing is reset without naming it:
+
+```sh
+make reset R=all                                 # every engine in the stack
+make reset R=postgres                            # one engine, every database it has
+make reset R="postgres:northwind mysql:sakila"   # single databases; the rest are not touched
+make reset ENGINE=postgres D=quick               # configure's selectors: core | quick | all | a tier | a list
+python3 -m megasamples reset --help              # the same, without make
+```
+
+* **A whole engine** is recreated with a fresh copy of its image's data directory, in seconds.
+  Everything made since goes: rows, tables, databases, accounts, roles and privileges. The data
+  volume it replaced is removed by name.
+* **A single database** is restored from a transient container of the same image: MySQL and
+  PostgreSQL dump it there and load it over the running copy, then check each table's row count
+  against the image; SQLite copies the image's file over the one the consoles read and compares
+  the two byte for byte. PostgreSQL disconnects the database's clients first; MySQL waits for their
+  open transactions. Accounts and roles are server-wide and stay as they are, and so do MySQL
+  privileges, which MySQL keeps in its account tables; reset the engine whole for those.
+
 ## The consoles
 
 `make up` brings the engines and the consoles up as one stack, and `make down` takes it away again.
@@ -319,6 +344,7 @@ make image FROM_DUMPS=1            # re-bake MySQL from the dumps already built,
 make restore                       # reload the MySQL build server from its dumps, in a minute, to port from
 make test-image ENGINE=sqlite      # assert an image: counts, integrity, accounts, overrides
 make test-console                  # assert the consoles are up and the accounts behave on every engine
+make reset R=sqlite:sakila         # put one database back as the image ships it (see "Putting the data back")
 make status                        # the stack, and any transient container
 make clean                         # remove the transient containers; the stack keeps running
 ```
