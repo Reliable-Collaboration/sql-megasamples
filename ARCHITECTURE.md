@@ -329,8 +329,11 @@ image for every configured engine, `--up` to start the stack afterwards). `make 
 or `engine:dataset` pairs, or `--engines`/`--datasets` with `configure`'s selectors. A whole engine
 is recreated with a fresh data directory (`up --force-recreate --renew-anon-volumes`, then the
 replaced anonymous volume removed by name); a single database is dumped from a transient container
-of the image and loaded over the running copy (SQLite: the image's file copied into the shared
-volume), then checked against the pristine copy.
+pinned to the running container’s immutable image ID and loaded over the running copy
+(SQLite: both `/data` and the shared volume), then checked against the pristine copy. Reset
+selectors omit build prerequisites in other databases. Disposable containers use `--rm`, with
+`rm -fv` cleanup on failures as well. Both SQLite paths stop running SQLite consoles before
+replacement and restart them in a `finally` block; manually opened shells must be closed first.
 
 | gate | command | cost | when |
 |---|---|---|---|

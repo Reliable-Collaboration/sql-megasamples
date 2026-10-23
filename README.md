@@ -248,12 +248,18 @@ python3 -m megasamples reset --help              # the same, without make
 * **A whole engine** is recreated with a fresh copy of its image's data directory, in seconds.
   Everything made since goes: rows, tables, databases, accounts, roles and privileges. The data
   volume it replaced is removed by name.
-* **A single database** is restored from a transient container of the same image: MySQL and
+* **A single database** is restored from a disposable container pinned to the running server’s immutable image ID: MySQL and
   PostgreSQL dump it there and load it over the running copy, then check each table's row count
-  against the image; SQLite copies the image's file over the one the consoles read and compares
-  the two byte for byte. PostgreSQL disconnects the database's clients first; MySQL waits for their
+  against the image; SQLite restores both `/data` and the shared console copy from the pristine
+  file and verifies their SHA-256 hashes. PostgreSQL disconnects the database's clients first; MySQL waits for their
   open transactions. Accounts and roles are server-wide and stay as they are, and so do MySQL
   privileges, which MySQL keeps in its account tables; reset the engine whole for those.
+
+Reset selectors do not add build prerequisites in other databases. Datasets sharing a database
+reset together. Both SQLite reset paths briefly stop and restart the running SQLite consoles,
+closing their existing connections (including connections to other engines in those consoles).
+Close any manually opened SQLite shells before resetting. Disposable containers and their
+anonymous volumes are removed on success or failure.
 
 ## The consoles
 
