@@ -26,8 +26,8 @@ Nothing is reset without naming it: `all`, an engine, a pair, or the flags.
   What lives outside the database stays as it is: accounts and roles (server-wide on both), and on
   MySQL the privileges, which it keeps in its account tables. Reset the engine whole for those.
 """
-import argparse, json, os, re, subprocess, sys, time, tempfile
-from contextlib import contextmanager, nullcontext
+import argparse, fcntl, json, os, re, subprocess, sys, time, tempfile, uuid
+from contextlib import ExitStack, contextmanager, nullcontext
 
 from megasamples import compose, config as stack, consoles, datasets as inventory, engines as engine_registry
 from megasamples.engines import unique_databases
@@ -97,6 +97,24 @@ def plan(cfg, targets, engines=None, datasets=None):
     return chosen
 
 
+@contextmanager
+def reset_locks(names):
+    """Reject overlapping resets by this user on this host, including across checkouts.
+
+    Keep the lock files: unlinking a locked inode lets another process lock a new one.
+    Acquire every requested engine before any console or database changes.
+    """
+    with ExitStack() as locks:
+        for name in sorted(names):
+            path = os.path.join(tempfile.gettempdir(), f"megasamples-reset-{os.getuid()}-{name}.lock")
+            handle = locks.enter_context(open(path, "a"))
+            try:
+                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                sys.exit(f"another reset is already running for {name}; retry when it finishes")
+        yield
+
+
 # --- whole engines ---------------------------------------------------------------------------------
 def data_volumes(container):
     """The anonymous volumes a container's data lives in (the images declare one for their data directory). An
@@ -112,6 +130,13 @@ def data_volumes(container):
 def reset_engines(names):
     services = [engine_registry.get(n) for n in names]
     replaced = {e.container: data_volumes(e.container) for e in services}
+    if "sqlite" in names:
+        # Consoles are stopped by main. A one-off service also works if the old holder is stopped.
+        cleaned = sh("docker", "compose", "-f", COMPOSE, "run", "--rm", "--no-deps", "-T",
+                     "--entrypoint", "sh", "sqlite", "-c",
+                     "rm -f /shared/*.sqlite-wal /shared/*.sqlite-shm /shared/*.sqlite-journal")
+        if cleaned.returncode:
+            sys.exit(f"could not remove stale SQLite journals: {cleaned.stderr.strip()[:300]}")
     print(f"  . recreating {', '.join(names)} from the image (fresh data directory)")
     if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--force-recreate", "--renew-anon-volumes",
                        "--no-deps", "--wait", *names], cwd=ROOT).returncode != 0:
@@ -131,7 +156,7 @@ class Pristine:
     """A transient container of an engine's image: its data directory exactly as shipped."""
 
     def __init__(self, engine, ready, env=()):
-        self.name = f"megasamples-reset-{engine.name}"
+        self.name = f"megasamples-reset-{engine.name}-{uuid.uuid4().hex}"
         self.engine = engine
         self.ready = ready
         self.env = list(env)
@@ -141,7 +166,6 @@ class Pristine:
         image = inspected.stdout.strip()
         if inspected.returncode or not image:
             sys.exit(f"could not inspect the running image for {self.engine.container}: {inspected.stderr.strip()[:300]}")
-        sh("docker", "rm", "-fv", self.name)
         try:
             run = sh("docker", "run", "--rm", "-d", "--name", self.name, *TRANSIENT,
                      "--memory", "2g", *self.env, image)
@@ -163,15 +187,28 @@ class Pristine:
 
 def pipe(source, target):
     """source | target, both argument lists; the first failure's message, or None."""
-    producer = subprocess.Popen(source, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    consumer = subprocess.run(target, stdin=producer.stdout, capture_output=True)
-    producer.stdout.close()
-    produced = producer.wait()
-    if produced != 0:
-        return producer.stderr.read().decode(errors="replace").strip()[:300]
-    if consumer.returncode != 0:
-        return consumer.stderr.decode(errors="replace").strip()[:300]
-    return None
+    with tempfile.TemporaryFile() as errors:
+        producer = subprocess.Popen(source, stdout=subprocess.PIPE, stderr=errors)
+        consumer = None
+        try:
+            consumer = subprocess.Popen(target, stdin=producer.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            # Only the consumer owns the read end now; an early exit must signal the producer.
+            producer.stdout.close()
+            _, consumed_errors = consumer.communicate()
+            produced = producer.wait()
+            if produced != 0:
+                errors.seek(0)
+                return errors.read(4096).decode(errors="replace").strip()[:300] or f"dump exited with status {produced}"
+            if consumer.returncode != 0:
+                return consumed_errors.decode(errors="replace").strip()[:300] or f"restore exited with status {consumer.returncode}"
+            return None
+        finally:
+            producer.stdout.close()
+            for process in (consumer, producer):
+                if process is not None:
+                    if process.poll() is None:
+                        process.kill()
+                    process.wait()
 
 
 def pg(container, sql, database="postgres"):
@@ -303,7 +340,7 @@ def main(argv=None):
     chosen = plan(cfg, a.targets, a.engines, a.datasets)
     if not os.path.exists(COMPOSE):
         compose.main([])
-    with sqlite_connections_closed() if "sqlite" in chosen else nullcontext():
+    with reset_locks(chosen), sqlite_connections_closed() if "sqlite" in chosen else nullcontext():
         whole = [e for e, databases in chosen.items() if databases is None]
         if whole and reset_engines(whole):
             return 1

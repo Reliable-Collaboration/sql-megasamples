@@ -94,7 +94,9 @@ def test_pristine_pins_running_image_and_cleans_up(monkeypatch, failure):
     started = next(c for c in calls if c[1] == "run")
     assert started[-1] == "sha256:running-build"
     assert "--rm" in started
-    assert calls[-1] == ("docker", "rm", "-fv", "megasamples-reset-mysql")
+    name = started[started.index("--name") + 1]
+    assert name.startswith("megasamples-reset-mysql-")
+    assert calls[-1] == ("docker", "rm", "-fv", name)
 
 
 def test_missing_postgres_source_does_not_drop_target(monkeypatch):
@@ -159,3 +161,150 @@ def test_sqlite_consoles_stop_before_reset_and_restart_after(monkeypatch, target
     else:
         assert reset.main([target]) == 0
     assert events == [("stop", "cloudbeaver"), "restore", ("start", "cloudbeaver")]
+
+
+def test_pristine_instances_never_remove_each_others_container(monkeypatch):
+    calls = []
+    def sh(*args):
+        calls.append(args)
+        return result(args, "sha256:running-build" if args[1] == "inspect" else "")
+    monkeypatch.setattr(reset, "sh", sh)
+    with reset.Pristine(get("postgres"), lambda c: True) as first:
+        with reset.Pristine(get("postgres"), lambda c: True) as second:
+            assert first.name != second.name
+            assert not any(c[1] == "rm" for c in calls)
+        assert calls[-1] == ("docker", "rm", "-fv", second.name)
+    assert calls[-1] == ("docker", "rm", "-fv", first.name)
+
+
+def test_reset_lock_rejects_other_process_and_releases_after_failure(monkeypatch, tmp_path):
+    import subprocess, sys
+    monkeypatch.setattr(reset.tempfile, "tempdir", str(tmp_path))
+    script = """
+import sys, tempfile
+from megasamples.reset import reset_locks
+tempfile.tempdir = sys.argv[1]
+with reset_locks(sys.argv[2:]):
+    print('acquired')
+"""
+    def contender(*engines):
+        return subprocess.run([sys.executable, "-c", script, str(tmp_path), *engines],
+                              capture_output=True, text=True, timeout=10)
+    with pytest.raises(RuntimeError):
+        with reset.reset_locks(["postgres"]):
+            blocked = contender("mysql", "postgres")
+            assert blocked.returncode != 0
+            assert "another reset is already running for postgres" in blocked.stderr
+            # The failed multi-engine acquisition must release its earlier MySQL lock.
+            assert contender("mysql").returncode == 0
+            raise RuntimeError("reset failed")
+    assert contender("postgres").returncode == 0
+
+
+@pytest.mark.parametrize("target", ["postgres", "postgres:northwind", "all"])
+def test_busy_engine_aborts_before_any_container_changes(monkeypatch, tmp_path, target):
+    monkeypatch.setattr(reset.tempfile, "tempdir", str(tmp_path))
+    monkeypatch.setattr(reset.stack, "load", lambda: CFG)
+    monkeypatch.setattr(reset.os.path, "exists", lambda p: True)
+    def unexpected(*args, **kwargs):
+        pytest.fail("container command ran before acquiring every lock")
+    monkeypatch.setattr(reset, "sh", unexpected)
+    monkeypatch.setattr(reset.subprocess, "run", unexpected)
+    with reset.reset_locks(["postgres"]):
+        with pytest.raises(SystemExit, match="already running for postgres"):
+            reset.main([target])
+
+
+def test_whole_sqlite_reset_removes_wal_before_copy(monkeypatch, tmp_path):
+    import shutil, sqlite3, subprocess, sys
+    from megasamples.engines.sqlite import ENGINE
+    data, shared = tmp_path / "data", tmp_path / "shared"
+    data.mkdir(); shared.mkdir()
+    with sqlite3.connect(data / "probe.sqlite") as db:
+        db.execute("create table t(x)")
+        db.execute("insert into t values(1)")
+    db.close()
+    shutil.copy(data / "probe.sqlite", shared / "probe.sqlite")
+    # A committed WAL left by a crashed writer must not replay over the replacement database.
+    subprocess.run([sys.executable, "-c", """
+import sqlite3, os, sys
+c = sqlite3.connect(sys.argv[1])
+c.execute('pragma journal_mode=wal')
+c.execute('pragma wal_autocheckpoint=0')
+c.execute('update t set x=99')
+c.commit()
+os._exit(0)
+""", str(shared / "probe.sqlite")], check=True, timeout=10)
+    assert (shared / "probe.sqlite-wal").exists()
+    (shared / "other.sqlite-journal").touch()
+    real_run = subprocess.run
+    def local(command):
+        return command.replace("$$", "$").replace("/data/", str(data) + "/").replace("/shared/", str(shared) + "/")
+    def sh(*args):
+        assert args[1] == "compose" and "run" in args and "--rm" in args
+        return real_run(["sh", "-c", local(args[-1])], capture_output=True, text=True)
+    def recreate(args, **kwargs):
+        assert "up" in args
+        assert not list(shared.glob("*.sqlite-wal"))
+        assert not list(shared.glob("*.sqlite-shm"))
+        assert not list(shared.glob("*.sqlite-journal"))
+        command = ENGINE.compose_service(CFG)["command"][2]
+        return real_run(["sh", "-c", local(command).replace("exec sleep infinity", "true")])
+    monkeypatch.setattr(reset, "data_volumes", lambda c: [])
+    monkeypatch.setattr(reset, "sh", sh)
+    monkeypatch.setattr(reset.subprocess, "run", recreate)
+    assert reset.reset_engines(["sqlite"]) == 0
+    with sqlite3.connect(shared / "probe.sqlite") as db:
+        assert db.execute("select x from t").fetchone() == (1,)
+    db.close()
+
+
+def test_failed_sqlite_cleanup_does_not_recreate(monkeypatch):
+    monkeypatch.setattr(reset, "data_volumes", lambda c: [])
+    monkeypatch.setattr(reset, "sh", lambda *a: result(a, code=1))
+    monkeypatch.setattr(reset.subprocess, "run", lambda *a, **kw: pytest.fail("recreated after cleanup failed"))
+    with pytest.raises(SystemExit, match="could not remove stale SQLite journals"):
+        reset.reset_engines(["sqlite"])
+
+
+@pytest.mark.parametrize("scenario", ["noisy", "source_failure", "target_failure", "early_exit", "missing_target"])
+def test_pipe_completes_and_reports_failures(scenario):
+    import os, signal, subprocess, sys
+    # Isolate the process group so a regression cannot hang pytest or leave children behind.
+    script = r'''
+import sys
+from megasamples.reset import pipe
+scenario = sys.argv[1]
+source = "import sys; sys.stderr.write('warning\\n' * 20000); sys.stderr.flush(); sys.stdout.write('data')"
+target = "import sys; assert sys.stdin.read() == 'data'"
+if scenario == 'source_failure':
+    source = "import sys; sys.exit(7)"
+    target = "import sys; sys.stdin.read()"
+elif scenario == 'target_failure':
+    target = "import sys; sys.stdin.read(); sys.exit(9)"
+elif scenario in ('early_exit', 'missing_target'):
+    source = "import os;\nwhile True: os.write(1, b'x' * 65536)"
+    target = "import sys; sys.exit(9)"
+if scenario == 'missing_target':
+    try:
+        pipe([sys.executable, '-c', source], ['/no/such/reset-test-command'])
+    except FileNotFoundError:
+        pass
+    else:
+        raise AssertionError('missing target did not raise')
+else:
+    error = pipe([sys.executable, '-c', source], [sys.executable, '-c', target])
+    if scenario == 'noisy':
+        assert error is None, error
+    else:
+        assert error, 'failed command returned success'
+'''
+    process = subprocess.Popen([sys.executable, "-c", script, scenario], start_new_session=True,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    try:
+        _, stderr = process.communicate(timeout=10)
+        assert process.returncode == 0, stderr.decode()
+    finally:
+        if process.poll() is None:
+            os.killpg(process.pid, signal.SIGKILL)
+            process.communicate()

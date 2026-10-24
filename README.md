@@ -259,7 +259,12 @@ Reset selectors do not add build prerequisites in other databases. Datasets shar
 reset together. Both SQLite reset paths briefly stop and restart the running SQLite consoles,
 closing their existing connections (including connections to other engines in those consoles).
 Close any manually opened SQLite shells before resetting. Disposable containers and their
-anonymous volumes are removed on success or failure.
+anonymous volumes are removed on success or failure. Whole-engine SQLite reset removes stale
+WAL, SHM and rollback-journal files before replacing the shared databases.
+
+Overlapping resets of the same engine by the same user on one host are rejected before any
+changes; retry after the active reset finishes. This also applies across local checkouts. Resets
+from different hosts or users sharing a container daemon must be coordinated separately.
 
 ## The consoles
 

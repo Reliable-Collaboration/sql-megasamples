@@ -334,6 +334,13 @@ pinned to the running container’s immutable image ID and loaded over the runni
 selectors omit build prerequisites in other databases. Disposable containers use `--rm`, with
 `rm -fv` cleanup on failures as well. Both SQLite paths stop running SQLite consoles before
 replacement and restart them in a `finally` block; manually opened shells must be closed first.
+Whole-engine SQLite reset first uses a disposable Compose service to remove shared-volume
+WAL/SHM/rollback journals, including when the old SQLite holder is stopped. Pristine source
+containers have UUID names. Per-engine advisory file locks prevent overlapping resets by the
+same user on the same host across checkouts; every requested lock is acquired before changing
+containers and released on exit. Different hosts/users sharing a daemon need external coordination.
+Dump stderr goes to a temporary file so a full stderr pipe cannot block the data stream; both
+pipeline processes are reaped on success or failure.
 
 | gate | command | cost | when |
 |---|---|---|---|
