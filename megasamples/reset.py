@@ -1,0 +1,355 @@
+#!/usr/bin/env python3
+"""Put the running stack's databases back as the images ship them: everything, or chosen engine/dataset pairs.
+
+  python3 -m megasamples reset all                                    # every engine the stack runs
+  python3 -m megasamples reset postgres                               # one engine, every database it has
+  python3 -m megasamples reset postgres:northwind mysql:sakila        # single databases
+  python3 -m megasamples reset --engines postgres --datasets quick    # configure's flags and selectors
+
+`make up` starts what megasamples.yaml names, as its images hold it; `reset` returns what it is told to
+that state, discarding the changes made since. The choice reads like `configure`'s -- engines and datasets, by name or selector
+(core | quick | all | a tier | a list) -- so whatever a configuration installs, a reset can restore.
+Nothing is reset without naming it: `all`, an engine, a pair, or the flags.
+
+* A whole engine is recreated with a fresh copy of its data directory from the image, the same
+  `up --force-recreate --renew-anon-volumes` that `make up` uses for a rebuilt image; the data volume it
+  replaced is then removed by name (never a prune). It takes seconds and discards everything: rows,
+  tables, databases, accounts, roles and privileges.
+* Single datasets are restored without touching the rest. PostgreSQL and MySQL start a transient
+  container pinned to the running container’s immutable image ID (labelled so `make clean` removes one left
+  behind), dump each database from it and replace the running server's copy; each restored table's
+  row count is then checked against that pristine copy. SQLite restores both /data and the shared
+  console copy from a pristine container and verifies their hashes. Both SQLite reset paths stop
+  and restart running SQLite consoles; close manually opened SQLite shells before resetting. A dataset that shares its database with
+  another (`append: true`) resets that whole database. PostgreSQL disconnects the clients of a database
+  it restores; MySQL waits for their open transactions.
+  What lives outside the database stays as it is: accounts and roles (server-wide on both), and on
+  MySQL the privileges, which it keeps in its account tables. Reset the engine whole for those.
+"""
+import argparse, fcntl, json, os, re, subprocess, sys, time, tempfile, uuid
+from contextlib import ExitStack, contextmanager, nullcontext
+
+from megasamples import compose, config as stack, consoles, datasets as inventory, engines as engine_registry
+from megasamples.engines import unique_databases
+from megasamples.paths import COMPOSE, ROOT
+
+TRANSIENT = ["--label", "megasamples.transient=true", "--label", "megasamples.role=reset"]
+READY_SECONDS = 120
+
+
+def sh(*args, input=None):
+    return subprocess.run(list(args), capture_output=True, text=True, input=input)
+
+
+# --- what to reset ---------------------------------------------------------------------------------
+def plan(cfg, targets, engines=None, datasets=None):
+    """{engine: None (the whole engine) | [databases]} from the arguments, or SystemExit naming the problem.
+
+    `targets` are `all`, engine names and `engine:dataset` pairs; `engines` and `datasets` are configure's
+    comma-separated flags (`datasets` a selector or names, applied to every engine named)."""
+    running = list(cfg.engines)
+    chosen = {}
+
+    def whole(engine):
+        chosen[engine] = None
+
+    def some(engine, names):
+        if chosen.get(engine, []) is None:
+            return                                   # already reset whole
+        configured = cfg.datasets(engine)
+        for name in names:
+            if name not in configured:
+                sys.exit(f"{engine} does not ship `{name}` (megasamples.yaml gives it: {', '.join(configured) or 'nothing'})")
+        databases = chosen.setdefault(engine, [])
+        for database in unique_databases(names):
+            if database not in databases:
+                databases.append(database)
+
+    def select(spec):
+        try:
+            return inventory.select(spec.split(","), include_prerequisites=False)
+        except KeyError as unknown:
+            sys.exit(unknown.args[0])
+
+    def known(engine):
+        if engine not in running:
+            sys.exit(f"`{engine}` is not in the stack (megasamples.yaml runs: {', '.join(running)})")
+        return engine
+
+    for target in targets:
+        if target == "all":
+            for engine in running:
+                whole(engine)
+        elif ":" in target:
+            engine, _, dataset = target.partition(":")
+            some(known(engine), select(dataset))
+        else:
+            whole(known(target))
+    if engines or datasets:
+        names = [known(e) for e in (engines.split(",") if engines else running)]
+        for engine in names:
+            if datasets:
+                some(engine, select(datasets))
+            else:
+                whole(engine)
+    if not chosen:
+        sys.exit("name what to reset: `all`, an engine, engine:dataset pairs, or --engines/--datasets (see --help)")
+    return chosen
+
+
+@contextmanager
+def reset_locks(names):
+    """Reject overlapping resets by this user on this host, including across checkouts.
+
+    Keep the lock files: unlinking a locked inode lets another process lock a new one.
+    Acquire every requested engine before any console or database changes.
+    """
+    with ExitStack() as locks:
+        for name in sorted(names):
+            path = os.path.join(tempfile.gettempdir(), f"megasamples-reset-{os.getuid()}-{name}.lock")
+            handle = locks.enter_context(open(path, "a"))
+            try:
+                fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except BlockingIOError:
+                sys.exit(f"another reset is already running for {name}; retry when it finishes")
+        yield
+
+
+# --- whole engines ---------------------------------------------------------------------------------
+def data_volumes(container):
+    """The anonymous volumes a container's data lives in (the images declare one for their data directory). An
+    anonymous volume is named by a 64-digit hex id; a named one (the SQLite files the consoles share) is never
+    one of them."""
+    mounts = sh("docker", "inspect", "-f", "{{json .Mounts}}", container)
+    if mounts.returncode != 0:
+        return []
+    return [m["Name"] for m in json.loads(mounts.stdout or "[]")
+            if m.get("Type") == "volume" and re.fullmatch(r"[0-9a-f]{64}", m.get("Name") or "")]
+
+
+def reset_engines(names):
+    services = [engine_registry.get(n) for n in names]
+    replaced = {e.container: data_volumes(e.container) for e in services}
+    if "sqlite" in names:
+        # Consoles are stopped by main. A one-off service also works if the old holder is stopped.
+        cleaned = sh("docker", "compose", "-f", COMPOSE, "run", "--rm", "--no-deps", "-T",
+                     "--entrypoint", "sh", "sqlite", "-c",
+                     "rm -f /shared/*.sqlite-wal /shared/*.sqlite-shm /shared/*.sqlite-journal")
+        if cleaned.returncode:
+            sys.exit(f"could not remove stale SQLite journals: {cleaned.stderr.strip()[:300]}")
+    print(f"  . recreating {', '.join(names)} from the image (fresh data directory)")
+    if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--force-recreate", "--renew-anon-volumes",
+                       "--no-deps", "--wait", *names], cwd=ROOT).returncode != 0:
+        return 1
+    for container, volumes in replaced.items():
+        for volume in volumes:
+            if volume in data_volumes(container):
+                continue
+            removed = sh("docker", "volume", "rm", volume)
+            print(f"  . removed the replaced data volume {volume[:12]}" if removed.returncode == 0
+                  else f"  ! could not remove the replaced data volume {volume}: {removed.stderr.strip()[:200]}")
+    return 0
+
+
+# --- single databases ------------------------------------------------------------------------------
+class Pristine:
+    """A transient container of an engine's image: its data directory exactly as shipped."""
+
+    def __init__(self, engine, ready, env=()):
+        self.name = f"megasamples-reset-{engine.name}-{uuid.uuid4().hex}"
+        self.engine = engine
+        self.ready = ready
+        self.env = list(env)
+
+    def __enter__(self):
+        inspected = sh("docker", "inspect", "-f", "{{.Image}}", self.engine.container)
+        image = inspected.stdout.strip()
+        if inspected.returncode or not image:
+            sys.exit(f"could not inspect the running image for {self.engine.container}: {inspected.stderr.strip()[:300]}")
+        try:
+            run = sh("docker", "run", "--rm", "-d", "--name", self.name, *TRANSIENT,
+                     "--memory", "2g", *self.env, image)
+            if run.returncode != 0:
+                sys.exit(f"could not start a pristine {image}: {run.stderr.strip()[:300]}")
+            started = time.monotonic()
+            while time.monotonic() - started < READY_SECONDS:
+                if self.ready(self.name):
+                    return self
+                time.sleep(0.5)
+            sys.exit(f"the pristine {image} did not answer within {READY_SECONDS}s")
+        except BaseException:
+            self.__exit__()
+            raise
+
+    def __exit__(self, *_):
+        sh("docker", "rm", "-fv", self.name)
+
+
+def pipe(source, target):
+    """source | target, both argument lists; the first failure's message, or None."""
+    with tempfile.TemporaryFile() as errors:
+        producer = subprocess.Popen(source, stdout=subprocess.PIPE, stderr=errors)
+        consumer = None
+        try:
+            consumer = subprocess.Popen(target, stdin=producer.stdout, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            # Only the consumer owns the read end now; an early exit must signal the producer.
+            producer.stdout.close()
+            _, consumed_errors = consumer.communicate()
+            produced = producer.wait()
+            if produced != 0:
+                errors.seek(0)
+                return errors.read(4096).decode(errors="replace").strip()[:300] or f"dump exited with status {produced}"
+            if consumer.returncode != 0:
+                return consumed_errors.decode(errors="replace").strip()[:300] or f"restore exited with status {consumer.returncode}"
+            return None
+        finally:
+            producer.stdout.close()
+            for process in (consumer, producer):
+                if process is not None:
+                    if process.poll() is None:
+                        process.kill()
+                    process.wait()
+
+
+def pg(container, sql, database="postgres"):
+    # The official image trusts its own loopback: the superuser runs maintenance without its password.
+    return sh("docker", "exec", container, "psql", "-h", "127.0.0.1", "-U", "postgres", "-d", database,
+              "-v", "ON_ERROR_STOP=1", "-tAc", sql)
+
+
+def pg_counts(container, database):
+    tables = pg(container, "SELECT format('%I.%I', schemaname, tablename) FROM pg_tables "
+                           "WHERE schemaname NOT IN ('pg_catalog', 'information_schema') ORDER BY 1", database)
+    out = {}
+    for table in tables.stdout.split():
+        out[table] = pg(container, f"SELECT count(*) FROM {table}", database).stdout.strip()
+    return out
+
+
+def reset_postgres(engine, databases):
+    with Pristine(engine, lambda c: pg(c, "SELECT 1").returncode == 0) as pristine:
+        for database in databases:
+            print(f"  . postgres:{database}: restoring from the image")
+            source = pg(pristine.name, "SELECT 1", database)
+            if source.returncode:
+                sys.exit(f"postgres:{database}: source database is unavailable: {source.stderr.strip()[:300]}")
+            dropped = pg(engine.container, f'DROP DATABASE IF EXISTS "{database}" WITH (FORCE)')
+            if dropped.returncode != 0:
+                sys.exit(f"postgres:{database}: {dropped.stderr.strip()[:300]}")
+            # --create carries the database's own settings and the grants on it.
+            failed = pipe(["docker", "exec", pristine.name, "pg_dump", "-h", "127.0.0.1", "-U", "postgres", "-Fc", "--create", database],
+                          ["docker", "exec", "-i", engine.container, "pg_restore", "-h", "127.0.0.1", "-U", "postgres",
+                           "-d", "postgres", "--create", "--exit-on-error"])
+            if failed:
+                sys.exit(f"postgres:{database}: {failed}")
+            expected, restored = pg_counts(pristine.name, database), pg_counts(engine.container, database)
+            if expected != restored or not expected:
+                sys.exit(f"postgres:{database}: the restored tables differ from the image's: {sorted(set(expected.items()) ^ set(restored.items()))[:5]}")
+            print(f"      {len(restored)} tables, row counts as shipped")
+    return 0
+
+
+def my(container, sql, database=None):
+    return sh("docker", "exec", container, "mysql", "-uroot", "-proot", "-N", "--batch",
+              *([database] if database else []), "-e", sql)
+
+
+def my_counts(container, database):
+    tables = my(container, "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() "
+                           "AND table_type = 'BASE TABLE' ORDER BY 1", database)
+    return {t: my(container, f"SELECT COUNT(*) FROM `{t}`", database).stdout.strip() for t in tables.stdout.split()}
+
+
+def reset_mysql(engine, databases):
+    with Pristine(engine, lambda c: my(c, "SELECT 1").returncode == 0, ["-e", "MYSQL_ROOT_PASSWORD=root"]) as pristine:
+        for database in databases:
+            print(f"  . mysql:{database}: restoring from the image")
+            failed = pipe(["docker", "exec", pristine.name, "mysqldump", "-uroot", "-proot", "--databases", database,
+                           "--add-drop-database", "--routines", "--triggers", "--events", "--single-transaction", "--set-gtid-purged=OFF"],
+                          ["docker", "exec", "-i", engine.container, "mysql", "-uroot", "-proot"])
+            if failed:
+                sys.exit(f"mysql:{database}: {failed}")
+            expected, restored = my_counts(pristine.name, database), my_counts(engine.container, database)
+            if expected != restored or not expected:
+                sys.exit(f"mysql:{database}: the restored tables differ from the image's: {sorted(set(expected.items()) ^ set(restored.items()))[:5]}")
+            print(f"      {len(restored)} tables, row counts as shipped")
+    return 0
+
+
+def reset_sqlite(engine, databases):
+    with Pristine(engine, lambda c: sh("docker", "exec", c, "true").returncode == 0) as pristine:
+        with tempfile.TemporaryDirectory(prefix="megasamples-reset-") as temp:
+            for database in databases:
+                print(f"  . sqlite:{database}: copying the image's file")
+                source = f"/data/{database}.sqlite"
+                local = os.path.join(temp, f"{database}.sqlite")
+                expected = sh("docker", "exec", pristine.name, "sha256sum", source)
+                copied = sh("docker", "cp", f"{pristine.name}:{source}", local)
+                if expected.returncode or not expected.stdout.split() or copied.returncode:
+                    sys.exit(f"sqlite:{database}: could not read the pristine file")
+                for directory in ("/data", "/shared"):
+                    staged = f"{directory}/.{database}.sqlite.part"
+                    copied = sh("docker", "cp", local, f"{engine.container}:{staged}")
+                    if copied.returncode:
+                        sys.exit(f"sqlite:{database}: {copied.stderr.strip()[:300]}")
+                    # No console may hold the old inode or a WAL while these files are replaced.
+                    replaced = sh("docker", "exec", engine.container, "sh", "-c",
+                                  f"rm -f {directory}/{database}.sqlite-wal {directory}/{database}.sqlite-shm "
+                                  f"{directory}/{database}.sqlite-journal && "
+                                  f"mv -f {staged} {directory}/{database}.sqlite")
+                    sums = sh("docker", "exec", engine.container, "sha256sum", f"{directory}/{database}.sqlite")
+                    if replaced.returncode or sums.returncode or sums.stdout.split()[:1] != expected.stdout.split()[:1]:
+                        sys.exit(f"sqlite:{database}: {directory} differs from the image's file")
+                print("      both files are the image's, byte for byte")
+    return 0
+
+
+@contextmanager
+def sqlite_connections_closed():
+    """Stop running SQLite consoles, then restore their prior running state even on failure."""
+    running = sh("docker", "compose", "-f", COMPOSE, "ps", "--status", "running", "--services")
+    if running.returncode:
+        sys.exit(f"could not list running consoles: {running.stderr.strip()[:300]}")
+    consumers = [name for name in running.stdout.split()
+                 if name in consoles.names() and "sqlite" in consoles.get(name).engines]
+    try:
+        if consumers:
+            stopped = sh("docker", "compose", "-f", COMPOSE, "stop", *consumers)
+            if stopped.returncode:
+                sys.exit(f"could not stop SQLite consoles: {stopped.stderr.strip()[:300]}")
+        yield
+    finally:
+        if consumers:
+            started = sh("docker", "compose", "-f", COMPOSE, "start", *consumers)
+            if started.returncode:
+                sys.exit(f"could not restart SQLite consoles: {started.stderr.strip()[:300]}")
+
+
+RESET_DATABASES = {"postgres": reset_postgres, "mysql": reset_mysql, "sqlite": reset_sqlite}
+
+
+def main(argv=None):
+    ap = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0],
+                                 formatter_class=argparse.RawDescriptionHelpFormatter,
+                                 epilog="\n".join(__doc__.strip().splitlines()[1:6]))
+    ap.add_argument("targets", nargs="*", help="all | an engine | engine:dataset (dataset: a name or a selector)")
+    ap.add_argument("--engines", help="comma-separated, as configure takes them (default with --datasets: every engine)")
+    ap.add_argument("--datasets", help="selector or comma-separated names, applied to every engine named")
+    a = ap.parse_args(argv)
+    cfg = stack.load()
+    chosen = plan(cfg, a.targets, a.engines, a.datasets)
+    if not os.path.exists(COMPOSE):
+        compose.main([])
+    with reset_locks(chosen), sqlite_connections_closed() if "sqlite" in chosen else nullcontext():
+        whole = [e for e, databases in chosen.items() if databases is None]
+        if whole and reset_engines(whole):
+            return 1
+        for engine, databases in chosen.items():
+            if databases:
+                RESET_DATABASES[engine](engine_registry.get(engine), databases)
+    print("  . reset: " + ", ".join(f"{e} (whole)" if d is None else f"{e}: {', '.join(d)}" for e, d in chosen.items()))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

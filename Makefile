@@ -3,12 +3,13 @@
 # pipeline; `make help` lists the commands.
 PY  ?= $(shell test -x .venv/bin/python && echo .venv/bin/python || echo python3)
 MS   = PYTHONPATH=. $(PY) -m megasamples
+comma := ,
 DATASETS := $(shell PYTHONPATH=. $(PY) -m megasamples list --names 2>/dev/null)
 ifdef SF                       # scale factor for the generated benchmarks: make tpch SF=0.01
 export SF                      # (unset: megasamples.yaml build.scale_factor, default 1)
 endif
 
-.PHONY: help configure list list-core list-quick fetch build image test-image run up down status clean clean-all \
+.PHONY: help configure list list-core list-quick fetch build image test-image run up down reset status clean clean-all \
         compose console-page catalogue provenance check okf-check audit-assets prepub-check \
         test-console screenshots build-server build-server-stop restore loader-image \
         wwi-export verify-oracle load-citibike load-divvy load-tpcc bench $(DATASETS)
@@ -18,6 +19,8 @@ help:
 	@echo "  make configure        choose engines x datasets and consoles, interactively"
 	@echo "  make run              the whole job: fetch, build, image, for every engine configured"
 	@echo "  make up | down        start the stack (regenerating compose.yaml and the index page) | stop it"
+	@echo "  make reset R=all      put the data back as the images ship it; R=\"postgres mysql:sakila\" for engines"
+	@echo "                        or engine:dataset pairs, or ENGINE=postgres D=\"northwind sakila\" (configure's selectors)"
 	@echo "  make status | clean   what is running | remove the transient containers (clean-all: the stack too)"
 	@echo "  make list             every engine, dataset (tier, download size, shape) and console"
 	@echo ""
@@ -56,6 +59,7 @@ test-image:     ; @$(MS) test-image $(if $(ENGINE),--engine $(ENGINE),) $(D)
 run:            ; @$(MS) run
 up:             ; @$(MS) up
 down:           ; @$(MS) down
+reset:          ; @$(MS) reset $(R) $(if $(ENGINE),--engines $(ENGINE),) $(if $(D),--datasets $(subst $(eval) ,$(comma),$(D)),)
 status:         ; @$(MS) status
 clean:          ; @$(MS) clean
 clean-all:      ; @$(MS) clean --all

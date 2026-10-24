@@ -125,9 +125,10 @@ def build_order(selected):
     return out
 
 
-def select(spec):
+def select(spec, *, include_prerequisites=True):
     """Expand a selector into an ordered list of dataset names.
 
+    Set `include_prerequisites=False` for destructive operations scoped to the selection.
     `spec` is "core", "quick", "all", a tier name, a single name, or a list mixing any of these.
     """
     if spec is None:
@@ -147,4 +148,4 @@ def select(spec):
             chosen.append(item)
         else:
             raise KeyError(f"unknown dataset or selector: {item!r}")
-    return build_order(chosen)
+    return build_order(chosen) if include_prerequisites else list(dict.fromkeys(chosen))

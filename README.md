@@ -70,7 +70,7 @@ dataset with its tier, download size and shape.
 |---|---|---:|---:|
 | `adventureworks` | Microsoft's flagship 68-table, 5-schema OLTP sample (bicycle manufacturer) | 69 | 759,240 |
 | `adventureworks_lt` | The lightweight 12-table AdventureWorks (SalesLT schema) | 12 | 4,277 |
-| `chicago_crimes` | The City of Chicago's 8.6 M-row reported-crime extract plus the 434-row IUCR code lookup | 2 | 260,041 |
+| `chicago_crimes` | The City of Chicago's 8.6 M-row reported-crime extract plus the 434-row IUCR code lookup — a live feed: a build takes the current extract, and this count is the snapshot's floor | 2 | 260,041 |
 | `chinook` | Luis Rocha's digital media store sample (v1.4.5, 2024-02-12) | 11 | 15,607 |
 | `contoso` | SQLBI's synthetic Contoso retail star schema V2 | 8 | 753,467 |
 | `dvdstore` | Dell/VMware's open-source OLTP benchmark schema (DVD e-commerce with reviews and memberships) | 9 | 174,716 |
@@ -230,6 +230,42 @@ Run `PRAGMA foreign_keys=ON` to enforce the foreign keys the file declares; a fu
 FTS5 table named `<table>_<index>_fts`. Ports and passwords are yours to change in
 `megasamples.yaml` and `.env`, and every page and console follows.
 
+## Putting the data back
+
+`admin` and the superusers can change anything, and nothing a client writes reaches the images, so
+the out-of-the-box state is always one command away. `make reset` returns what you name to exactly
+what the images ship; it is chosen the way `make configure` chooses, by engine and dataset, and
+nothing is reset without naming it:
+
+```sh
+make reset R=all                                 # every engine in the stack
+make reset R=postgres                            # one engine, every database it has
+make reset R="postgres:northwind mysql:sakila"   # single databases; the rest are not touched
+make reset ENGINE=postgres D=quick               # configure's selectors: core | quick | all | a tier | a list
+python3 -m megasamples reset --help              # the same, without make
+```
+
+* **A whole engine** is recreated with a fresh copy of its image's data directory, in seconds.
+  Everything made since goes: rows, tables, databases, accounts, roles and privileges. The data
+  volume it replaced is removed by name.
+* **A single database** is restored from a disposable container pinned to the running server’s immutable image ID: MySQL and
+  PostgreSQL dump it there and load it over the running copy, then check each table's row count
+  against the image; SQLite restores both `/data` and the shared console copy from the pristine
+  file and verifies their SHA-256 hashes. PostgreSQL disconnects the database's clients first; MySQL waits for their
+  open transactions. Accounts and roles are server-wide and stay as they are, and so do MySQL
+  privileges, which MySQL keeps in its account tables; reset the engine whole for those.
+
+Reset selectors do not add build prerequisites in other databases. Datasets sharing a database
+reset together. Both SQLite reset paths briefly stop and restart the running SQLite consoles,
+closing their existing connections (including connections to other engines in those consoles).
+Close any manually opened SQLite shells before resetting. Disposable containers and their
+anonymous volumes are removed on success or failure. Whole-engine SQLite reset removes stale
+WAL, SHM and rollback-journal files before replacing the shared databases.
+
+Overlapping resets of the same engine by the same user on one host are rejected before any
+changes; retry after the active reset finishes. This also applies across local checkouts. Resets
+from different hosts or users sharing a container daemon must be coordinated separately.
+
 ## The consoles
 
 `make up` brings the engines and the consoles up as one stack, and `make down` takes it away again.
@@ -319,6 +355,7 @@ make image FROM_DUMPS=1            # re-bake MySQL from the dumps already built,
 make restore                       # reload the MySQL build server from its dumps, in a minute, to port from
 make test-image ENGINE=sqlite      # assert an image: counts, integrity, accounts, overrides
 make test-console                  # assert the consoles are up and the accounts behave on every engine
+make reset R=sqlite:sakila         # put one database back as the image ships it (see "Putting the data back")
 make status                        # the stack, and any transient container
 make clean                         # remove the transient containers; the stack keeps running
 ```
