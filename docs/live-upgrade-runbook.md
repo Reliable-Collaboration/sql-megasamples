@@ -49,9 +49,14 @@ podman save -o "$BACKUP_DIR/rollback-images.tar" \
   "localhost/sql-megasamples-mysql:rollback-$UPGRADE_ID" \
   "localhost/sql-megasamples-sqlite:rollback-$UPGRADE_ID"
 
+# Refuse an unmerged draft or a main that has advanced beyond the reviewed upgrade.
+APPROVED_UPGRADE_MERGE=$(gh pr view 9 --repo Reliable-Collaboration/sql-megasamples \
+  --json mergeCommit --jq '.mergeCommit.oid // empty')
+test -n "$APPROVED_UPGRADE_MERGE"
 git fetch origin
 git switch main
 git merge --ff-only origin/main
+test "$(git rev-parse HEAD)" = "$APPROVED_UPGRADE_MERGE"
 git rev-parse HEAD > "$BACKUP_DIR/upgrade-commit.txt"
 # Verify this is the reviewed upgrade, not just an arbitrary newer main.
 MEGASAMPLES_PY=python3
