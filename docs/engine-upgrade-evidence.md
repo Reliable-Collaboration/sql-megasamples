@@ -83,6 +83,9 @@ The upgrade candidate declares only that named full-corpus PostgreSQL FULLTEXT i
 
 ## Runtime validation
 
+The three-engine `pubs` image preflight first **Failed** because `.dockerignore` excluded the new image lock file; adding its precise allowlist entry made all three builds **Pass**. The actual preflight is the regression check; no existing assertion was weakened. MySQL's image test then **Failed** its read check because it hardcoded Sakila in a pubs-only image. The corrected checker creates a real table and modifying procedure in a shipped database, requires reads, denies all writes and routine execution, and also requires admin writes. The unchanged three-engine preflight command then **Passed**. Separate container checks **Passed** for the exact image-lock SHA-256 in every image (`preflight-provenance-results.json`). These are small preflight images, not the full-data image validation.
+
+
 Pending completion. Per-dataset commands use `python -m megasamples build --no-fetch --engine ENGINE DATASET`, which loads and runs the repository's applicable counts, canonical fingerprints, constraints, views, routines, triggers, explain and smoke checks. Unsupported/not-ported objects remain subject to the repository's explicit exception records. A driver's successful exit is not a substitute for its per-dataset results.
 
 One early full gate ran while the hub was rebuilding a database and failed port reproduction on that temporarily absent database; it must be rerun after the build settles. This is retained as **Failed**, not reported as a test pass.
