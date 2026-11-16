@@ -39,7 +39,7 @@ class Checks:
     def expect(self, cond, label): (self.ok if cond else self.fail)(label)
 
 
-def account_checks(checks, schema):
+def account_checks(checks, schema, read_table, expected_count):
     """Exercise valid statements against fixtures in a database this image actually carries."""
     reader, writer = "demo", "admin"
     table = f"`{schema}`.`_megasamples_access_probe`"
@@ -56,8 +56,8 @@ def account_checks(checks, schema):
         if setup.returncode:
             return
         checks.expect(q("SELECT 1", user=reader, pw=reader).returncode == 0, "demo can connect")
-        result = q(f"SELECT COUNT(*) FROM {table}", user=reader, pw=reader)
-        checks.expect(result.returncode == 0 and result.stdout.strip() == "1", "demo can read")
+        result = q(f"SELECT COUNT(*) FROM `{schema}`.`{read_table}`", user=reader, pw=reader)
+        checks.expect(result.returncode == 0 and result.stdout.strip() == str(expected_count), "demo can read")
         for statement, label in [
                 (f"CREATE TABLE {created} (id integer)", "CREATE"),
                 (f"INSERT INTO {table} VALUES (2, 2)", "INSERT"),
@@ -145,7 +145,9 @@ def main(argv=None):
                 c.expect(not orphaned, f"{schema}: {len(external)} cross-database foreign key(s) "
                                        f"present with no orphans" + (f" -- {orphaned}" if orphaned else ""))
 
-        account_checks(c, unique_databases(datasets)[0])
+        first_counts = image_counts(datasets[0])
+        read_table = sorted(first_counts)[0]
+        account_checks(c, unique_databases(datasets)[0], read_table, first_counts[read_table])
 
         empty = q("SELECT COUNT(*) FROM mysql.user WHERE authentication_string='' "
                   "AND user NOT LIKE 'mysql.%'").stdout.strip()
