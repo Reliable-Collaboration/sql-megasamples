@@ -336,7 +336,7 @@ def final_line(job, state):
     mark = {"fetched": "+", "cached": "=", "manual": "=", "failed": "x"}[state]
     if state == "failed":
         return f"  {mark} {job.id} FAILED: {job.detail}"
-    took = f" in {job.finished - job.started:.1f}s" if state == "fetched" and job.finished else ""
+    took = f" in {job.finished - job.started:.1f}s" if state == "fetched" and job.finished and job.started else ""
     size = f" {human(job.size)}" if job.size else ""
     return f"  {mark} {job.id}{size}{took}, {job.verdict}"
 
@@ -409,6 +409,7 @@ def fetch(arts, dest_root=DOWNLOADS, manifest_path=MANIFEST, jobs=3, stall=120, 
                 job = q.get_nowait()
             except queue.Empty:
                 return
+            job.started = time.time()
             try:
                 state = fetch_one(job, dest_root, manifest_path, trust_first, stall)
             except Exception as exc:  # noqa: BLE001 - reported per artifact; the build stops at the end
