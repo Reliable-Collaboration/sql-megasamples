@@ -16,7 +16,7 @@ a download does not match.
 
 | artifact | bytes | sha256 |
 |---|---:|---|
-| `lahman/lahman_1871-2025_csv.zip` | 42,207,446 | `11e8a7ab7f7fee0a5e01c22f9c87872c3fc6e710134a1f6f3d1c6c886c3f6a52` |
+| `lahman/lahman_1871-2025_csv.zip` | 42,207,441 | `25b96fb2cca0a8b09768ce57eeeb4ef69ad9838099a0f1e1123379a63ebf9407` |
 
 ## What upstream publishes
 

@@ -119,7 +119,7 @@ is the registry the configuration names.
 
 ### 4.1 MySQL (`engines/mysql/`, `megasamples/engines/mysql/`)
 
-* **Build server.** `mysql:9.7.2` started as a plain container, `megasamples-build-mysql`, with the
+* **Build server.** `mysql:26.10.0` started as a plain container, `megasamples-build-mysql`, with the
   project's `my.cnf`, `--local-infile=1 --skip-log-bin`, `build/stage/` mounted read-only at
   `/context` and `build/` at `/build`. It is reused across a build session and removed by
   `make image` when the image is done (`build.keep_build_server: true` keeps it), or by `make clean`.
@@ -131,7 +131,7 @@ is the registry the configuration names.
 * **Image.** `engines/mysql/Dockerfile`, a two-stage build: the builder initialises a data directory,
   loads each dump with `util.loadDump` (`deferTableIndexes: all`, so secondary indexes are built
   after the data), loads the time-zone tables, creates the accounts and the provenance registry,
-  shuts down; the final stage is `mysql:9.7.2` plus that data directory, `my.cnf` and a wrapper
+  shuts down; the final stage is `mysql:26.10.0` plus that data directory, `my.cnf` and a wrapper
   entrypoint that applies password overrides at startup. The context is `build/mysql/image/`, which
   `megasamples image` fills with hardlinks to exactly the dumps being baked and the registry SQL for
   them, so the image contains what the configuration names and nothing else. The data directory is
@@ -155,7 +155,7 @@ is the registry the configuration names.
   for every FULLTEXT index), `constraints.sql` (foreign keys, checks, and `setval` for every
   identity sequence), `routines.sql` (PL/pgSQL), `views.sql`, `triggers.sql` (PL/pgSQL trigger
   functions, including one per `ON UPDATE CURRENT_TIMESTAMP` column), `model.json`, `dropped.txt` —
-  and are loaded in that order into a throwaway `postgres:18.6-bookworm` build server,
+  and are loaded in that order into a throwaway `postgres:18.7-trixie` build server,
   `megasamples-build-postgres`, with `\copy`. A procedure that returns rows becomes a function
   `RETURNS TABLE(...)`; its columns are measured once with psql's `\gdesc` on the ported schema and
   recorded in `datasets/<name>/ports/result_sets.yaml`, so the next render needs no server. A
@@ -188,8 +188,8 @@ is the registry the configuration names.
   external-content table with three sync triggers for every FULLTEXT index, the views, and the
   triggers; `VACUUM`ed, rollback journal, `application_id` `MSMP`. There is no build server: the
   file is the database. Details: `knowledge/decisions/sqlite-file-conventions.md`.
-* **Image.** `engines/sqlite/Dockerfile`: Alpine 3.22 (digest-pinned) with the `sqlite` package
-  (SQLite 3.49.2), the files under `/data` and `/data/megasamples.sqlite` as the registry; its default
+* **Image.** `engines/sqlite/Dockerfile`: Alpine 3.24.4 (digest-pinned) with SQLite 3.54.1 built from its verified vendor source
+  (SQLite 3.54.1.2), the files under `/data` and `/data/megasamples.sqlite` as the registry; its default
   command sleeps so the container holds the files for `docker exec` and for the consoles. The 21 core
   databases are 899 MB of files and a 1.3 GB image. The same files stay under
   `build/sqlite/<database>/` for readers that want a database without a server.

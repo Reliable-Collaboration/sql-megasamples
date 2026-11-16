@@ -23,7 +23,7 @@ is not used: the image ships SQL*Loader, which loads the SH CSVs.
 import argparse, json, os, re, subprocess, sys, time
 
 from megasamples.paths import ROOT
-IMAGE = os.environ.get("ORACLE_IMAGE", "gvenzl/oracle-free:23")
+IMAGE = os.environ.get("ORACLE_IMAGE", "gvenzl/oracle-free:23@sha256:7ed34d0ade89c91a553c9cbe9d42457c758fa29a762aaaa3137541ff30a2d1cb")
 NAME = os.environ.get("ORACLE_CONTAINER", "megasamples-build-oracle")
 SYS_PW = "oracle"
 MYSQL_CONTAINER = os.environ.get("MEGASAMPLES_CONTAINER", "megasamples-mysql")

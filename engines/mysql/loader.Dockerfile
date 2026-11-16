@@ -9,7 +9,7 @@
 # the runbook puts first -- so the base image is fetched by `megasamples/pull_image.py` over IPv4 and
 # referenced here by the digest that produced. Container networking itself is fine: apt and git
 # both work from inside.
-FROM debian@sha256:5ae3c39ebd15e229dcedd5cee596b2497182493d41ff162e824ba13fc1b2b867
+FROM debian:13.7-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 
 RUN apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         build-essential cmake git ca-certificates sysbench default-mysql-client \

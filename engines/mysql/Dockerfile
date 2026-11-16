@@ -1,13 +1,13 @@
-# syntax=docker/dockerfile:1.7
-# sql-megasamples-mysql: MySQL LTS with sample databases baked into the data directory.
+# syntax=docker/dockerfile:1.29.0@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183
+# sql-megasamples-mysql: MySQL Innovation with sample databases baked into the data directory.
 # The builder initialises a data directory, loads each configured dataset from its MySQL Shell dump,
 # creates the accounts and the provenance registry, and shuts down cleanly; the final stage carries
 # only that directory. Build context: the repository root, filtered by .dockerignore; the dumps and
 # registry come from build/mysql/image/, which `megasamples image` fills with exactly the datasets
 # being baked. See ARCHITECTURE.md section 4.
-ARG MYSQL_VERSION=9.7.2
+ARG MYSQL_IMAGE=docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999
 
-FROM mysql:${MYSQL_VERSION} AS builder
+FROM ${MYSQL_IMAGE} AS builder
 COPY engines/mysql/my.cnf /etc/mysql/conf.d/megasamples.cnf
 COPY engines/mysql/init/ /build/init/
 COPY build/mysql/image/registry.sql /build/init/10-registry.sql
@@ -16,6 +16,7 @@ COPY build/mysql/image/dumps/ /build/mysql/dumps/
 # redistribution, and an image is a redistribution (ARCHITECTURE.md section 8).
 # /docs, not /build: the builder's last act is `rm -rf /build`
 COPY NOTICE.md LICENSES.md CATALOGUE.md README.md /docs/
+COPY engines/images.lock.yaml /docs/images.lock.yaml
 COPY datasets/ /build/datasets/
 RUN set -eu; \
     mkdir -p /docs/datasets; \
@@ -53,9 +54,9 @@ mysqladmin -S $S -uroot -proot shutdown
 rm -rf /build
 SH
 
-FROM mysql:${MYSQL_VERSION}
+FROM ${MYSQL_IMAGE}
 LABEL org.opencontainers.image.title="sql-megasamples-mysql" \
-      org.opencontainers.image.description="MySQL 9.7 LTS preloaded with well-known sample databases (sql-megasamples)" \
+      org.opencontainers.image.description="MySQL 26.10 Innovation preloaded with well-known sample databases (sql-megasamples)" \
       org.opencontainers.image.licenses="MIT AND BSD-3-Clause AND CC-BY-SA-3.0"
 COPY engines/mysql/my.cnf /etc/mysql/conf.d/megasamples.cnf
 COPY engines/mysql/entrypoint-wrapper.sh /usr/local/bin/entrypoint-wrapper.sh

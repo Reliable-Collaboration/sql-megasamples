@@ -79,14 +79,14 @@ bench:          ; @$(MS) bench --dataset $(or $(DATASET),employees) --repeat $(o
 
 # the README's screenshots, taken by docs/screenshots/capture.py in the Playwright image on the stack's network
 screenshots:
-	@docker run --rm --network sql-megasamples_default -v "$(CURDIR)/docs/screenshots:/out" --label megasamples.transient=true \
-	  mcr.microsoft.com/playwright/python:v1.49.1-noble sh -c "pip install -q --break-system-packages playwright==1.49.1 && python3 /out/capture.py"
+	@docker run --rm --network $${COMPOSE_PROJECT_NAME:-sql-megasamples}_default -v "$(CURDIR)/docs/screenshots:/out" --label megasamples.transient=true \
+	  mcr.microsoft.com/playwright/python:v1.65.0-noble@sha256:f9294526294a7bdfb8ca8aa7d815c049125a10e73b65d47fb9a80f5d74f284a6 sh -c "pip install -q --break-system-packages playwright==1.65.0 && python3 /out/capture.py"
 	@ls -l docs/screenshots/*.png
 
 # the build-time loader image: compiles SSB's dbgen and carries sysbench for TPC-C. Nothing from it
 # reaches any published image.
 loader-image:
-	@$(MS) pull-image debian:12-slim
+	@$(MS) pull-image debian:13.7-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 	@$(if $(shell docker version -f "{{json .Server.Components}}" 2>/dev/null | grep -q Podman && echo podman),,DOCKER_BUILDKIT=1 )docker build -f engines/mysql/loader.Dockerfile -t sql-megasamples-loader:dev .
 
 #   MEGASAMPLES_ACCEPT_MSSQL_EULA=1 make wwi-export

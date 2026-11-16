@@ -440,6 +440,43 @@ def convert_concat(expr, stringy=()):
     return "".join(out)
 
 
+def convert_view_concat(sql):
+    """Rewrite string additions as expressions, preserving the surrounding view statement.
+
+    The expression-only helper cannot distinguish a SELECT item from the rest of a statement:
+    a literal in CASE can otherwise turn CREATE VIEW and unrelated numeric additions into CONCAT
+    arguments. Parse the already translated MySQL syntax and inspect each addition separately.
+    """
+    import sqlglot
+    from sqlglot import exp
+
+    if xml_blockers(sql):
+        return sql  # the caller reports these existing, explicit conversion exceptions
+
+    def string_value(node):
+        if isinstance(node, exp.Literal):
+            return node.is_string
+        if isinstance(node, exp.Paren):
+            return string_value(node.this)
+        if isinstance(node, exp.Cast):
+            return node.to.this.value.upper() in {"CHAR", "NCHAR", "VARCHAR", "NVARCHAR", "TEXT"}
+        if isinstance(node, exp.Case):
+            # WHEN conditions say nothing about the result's type.
+            values = [item.args.get("true") for item in node.args.get("ifs", [])]
+            values.append(node.args.get("default"))
+            return any(value is not None and string_value(value) for value in values)
+        return node.key in {"concat", "concatws", "left", "right", "substring", "repeat", "lower", "upper", "trim"}
+
+    tree = sqlglot.parse_one(normalize_comments(sql), read="mysql")
+    for node in reversed(list(tree.walk())):
+        if isinstance(node, exp.Add) and (string_value(node.this) or string_value(node.expression)):
+            operands = []
+            for child in (node.this, node.expression):
+                operands.extend(child.expressions if isinstance(child, exp.Concat) else [child])
+            node.replace(exp.Concat(expressions=[child.copy() for child in operands]))
+    return tree.sql(dialect="mysql")
+
+
 AS_TYPE = re.compile(r"(?is)^(.*?)(\s+AS\s+[A-Za-z_][A-Za-z0-9_]*\s*(?:\([^()]*\))?\s*)$")
 
 
@@ -1177,7 +1214,7 @@ def translate(sql, drop_checks=(), keep_objects=True, dateformat=None, schemas=(
             if kind == "view":
                 # `FirstName + ' ' + LastName` in a view is T-SQL concatenation; left as `+`, MySQL
                 # adds the strings numerically and returns 0 with a warning per row
-                body = convert_concat(body)
+                body = convert_view_concat(body)
         if kind in ("view", "procedure") and not keep_objects:
             notes.append(f"skipped {kind}")
             continue

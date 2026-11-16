@@ -61,6 +61,8 @@ def split_ref(ref):
     host, rest = ref.split("/", 1)
     if "@" in rest:
         repo, tag = rest.split("@", 1)
+        if ":" in repo.rsplit("/", 1)[-1]:
+            repo = repo.rsplit(":", 1)[0]
     elif ":" in rest.rsplit("/", 1)[-1]:
         repo, tag = rest.rsplit(":", 1)
     else:

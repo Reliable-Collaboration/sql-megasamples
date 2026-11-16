@@ -10,7 +10,7 @@ tested there, and dumped from it; the container is disposable.
 import json, os, shlex, subprocess, sys, time
 
 from megasamples.paths import BUILD, DATASETS, ENGINES, STAGE
-IMAGE = os.environ.get("MYSQL_IMAGE", "mysql:9.7.2")
+IMAGE = os.environ.get("MYSQL_IMAGE", 'docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999')
 NAME = os.environ.get("BUILD_SERVER", "megasamples-build-mysql")
 PW = "build"
 

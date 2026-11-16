@@ -19,7 +19,7 @@ artifacts:
     dataset: sakila
     url: https://downloads.mysql.com/docs/sakila-db.zip
     mirrors: []
-    sha256: "ef4ab9aab7a433311eff6558561bf47de231fe9f6d49f03de67e593418df719c"
+    sha256: "51da69f6cbade50b8b18bece7b4bb52336ec86e70723752bb5871cc36ec0d9f2"
     size_bytes: 729654
     license: bsd-3-clause-sakila
     ipv4_first: false
@@ -1234,8 +1234,8 @@ artifacts:
     url: https://sabr.box.com/s/y1prhc795jk8zvmelfd3jq7tl389y6cd
     mirrors: []
     manual: true
-    sha256: "11e8a7ab7f7fee0a5e01c22f9c87872c3fc6e710134a1f6f3d1c6c886c3f6a52"
-    size_bytes: 42207446
+    sha256: "25b96fb2cca0a8b09768ce57eeeb4ef69ad9838099a0f1e1123379a63ebf9407"
+    size_bytes: 42207441
     license: cc-by-sa-3-0
     ipv4_first: false
 
@@ -1393,7 +1393,7 @@ artifacts:
   - id: bts_ontime/L_AIRLINE_ID.csv
     dataset: bts_ontime
     url: https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_NVeYVaR_VQ
-    mirrors: []
+    mirrors: [https://web.archive.org/web/20260812143303id_/https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_NVeYVaR_VQ]
     sha256: "f84e6b89051a48910fe5487f25378b93173c10aa5752d01e1ddef09c3a50b5c2"
     size_bytes: 66730
     license: us-government-public-domain
@@ -1401,7 +1401,7 @@ artifacts:
   - id: bts_ontime/L_UNIQUE_CARRIERS.csv
     dataset: bts_ontime
     url: https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_haVdhR_PNeeVRef
-    mirrors: []
+    mirrors: [https://web.archive.org/web/20260809002821id_/https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_haVdhR_PNeeVRef]
     sha256: "4ccd2b1edabe8d155efcbc8d00bb6df528872afd01c3afe038f9686902bc25cb"
     size_bytes: 54217
     license: us-government-public-domain

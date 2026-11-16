@@ -32,7 +32,7 @@ def link_tree(src, dst):
 class MySQL(Engine):
     name = "mysql"
     title = "MySQL"
-    version = "9.7.2"
+    version = "26.10.0"
     image = os.environ.get("MEGASAMPLES_MYSQL_IMAGE", "sql-megasamples-mysql:dev")
     container = "megasamples-mysql"
     port = 3306

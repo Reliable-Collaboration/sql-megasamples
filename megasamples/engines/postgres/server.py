@@ -12,7 +12,7 @@ import os, shlex, subprocess, sys, time
 
 from megasamples.paths import BUILD
 
-IMAGE = os.environ.get("POSTGRES_IMAGE", "postgres:18.6-bookworm")
+IMAGE = os.environ.get("POSTGRES_IMAGE", 'docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc')
 NAME = os.environ.get("POSTGRES_BUILD_SERVER", "megasamples-build-postgres")
 PW = "build"
 

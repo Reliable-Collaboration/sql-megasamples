@@ -1,16 +1,17 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.29.0@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183
 # sql-megasamples-postgres: PostgreSQL with sample databases baked into its cluster.
 # The builder initialises a cluster at the image's own PGDATA, creates the accounts and the
 # provenance registry, loads each configured database from the port files (schema, data, indexes,
 # constraints), and stops cleanly; the final stage carries only that cluster. The context is the
 # repository root filtered by .dockerignore; build/postgres/image/ holds exactly the databases being
 # baked. See ARCHITECTURE.md section 4.
-ARG POSTGRES_IMAGE=postgres:18.6-bookworm
+ARG POSTGRES_IMAGE=docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
 
 FROM ${POSTGRES_IMAGE} AS builder
 COPY engines/postgres/init/ /build/init/
 COPY build/postgres/image/ /build/databases/
 COPY NOTICE.md LICENSES.md CATALOGUE.md README.md /docs/
+COPY engines/images.lock.yaml /docs/images.lock.yaml
 COPY datasets/ /build/datasets/
 RUN set -eu; \
     mkdir -p /docs/datasets; \
