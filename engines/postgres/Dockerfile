@@ -8,7 +8,7 @@
 ARG POSTGRES_IMAGE=docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
 
 FROM ${POSTGRES_IMAGE} AS builder
-COPY engines/postgres/init/ /build/init/
+COPY engines/postgres/init/00-users.sql engines/postgres/init/20-grants.sql /build/init/
 COPY build/postgres/image/ /build/databases/
 COPY NOTICE.md LICENSES.md CATALOGUE.md README.md /docs/
 COPY engines/images.lock.yaml /docs/images.lock.yaml
@@ -56,6 +56,13 @@ for d in /build/databases/*/; do
 done
 psql -v ON_ERROR_STOP=1 -q -f /build/databases/registry.sql megasamples
 pg_ctl -w -m fast stop >/dev/null
+SH
+# Keep the packaging pass separate so changing it does not invalidate the bulk-load cache.
+COPY engines/postgres/init/99-trim-wal.sql /build/init/99-trim-wal.sql
+RUN <<'SH'
+#!/bin/bash
+set -euo pipefail
+export PGDATA
 # Reclaim the bulk loader's recycled WAL through PostgreSQL itself before packaging. A short,
 # private restart with a small WAL budget lets CHECKPOINT remove unneeded segments; no WAL files
 # are deleted by hand, and command-line settings leave the shipped configuration unchanged.
