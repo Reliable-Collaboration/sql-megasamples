@@ -21,7 +21,7 @@ not carry, listed by name in `datasets/<name>/ports/not_ported.yaml`.
 |---|---|---:|---:|---|---|---|
 | `adventureworks` | Microsoft's flagship 68-table, 5-schema OLTP sample (bicycle manufacturer) | 69 | 759,240 | MySQL · PostgreSQL · SQLite (21 not ported) | [mit](knowledge/licenses/mit.md) | ship the notice |
 | `adventureworks_lt` | The lightweight 12-table AdventureWorks (SalesLT schema) | 12 | 4,277 | MySQL · PostgreSQL · SQLite (3 not ported) | [mit](knowledge/licenses/mit.md) | ship the notice |
-| `chicago_crimes` | The City of Chicago's 8.6 M-row reported-crime extract plus the 434-row IUCR code lookup | 2 | 260,041 | MySQL · PostgreSQL · SQLite | [chicago-data-portal-terms](knowledge/licenses/chicago-data-portal-terms.md) | attribution, verbatim disclaimer |
+| `chicago_crimes` | The City of Chicago's 8.6 M-row reported-crime extract plus the 434-row IUCR code lookup — a live feed: a build takes the current extract, and this count is the snapshot's floor | 2 | 260,041 | MySQL · PostgreSQL · SQLite | [chicago-data-portal-terms](knowledge/licenses/chicago-data-portal-terms.md) | attribution, verbatim disclaimer |
 | `chinook` | Luis Rocha's digital media store sample (v1.4.5, 2024-02-12) | 11 | 15,607 | MySQL · PostgreSQL · SQLite | [mit](knowledge/licenses/mit.md) | ship the notice |
 | `contoso` | SQLBI's synthetic Contoso retail star schema V2 | 8 | 753,467 | MySQL · PostgreSQL · SQLite | [mit](knowledge/licenses/mit.md) | ship the notice |
 | `dvdstore` | Dell/VMware's open-source OLTP benchmark schema (DVD e-commerce with reviews and memberships) | 9 | 174,716 | MySQL · PostgreSQL · SQLite (2 not ported) | [gpl-2-0](knowledge/licenses/gpl-2-0.md) | share-alike |
@@ -52,7 +52,7 @@ not carry, listed by name in `datasets/<name>/ports/not_ported.yaml`.
 |---|---|---:|---:|---|---|---|
 | `adventureworks_dw` | The AdventureWorks star-schema data warehouse (31 dbo tables, dimension/fact naming) | — | — | — | [mit](knowledge/licenses/mit.md) | ship the notice |
 | `bts_ontime` | One month of the US DOT Reporting Carrier On-Time Performance table (~536k flights, 109 columns) plus the airport and carrier lookup tables | — | — | — | [us-government-public-domain](knowledge/licenses/us-government-public-domain.md) | none |
-| `chicago_crimes_full`<br>appends to `chicago_crimes` | The City of Chicago's 8.6 M-row reported-crime extract plus the 434-row IUCR code lookup | — | — | — | [chicago-data-portal-terms](knowledge/licenses/chicago-data-portal-terms.md) | attribution, verbatim disclaimer |
+| `chicago_crimes_full`<br>appends to `chicago_crimes` | The City of Chicago's 8.6 M-row reported-crime extract plus the 434-row IUCR code lookup — a live feed: a build takes the current extract, and this count is the snapshot's floor | — | — | — | [chicago-data-portal-terms](knowledge/licenses/chicago-data-portal-terms.md) | attribution, verbatim disclaimer |
 | `contoso_10m` | SQLBI's synthetic Contoso retail star schema V2 | — | — | — | [mit](knowledge/licenses/mit.md) | ship the notice |
 | `contoso_1m` | SQLBI's synthetic Contoso retail star schema V2 | — | — | — | [mit](knowledge/licenses/mit.md) | ship the notice |
 | `dvdstore_reviews`<br>appends to `dvdstore` | Dell/VMware's open-source OLTP benchmark schema (DVD e-commerce with reviews and memberships) | — | — | — | [gpl-2-0](knowledge/licenses/gpl-2-0.md) | share-alike |
