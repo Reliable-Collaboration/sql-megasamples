@@ -154,7 +154,8 @@ def collect(container=None):
             # `blurb:` in dataset.yaml wins where the record's description was written for the
             # research rather than for a reader -- smallsets' explains which naming option was
             # accepted, which means nothing to someone looking at a list of databases
-            what=spec.get("blurb") or record_description(spec.get("record", "")),
+            what=(spec.get("blurb") or record_description(spec.get("record", "")))
+                 + (" — a live feed: a build takes the current extract, and this count is the snapshot's floor" if spec.get("live") else ""),
             append=append,
             tables=len(counts) if counts else None,
             rows=sum(counts.values()) if counts else None,

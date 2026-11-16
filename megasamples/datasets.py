@@ -17,6 +17,8 @@ against (`tests/`), and the generated `LICENSE` and `PROVENANCE.md`. The contrac
     depends     datasets that must be loaded first (cross-database foreign keys)
     build_license  a licence accepted at build time only (never in the image)
     blurb       a one-line description for the catalogue, when the record's is not written for readers
+    live        true for a dataset built from a feed that changes: its artifacts are taken as served
+                and its tests describe a snapshot (floors and structure), see megasamples/verify.py
 """
 import functools, os
 

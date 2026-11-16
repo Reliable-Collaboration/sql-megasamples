@@ -3,6 +3,9 @@ database: chicago_crimes
 append: true
 tier: extended
 record: knowledge/datasets/chicago-crimes.md
+# a live feed: the portal amends past years, so a build takes the current extract and the tests
+# describe a snapshot (megasamples/verify.py)
+live: true
 licenses: [chicago-data-portal-terms]
 artifacts:
   - chicago_crimes/full/crimes_2001.csv

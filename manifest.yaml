@@ -10,6 +10,10 @@
 #   size_bytes    0 when unknown; checked when non-zero
 #   license       id of a record in knowledge/licenses/
 #   ipv4_first    force curl -4 (hosts with AAAA records known to hang)
+#   live          the upstream is a feed that changes (a query against a live portal): a build takes
+#                 what it serves today and records what it got; sha256 and size_bytes then describe
+#                 the snapshot the dataset's tests were written against, not a pin
+#                 (knowledge/decisions/live-artifacts.md)
 artifacts:
   - id: sakila/sakila-db.zip
     dataset: sakila
@@ -1199,6 +1203,7 @@ artifacts:
     size_bytes: 74885948
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/iucr.csv
     dataset: chicago_crimes
     url: "https://data.cityofchicago.org/api/views/c7ck-438e/rows.csv?accessType=DOWNLOAD"
@@ -1207,6 +1212,7 @@ artifacts:
     size_bytes: 24230
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
 
   # Stack Exchange: the beer.stackexchange.com site dump from the archive.org 2024-04-02 snapshot,
   # the newest copy redistributable without accepting the later click-through. Upstream publishes an
@@ -1422,6 +1428,7 @@ artifacts:
     size_bytes: 132932015
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2002.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2002&$order=id&$limit=600000"
@@ -1430,6 +1437,7 @@ artifacts:
     size_bytes: 135998717
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2003.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2003&$order=id&$limit=600000"
@@ -1438,6 +1446,7 @@ artifacts:
     size_bytes: 135452707
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2004.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2004&$order=id&$limit=600000"
@@ -1446,6 +1455,7 @@ artifacts:
     size_bytes: 133823716
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2005.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2005&$order=id&$limit=600000"
@@ -1454,6 +1464,7 @@ artifacts:
     size_bytes: 129375533
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2006.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2006&$order=id&$limit=600000"
@@ -1462,6 +1473,7 @@ artifacts:
     size_bytes: 127886299
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2007.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2007&$order=id&$limit=600000"
@@ -1470,6 +1482,7 @@ artifacts:
     size_bytes: 124712551
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2008.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2008&$order=id&$limit=600000"
@@ -1478,6 +1491,7 @@ artifacts:
     size_bytes: 121380361
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2009.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2009&$order=id&$limit=600000"
@@ -1486,6 +1500,7 @@ artifacts:
     size_bytes: 111733260
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2010.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2010&$order=id&$limit=600000"
@@ -1494,6 +1509,7 @@ artifacts:
     size_bytes: 105918385
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2011.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2011&$order=id&$limit=600000"
@@ -1502,6 +1518,7 @@ artifacts:
     size_bytes: 100664384
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2012.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2012&$order=id&$limit=600000"
@@ -1510,6 +1527,7 @@ artifacts:
     size_bytes: 96157167
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2013.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2013&$order=id&$limit=600000"
@@ -1518,6 +1536,7 @@ artifacts:
     size_bytes: 87983901
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2014.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2014&$order=id&$limit=600000"
@@ -1526,6 +1545,7 @@ artifacts:
     size_bytes: 78866106
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2015.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2015&$order=id&$limit=600000"
@@ -1534,6 +1554,7 @@ artifacts:
     size_bytes: 75575689
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2016.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2016&$order=id&$limit=600000"
@@ -1542,6 +1563,7 @@ artifacts:
     size_bytes: 77382197
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2017.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2017&$order=id&$limit=600000"
@@ -1550,6 +1572,7 @@ artifacts:
     size_bytes: 77061081
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2018.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2018&$order=id&$limit=600000"
@@ -1558,6 +1581,7 @@ artifacts:
     size_bytes: 76960081
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2019.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2019&$order=id&$limit=600000"
@@ -1566,6 +1590,7 @@ artifacts:
     size_bytes: 75139643
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2020.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2020&$order=id&$limit=600000"
@@ -1574,6 +1599,7 @@ artifacts:
     size_bytes: 61297573
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2021.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2021&$order=id&$limit=600000"
@@ -1582,6 +1608,7 @@ artifacts:
     size_bytes: 60239381
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2022.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2022&$order=id&$limit=600000"
@@ -1590,6 +1617,7 @@ artifacts:
     size_bytes: 68982515
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2023.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2023&$order=id&$limit=600000"
@@ -1598,6 +1626,7 @@ artifacts:
     size_bytes: 75992181
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
   - id: chicago_crimes/full/crimes_2024.csv
     dataset: chicago_crimes_full
     url: "https://data.cityofchicago.org/resource/ijzp-q8t2.csv?$where=year=2024&$order=id&$limit=600000"
@@ -1606,6 +1635,7 @@ artifacts:
     size_bytes: 74811578
     license: chicago-data-portal-terms
     ipv4_first: false
+    live: true
 
   # Contoso at 1 M and 10 M orders: the extended tier of the same generator output the core ships at
   # 100 k. Each is a separate database rather than an append, because it is the same eight tables at

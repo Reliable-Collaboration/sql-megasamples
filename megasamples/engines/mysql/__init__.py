@@ -41,7 +41,14 @@ class MySQL(Engine):
     def build(self, dataset, fresh=False):
         stager.stage(dataset)
         loader.main([dataset] + (["--fresh"] if fresh else []))
-        return verifier.verify(dataset, engine="mysql")
+        rc = verifier.verify(dataset, engine="mysql")
+        if rc == 0:
+            # the dump a port restores from (ensure) must be this build, not one an earlier image
+            # bake left behind: a live dataset rebuilt from today's feed would otherwise port
+            # yesterday's rows, which the ports' check against build/live/ then fails
+            from megasamples.engines.mysql import dump as dumper
+            dumper.dump(dataset)
+        return rc
 
     def verify(self, dataset, stages=None, pin=False):
         return verifier.verify(dataset, stages, engine="mysql", pin=pin)
