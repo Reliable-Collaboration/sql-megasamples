@@ -43,4 +43,3 @@ def test_declared_downloads_exist_in_the_manifest():
     unknown = {name: sorted(set(datasets.load(name).get("artifacts") or []) - known)
                for name in datasets.names()}
     assert not {name: ids for name, ids in unknown.items() if ids}
-

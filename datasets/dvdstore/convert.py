@@ -12,7 +12,6 @@ Record: knowledge/datasets/dell-dvd-store.md
 import os, re, shutil, sys
 
 DATABASE = "dvdstore"
-CONTEXT = "/context/dvdstore"
 SCRIPTS = ["mysqlds3_create_db.sql", "mysqlds3_create_ind.sql", "mysqlds3_create_sp.sql"]
 # deferred to the extended tier with their indexes; see the record's tier assignment
 EXTENDED_TABLES = {"reviews", "reviews_helpfulness"}
@@ -74,6 +73,7 @@ def split_statements(sql, delimiter=";"):
 def main():
     downloads, dest = sys.argv[1], sys.argv[2]
     context = os.path.dirname(os.path.abspath(dest))
+    inside = f"/context/{os.path.basename(context)}"
     extended = "--reviews" in sys.argv
 
     kept, dropped, procedures = [], [], 0
@@ -108,7 +108,7 @@ def main():
         for filename in files:
             shutil.copyfile(os.path.join(downloads, filename), os.path.join(context, filename))
             copied += 1
-            loads.append(f"LOAD DATA LOCAL INFILE '{CONTEXT}/{filename}' INTO TABLE `{table}`\n"
+            loads.append(f"LOAD DATA LOCAL INFILE '{inside}/{filename}' INTO TABLE `{table}`\n"
                          f"  CHARACTER SET utf8mb4 FIELDS TERMINATED BY ',' "
                          f"OPTIONALLY ENCLOSED BY '\"';")
 
