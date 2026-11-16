@@ -12,6 +12,8 @@ import os, subprocess, sys, time
 import yaml
 
 from megasamples.paths import ROOT
+from megasamples.engines import unique_databases
+from megasamples.registry import image_counts
 
 IMAGE = os.environ.get("MEGASAMPLES_POSTGRES_IMAGE", "sql-megasamples-postgres:dev")
 NAME = "megasamples-test-postgres"
@@ -70,20 +72,19 @@ def main(argv=None):
                  "entrypoint did not re-initialise the shipped cluster")
 
         registry = q("SELECT name FROM datasets ORDER BY name", database="megasamples").stdout.split()
-        c.expect(sorted(registry) == sorted(datasets),
-                 f"registry lists exactly the built datasets ({len(registry)})")
+        c.expect(sorted(registry) == sorted(unique_databases(datasets)),
+                 f"registry lists exactly the built databases ({len(registry)})")
 
         for name in datasets:
             cfg = yaml.safe_load(open(os.path.join(ROOT, "datasets", name, "dataset.yaml"), encoding="utf-8"))
             schema = cfg["database"]
-            counts = yaml.safe_load(open(os.path.join(ROOT, "datasets", name, "tests",
-                                                     "expected_counts.yaml"), encoding="utf-8"))
+            counts = image_counts(name)
             bad = []
             for table, want in counts.items():
                 got = q(f'SELECT count(*) FROM "{table}"', database=schema).stdout.strip()
                 if got != str(want):
                     bad.append(f"{table}={got} want {want}")
-            c.expect(not bad, f"{schema}: {len(counts)} tables match their pinned counts"
+            c.expect(not bad, f"{schema}: {len(counts)} tables match their expected snapshot counts"
                               + (f" -- {bad[:3]}" if bad else ""))
 
         first = datasets[0]

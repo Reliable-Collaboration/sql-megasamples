@@ -9,9 +9,9 @@ choice and one command builds it.
 
 | engine | what ships | size |
 |---|---|---|
-| **MySQL 26.10.0** | `sql-megasamples-mysql`: an image with the databases baked into its data directory | 3.5 GB image |
-| **PostgreSQL 18.7** | `sql-megasamples-postgres`: an image with the databases in its cluster, ported from the verified MySQL corpus | 4.1 GB image (2.6 GB data directory) |
-| **SQLite 3.54.1** | `sql-megasamples-sqlite`: one `.sqlite` file per database with the `sqlite3` shell beside them; the files are also under `build/sqlite/` to copy anywhere | 1.3 GB image (899 MB of files) |
+| **MySQL 26.10.0** | `sql-megasamples-mysql`: an image with the databases baked into its data directory | depends on the selected datasets; see [upgrade evidence](docs/engine-upgrade-evidence.md) |
+| **PostgreSQL 18.7** | `sql-megasamples-postgres`: an image with the databases in its cluster, ported from the verified MySQL corpus | depends on the selected datasets; see [upgrade evidence](docs/engine-upgrade-evidence.md) |
+| **SQLite 3.54.1** | `sql-megasamples-sqlite`: one `.sqlite` file per database with the `sqlite3` shell beside them; the files are also under `build/sqlite/` to copy anywhere | depends on the selected datasets; see [upgrade evidence](docs/engine-upgrade-evidence.md) |
 
 Every dataset is built and verified on all three engines. PostgreSQL and SQLite are **ports of the
 MySQL corpus**: the same rows, proved by the same per-table content digests, foreign-key checks and

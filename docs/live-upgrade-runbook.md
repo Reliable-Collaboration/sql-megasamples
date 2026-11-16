@@ -46,8 +46,10 @@ git switch main
 git merge --ff-only origin/main
 git rev-parse HEAD > "$BACKUP_DIR/upgrade-commit.txt"
 # Verify this is the reviewed upgrade, not just an arbitrary newer main.
-python3 -m pytest -q tests/test_versions.py
-make check
+MEGASAMPLES_PY=python3
+if test -x .venv/bin/python; then MEGASAMPLES_PY="$PWD/.venv/bin/python"; fi
+"$MEGASAMPLES_PY" -m pytest -q tests/test_versions.py
+make check PY="$MEGASAMPLES_PY"
 # Preserve the live configuration and credentials. Do not copy the isolated ports into this file.
 # Rebuild the datasets and images in the live store while the current tagged containers keep running.
 # This does not upgrade their data directories in place.

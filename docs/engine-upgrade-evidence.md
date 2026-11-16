@@ -58,9 +58,13 @@ SQLite is compiled independently of Alpine's package version. Its source archive
 - Tagged digest references exposed a `pull-image` parser bug: it included `:tag` in the registry repository path. The new reference tests **Failed** (3 failures, 2 passes), then **Passed** (5 tests) after correcting the parser. Both proposed database manifest digests were independently verified against the registry.
 - Sakila's upstream ZIP wrapper changed again. Both inner SQL files match the byte lengths and MD5 values recorded in `knowledge/datasets/sakila.md`. Only the transport archive SHA-256 was updated; dataset expectations were retained.
 - Lahman's public Box folder was downloaded through the browser. Its generated ZIP wrapper differs per download. Its README and every dataset assertion are checked before accepting the new archive pin. The source is the [published Box share](https://sabr.box.com/s/y1prhc795jk8zvmelfd3jq7tl389y6cd), read 2026-11-16 during this run.
-- BTS's upstream lookup files drifted. Archived source recovery is being attempted against the exact manifest hashes. Dataset expectations are unchanged.
+- BTS's upstream lookup files drifted. Two lookup CSVs were recovered with exact manifest hashes and fresh mirror downloads **Passed**. The airport lookup remains unavailable at its pin. Source archives are recorded in `build/upgrade-evidence/bts-archive-recovery.json`; dataset expectations are unchanged.
+- The full Wikipedia load passed all existing counts, checksums, indexes and smoke queries, then failed because its view baseline was missing. Added the four-view baseline without altering any existing expectation.
+- Seven image-gate regression cases **Failed** on historical live-count floors and duplicate registry rows for append datasets, then **Passed** with exact verified hub counts and one registry row per database. Three further cases confirm incomplete or below-floor hub records are rejected.
+- A full Chicago conversion failed with unconstrained dependency versions. The repository's locked dependencies successfully staged all 24 year files; a focused boolean-projection test also **Passed** without a converter change. All final validation uses the locked environment.
+- The SQLite source builder **Passed**; executing its built shell reported 3.54.1. The isolated PostgreSQL build server reported 18.7.
 
-The full unit suite also **Passed** with the exact `uv.lock` dependencies installed inside `/opt/locked-venv` in the tools container: **116 tests**, 2026-11-16 19:14 UTC. The repository checkout has no host-installed environment.
+The full unit suite also **Passed** with the exact `uv.lock` dependencies installed inside `/opt/locked-venv` in the tools container: initially **116 tests**, then **127 tests** after the image-snapshot regressions and Chicago CSV coverage were added. The repository checkout has no host-installed environment.
 
 ## Runtime validation
 
