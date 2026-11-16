@@ -3,8 +3,9 @@ database: oracle_sh
 tier: core
 record: knowledge/datasets/oracle-sh.md
 licenses: [mit]
+# channels is populated by sh_populate.sql, not a separate CSV download.
 artifacts: [oracle_sh/sh_install.sql, oracle_sh/sh_create.sql, oracle_sh/sh_populate.sql,
-            oracle_sh/channels.csv, oracle_sh/costs.csv, oracle_sh/customers.csv,
+            oracle_sh/costs.csv, oracle_sh/customers.csv,
             oracle_sh/promotions.csv, oracle_sh/sales.csv,
             oracle_sh/supplementary_demographics.csv, oracle_sh/times.csv]
 stage: {input: dir}

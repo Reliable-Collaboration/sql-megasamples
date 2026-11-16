@@ -64,9 +64,11 @@ SQLite is compiled independently of Alpine's package version. Its source archive
 - A whole SQLite reset retained client-added databases in the shared console volume. The strengthened reset test **Failed** first; after clearing those database files before recreating the holder, all **36 reset tests Passed**.
 - Seven image-gate regression cases **Failed** on historical live-count floors and duplicate registry rows for append datasets, then **Passed** with exact verified hub counts and one registry row per database. Three further cases confirm incomplete or below-floor hub records are rejected.
 - A full Chicago conversion failed with unconstrained dependency versions. The repository's locked dependencies successfully staged all 24 year files; a focused boolean-projection test also **Passed** without a converter change. All final validation uses the locked environment.
+- Oracle SH declared a nonexistent `channels.csv` even though its rows come from the pinned SQL script. The new manifest-contract test **Failed**, the input list was corrected, and all **6 inventory tests Passed**.
+- A native Podman loader-image attempt **Failed** because the IPv4 OCI archive flattened an image-index digest. A regression test **Failed** before selecting Podman's native importer, then **Passed**; platform-preservation cases likewise **Failed** before correction and the full image-reference suite **Passed** (7 tests). The actual **loader image build Passed** after the import correction.
 - The SQLite source builder **Passed**; executing its built shell reported 3.54.1. The isolated PostgreSQL build server reported 18.7.
 
-The full unit suite also **Passed** with the exact `uv.lock` dependencies installed inside `/opt/locked-venv` in the tools container: initially **116 tests**, then **127 tests** after the image-snapshot regressions and Chicago CSV coverage were added. The repository checkout has no host-installed environment.
+The full unit suite also **Passed** with the exact `uv.lock` dependencies installed inside `/opt/locked-venv` in the tools container: initially **116 tests**, then **127 tests** after the image-snapshot regressions and Chicago CSV coverage were added, and **130 tests** after the manifest-contract and native-import cases. The repository checkout has no host-installed environment.
 
 ## Runtime validation
 
