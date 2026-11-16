@@ -149,7 +149,7 @@ if test -f "$BACKUP_DIR/.env"; then cp "$BACKUP_DIR/.env" ./.env; fi
 podman load -i "$BACKUP_DIR/rollback-images.tar"
 ```
 
-For exact preservation of application writes, create four **new** named rollback volumes (the three engine data directories and SQLite shared files), populate them from the cold copies while no database has them open, and attach them to the original image IDs. Use a Compose override, leaving original volumes untouched:
+For exact preservation of application writes, create four **new** named rollback volumes (the three engine data directories and SQLite shared files), populate them from the cold copies while no database has them open, and attach them to the original image IDs. Podman supports copying directory contents from stopped containers with `/.` ([copy reference](https://docs.podman.io/en/latest/markdown/podman-cp.1.html), read 2026-11-16 21:05 UTC). Run the ownership-preserving `cp -a` inside the native rootless user namespace ([unshare reference](https://docs.podman.io/en/latest/markdown/podman-unshare.1.html), read 2026-11-16 21:05 UTC); this command is unavailable through a remote Podman client. Use a Compose override, leaving original volumes untouched:
 
 ```sh
 for engine in postgres mysql sqlite sqlite-shared; do
