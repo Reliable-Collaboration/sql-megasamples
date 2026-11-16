@@ -36,9 +36,40 @@ CREATE TABLE "crimes" (
   CONSTRAINT "fk_crimes_iucr" FOREIGN KEY ("iucr") REFERENCES "iucr" ("iucr") ON UPDATE NO ACTION ON DELETE NO ACTION
 );
 
+CREATE TABLE "crimes_all" (
+  "id" INTEGER NOT NULL,
+  "case_number" VARCHAR(16),
+  "date" DATETIME,
+  "block" VARCHAR(64),
+  "iucr" CHAR(4),
+  "primary_type" VARCHAR(40),
+  "description" VARCHAR(80),
+  "location_description" VARCHAR(80),
+  "arrest" TINYINT,
+  "domestic" TINYINT,
+  "beat" SMALLINT,
+  "district" TINYINT,
+  "ward" TINYINT,
+  "community_area" TINYINT,
+  "fbi_code" VARCHAR(4),
+  "x_coordinate" INTEGER,
+  "y_coordinate" INTEGER,
+  "year" SMALLINT,
+  "updated_on" DATETIME,
+  "latitude" DECIMAL(9,6),
+  "longitude" DECIMAL(9,6),
+  PRIMARY KEY ("id"),
+  CONSTRAINT "fk_crimes_all_iucr" FOREIGN KEY ("iucr") REFERENCES "iucr" ("iucr") ON UPDATE NO ACTION ON DELETE NO ACTION
+);
+
 CREATE INDEX "crimes_ix_crimes_beat" ON "crimes" ("beat");
 CREATE INDEX "crimes_ix_crimes_community_area" ON "crimes" ("community_area");
 CREATE INDEX "crimes_ix_crimes_date" ON "crimes" ("date");
 CREATE INDEX "crimes_ix_crimes_district" ON "crimes" ("district");
 CREATE INDEX "crimes_ix_crimes_iucr" ON "crimes" ("iucr");
 CREATE INDEX "crimes_ix_crimes_primary_type" ON "crimes" ("primary_type");
+CREATE INDEX "crimes_all_ix_crimes_all_community_area" ON "crimes_all" ("community_area");
+CREATE INDEX "crimes_all_ix_crimes_all_date" ON "crimes_all" ("date");
+CREATE INDEX "crimes_all_ix_crimes_all_iucr" ON "crimes_all" ("iucr");
+CREATE INDEX "crimes_all_ix_crimes_all_primary_type" ON "crimes_all" ("primary_type");
+CREATE INDEX "crimes_all_ix_crimes_all_year" ON "crimes_all" ("year");

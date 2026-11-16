@@ -86,7 +86,47 @@ The upgrade candidate declares only that named full-corpus PostgreSQL FULLTEXT i
 The three-engine `pubs` image preflight first **Failed** because `.dockerignore` excluded the new image lock file; adding its precise allowlist entry made all three builds **Pass**. The actual preflight is the regression check; no existing assertion was weakened. MySQL's image test then **Failed** its read check because it hardcoded Sakila in a pubs-only image. The corrected checker creates a real table and modifying procedure in a shipped database, requires reads, denies all writes and routine execution, and also requires admin writes. The unchanged three-engine preflight command then **Passed**. Separate container checks **Passed** for the exact image-lock SHA-256 in every image (`preflight-provenance-results.json`). These are small preflight images, not the full-data image validation.
 
 
-Pending completion. Per-dataset commands use `python -m megasamples build --no-fetch --engine ENGINE DATASET`, which loads and runs the repository's applicable counts, canonical fingerprints, constraints, views, routines, triggers, explain and smoke checks. Unsupported/not-ported objects remain subject to the repository's explicit exception records. A driver's successful exit is not a substitute for its per-dataset results.
+The build/port phase **Passed for 30 available datasets on all three engines (90 combinations)**. Nine combinations are **Not run**: the pinned BTS airport bytes are unavailable, and both WideWorldImporters exports require explicit operator EULA acceptance. The complete requested configuration is saved at `build/upgrade-evidence/full-manifest-config.yaml`; the active rehearsal configuration explicitly excludes only those three datasets, as recorded in `rehearsal-coverage.json`.
+
+| Dataset | MySQL | PostgreSQL | SQLite |
+|---|---|---|---|
+| jaffle_shop | Passed | Passed | Passed |
+| dvdstore | Passed | Passed | Passed |
+| oracle_hr | Passed | Passed | Passed |
+| pubs | Passed | Passed | Passed |
+| smallsets | Passed | Passed | Passed |
+| chinook | Passed | Passed | Passed |
+| sakila | Passed | Passed | Passed |
+| adventureworks_lt | Passed | Passed | Passed |
+| northwind | Passed | Passed | Passed |
+| nyc_taxi | Passed | Passed | Passed |
+| oracle_co | Passed | Passed | Passed |
+| oracle_oe | Passed | Passed | Passed |
+| stackexchange_beer | Passed | Passed | Passed |
+| contoso | Passed | Passed | Passed |
+| adventureworks_dw | Passed | Passed | Passed |
+| adventureworks | Passed | Passed | Passed |
+| bts_ontime | Not run | Not run | Not run |
+| lahman | Passed | Passed | Passed |
+| contoso_1m | Passed | Passed | Passed |
+| wideworldimporters_dw | Not run | Not run | Not run |
+| nyc_taxi_yellow | Passed | Passed | Passed |
+| chicago_crimes | Passed | Passed | Passed |
+| oracle_sh | Passed | Passed | Passed |
+| wideworldimporters | Not run | Not run | Not run |
+| employees | Passed | Passed | Passed |
+| dvdstore_reviews | Passed | Passed | Passed |
+| stackexchange_dba | Passed | Passed | Passed |
+| enron | Passed | Passed | Passed |
+| enron_full | Passed | Passed (FTS unsupported) | Passed |
+| contoso_10m | Passed | Passed | Passed |
+| wikipedia_simple | Passed | Passed | Passed |
+| wikipedia_simple_full | Passed | Passed | Passed |
+| chicago_crimes_full | Passed | Passed | Passed |
+
+The full repository gate initially **Failed** on core port records after append datasets expanded their shared databases. Records were regenerated for Chicago, DVD Store and NYC taxi; that changed the catalogue's routine metadata, so the catalogue was refreshed again. The final gate **Passed**: 149 tests in 22.58 seconds, port reproduction for all 30 loaded datasets, canonical knowledge records, current provenance files and current catalogue/README (`stack-check.log`). The earlier failed gates are retained under `before-catalogue-refresh-*` and `stack-ports-before.log`.
+
+Final full-data images, running-stack resets and persistence checks are pending. Per-dataset commands use `python -m megasamples build --no-fetch --engine ENGINE DATASET`, which loads and runs the repository's applicable counts, canonical fingerprints, constraints, views, routines, triggers, explain and smoke checks. Unsupported/not-ported objects remain subject to the repository's explicit exception records. A driver's successful exit is not a substitute for its per-dataset results.
 
 One early full gate ran while the hub was rebuilding a database and failed port reproduction on that temporarily absent database; it must be rerun after the build settles. This is retained as **Failed**, not reported as a test pass.
 

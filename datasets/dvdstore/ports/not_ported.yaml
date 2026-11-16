@@ -4,3 +4,5 @@ postgres: []
 sqlite:
 - 'procedure new_customer: SQLite has no stored routines'
 - 'procedure new_member: SQLite has no stored routines'
+- 'procedure new_prod_review: SQLite has no stored routines'
+- 'procedure new_review_helpfulness: SQLite has no stored routines'

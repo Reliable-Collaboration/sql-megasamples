@@ -1,3 +1,6 @@
 # What the PostgreSQL port changed inside a routine body, by routine: constructs with no
 # PL/pgSQL counterpart, replaced by rule (megasamples/port/routines.py).
-{}
+new_prod_review:
+- 'COMMIT dropped: the procedure runs in the caller''s transaction, rolled back on error'
+new_review_helpfulness:
+- 'COMMIT dropped: the procedure runs in the caller''s transaction, rolled back on error'
