@@ -56,6 +56,12 @@ for d in /build/databases/*/; do
 done
 psql -v ON_ERROR_STOP=1 -q -f /build/databases/registry.sql megasamples
 pg_ctl -w -m fast stop >/dev/null
+# Reclaim the bulk loader's recycled WAL through PostgreSQL itself before packaging. A short,
+# private restart with a small WAL budget lets CHECKPOINT remove unneeded segments; no WAL files
+# are deleted by hand, and command-line settings leave the shipped configuration unchanged.
+pg_ctl -w -o "-c listen_addresses='' -c max_wal_size=64MB -c min_wal_size=32MB -c wal_level=minimal -c max_wal_senders=0" start >/dev/null
+psql -v ON_ERROR_STOP=1 -q -c 'CHECKPOINT' postgres
+pg_ctl -w -m fast stop >/dev/null
 SH
 USER root
 RUN rm -rf /build
