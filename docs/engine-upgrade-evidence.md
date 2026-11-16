@@ -70,7 +70,7 @@ SQLite is compiled independently of Alpine's package version. Its source archive
 - A native Podman loader-image attempt **Failed** because the IPv4 OCI archive flattened an image-index digest. A regression test **Failed** before selecting Podman's native importer, then **Passed**; platform-preservation cases likewise **Failed** before correction and the full image-reference suite **Passed** (7 tests). The actual **loader image build Passed** after the import correction.
 - The SQLite source builder **Passed**; executing its built shell reported 3.54.1. The isolated PostgreSQL build server reported 18.7.
 
-The full unit suite also **Passed** with the exact `uv.lock` dependencies installed inside `/opt/locked-venv` in the tools container: initially **116 tests**, then **127 tests** after the image-snapshot regressions and Chicago CSV coverage were added, and **130 tests** after the manifest-contract and native-import cases. The repository checkout has no host-installed environment.
+The full unit suite also **Passed** with the exact `uv.lock` dependencies installed inside `/opt/locked-venv` in the tools container: initially **116 tests**, then **127 tests** after the image-snapshot regressions and Chicago CSV coverage were added, and **130 tests** after the manifest-contract and native-import cases. With the DVD Store and Enron regressions, the full locked suite **Passed: 138 tests in 22.63 seconds** (`locked-unit-tests-with-enron.log`). The repository checkout has no host-installed environment.
 
 ## Runtime validation
 

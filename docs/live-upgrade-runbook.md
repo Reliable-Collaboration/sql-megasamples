@@ -121,6 +121,15 @@ podman exec megasamples-sqlite sqlite3 /data/megasamples.sqlite \
   'SELECT name,row_counts FROM datasets ORDER BY name'
 ```
 
+Verify both existing forwarded endpoints with the containers' installed clients (credentials stay inside each container):
+
+```sh
+podman exec megasamples-postgres sh -c \
+  'export PGPASSWORD="$DEMO_PASSWORD"; exec psql -h 10.0.0.172 -p 5432 -U demo -d megasamples -Atc "SELECT version(); SELECT count(*) FROM datasets"'
+podman exec megasamples-mysql sh -c \
+  'export MYSQL_PWD="$DEMO_PASSWORD"; exec mysql -h 10.0.0.172 -P 3306 -udemo -N -e "SELECT VERSION(); SELECT count(*) FROM megasamples.datasets"'
+```
+
 Compare the complete registry sets and each table's actual row counts with the validated configuration and catalogue. Registry text alone is not an actual count check. Run the repository's image tests before cutover and the same validation queries against the replacement servers afterwards. Live-feed counts/checksums must match the hub snapshot built with these images; historical manifest counts are floors for those feeds. Verify `demo` remains read-only and `admin` can write using disposable probe tables, then remove the probes.
 
 Confirm PostgreSQL binds to `127.0.0.1:5432` and MySQL to `127.0.0.1:3306`. Run the coordinator's DataIntent server-bound suites against both the local endpoints and the existing forwarded endpoints `10.0.0.172:5432` and `10.0.0.172:3306`. The proxies continue forwarding to the same local ports and require no changes. Resume clients only after these checks pass.
@@ -140,14 +149,14 @@ if test -f "$BACKUP_DIR/.env"; then cp "$BACKUP_DIR/.env" ./.env; fi
 podman load -i "$BACKUP_DIR/rollback-images.tar"
 ```
 
-For exact preservation of application writes, create three **new** named rollback volumes, populate them from the cold copies while no database has them open, and attach them to the original image IDs. Use a Compose override, leaving original volumes untouched:
+For exact preservation of application writes, create four **new** named rollback volumes (the three engine data directories and SQLite shared files), populate them from the cold copies while no database has them open, and attach them to the original image IDs. Use a Compose override, leaving original volumes untouched:
 
 ```sh
-for engine in postgres mysql sqlite; do
+for engine in postgres mysql sqlite sqlite-shared; do
   podman volume create "megasamples-rollback-$engine-$UPGRADE_ID"
 done
 # podman unshare preserves ownership from the cold copies in rootless Podman's namespace.
-for engine in postgres mysql sqlite; do
+for engine in postgres mysql sqlite sqlite-shared; do
   target=$(podman volume inspect -f '{{.Mountpoint}}' "megasamples-rollback-$engine-$UPGRADE_ID")
   podman unshare cp -a "$BACKUP_DIR/$engine/." "$target/"
 done
@@ -167,6 +176,9 @@ services:
     volumes:
       - rollback-sqlite:/data
 volumes:
+  megasamples-sqlite:
+    external: true
+    name: megasamples-rollback-sqlite-shared-$UPGRADE_ID
   rollback-postgres:
     external: true
     name: megasamples-rollback-postgres-$UPGRADE_ID
@@ -182,7 +194,7 @@ export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
 docker compose -p sql-megasamples -f compose.yaml -f "$BACKUP_DIR/rollback.override.yaml" up -d --wait
 ```
 
-If that default socket is absent, start a Podman API service for the **default** store in the coordinator's session before the Compose command. This is separate from the isolated build's service. The SQLite service's original startup command republishes `/data` into its shared console volume; keep SQLite consoles stopped until that copy finishes. Repeat version, actual row-count, account and DataIntent endpoint checks against the restored stack, including the forwarded endpoints. Resume clients only after rollback validation succeeds. Record the failed upgrade and retain its data directories separately for diagnosis.
+If that default socket is absent, start a Podman API service for the **default** store in the coordinator's session before the Compose command. This is separate from the isolated build's service. The override also maps the original shared-volume name to the restored cold copy for every SQLite consumer. The SQLite service's original startup command republishes `/data` into that restored shared console volume; keep SQLite consoles stopped until that copy finishes. Repeat version, actual row-count, account and DataIntent endpoint checks against the restored stack, including the forwarded endpoints. Resume clients only after rollback validation succeeds. Record the failed upgrade and retain its data directories separately for diagnosis.
 
 ## Isolation used for rehearsal
 
