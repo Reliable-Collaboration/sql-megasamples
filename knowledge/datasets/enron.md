@@ -83,6 +83,7 @@ Custom Python loader (`email` stdlib → TSV → `LOAD DATA LOCAL INFILE`), dete
 
 # Type-mapping hazards
 * `Date` headers carry numeric offsets with zone comments like `-0700 (PDT)` (**Inferred**); store UTC `DATETIME` plus `date_raw`; a handful of bogus years (1979/1980/2044) are expected — keep them, do not coerce (**Inferred**).
+* **Upgrade verification, 2026-11-16:** the original converter used the host timezone, and the shipped fingerprints and date-range expectations contain America/Chicago wall times despite the legacy `date_utc` name. The converter now chooses that zone explicitly, including daylight saving and offset-free headers, preserving the existing corpus on hosts configured for UTC. `date_raw` retains the source header. The earlier UTC description above was an inference, not the shipped behavior.
 * Recipient lists can run to thousands of addresses on broadcast mails; hence the child table rather than a `to` column.
 * `subject` may exceed 255 chars → `TEXT`. `message_id` is not declared UNIQUE until uniqueness is verified.
 * FULLTEXT on `message.subject, message.body` (InnoDB): build after load; `innodb_ft_min_token_size=3` default drops 1-2 letter tokens; document.

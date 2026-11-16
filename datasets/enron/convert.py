@@ -9,13 +9,14 @@ The tar's own member order is **not** alphabetical, so the subset is chosen from
 the member list and read in a second pass. Both passes stream; the archive is never extracted.
 
 Header handling follows the record: `email` with `policy=compat32`, bodies decoded by the declared
-charset with a cp1252 fallback that is recorded per message, dates parsed to UTC where they parse at
-all and kept verbatim either way.
+charset with a cp1252 fallback that is recorded per message. The legacy `date_utc` column preserves
+the America/Chicago values of the shipped corpus; the original offset is retained in `date_raw`.
 
 Record: knowledge/datasets/enron.md
 """
 import email, email.header, email.parser, email.utils, hashlib, os, re, sys, tarfile
 from email import policy as email_policy
+from zoneinfo import ZoneInfo
 
 DATABASE = "enron"
 ARCHIVE = "enron_mail_20150507.tar.gz"
@@ -148,7 +149,12 @@ def main():
                 undated += 1
                 date_utc = None
             else:
-                date_utc = parsed.astimezone(tz=None).replace(tzinfo=None).isoformat(sep=" ")
+                # Historical pins were produced in America/Chicago despite the column name.
+                # Preserve those values explicitly instead of depending on the host's timezone.
+                corpus_timezone = ZoneInfo("America/Chicago")
+                if parsed.tzinfo is None:
+                    parsed = parsed.replace(tzinfo=corpus_timezone)
+                date_utc = parsed.astimezone(corpus_timezone).replace(tzinfo=None).isoformat(sep=" ")
 
             message_id = (header_text(msg.get("Message-ID")) or "").strip()[:255] or None
             if message_id:
