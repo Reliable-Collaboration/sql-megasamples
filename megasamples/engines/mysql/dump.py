@@ -9,6 +9,7 @@ Uses MySQL Shell's `util.dumpSchemas`, whose output `util.loadDump` can restore 
 """
 import argparse, hashlib, json, os, shutil, sys, time
 import yaml
+from megasamples import container_engine
 from megasamples.engines.mysql import server as db  # noqa: E402
 
 from megasamples.paths import ROOT, engine_build_dir
@@ -31,9 +32,10 @@ def dump(dataset):
               f"{{'showProgress': False, 'compression': 'zstd', 'threads': 4}})")
     # --no-defaults: mysqlsh reads my.cnf's [client] section and rejects default-character-set,
     # which the MySQL Shell record already flagged as a difference from the mysql client.
-    # Run the shell as the host user (over TCP, since the socket is only reachable by uid 999) so
+    # Run the shell as the host user (over TCP, since the socket is only reachable by uid 999; on a
+    # rootless engine that user is container root, container_engine.host_user says why) so
     # the dump files land owned by the caller instead of by the container's mysql user.
-    out = db.run(["docker", "exec", "-u", f"{os.getuid()}:{os.getgid()}",
+    out = db.run(["docker", "exec", "-u", container_engine.host_user(),
                   "-e", "HOME=/build",          # mysqlsh needs a writable home for its state dir
                   db.NAME,
                   "mysqlsh", "--no-defaults", f"root:{db.PW}@127.0.0.1:3306", "--py", "-e", script])

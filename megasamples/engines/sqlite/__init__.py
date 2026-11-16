@@ -15,6 +15,7 @@ from megasamples.engines.base import Engine
 from megasamples.engines.mysql import server as mysql
 from megasamples.engines.sqlite import image_test as tester, port
 from megasamples.paths import ROOT, engine_build_dir, engine_dir, rel
+from megasamples import container_engine
 
 
 class SQLite(Engine):
@@ -49,7 +50,7 @@ class SQLite(Engine):
         port.write_registry(os.path.join(context, "data", "megasamples.sqlite"), datasets)
         cmd = ["docker", "build", "-f", os.path.join(engine_dir(self.name), "Dockerfile"), "-t", self.image, ROOT]
         print(f"  . docker build -t {self.image} ({len(datasets)} datasets from {rel(context)})")
-        if subprocess.run(cmd, cwd=ROOT, env={**os.environ, "DOCKER_BUILDKIT": "1"}).returncode != 0:
+        if subprocess.run(cmd, cwd=ROOT, env=container_engine.build_env()).returncode != 0:
             sys.exit(f"docker build failed for {self.image}")
         print(f"  . built {self.image} with: {' '.join(datasets)}")
         return 0

@@ -19,7 +19,7 @@ artifacts:
     dataset: sakila
     url: https://downloads.mysql.com/docs/sakila-db.zip
     mirrors: []
-    sha256: "e27ed871082e76e9d32021c2df07f97ebf7696ace132f5995218557dd87d7046"
+    sha256: "ef4ab9aab7a433311eff6558561bf47de231fe9f6d49f03de67e593418df719c"
     size_bytes: 729654
     license: bsd-3-clause-sakila
     ipv4_first: false
@@ -1234,8 +1234,8 @@ artifacts:
     url: https://sabr.box.com/s/y1prhc795jk8zvmelfd3jq7tl389y6cd
     mirrors: []
     manual: true
-    sha256: "2c293c7b4a4e3a86a494d5163c9f52958298d3e189c9ccea7dae507fcdb8de22"
-    size_bytes: 42207356
+    sha256: "11e8a7ab7f7fee0a5e01c22f9c87872c3fc6e710134a1f6f3d1c6c886c3f6a52"
+    size_bytes: 42207446
     license: cc-by-sa-3-0
     ipv4_first: false
 

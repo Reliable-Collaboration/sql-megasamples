@@ -12,6 +12,7 @@ from megasamples.engines.base import Engine
 from megasamples.engines import expected_tables, unique_databases
 from megasamples.engines.mysql import dump as dumper, image_test as tester, load as loader, server
 from megasamples.paths import ROOT, engine_build_dir, engine_dir, rel
+from megasamples import container_engine
 
 
 def link_tree(src, dst):
@@ -102,7 +103,7 @@ class MySQL(Engine):
         cmd = ["docker", "build", "-f", os.path.join(engine_dir(self.name), "Dockerfile"),
                "-t", self.image, ROOT]
         print(f"  . docker build -t {self.image} ({len(datasets)} datasets from {rel(context)})")
-        if subprocess.run(cmd, cwd=ROOT, env={**os.environ, "DOCKER_BUILDKIT": "1"}).returncode != 0:
+        if subprocess.run(cmd, cwd=ROOT, env=container_engine.build_env()).returncode != 0:
             sys.exit(f"docker build failed for {self.image}")
         print(f"  . built {self.image} with: {' '.join(datasets)}")
         if from_dumps:

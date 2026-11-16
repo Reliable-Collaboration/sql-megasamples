@@ -14,6 +14,7 @@ import argparse, os, sys, time
 from megasamples import datasets as inventory
 from megasamples.engines.mysql import server as db
 from megasamples.paths import engine_build_dir, rel
+from megasamples import container_engine
 
 DUMPS = os.path.join(engine_build_dir("mysql"), "dumps")
 
@@ -46,7 +47,7 @@ def restore(dataset, threads=4):
     db.sql(f"DROP DATABASE IF EXISTS `{schema}`")
     script = (f"util.load_dump('/build/mysql/dumps/{schema}', {{'deferTableIndexes': 'all', "
               f"'threads': {threads}, 'showProgress': False, 'resetProgress': True, 'skipBinlog': True}})")
-    out = db.run(["docker", "exec", "-u", f"{os.getuid()}:{os.getgid()}", "-e", "HOME=/build", db.NAME,
+    out = db.run(["docker", "exec", "-u", container_engine.host_user(), "-e", "HOME=/build", db.NAME,
                   "mysqlsh", "--no-defaults", f"root:{db.PW}@127.0.0.1:3306", "--py", "-e", script])
     if out.returncode != 0:
         sys.exit(f"restore of {dataset} failed:\n{out.stdout}\n{out.stderr}")
