@@ -13,9 +13,6 @@ set -eu
 unset CONTAINERS_STORAGE_CONF CONTAINERS_CONF CONTAINERS_CONF_OVERRIDE DOCKER_HOST COMPOSE_PROJECT_NAME
 export COMPOSE_PROJECT_NAME=sql-megasamples
 export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
-# If this socket is absent, start a default-store API service in this maintenance session:
-# podman system service --time=0 "$DOCKER_HOST" > /tmp/megasamples-live-api.log 2>&1 &
-# Record its PID and stop only that API process after maintenance. Do not change proxy services.
 cd /home/rcc-vstudio/working/sql-megasamples
 UPGRADE_ID=$(date -u +%Y%m%dT%H%M%SZ)
 BACKUP_DIR="$PWD/build/live-upgrade-backups/$UPGRADE_ID"
@@ -29,6 +26,17 @@ git rev-parse HEAD > "$BACKUP_DIR/original-commit.txt"
 cp megasamples.yaml "$BACKUP_DIR/"
 cp compose.yaml "$BACKUP_DIR/"
 if test -f .env; then cp .env "$BACKUP_DIR/"; fi
+# The existing Docker client uses this default-store socket, not the isolated socket.
+MEGASAMPLES_LIVE_API_PID=
+if ! test -S "${DOCKER_HOST#unix://}"; then
+  podman system service --time=0 "$DOCKER_HOST" > "$BACKUP_DIR/api-service.log" 2>&1 &
+  MEGASAMPLES_LIVE_API_PID=$!
+  for attempt in $(seq 1 50); do
+    test -S "${DOCKER_HOST#unix://}" && break
+    sleep 0.2
+  done
+fi
+docker version --format '{{.Server.Version}}'
 podman inspect megasamples-postgres megasamples-mysql megasamples-sqlite > "$BACKUP_DIR/containers.json"
 chmod 600 "$BACKUP_DIR/containers.json"
 for engine in postgres mysql sqlite; do
@@ -179,3 +187,11 @@ If that default socket is absent, start a Podman API service for the **default**
 ## Isolation used for rehearsal
 
 The rehearsal's settings and generated credentials are in the upgrade clone's `megasamples.yaml` and `.env` (mode 0600). Its socket is `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/podman.sock`, project `megasamples-upgrade`; ports are PostgreSQL `127.0.0.1:15432`, MySQL `127.0.0.1:13306`, and consoles `127.0.0.1:18080` through `:18084`. It uses the isolated `slirp4netns` override under `build/upgrade-evidence/containers-slirp.conf` because Pasta failed to access the custom runroot's network namespace. Source `env.sh` and set `CONTAINERS_CONF_OVERRIDE` to that absolute file before starting its socket. The isolated API process can be stopped without stopping its running containers; start it again to use Docker Compose or the repository's commands. None of these settings belongs in the live checkout.
+
+After successful cutover or rollback, if this maintenance shell started an API process, stop only that process (the stack keeps running):
+
+```sh
+if test -n "${MEGASAMPLES_LIVE_API_PID:-}"; then
+  kill "$MEGASAMPLES_LIVE_API_PID"
+fi
+```

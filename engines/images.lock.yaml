@@ -37,9 +37,9 @@ images:
     read_at: '2026-11-16T18:58:37.116706+00:00'
   oracle-verifier:
     image: gvenzl/oracle-free:23@sha256:7ed34d0ade89c91a553c9cbe9d42457c758fa29a762aaaa3137541ff30a2d1cb
-    version: 23 image line; exact Oracle patch not verified
-    release_source: https://hub.docker.com/v2/repositories/gvenzl/oracle-free/tags?page_size=20
-    read_at: '2026-11-16T18:58:37.348606+00:00'
+    version: 26ai Free 23.26.3.0.0
+    release_source: https://www.oracle.com/database/free/get-started/
+    read_at: '2026-11-16T19:41:23.043634+00:00'
   landing:
     image: nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703
     version: 1.30.6
