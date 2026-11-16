@@ -134,9 +134,9 @@ def reset_engines(names):
         # Consoles are stopped by main. A one-off service also works if the old holder is stopped.
         cleaned = sh("docker", "compose", "-f", COMPOSE, "run", "--rm", "--no-deps", "-T",
                      "--entrypoint", "sh", "sqlite", "-c",
-                     "rm -f /shared/*.sqlite-wal /shared/*.sqlite-shm /shared/*.sqlite-journal")
+                     "rm -f /shared/*.sqlite /shared/*.sqlite-wal /shared/*.sqlite-shm /shared/*.sqlite-journal")
         if cleaned.returncode:
-            sys.exit(f"could not remove stale SQLite journals: {cleaned.stderr.strip()[:300]}")
+            sys.exit(f"could not remove stale SQLite journals or database files: {cleaned.stderr.strip()[:300]}")
     print(f"  . recreating {', '.join(names)} from the image (fresh data directory)")
     if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--force-recreate", "--renew-anon-volumes",
                        "--no-deps", "--wait", *names], cwd=ROOT).returncode != 0:

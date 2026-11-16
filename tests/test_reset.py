@@ -237,6 +237,8 @@ os._exit(0)
 """, str(shared / "probe.sqlite")], check=True, timeout=10)
     assert (shared / "probe.sqlite-wal").exists()
     (shared / "other.sqlite-journal").touch()
+    # A whole-engine reset also discards databases that were never shipped by the image.
+    (shared / "client_added.sqlite").write_bytes(b"extra database")
     real_run = subprocess.run
     def local(command):
         return command.replace("$$", "$").replace("/data/", str(data) + "/").replace("/shared/", str(shared) + "/")
@@ -248,6 +250,7 @@ os._exit(0)
         assert not list(shared.glob("*.sqlite-wal"))
         assert not list(shared.glob("*.sqlite-shm"))
         assert not list(shared.glob("*.sqlite-journal"))
+        assert not (shared / "client_added.sqlite").exists()
         command = ENGINE.compose_service(CFG)["command"][2]
         return real_run(["sh", "-c", local(command).replace("exec sleep infinity", "true")])
     monkeypatch.setattr(reset, "data_volumes", lambda c: [])
