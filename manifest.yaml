@@ -1393,7 +1393,7 @@ artifacts:
   - id: bts_ontime/L_AIRLINE_ID.csv
     dataset: bts_ontime
     url: https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_NVeYVaR_VQ
-    mirrors: [https://web.archive.org/web/20260812143303id_/https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_NVeYVaR_VQ]
+    mirrors: ["https://web.archive.org/web/20260812143303id_/https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_NVeYVaR_VQ"]
     sha256: "f84e6b89051a48910fe5487f25378b93173c10aa5752d01e1ddef09c3a50b5c2"
     size_bytes: 66730
     license: us-government-public-domain
@@ -1401,7 +1401,7 @@ artifacts:
   - id: bts_ontime/L_UNIQUE_CARRIERS.csv
     dataset: bts_ontime
     url: https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_haVdhR_PNeeVRef
-    mirrors: [https://web.archive.org/web/20260809002821id_/https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_haVdhR_PNeeVRef]
+    mirrors: ["https://web.archive.org/web/20260809002821id_/https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_haVdhR_PNeeVRef"]
     sha256: "4ccd2b1edabe8d155efcbc8d00bb6df528872afd01c3afe038f9686902bc25cb"
     size_bytes: 54217
     license: us-government-public-domain
