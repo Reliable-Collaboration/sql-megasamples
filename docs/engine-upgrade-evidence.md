@@ -75,6 +75,12 @@ SQLite is compiled independently of Alpine's package version. Its source archive
 
 The full unit suite also **Passed** with the exact `uv.lock` dependencies installed inside `/opt/locked-venv` in the tools container: initially **116 tests**, then **127 tests** after the image-snapshot regressions and Chicago CSV coverage were added, and **130 tests** after the manifest-contract and native-import cases. With the DVD Store and Enron regressions, the full locked suite **Passed: 138 tests in 22.63 seconds** (`locked-unit-tests-with-enron.log`). The repository checkout has no host-installed environment.
 
+## Native PostgreSQL full-text limit
+
+The full Enron load initially **Failed** on PostgreSQL while building `message.ft_message`. With notices suppressed, the actual error was `string is too long for tsvector (1491766 bytes, max 1048575 bytes)`. The [vendor documents this native vector-size limit](https://www.postgresql.org/docs/18/textsearch-limitations.html) (read 2026-11-16 20:45:06 UTC, capture `postgres-textsearch-limit-source.json`). Core Enron fits and retains its index; full Enron's rows, body text, counts and canonical checksum expectations remain unchanged.
+
+The upgrade candidate declares only that named full-corpus PostgreSQL FULLTEXT index **Unsupported**, with its reason in the dataset contract, generated port records, catalogue and baked registry. It does not truncate messages or omit rows. The verifier reports the unsupported index explicitly while requiring every other declared index. Eight regression cases **Failed** before implementation and then **Passed**, including guards against unknown names, missing reasons, ordinary-index exclusions and exclusions on SQLite. Together with the existing port tests, **25 tests Passed**. Actual full-corpus PostgreSQL verification is being rerun with that declaration; its result must be read separately from this unit evidence. This limitation is part of draft PR 9 for owner review, not a claim of full-text parity.
+
 ## Runtime validation
 
 Pending completion. Per-dataset commands use `python -m megasamples build --no-fetch --engine ENGINE DATASET`, which loads and runs the repository's applicable counts, canonical fingerprints, constraints, views, routines, triggers, explain and smoke checks. Unsupported/not-ported objects remain subject to the repository's explicit exception records. A driver's successful exit is not a substitute for its per-dataset results.

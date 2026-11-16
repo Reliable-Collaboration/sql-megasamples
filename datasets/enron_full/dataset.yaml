@@ -4,6 +4,13 @@ tier: extended
 record: knowledge/datasets/enron.md
 licenses: [enron-public-record]
 artifacts: [enron/enron_mail_20150507.tar.gz]
+postgres_fulltext_limits:
+  message:
+    ft_message: >-
+      PostgreSQL tsvector exceeds its native 1 MiB limit for a full-corpus message
+      (1491766 bytes observed); message bodies and their checksums are retained unchanged.
+      https://www.postgresql.org/docs/18/textsearch-limitations.html
+      (read 2026-11-16T20:45:06.354559+00:00). Full-corpus PostgreSQL FULLTEXT search is unsupported.
 stage: {input: dir, source: enron, converter: enron, args: [--full]}
 load:
   - enron_full.sql

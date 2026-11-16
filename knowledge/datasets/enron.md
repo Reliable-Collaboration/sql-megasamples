@@ -81,6 +81,16 @@ A directory tree `maildir/<custodian>/<folder>/<n>.`, one RFC 822 message per fi
 # Conversion path
 Custom Python loader (`email` stdlib → TSV → `LOAD DATA LOCAL INFILE`), deterministic path order; see [decision](/decisions/enron-conversion-path.md) and [tool](/tools/text-enron-maildir-parsing.md). No off-the-shelf MySQL converter with a known license was found (ah-ruhe.de dump has none; converters on GitHub target SQLite/Mongo/Postgres).
 
+# Upgrade coverage, 2026-11-16
+
+The full corpus exceeds PostgreSQL's native full-text vector size for at least one message: the
+isolated port observed 1,491,766 bytes against a 1,048,575-byte maximum. PostgreSQL's
+[documented limits](https://www.postgresql.org/docs/18/textsearch-limitations.html), read
+2026-11-16 20:45:06 UTC, confirm this restriction. The upgrade candidate records
+`enron_full.message.ft_message` as unsupported on PostgreSQL; it preserves every message body
+and its original count/checksum expectations. Core Enron, MySQL FULLTEXT and SQLite FTS5 keep
+their indexes. The exception appears by name in generated port records and the image registry.
+
 # Type-mapping hazards
 * `Date` headers carry numeric offsets with zone comments like `-0700 (PDT)` (**Inferred**); store UTC `DATETIME` plus `date_raw`; a handful of bogus years (1979/1980/2044) are expected — keep them, do not coerce (**Inferred**).
 * **Upgrade verification, 2026-11-16:** the original converter used the host timezone, and the shipped fingerprints and date-range expectations contain America/Chicago wall times despite the legacy `date_utc` name. The converter now chooses that zone explicitly, including daylight saving and offset-free headers, preserving the existing corpus on hosts configured for UTC. `date_raw` retains the source header. The earlier UTC description above was an inference, not the shipped behavior.
