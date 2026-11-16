@@ -77,7 +77,7 @@ The files in `containers.json` include environment credentials: restrict access,
 podman exec megasamples-postgres sh -c \
   'exec pg_dumpall -U postgres' > "$BACKUP_DIR/postgres.sql"
 podman exec megasamples-mysql sh -c \
-  'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; exec mysqldump -uroot --all-databases --routines --events --triggers --single-transaction --hex-blob' \
+  'export MYSQL_PWD="$ADMIN_PASSWORD"; exec mysqldump -uadmin --all-databases --routines --events --triggers --single-transaction --hex-blob' \
   > "$BACKUP_DIR/mysql.sql"
 chmod 600 "$BACKUP_DIR/"*.sql
 
@@ -111,12 +111,12 @@ The outage lasts from the first stop through readiness and verification, plus an
 podman ps --format '{{.Names}} {{.Status}} {{.Ports}}'
 podman exec megasamples-postgres psql -U postgres -Atc 'SHOW server_version'
 podman exec megasamples-mysql sh -c \
-  'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; mysql -uroot -N -e "SELECT VERSION()"'
+  'export MYSQL_PWD="$ADMIN_PASSWORD"; mysql -uadmin -N -e "SELECT VERSION()"'
 podman exec megasamples-sqlite sqlite3 :memory: 'SELECT sqlite_version()'
 podman exec megasamples-postgres psql -U postgres -d megasamples -Atc \
   'SELECT name,row_counts FROM datasets ORDER BY name'
 podman exec megasamples-mysql sh -c \
-  'export MYSQL_PWD="$MYSQL_ROOT_PASSWORD"; mysql -uroot -N -e "SELECT name,row_counts FROM megasamples.datasets ORDER BY name"'
+  'export MYSQL_PWD="$ADMIN_PASSWORD"; mysql -uadmin -N -e "SELECT name,row_counts FROM megasamples.datasets ORDER BY name"'
 podman exec megasamples-sqlite sqlite3 /data/megasamples.sqlite \
   'SELECT name,row_counts FROM datasets ORDER BY name'
 ```
