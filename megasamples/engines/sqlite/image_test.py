@@ -16,6 +16,7 @@ from megasamples.registry import image_counts
 
 IMAGE = os.environ.get("MEGASAMPLES_SQLITE_IMAGE", "sql-megasamples-sqlite:dev")
 NAME = "megasamples-test-sqlite"
+BUDGET_SECONDS = 30
 
 
 def sh(*args, **kw):
@@ -44,12 +45,14 @@ def main(argv=None):
         sys.exit(f"could not start {IMAGE}: {run.stderr}")
     try:
         ready = None
-        while time.time() - started < 30:
+        while time.time() - started < BUDGET_SECONDS * 2:
             if q("SELECT 1").returncode == 0:
                 ready = time.time() - started
                 break
             time.sleep(0.2)
-        c.expect(ready is not None, f"container answers a query{f' in {ready:.1f}s' if ready else ''}")
+        c.expect(ready is not None, "container answers a query")
+        c.expect(ready is not None and ready <= BUDGET_SECONDS,
+                 f"ready in {ready:.1f}s (budget {BUDGET_SECONDS}s)" if ready else "never became ready")
         if ready is None:
             return 1
         registry = q("SELECT name FROM datasets ORDER BY name").stdout.split()
