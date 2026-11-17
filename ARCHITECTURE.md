@@ -119,7 +119,7 @@ is the registry the configuration names.
 
 ### 4.1 MySQL (`engines/mysql/`, `megasamples/engines/mysql/`)
 
-* **Build server.** `mysql:9.7.4` started as a plain container, `megasamples-build-mysql`, with the
+* **Build server.** The thin `sql-megasamples-mysql-base:9.7.4-shell-9.7.1` image, built from digest-pinned Oracle Registry MySQL plus a pinned complete 9.7.1 Shell payload, started as a plain container, `megasamples-build-mysql`, with the
   project's `my.cnf`, `--local-infile=1 --skip-log-bin`, `build/stage/` mounted read-only at
   `/context` and `build/` at `/build`. It is reused across a build session and removed by
   `make image` when the image is done (`build.keep_build_server: true` keeps it), or by `make clean`.
@@ -131,7 +131,7 @@ is the registry the configuration names.
 * **Image.** `engines/mysql/Dockerfile`, a two-stage build: the builder initialises a data directory,
   loads each dump with `util.loadDump` (`deferTableIndexes: all`, so secondary indexes are built
   after the data), loads the time-zone tables, creates the accounts and the provenance registry,
-  shuts down; the final stage is `mysql:9.7.4` plus that data directory, `my.cnf` and a wrapper
+  shuts down; the final stage uses that same thin LTS base plus that data directory, `my.cnf` and a wrapper
   entrypoint that applies password overrides at startup. The context is `build/mysql/image/`, which
   `megasamples image` fills with hardlinks to exactly the dumps being baked and the registry SQL for
   them, so the image contains what the configuration names and nothing else. The data directory is

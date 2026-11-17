@@ -7,7 +7,7 @@ from megasamples.engines import unique_databases
 from megasamples.console_test import passwords
 assert os.environ['COMPOSE_PROJECT_NAME']=='megasamples-upgrade'
 assert os.environ['DOCKER_HOST']=='unix:///home/rcc-vstudio/working/sql-megasamples-upgrade-env/podman.sock'
-out=Path('build/client-evidence');out.mkdir(parents=True,exist_ok=True);cfg=config.load();demo,_=passwords();results={}
+out=Path(os.environ.get('MEGASAMPLES_VALIDATION_OUT', 'build/client-evidence'));out.mkdir(parents=True,exist_ok=True);cfg=config.load();demo,_=passwords();results={}
 expected={e:set(unique_databases(cfg.datasets(e))) for e in cfg.engines}
 def save():
  (out/'console-deep-results.json').write_text(json.dumps(results,indent=2)+'\n')

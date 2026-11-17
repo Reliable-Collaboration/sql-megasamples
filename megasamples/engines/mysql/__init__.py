@@ -83,6 +83,8 @@ class MySQL(Engine):
         return self.build(dataset)
 
     def image_build(self, datasets, keep=False, threads=4, from_dumps=False):
+        from megasamples.engines.mysql import base_image
+        base_image.build()
         dumps = os.path.join(engine_build_dir(self.name), "dumps")
         databases = unique_databases(datasets)
         if from_dumps:

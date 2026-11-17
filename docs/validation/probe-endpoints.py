@@ -7,7 +7,7 @@ assert psycopg.pq.__impl__ == "python"
 assert psycopg.pq.version() == 180007
 assert importlib.metadata.version("pymysql") == "1.2.4"
 from megasamples import config,registry
-root=Path.cwd();out=root/'build/client-evidence'
+root=Path.cwd();out=root/os.environ.get('MEGASAMPLES_VALIDATION_OUT', 'build/client-evidence')
 assert root==Path('/home/rcc-vstudio/working/sql-megasamples-upgrade')
 assert os.environ.get('COMPOSE_PROJECT_NAME')=='megasamples-upgrade'
 cfg=config.load();assert cfg.ports['mysql']==13306 and cfg.ports['postgres']==15432

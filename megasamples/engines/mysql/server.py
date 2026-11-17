@@ -10,7 +10,8 @@ tested there, and dumped from it; the container is disposable.
 import json, os, shlex, subprocess, sys, time
 
 from megasamples.paths import BUILD, DATASETS, ENGINES, STAGE
-IMAGE = os.environ.get("MYSQL_IMAGE", 'docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8')
+from megasamples.engines.mysql import base_image
+IMAGE = os.environ.get("MYSQL_IMAGE", base_image.IMAGE)
 NAME = os.environ.get("BUILD_SERVER", "megasamples-build-mysql")
 PW = "build"
 
@@ -45,12 +46,15 @@ def start(fresh=False):
         return
     if container_state():
         run(["docker", "rm", "-f", NAME])
+    if IMAGE == base_image.IMAGE:
+        base_image.build()
     os.makedirs(STAGE, exist_ok=True)     # mounted below; Docker would otherwise create it as root
     p = run(["docker", "run", "-d", "--name", NAME,
              # transient: `python3 -m megasamples status clean` removes everything so labelled, and
              # Docker Desktop shows them apart from the compose stack rather than mixed into it
              "--label", "megasamples.transient=true", "--label", "megasamples.role=build",
              "-e", f"MYSQL_ROOT_PASSWORD={PW}",
+             "-e", "MYSQL_ROOT_HOST=127.0.0.1",
              "-v", f"{os.path.join(ENGINES, 'mysql', 'my.cnf')}:/etc/mysql/conf.d/megasamples.cnf:ro",
              "-v", f"{DATASETS}:/datasets:ro",
              # read-only: staged inputs are produced on the host. The context must NOT be the

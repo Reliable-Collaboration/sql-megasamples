@@ -10,12 +10,17 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def test_mysql_server_is_the_reviewed_lts_patch():
     assert get('mysql').version == '9.7.4'
-    assert re.fullmatch(r'docker.io/library/mysql:9\.7\.4@sha256:[0-9a-f]{64}', server.IMAGE)
+    assert server.IMAGE == 'sql-megasamples-mysql-base:9.7.4-shell-9.7.1'
+    text = (ROOT / 'engines/mysql/base.Dockerfile').read_text()
+    assert 'container-registry.oracle.com/mysql/community-server:9.7.4@sha256:' in text
+    assert 'mysql:9.7.4@sha256:' in text
+    assert '9.7.1' in text
+    assert 'VOLUME ["/var/lib/mysql"]' in text
 
 
 def test_loader_cli_and_c_library_match_server_lts():
     text = (ROOT / 'engines/mysql/loader.Dockerfile').read_text()
-    assert 'mysql:9.7.4@sha256:' in text
+    assert 'community-server:9.7.4@sha256:' in text
     assert 'libmysqlclient' in text
     assert 'mariadb-connector-c-' not in text
     assert 'mysql_config --version' in text
@@ -41,3 +46,15 @@ def test_locks_agree_with_lts_targets():
     assert images['images']['mysql']['version'] == '9.7.4'
     assert clients['native_clients']['mysql']['version'] == '9.7.4'
     assert clients['drivers']['cloudbeaver-mysql-connector-j']['version'] == '9.7.0'
+
+
+def test_build_server_explicitly_allows_only_loopback_root(monkeypatch, tmp_path):
+    from types import SimpleNamespace
+    calls = []
+    monkeypatch.setattr(server, 'STAGE', str(tmp_path))
+    monkeypatch.setattr(server, 'container_state', lambda: None)
+    monkeypatch.setattr(server.base_image, 'build', lambda: 0)
+    monkeypatch.setattr(server, 'ready', lambda: True)
+    monkeypatch.setattr(server, 'run', lambda args, **kw: calls.append(args) or SimpleNamespace(returncode=0))
+    server.start()
+    assert 'MYSQL_ROOT_HOST=127.0.0.1' in calls[0]

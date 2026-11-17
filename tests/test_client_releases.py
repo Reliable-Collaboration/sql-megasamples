@@ -25,7 +25,7 @@ def test_direct_python_client_pin_and_lock(name, version):
 def test_loader_uses_oracle_client_and_pinned_connector():
     text = (ROOT / 'engines/mysql/loader.Dockerfile').read_text()
     assert 'default-mysql-client' not in text
-    assert 'mysql:9.7.4@sha256:' in text
+    assert 'community-server:9.7.4@sha256:' in text
     assert 'libmysqlclient24_9.7.4' in text
     assert 'sha256sum -c' in text
     assert 'sysbench=1.0.20+ds-7' not in text

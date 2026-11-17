@@ -85,30 +85,30 @@ for name in cfg.datasets(engine):
     expected.setdefault(datasets.load(name)['database'], {}).update(registry.image_counts(name))
 assert registry_rows == expected, engine + ': registry differs from verified data'
 
-results = {}
+# Class-level wrappers preserve the receiver of MySQL's with_clock() shallow
+# copies. Instance closures would accidentally query through the unfrozen receiver.
 original_adapter = verify.adapter_for
+adapter_class = type(original_adapter(engine, cfg.datasets(engine)[0]))
+original_count, original_fingerprint = adapter_class.count, adapter_class.fingerprint
+
+
+def capture_count(self, schema, table):
+    value = original_count(self, schema, table)
+    observed['counts'][table] = value
+    return value
+
+
+def capture_fingerprint(self, schema, table, columns):
+    value = original_fingerprint(self, schema, table, columns)
+    observed['fingerprints'].append(dict(table=table, columns=[col for col, _ in columns],
+                                         n=value[0], x=value[1], s=value[2]))
+    return value
+
+
+adapter_class.count, adapter_class.fingerprint = capture_count, capture_fingerprint
+results = {}
 for name in cfg.datasets(engine):
     observed = {'counts': {}, 'fingerprints': []}
-
-    def adapter_for(selected_engine, selected_name):
-        adapter = original_adapter(selected_engine, selected_name)
-        count, fingerprint = adapter.count, adapter.fingerprint
-
-        def capture_count(schema, table):
-            value = count(schema, table)
-            observed['counts'][table] = value
-            return value
-
-        def capture_fingerprint(schema, table, columns):
-            value = fingerprint(schema, table, columns)
-            observed['fingerprints'].append(dict(table=table, columns=[col for col, _ in columns],
-                                                 n=value[0], x=value[1], s=value[2]))
-            return value
-
-        adapter.count, adapter.fingerprint = capture_count, capture_fingerprint
-        return adapter
-
-    verify.adapter_for = adapter_for
     started_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
     started = time.monotonic()
     with (OUT / f'runtime-{engine}-{name}.log').open('w') as log, contextlib.redirect_stdout(log), contextlib.redirect_stderr(log):

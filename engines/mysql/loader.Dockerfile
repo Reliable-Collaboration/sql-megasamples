@@ -9,7 +9,7 @@
 # the runbook puts first -- so the base image is fetched by `megasamples/pull_image.py` over IPv4 and
 # referenced here by the digest that produced. Container networking itself is fine: apt and git
 # both work from inside.
-FROM docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8 AS mysql-client
+FROM container-registry.oracle.com/mysql/community-server:9.7.4@sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb AS mysql-client
 
 FROM debian:13.7-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
 

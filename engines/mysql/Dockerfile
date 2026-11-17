@@ -5,7 +5,7 @@
 # only that directory. Build context: the repository root, filtered by .dockerignore; the dumps and
 # registry come from build/mysql/image/, which `megasamples image` fills with exactly the datasets
 # being baked. See ARCHITECTURE.md section 4.
-ARG MYSQL_IMAGE=docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8
+ARG MYSQL_IMAGE=sql-megasamples-mysql-base:9.7.4-shell-9.7.1
 
 FROM ${MYSQL_IMAGE} AS builder
 COPY engines/mysql/my.cnf /etc/mysql/conf.d/megasamples.cnf

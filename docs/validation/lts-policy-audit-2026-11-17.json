@@ -14,11 +14,10 @@
       },
       "change": "Rebuild from inputs on a fresh data directory",
       "release_source": {
-        "url": "https://hub.docker.com/v2/repositories/library/mysql/tags/9.7.4",
-        "read_at": "2026-11-17T15:10:43.360607+00:00",
-        "read_status": "Passed"
+        "url": "https://container-registry.oracle.com/v2/mysql/community-server/manifests/9.7.4",
+        "read_at": "2026-11-17T15:40:01.485365+00:00"
       },
-      "notes": "MySQL policy/release pages were read with the web tool after HTTP 403 from urllib; registry digest separately verified."
+      "notes": "Oracle registry server pinned by digest. Oracle image bundles Shell 26.10, so the thin base replaces its complete payload with digest-pinned 9.7.1 and preserves the existing volume/config/entrypoint conventions."
     },
     {
       "component": "MySQL mysql/mysqladmin/mysqldump",
@@ -969,17 +968,17 @@
       "component": "playwright",
       "before": "See engine-upgrade baseline; version not independently recovered",
       "current_pin": "1.65.0",
-      "target": "1.65.0",
+      "target": "1.65.2",
       "policy": "No separate LTS; current major 1 release. Bundled Noble Ubuntu 24.04 LTS is the supported official image base.",
       "policy_source": {
         "url": "https://playwright.dev/python/docs/release-notes",
         "read_at": "2026-11-17T15:10:44.809982+00:00",
         "read_status": "Passed"
       },
-      "change": "Retain",
+      "change": "Update image digest and matching package patch",
       "release_source": {
         "url": "https://pypi.org/pypi/playwright/json",
-        "read_at": "2026-11-16T18:58:36.838819+00:00"
+        "read_at": "2026-11-17T15:51:02.543206+00:00"
       },
       "notes": ""
     },
@@ -1550,6 +1549,23 @@
       "url": "https://pypi.org/pypi/tzdata/json",
       "read_at": "2026-11-17T15:18:19.541518+00:00",
       "status": 200
+    },
+    "oracle-mysql-registry": {
+      "url": "https://container-registry.oracle.com/v2/mysql/community-server/manifests/9.7.4",
+      "status": "Passed",
+      "digest": "sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb",
+      "read_at": "2026-11-17T15:40:01.485365+00:00"
+    },
+    "playwright-release": {
+      "url": "https://pypi.org/pypi/playwright/json",
+      "read_at": "2026-11-17T15:51:02.543206+00:00",
+      "latest": "1.65.2"
+    },
+    "playwright-image": {
+      "url": "https://mcr.microsoft.com/v2/playwright/python/manifests/v1.65.2-noble",
+      "digest": "sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f",
+      "read_at": "2026-11-17T15:51:47.306498+00:00",
+      "status": "Passed"
     }
   },
   "limitations": [

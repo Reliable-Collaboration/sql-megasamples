@@ -389,9 +389,10 @@ native_clients:
     - mysqldump
     before_client_followup: 26.10.0
     version: 9.7.4
-    image: docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8
+    image: container-registry.oracle.com/mysql/community-server:9.7.4@sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb
     release_source: https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html
     read_at: '2026-11-17T15:10:43.360607+00:00'
+    runtime_image: sql-megasamples-mysql-base:9.7.4-shell-9.7.1
   sqlite3:
     version: 3.54.1
     url: https://sqlite.org/2026/sqlite-autoconf-3540100.tar.gz
@@ -407,7 +408,7 @@ native_clients:
     - mysqldump
     before: MariaDB 11.8.6 (unversioned Debian default-mysql-client)
     version: 9.7.4
-    image: docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8
+    image: container-registry.oracle.com/mysql/community-server:9.7.4@sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb
     release_source: https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html
     read_at: '2026-11-17T15:10:43.360607+00:00'
     pin: COPY exact binaries from digest-pinned vendor image
@@ -433,6 +434,9 @@ native_clients:
     read_at: '2026-11-17T15:11:53.345079+00:00'
     policy: Matching 9.7 line explicitly requested by owner; Shell has a single upstream
       release track.
+    runtime_image: sql-megasamples-mysql-base:9.7.4-shell-9.7.1
+    source: Complete payload copied from digest-pinned input; includes Python runtime,
+      libraries, helpers and documentation.
 optional_export_clients:
   mssql:
     before: 18.7.1.1
@@ -536,11 +540,11 @@ scope_notes:
   Shell 9.7.1 and Connector/J 9.7.0. Connector versions follow their own available
   9.7 patch numbers; none is fabricated to equal the server patch.'
 screenshot_client:
-  image: mcr.microsoft.com/playwright/python:v1.65.0-noble@sha256:f9294526294a7bdfb8ca8aa7d815c049125a10e73b65d47fb9a80f5d74f284a6
-  version: 1.65.0
+  image: mcr.microsoft.com/playwright/python:v1.65.2-noble@sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f
+  version: 1.65.2
   release_source: https://playwright.dev/python/docs/release-notes
-  read_at: '2026-11-17T02:40:57.779038+00:00'
-  pip_pin: playwright==1.65.0 in Makefile
+  read_at: '2026-11-17T15:51:02.543206+00:00'
+  pip_pin: playwright==1.65.2 in Makefile
 runtimes:
   dbgate-node:
     version: 24.22.3
