@@ -4,7 +4,7 @@ images:
     image: container-registry.oracle.com/mysql/community-server:9.7.4@sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb
     version: 9.7.4
     release_source: https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html
-    read_at: '2026-11-17T15:10:43.360607+00:00'
+    read_at: '2026-11-17T16:46:19+00:00'
     registry_source: https://container-registry.oracle.com/v2/mysql/community-server/manifests/9.7.4
     registry_read_at: '2026-11-17T15:40:01.485365+00:00'
     runtime_base_image: sql-megasamples-mysql-base:9.7.4-shell-9.7.1
@@ -51,7 +51,7 @@ images:
   landing:
     image: nginx:1.31.8@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82
     version: 1.31.8
-    release_source: https://nginx.org/en/download.html
+    release_source: https://hub.docker.com/v2/repositories/library/nginx/tags/1.31.8
     read_at: '2026-11-17T15:22:39.042627+00:00'
   cloudbeaver:
     image: dbeaver/cloudbeaver:26.2.5@sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f

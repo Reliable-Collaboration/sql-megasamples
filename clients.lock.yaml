@@ -391,7 +391,7 @@ native_clients:
     version: 9.7.4
     image: container-registry.oracle.com/mysql/community-server:9.7.4@sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb
     release_source: https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html
-    read_at: '2026-11-17T15:10:43.360607+00:00'
+    read_at: '2026-11-17T16:46:19+00:00'
     runtime_image: sql-megasamples-mysql-base:9.7.4-shell-9.7.1
   sqlite3:
     version: 3.54.1
@@ -410,7 +410,7 @@ native_clients:
     version: 9.7.4
     image: container-registry.oracle.com/mysql/community-server:9.7.4@sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb
     release_source: https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html
-    read_at: '2026-11-17T15:10:43.360607+00:00'
+    read_at: '2026-11-17T16:46:19+00:00'
     pin: COPY exact binaries from digest-pinned vendor image
   sysbench:
     before: 1.0.20+ds-7
@@ -554,7 +554,7 @@ scope_notes:
 screenshot_client:
   image: mcr.microsoft.com/playwright/python:v1.65.2-noble@sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f
   version: 1.65.2
-  release_source: https://playwright.dev/python/docs/release-notes
+  release_source: https://pypi.org/pypi/playwright/json
   read_at: '2026-11-17T15:51:02.543206+00:00'
   pip_pin: playwright==1.65.2 in Makefile
 runtimes:

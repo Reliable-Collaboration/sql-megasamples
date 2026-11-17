@@ -17,7 +17,13 @@
         "url": "https://container-registry.oracle.com/v2/mysql/community-server/manifests/9.7.4",
         "read_at": "2026-11-17T15:40:01.485365+00:00"
       },
-      "notes": "Oracle registry server pinned by digest. Oracle image bundles Shell 26.10, so the thin base replaces its complete payload with digest-pinned 9.7.1 and preserves the existing volume/config/entrypoint conventions."
+      "notes": "Oracle registry server pinned by digest. Oracle image bundles Shell 26.10, so the thin base replaces its complete payload with digest-pinned 9.7.1 and preserves the existing volume/config/entrypoint conventions.",
+      "release_notes_source": {
+        "url": "https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html",
+        "read_at": "2026-11-17T16:46:19+00:00",
+        "web_read_status": "Passed",
+        "finding": "9.7.4 released 2026-10-20; next 9.7.4.1 is explicitly not yet released."
+      }
     },
     {
       "component": "MySQL mysql/mysqladmin/mysqldump",
@@ -45,8 +51,8 @@
       "target": "9.7.1",
       "policy": "Upstream has one connector/tool release track, not an independent LTS track; owner explicitly requires 9.7.",
       "policy_source": {
-        "url": "https://repo.mysql.com/apt/debian/dists/trixie/mysql-9.7-lts/binary-amd64/Packages.gz",
-        "read_at": "2026-11-17T15:11:53.345079+00:00",
+        "url": "https://dev.mysql.com/doc/refman/9.7/en/mysql-releases.html",
+        "read_at": "2026-11-17T16:46:19+00:00",
         "read_status": "Passed"
       },
       "change": "Use 9.7 Shell bundled in pinned 9.7.4 image",
@@ -101,8 +107,8 @@
       "target": "9.7.0",
       "policy": "Single upstream connector track; owner explicitly requires newest available 9.7 connector.",
       "policy_source": {
-        "url": "https://repo.maven.apache.org/maven2/com/mysql/mysql-connector-j/maven-metadata.xml",
-        "read_at": "2026-11-17T15:10:43.341701+00:00",
+        "url": "https://dev.mysql.com/doc/refman/9.7/en/mysql-releases.html",
+        "read_at": "2026-11-17T16:46:19+00:00",
         "read_status": "Passed"
       },
       "change": "Replace jar with SHA-256-verified 9.7.0",
@@ -1151,7 +1157,8 @@
       "error": "HTTP Error 403: Forbidden",
       "read_at": "2026-11-17T15:10:43.312316+00:00",
       "web_read_at": "2026-11-17T15:09:36+00:00",
-      "web_read_status": "Passed"
+      "web_read_status": "Passed",
+      "web_reread_at": "2026-11-17T16:46:19+00:00"
     },
     "mysql-tags": {
       "url": "https://hub.docker.com/v2/repositories/library/mysql/tags/9.7.4",
@@ -1600,6 +1607,12 @@
           "sha256": "669fe797e36ee181ecfe2d46146f6db0fdd4ea422991d2c9c0150fc65d87f59e"
         }
       ]
+    },
+    "mysql-9.7.4-release-notes": {
+      "url": "https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html",
+      "read_at": "2026-11-17T16:46:19+00:00",
+      "web_read_status": "Passed",
+      "finding": "9.7.4 released 2026-10-20; next 9.7.4.1 is explicitly not yet released."
     }
   },
   "limitations": [
