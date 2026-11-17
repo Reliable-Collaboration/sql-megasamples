@@ -1049,8 +1049,8 @@
       "target": "26ai Free 23.26.3.0.0",
       "policy": "26ai is Oracle long-term release. Free published server package remains 23.26.3; Free is not an Enterprise support entitlement.",
       "policy_source": {
-        "url": "https://docs.oracle.com/en/database/oracle/oracle-database/26/nfcoa/all-nfg.html",
-        "read_at": "2026-11-17T15:22:39.302718+00:00",
+        "url": "https://www.oracle.com/assets/lsp-tech-chart-069290.pdf",
+        "read_at": "2026-11-17T17:08:30.137866+00:00",
         "read_status": "Passed"
       },
       "change": "Retain",
@@ -1613,6 +1613,21 @@
       "read_at": "2026-11-17T16:46:19+00:00",
       "web_read_status": "Passed",
       "finding": "9.7.4 released 2026-10-20; next 9.7.4.1 is explicitly not yet released."
+    },
+    "oracle-database-lifecycle": {
+      "url": "https://www.oracle.com/assets/lsp-tech-chart-069290.pdf",
+      "read_at": "2026-11-17T17:08:30.137866+00:00",
+      "status": 200,
+      "content_type": "application/pdf",
+      "sha256": "4c26af1a025144b6a8e4f5204e131f83d5a5c69153b73674551c18a977058a15",
+      "web_text_read_at": "2026-11-17T17:08:04+00:00",
+      "finding": "Oracle 26ai Enterprise Edition is a long-term support release. This is not a Free support entitlement."
+    },
+    "oracle-database-lifecycle-old-url": {
+      "url": "https://www.oracle.com/support/library/lifetime-support-technology.pdf",
+      "read_at": "2026-11-17T17:07:51+00:00",
+      "status": "Failed",
+      "reason": "HTTP 404; located current vendor policy URL instead."
     }
   },
   "limitations": [
