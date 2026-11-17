@@ -48,7 +48,15 @@ with sync_playwright() as p:
     expand("Databases")
     expand("sakila")
     expand("Tables")
-    page.locator('[data-tree-node-control="true"]').filter(has=page.get_by_text("film", exact=True)).first.dblclick()
+    film = page.locator('[data-tree-node-control="true"]').filter(has=page.get_by_text("film", exact=True))
+    # A full catalogue virtualizes rows below the navigation viewport.
+    for attempt in range(12):
+        if film.count():
+            break
+        page.locator('[data-tree-node-control="true"]').last.hover()
+        page.mouse.wheel(0, 350)
+        page.wait_for_timeout(350)
+    film.first.dblclick()
     time.sleep(10)
     tab = page.get_by_role("tab", name="Data").first
     if tab.count():
