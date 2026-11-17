@@ -74,3 +74,13 @@ def test_start_refuses_to_reuse_a_different_build_server_image(monkeypatch):
     with pytest.raises(SystemExit, match='fresh'):
         server.start()
     assert all(args[1] in ['inspect', 'image'] for args in calls)
+
+
+def test_asset_audit_compares_the_selected_mysql_base(monkeypatch):
+    from megasamples import audit
+    seen = []
+    monkeypatch.setattr(audit, 'tracked_files', lambda: [])
+    monkeypatch.setattr(audit, 'image_schemas', lambda *args: ([], None))
+    monkeypatch.setattr(audit, 'forbidden_files_in', lambda image, failures: seen.append(image) or set())
+    assert audit.main([]) == 0
+    assert seen[-1] == server.IMAGE
