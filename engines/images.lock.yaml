@@ -84,6 +84,20 @@ images:
     version: 24.22.3
     release_source: https://nodejs.org/dist/index.json
     read_at: '2026-11-17T15:10:43.916765+00:00'
+  php-apache:
+    image: php:8.5.12-apache-trixie@sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46
+    version: 8.5.12
+    release_source: https://www.php.net/releases/index.php?json&version=8
+    read_at: '2026-11-17T17:52:04.583187+00:00'
+    registry_source: https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-apache-trixie
+    registry_read_at: '2026-11-17T17:52:04.725626+00:00'
+  php-cli:
+    image: php:8.5.12-cli-alpine3.24@sha256:1ff5b45922ab30f418447c6089dbe2eba5f01e0b2742863d0327ac349305d70f
+    version: 8.5.12
+    release_source: https://www.php.net/releases/index.php?json&version=8
+    read_at: '2026-11-17T17:52:04.583187+00:00'
+    registry_source: https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-cli-alpine3.24
+    registry_read_at: '2026-11-17T17:52:04.879190+00:00'
 sqlite_source:
   version: 3.54.1
   url: https://sqlite.org/2026/sqlite-autoconf-3540100.tar.gz

@@ -271,7 +271,7 @@
         "read_at": "2026-11-17T15:11:52.936414+00:00",
         "read_status": "Passed"
       },
-      "notes": "Historical baseline tag version unverified; the exact before digest is recorded."
+      "notes": "Application retained; PHP runtime updated separately. Vendor publishes PHP >=7.2; no downgrade to the older 4.9 LTS line."
     },
     {
       "component": "adminer",
@@ -460,37 +460,45 @@
       "component": "adminer-mysqlnd",
       "before": "8.4.27",
       "current_pin": "8.4.27",
-      "target": "8.4.27",
-      "policy": "Bundled with vendor PHP runtime; four-year active/security lifecycle, no independent mysqlnd release track.",
+      "target": "8.5.12",
+      "policy": "PHP has two years of active maintenance plus two years of security servicing per branch; no separate LTS edition. Use latest stable PHP 8 (8.5.12); mysqlnd follows PHP.",
       "policy_source": {
         "url": "https://www.php.net/supported-versions.php",
-        "read_at": "2026-11-17T15:10:44.167596+00:00",
+        "read_at": "2026-11-17T17:51:05+00:00",
         "read_status": "Passed"
       },
-      "change": "Retain",
+      "change": "Rebuild the application with PHP 8.5.12 and matching extension ABI",
       "release_source": {
-        "url": "https://hub.docker.com/v2/repositories/library/adminer/tags/6.3.0",
-        "read_at": "2026-11-17T05:07:04.152534+00:00"
+        "url": "https://www.php.net/releases/index.php?json&version=8",
+        "read_at": "2026-11-17T17:52:04.583187+00:00",
+        "status": 200,
+        "sha256": "daefedf879e64f5b5922c36250e78f07b77171eff7bc0cdb09fe56a930abe97b",
+        "version": "8.5.12",
+        "digest": null
       },
-      "notes": "Retain latest patch of the application vendor runtime line. phpMyAdmin 5.2 requires PHP <8.4."
+      "notes": "All inherited PHP modules preserved in native probes. phpMyAdmin publishes PHP >=7.2, with no upper bound on its download page; the earlier draft upper-bound claim was incorrect."
     },
     {
       "component": "phpmyadmin-mysqlnd",
       "before": "8.3.36",
       "current_pin": "8.3.36",
-      "target": "8.3.36",
-      "policy": "Bundled with vendor PHP runtime; four-year active/security lifecycle, no independent mysqlnd release track.",
+      "target": "8.5.12",
+      "policy": "PHP has two years of active maintenance plus two years of security servicing per branch; no separate LTS edition. Use latest stable PHP 8 (8.5.12); mysqlnd follows PHP.",
       "policy_source": {
         "url": "https://www.php.net/supported-versions.php",
-        "read_at": "2026-11-17T15:10:44.167596+00:00",
+        "read_at": "2026-11-17T17:51:05+00:00",
         "read_status": "Passed"
       },
-      "change": "Retain",
+      "change": "Rebuild the application with PHP 8.5.12 and matching extension ABI",
       "release_source": {
-        "url": "https://hub.docker.com/v2/repositories/library/phpmyadmin/tags/5.2.3",
-        "read_at": "2026-11-17T05:07:04.157874+00:00"
+        "url": "https://www.php.net/releases/index.php?json&version=8",
+        "read_at": "2026-11-17T17:52:04.583187+00:00",
+        "status": 200,
+        "sha256": "daefedf879e64f5b5922c36250e78f07b77171eff7bc0cdb09fe56a930abe97b",
+        "version": "8.5.12",
+        "digest": null
       },
-      "notes": "Retain latest patch of the application vendor runtime line. phpMyAdmin 5.2 requires PHP <8.4."
+      "notes": "All inherited PHP modules preserved in native probes. phpMyAdmin publishes PHP >=7.2, with no upper bound on its download page; the earlier draft upper-bound claim was incorrect."
     },
     {
       "component": "Python backports-zstd",
@@ -1193,6 +1201,72 @@
       "change": "Retain",
       "release_source": null,
       "notes": ""
+    },
+    {
+      "component": "phpMyAdmin PHP runtime base",
+      "before": "Not independently recorded before engine run",
+      "current_pin": "PHP 8.3.36 on Debian 13",
+      "target": "PHP 8.5.12 apache-trixie",
+      "policy": "No separately designated PHP LTS; four-year servicing per branch. Latest stable current-major PHP 8 is 8.5.12. Retain the existing supported Debian/Alpine distribution line.",
+      "policy_source": {
+        "url": "https://www.php.net/supported-versions.php",
+        "read_at": "2026-11-17T17:51:05+00:00",
+        "read_status": "Passed"
+      },
+      "release_source": {
+        "url": "https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-apache-trixie",
+        "read_at": "2026-11-17T17:52:04.725626+00:00",
+        "status": 200,
+        "sha256": "1ad27a2cfeb0666a37bdd372f39a5d674673ffcaed04ea1ea431dc6d6f4a32fb",
+        "version": "8.5.12-apache-trixie",
+        "digest": "sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46"
+      },
+      "change": "Pin official PHP runtime image by digest; preserve released application, configuration and every inherited module",
+      "notes": "Module/ABI probes Passed; full HTTP/SQL console validation follows with the corrected stack."
+    },
+    {
+      "component": "Adminer PHP runtime base",
+      "before": "Not independently recorded before engine run",
+      "current_pin": "PHP 8.4.27 on Alpine 3.24",
+      "target": "PHP 8.5.12 cli-alpine3.24",
+      "policy": "No separately designated PHP LTS; four-year servicing per branch. Latest stable current-major PHP 8 is 8.5.12. Retain the existing supported Debian/Alpine distribution line.",
+      "policy_source": {
+        "url": "https://www.php.net/supported-versions.php",
+        "read_at": "2026-11-17T17:51:05+00:00",
+        "read_status": "Passed"
+      },
+      "release_source": {
+        "url": "https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-cli-alpine3.24",
+        "read_at": "2026-11-17T17:52:04.879190+00:00",
+        "status": 200,
+        "sha256": "faa89b106479dfd9eb75eef91ab60398753f0c3c654d940d97e2a43817d45f79",
+        "version": "8.5.12-cli-alpine3.24",
+        "digest": "sha256:1ff5b45922ab30f418447c6089dbe2eba5f01e0b2742863d0327ac349305d70f"
+      },
+      "change": "Pin official PHP runtime image by digest; preserve released application, configuration and every inherited module",
+      "notes": "Module/ABI probes Passed; full HTTP/SQL console validation follows with the corrected stack."
+    },
+    {
+      "component": "phpMyAdmin uploadprogress",
+      "before": "Not separately recorded before engine run",
+      "current_pin": "2.0.2",
+      "target": "2.0.2",
+      "policy": "No separate LTS policy located in the publisher release metadata (inference); latest published major-2 release is retained.",
+      "policy_source": {
+        "url": "https://pecl.php.net/rest/r/uploadprogress/latest.txt",
+        "read_at": "2026-11-17T17:52:05.269127+00:00",
+        "status": 200,
+        "sha256": "31186721be50d1033545dfeee9d6ee118b54fb1b974ea909ab2e960e0b7c049b"
+      },
+      "release_source": {
+        "url": "https://pecl.php.net/get/uploadprogress-2.0.2.tgz",
+        "final_url": "https://pecl.php.net/get/uploadprogress-2.0.2.tgz",
+        "read_at": "2026-11-17T17:58:59.788653+00:00",
+        "sha256": "2c63ce727340121044365f0fd83babd60dfa785fa5979fae2520b25dad814226",
+        "bytes": 19969
+      },
+      "change": "Retain version; checksum-pin PECL archive and rebuild for PHP 8.5 ABI",
+      "notes": "Original vendor image and rebuilt image both report 2.0.2. Source archive retained inside the image with its licence."
     }
   ],
   "sources": {
@@ -1694,6 +1768,48 @@
       "read_at": "2026-11-17T17:24:13+00:00",
       "read_status": "Passed",
       "finding": "CPython ABI compatibility across patch releases depends on compatible compiler/platform settings; private APIs are excluded. Actual Shell/native-extension and full restore tests remain required."
+    },
+    "php-policy-current": {
+      "url": "https://www.php.net/supported-versions.php",
+      "read_at": "2026-11-17T17:51:05+00:00",
+      "read_status": "Passed"
+    },
+    "php-current-major": {
+      "url": "https://www.php.net/releases/index.php?json&version=8",
+      "read_at": "2026-11-17T17:52:04.583187+00:00",
+      "status": 200,
+      "sha256": "daefedf879e64f5b5922c36250e78f07b77171eff7bc0cdb09fe56a930abe97b",
+      "version": "8.5.12",
+      "digest": null
+    },
+    "php-apache-current": {
+      "url": "https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-apache-trixie",
+      "read_at": "2026-11-17T17:52:04.725626+00:00",
+      "status": 200,
+      "sha256": "1ad27a2cfeb0666a37bdd372f39a5d674673ffcaed04ea1ea431dc6d6f4a32fb",
+      "version": "8.5.12-apache-trixie",
+      "digest": "sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46"
+    },
+    "php-cli-current": {
+      "url": "https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-cli-alpine3.24",
+      "read_at": "2026-11-17T17:52:04.879190+00:00",
+      "status": 200,
+      "sha256": "faa89b106479dfd9eb75eef91ab60398753f0c3c654d940d97e2a43817d45f79",
+      "version": "8.5.12-cli-alpine3.24",
+      "digest": "sha256:1ff5b45922ab30f418447c6089dbe2eba5f01e0b2742863d0327ac349305d70f"
+    },
+    "uploadprogress-current": {
+      "url": "https://pecl.php.net/rest/r/uploadprogress/latest.txt",
+      "read_at": "2026-11-17T17:52:05.269127+00:00",
+      "status": 200,
+      "sha256": "31186721be50d1033545dfeee9d6ee118b54fb1b974ea909ab2e960e0b7c049b"
+    },
+    "uploadprogress-source": {
+      "url": "https://pecl.php.net/get/uploadprogress-2.0.2.tgz",
+      "final_url": "https://pecl.php.net/get/uploadprogress-2.0.2.tgz",
+      "read_at": "2026-11-17T17:58:59.788653+00:00",
+      "sha256": "2c63ce727340121044365f0fd83babd60dfa785fa5979fae2520b25dad814226",
+      "bytes": 19969
     }
   },
   "limitations": [

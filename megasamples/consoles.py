@@ -63,13 +63,15 @@ CONSOLES = [
             "adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c", 8080, "160m",
             "Its login form remains: the page behind this card says what to type for each engine, and opens it filled in.",
             "http://127.0.0.1:{port}/?server=mysql&username=demo&db={db}", "A",
-            build_image="sql-megasamples-adminer:6.3.0-libpq-18.7-r0",
+            build_image="sql-megasamples-adminer:6.3.0-php-8.5.12-libpq-18.7-r0",
             dockerfile="consoles/adminer/Dockerfile"),
     Console("phpmyadmin", "phpMyAdmin", ("mysql",),
             "phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40", 80, "256m",
             "MySQL only. Signed in already; the server menu switches account.",
             "http://127.0.0.1:{port}/index.php?route=/database/structure&db={db}&server=1", "P",
-            volumes=["./consoles/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro"]),
+            volumes=["./consoles/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro"],
+            build_image="sql-megasamples-phpmyadmin:5.2.3-php-8.5.12",
+            dockerfile="consoles/phpmyadmin/Dockerfile"),
 ]
 _BY_NAME = {c.name: c for c in CONSOLES}
 

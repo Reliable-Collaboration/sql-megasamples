@@ -98,3 +98,13 @@ def test_shell_embedded_runtime_has_current_security_patches():
 def test_shell_runtime_does_not_search_writable_build_paths():
     text = (ROOT / 'engines/mysql/base.Dockerfile').read_text()
     assert '-Wl,-rpath,/tmp' not in text
+
+
+def test_phpmyadmin_uses_current_supported_php_major():
+    from megasamples.consoles import get
+    assert '-php-8.5.12' in (get('phpmyadmin').build_image or '')
+
+
+def test_adminer_uses_current_supported_php_major():
+    from megasamples.consoles import get
+    assert '-php-8.5.12' in (get('adminer').build_image or '')

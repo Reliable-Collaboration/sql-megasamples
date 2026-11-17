@@ -344,22 +344,22 @@ drivers:
     url: https://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-18/libpq5_18.7-1.pgdg13+2_amd64.deb
   adminer-mysqlnd:
     before: 8.4.27
-    version: 8.4.27
-    release_source: https://hub.docker.com/v2/repositories/library/adminer/tags/6.3.0
-    read_at: '2026-11-17T05:07:04.152534+00:00'
-    runtime_version_evidence: build/client-evidence/adminer-mysql-driver-version.txt
-    pin: adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c
-    scope: Observed PHP-bundled mysqlnd API from this exact vendor image; follows
-      the selected application runtime, not an independently versioned driver dependency
+    version: 8.5.12
+    release_source: https://www.php.net/releases/index.php?json&version=8
+    read_at: '2026-11-17T17:52:04.583187+00:00'
+    runtime_version_evidence: build/lts-audit/php-runtime-probes.json
+    pin: sql-megasamples-adminer:6.3.0-php-8.5.12-libpq-18.7-r0 (digest-pinned PHP runtime in console Dockerfile)
+    scope: Observed mysqlnd API from the digest-pinned official PHP 8.5 runtime;
+      matching extensions rebuilt, released application preserved
   phpmyadmin-mysqlnd:
     before: 8.3.36
-    version: 8.3.36
-    release_source: https://hub.docker.com/v2/repositories/library/phpmyadmin/tags/5.2.3
-    read_at: '2026-11-17T05:07:04.157874+00:00'
-    runtime_version_evidence: build/client-evidence/phpmyadmin-driver-version.txt
-    pin: phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40
-    scope: Observed PHP-bundled mysqlnd API from this exact vendor image; follows
-      the selected application runtime, not an independently versioned driver dependency
+    version: 8.5.12
+    release_source: https://www.php.net/releases/index.php?json&version=8
+    read_at: '2026-11-17T17:52:04.583187+00:00'
+    runtime_version_evidence: build/lts-audit/php-runtime-probes.json
+    pin: sql-megasamples-phpmyadmin:5.2.3-php-8.5.12 (digest-pinned PHP runtime in console Dockerfile)
+    scope: Observed mysqlnd API from the digest-pinned official PHP 8.5 runtime;
+      matching extensions rebuilt, released application preserved
 native_clients:
   postgres:
     programs:
@@ -586,3 +586,15 @@ mysql_shell_embedded_runtime:
     sha3_256: b6ced585c750916b1052667239a12c25a7ff34e7f06e1e6e01ecb0427657d9c4
     release_source: https://sqlite.org/changes.html
     read_at: '2026-11-17T15:10:43.638228+00:00'
+
+php_console_runtimes:
+  version: 8.5.12
+  release_source: https://www.php.net/releases/index.php?json&version=8
+  read_at: '2026-11-17T17:52:04.583187+00:00'
+  policy_source: https://www.php.net/supported-versions.php
+  policy_read_at: '2026-11-17T17:51:05+00:00'
+  uploadprogress:
+    version: 2.0.2
+    url: https://pecl.php.net/get/uploadprogress-2.0.2.tgz
+    sha256: 2c63ce727340121044365f0fd83babd60dfa785fa5979fae2520b25dad814226
+    read_at: '2026-11-17T17:58:59.788653+00:00'
