@@ -4,10 +4,12 @@ This procedure is written for the coordinator. It has **not been executed** agai
 
 The isolated build uses `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/env.sh`. The live commands below deliberately use the default rootless Podman store instead. Run them only in the coordinator's live maintenance session. Never run them from the isolated validation shell.
 
-The current dataset candidate has a recorded blocker: MySQL full-image cold readiness was
-49.0 seconds against 30 seconds, and SQLite cold readiness was 38.2 seconds against 30 seconds.
-Both gates are unchanged. Data/reset/console validation Passed, but these failures keep the dataset PR open. Resolve and rerun the gate before merging or live cutover;
-the procedure below does not authorize bypassing it.
+The dataset candidate's cold-readiness blocker is resolved by the
+[all-engine follow-up](cold-readiness-evidence.md): complete MySQL, PostgreSQL and SQLite image
+checks and the repository gate Passed. Each engine now has a measured cold-copy/run limit and
+the same independent 30-second server-query limit. The original 49.0-second MySQL and
+38.2-second SQLite failures remain in the dataset receipt as historical results. The timing
+and maintenance-window section below records the fresh measurements and their limits.
 
 ## Prepare while the live servers are still running
 
@@ -272,7 +274,43 @@ The Compose stop above includes every configured console, so SQLite consumers ar
 
 In the isolated 30-dataset rehearsal, replacing all three engine containers and restoring SQLite's shared files took 121.65 seconds. Individual whole-engine resets took 23.07 seconds (MySQL), 26.4 seconds (PostgreSQL) and 92.4 seconds (SQLite). A stop/start of the existing eight-service stack, without replacing data volumes, took 38.66 seconds and preserved every recorded count, SQLite hash and inserted probe row. These measurements exclude cold-backup time and the coordinator's DataIntent checks and predate this follow-up; the added datasets have separate measurements in “Added dataset cost and scope”. Initial stack startup took 328.32 seconds while this custom store waited for health scheduling; real probes then completed successfully through the isolated-only runner. These are observed preparation/outage components, not a full-manifest downtime guarantee. The complete full-Contoso repository check against the shipped MySQL configuration took 1,736.02 seconds in this rehearsal, dominated by an indexed nested-loop constraint query. If the maintenance window includes that full integrity audit, budget its verification time as well as startup, cold copies and DataIntent tests.
 
-The outage lasts from the first stop through readiness and verification, plus any rollback. Reserve a maintenance window; measured isolated timings belong in the evidence report, not an assumed SLA. Rebuilding before cutover avoids putting download/conversion time in the outage.
+The 2026-11-17 cold-readiness follow-up measured six fresh-volume starts per PR #11 image,
+plus six each for the retained main MySQL and SQLite images. Starts were sequential, with
+engine and comparison order reversed between rounds, no published ports and no cache dropping.
+The measured standalone-image components are:
+
+| Engine | Baked data files (bytes) | Cold copy/run range (s) | Query after run returns (s) | Cold-copy gate (s) | Server gate (s) |
+|---|---:|---:|---:|---:|---:|
+| MySQL | 22,953,654,938 | 32.071–83.762 | 1.431–2.205 | 170 | 30 |
+| PostgreSQL | 22,443,408,360 | 40.372–85.274 | 0.414–0.607 | 180 | 30 |
+| SQLite | 19,179,147,264 | 30.926–71.862 | 0.073–0.172 | 150 | 30 |
+
+MySQL's first successful query followed its server-ready log by 0.039–0.347 s; PostgreSQL's
+by 0.273–0.324 s. SQLite has no server: its shell query followed the container's process-start
+event by 0.080–0.183 s. The server gate starts earlier, when detached `run` returns, and retains
+the full independent 30-second limit for every engine. Cold copy/run includes volume
+materialization and runtime launch overhead. Baked data bytes sum immutable regular-file sizes,
+counting hard links once; allocated blocks and complete image sizes are recorded separately.
+
+The old MySQL image contained 21,653,516,735 data bytes and copied/launched in 31.803–69.677 s;
+the old SQLite image contained 19,008,032,768 bytes and took 28.310–65.938 s. The new contents
+increase these file totals by about 6.0% and 0.9%. Timing ranges overlap widely; they do not
+establish a stable linear cost per added byte. Use the full observed range when planning.
+
+All engines use the same rule in `megasamples/engines/image_startup.py`: twice the largest
+measured cold copy/run interval for that engine, rounded up to ten seconds, considering both
+images where compared. The server interval is checked separately. The copy allowances plus
+30 seconds per server total 590 seconds if all three starts are serialized; these are validation
+ceilings, not measured downtime. The standalone checks exclude Compose health scheduling,
+SQLite's additional shared-console copy, cold backups, fingerprint verification, DataIntent
+checks and rollback. Keep the separately observed 269.27-second replacement-stack startup and
+200.15-second five-pair verification in view; no complete live maintenance window is verified.
+The [cold-readiness evidence](cold-readiness-evidence.md) and
+[receipt](validation/cold-readiness-2026-11-17.json) preserve all samples and final validation.
+
+The outage lasts from the first stop through readiness and verification, plus any rollback.
+Reserve those additional components separately. Rebuilding before cutover avoids putting
+download/conversion time in the outage.
 
 ## Verify before resuming clients
 

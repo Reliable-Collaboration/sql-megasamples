@@ -1,20 +1,28 @@
-"""Late cold provisioning must fail readiness and still reach MySQL data checks."""
+"""Cold copying has its own gate and must still reach MySQL data checks."""
+import pytest
 from types import SimpleNamespace
 
 from megasamples.engines.mysql import image_test
 
 
-def test_late_ready_image_checks_data_without_relaxing_budget(monkeypatch, capsys):
+@pytest.mark.parametrize('copy_seconds,query_seconds,passes', [
+    (65, 66, True),     # full baked image copies slowly; server answers promptly
+    (2, 33, False),     # fast copy cannot hide a server taking over 30 seconds
+    (1000, 1001, False),  # copying remains bounded
+])
+def test_copy_and_server_limits_and_data_checks(monkeypatch, capsys, copy_seconds, query_seconds, passes):
     clock = [0.0]
     queries = []
     baked_password = image_test.q.__defaults__[1]
 
     def shell(*args, **kwargs):
         if args[:2] == ('docker', 'run'):
-            clock[0] = 65.0
+            clock[0] = copy_seconds
         return SimpleNamespace(returncode=0, stdout='', stderr='')
 
     def query(sql, **kwargs):
+        if not queries:
+            clock[0] = query_seconds
         queries.append(sql)
         answers = {
             'SELECT name FROM megasamples.datasets ORDER BY name': 'pubs\n',
@@ -38,12 +46,12 @@ def test_late_ready_image_checks_data_without_relaxing_budget(monkeypatch, capsy
     monkeypatch.setattr(image_test, 'sh', shell)
     monkeypatch.setattr(image_test, 'q', query)
     monkeypatch.setattr(image_test.time, 'time', lambda: clock[0])
+    monkeypatch.setattr(image_test.time, 'monotonic', lambda: clock[0])
     monkeypatch.setattr(image_test, 'image_counts', lambda name: {'jobs': 1})
     monkeypatch.setattr(image_test, 'account_checks', lambda *args: None)
 
-    assert image_test.BUDGET_SECONDS == 30
-    assert image_test.main(['pubs']) == 1
+    assert image_test.main(['pubs']) == (0 if passes else 1)
     assert 'SELECT COUNT(*) FROM `jobs`' in queries
     assert 'CHECK TABLE `jobs`' in queries
     failures = [line for line in capsys.readouterr().out.splitlines() if line.startswith('  x ')]
-    assert failures == ['  x ready in 65.0s (budget 30s)']
+    assert bool(failures) is not passes

@@ -1,7 +1,7 @@
 # Owner-approved BTS and WideWorldImporters upgrade
 
 <!-- gate:start -->
-Overall validation: **Failed**. The five supported dataset pairs and all console/reset checks Passed; see the separate full-image gate results below. A Failed overall result leaves this PR open and blocks live cutover.
+Original dataset-only validation: **Failed** on the cold-readiness gates below. The five supported dataset pairs and all console/reset checks Passed. The subsequent [all-engine cold-readiness follow-up](cold-readiness-evidence.md) resolves that blocker: all three complete image checks and the repository gate **Passed**. The original receipt and failed attempts below remain unchanged as historical evidence.
 <!-- gate:end -->
 
 The owner authorized the BTS lookup refresh and accepted the SQL Server Developer EULA for the
@@ -12,10 +12,11 @@ and the required client head `a83255d4ddaf26265c26fd1a18c04c2555e8b433`. This br
 Oracle native verification remains **Not run, pending the owner's decision on Oracle's Free Use Terms**.
 No Oracle database was started or terms accepted. The merged PR description records this disposition.
 
-The dataset follow-up is draft [PR #11](https://github.com/Reliable-Collaboration/sql-megasamples/pull/11).
-It remains **open and unmerged** because the unchanged MySQL and SQLite full-image cold-readiness
-gates Failed. There is no dataset merge commit. Resolve and rerun those gates before marking
-it ready or merging with a merge commit. The supported data remains loaded in isolation.
+The dataset follow-up is [PR #11](https://github.com/Reliable-Collaboration/sql-megasamples/pull/11).
+Its original head `c854f399` remained draft because the MySQL and SQLite cold-readiness gates
+Failed. The [follow-up receipt](validation/cold-readiness-2026-11-17.json) records the class-wide
+gate correction, measurements and passing rerun required before marking it ready and merging
+with a merge commit matching the validated head. The supported data remains loaded in isolation.
 
 ## BTS source and pin
 

@@ -14,15 +14,10 @@ import yaml
 from megasamples.paths import ROOT
 from megasamples.engines import unique_databases
 from megasamples.registry import image_counts
+from megasamples.engines.image_startup import probe_startup
 
 IMAGE = os.environ.get("MEGASAMPLES_POSTGRES_IMAGE", "sql-megasamples-postgres:dev")
 NAME = "megasamples-test-postgres"
-# Includes materializing the 21 GiB baked cluster into a fresh volume. Matched
-# 18.6/18.7 starts took 40.8–46.7s, with queries answering within 0.7s after run
-# returned. Twice that maximum, rounded up to ten seconds, is 100s. Keep the
-# original server-only 30s limit as a separate assertion. See the evidence report.
-BUDGET_SECONDS = 100
-SERVER_BUDGET_SECONDS = 30
 
 
 def sh(*args, **kw):
@@ -51,15 +46,6 @@ class Checks:
     def expect(self, cond, label): (self.ok if cond else self.fail)(label)
 
 
-def check_startup(checks, provisioned, ready):
-    checks.expect(ready is not None and ready <= BUDGET_SECONDS,
-                  f"cold start in {ready:.1f}s (budget {BUDGET_SECONDS}s)" if ready is not None else "never became ready")
-    server = ready - provisioned if ready is not None else None
-    checks.expect(server is not None and server <= SERVER_BUDGET_SECONDS,
-                  f"query ready {server:.1f}s after run returned (budget {SERVER_BUDGET_SECONDS}s)"
-                  if server is not None else "server never answered a query")
-
-
 def main(argv=None):
     datasets = list(sys.argv[1:] if argv is None else argv) or ["sakila"]
     c = Checks()
@@ -71,14 +57,7 @@ def main(argv=None):
         sys.exit(f"could not start {IMAGE}: {run.stderr}")
     provisioned = time.monotonic() - started
     try:
-        ready = None
-        while time.monotonic() - started < BUDGET_SECONDS + SERVER_BUDGET_SECONDS:
-            if q("SELECT 1").returncode == 0:
-                ready = time.monotonic() - started
-                break
-            time.sleep(0.2)
-        c.expect(ready is not None, "container answers a real query")
-        check_startup(c, provisioned, ready)
+        ready = probe_startup(c, "postgres", started, provisioned, lambda: q("SELECT 1"))
         if ready is None:
             print(sh("docker", "logs", "--tail", "30", NAME).stdout); return 1
         logs = sh("docker", "logs", NAME).stdout + sh("docker", "logs", NAME).stderr
