@@ -4,8 +4,10 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
 import time
 
+sys.path.insert(0, str(Path.cwd()))
 from megasamples.engines.image_startup import cold_copy_budget, SERVER_BUDGET_SECONDS
 
 OUT = Path('build/lts-audit')
