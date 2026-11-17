@@ -13,6 +13,7 @@ import subprocess
 import sys
 import time
 import yaml
+from lts_live_records import compare_frozen_records
 
 ROOT = Path.cwd()
 OUT = ROOT / 'build/lts-audit'
@@ -22,15 +23,17 @@ assert os.environ['DOCKER_HOST'] == 'unix://' + str(ROOT.parent / 'sql-megasampl
 assert os.environ['COMPOSE_PROJECT_NAME'] == 'megasamples-upgrade'
 assert subprocess.check_output(['podman', 'info', '--format', '{{.Store.GraphRoot}}'], text=True).strip() == str(ROOT.parent / 'sql-megasamples-upgrade-env/graph')
 
-pid = int(sys.argv[1])
-while True:
-    try:
-        command = Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0')
-    except FileNotFoundError:
-        break
-    if b'megasamples' not in command or b'--no-fetch' not in command:
-        break
-    time.sleep(5)
+resume = sys.argv[1] == '--resume-after-restore'
+if not resume:
+    pid = int(sys.argv[1])
+    while True:
+        try:
+            command = Path(f'/proc/{pid}/cmdline').read_bytes().split(b'\0')
+        except FileNotFoundError:
+            break
+        if b'megasamples' not in command or b'--no-fetch' not in command:
+            break
+        time.sleep(5)
 
 text = (OUT / 'build-mysql-all.log').read_text()
 assert text.rstrip().endswith('build: 0 failure(s)'), 'Input rebuild did not finish successfully'
@@ -38,8 +41,15 @@ cfg = yaml.safe_load((ROOT / 'megasamples.yaml').read_text())
 configured = cfg['engines']['mysql']['datasets']
 verified = dict(re.findall(r'^([\w_]+) on mysql: (\d+) failure\(s\)$', text, re.M))
 assert set(verified) == set(configured) and all(value == '0' for value in verified.values())
-results = {'input_rebuild': {'status': 'Passed', 'dataset_results': verified,
-                            'log_completed_at': datetime.datetime.fromtimestamp((OUT / 'build-mysql-all.log').stat().st_mtime, datetime.timezone.utc).isoformat()}}
+results = json.loads((OUT/'build-steps.json').read_text()) if resume else {
+    'input_rebuild': {'status': 'Passed', 'dataset_results': verified,
+                      'log_completed_at': datetime.datetime.fromtimestamp((OUT / 'build-mysql-all.log').stat().st_mtime, datetime.timezone.utc).isoformat()}}
+if resume:
+    for step in ['input_rebuild', 'uv-sync-handoff', 'fresh-oracle-build-server', 'restore-oracle-all', 'verify-expanded-core']:
+        assert results[step]['status'] == 'Passed', 'Resume requires successful '+step
+    running = subprocess.check_output(['podman', 'inspect', '--format', '{{.Image}}', 'megasamples-build-mysql'], text=True).strip()
+    expected = subprocess.check_output(['podman', 'image', 'inspect', '--format', '{{.Id}}', 'sql-megasamples-mysql-base:9.7.4-shell-9.7.1'], text=True).strip()
+    assert running.removeprefix('sha256:') == expected.removeprefix('sha256:'), 'Resume build-server image changed'
 (OUT / 'build-steps.json').write_text(json.dumps(results, indent=2)+'\n')
 
 
@@ -58,18 +68,20 @@ def run(label, args):
     assert rc == 0, label+' failed; inspect the retained log'
 
 
-run('uv-sync-handoff', ['/opt/venv/bin/uv', 'sync', '--locked', '--python', '/usr/local/bin/python3'])
-run('fresh-oracle-build-server', ['.venv/bin/python', '-m', 'megasamples', 'build-server', 'fresh'])
-physical = [name for name in configured if not yaml.safe_load((ROOT/'datasets'/name/'dataset.yaml').read_text()).get('append')]
-run('restore-oracle-all', ['make', 'restore', 'PY=.venv/bin/python', 'D='+' '.join(physical)])
-# An append dataset expands the core Chicago table. Refresh through the repository
-# verifier, then hold both resulting live records to the previous frozen corpus.
-run('verify-expanded-core', ['.venv/bin/python', '-m', 'megasamples', 'verify', 'chicago_crimes', '--engine', 'mysql'])
+if not resume:
+    run('uv-sync-handoff', ['/opt/venv/bin/uv', 'sync', '--locked', '--python', '/usr/local/bin/python3'])
+    run('fresh-oracle-build-server', ['.venv/bin/python', '-m', 'megasamples', 'build-server', 'fresh'])
+    physical = [name for name in configured if not yaml.safe_load((ROOT/'datasets'/name/'dataset.yaml').read_text()).get('append')]
+    run('restore-oracle-all', ['make', 'restore', 'PY=.venv/bin/python', 'D='+' '.join(physical)])
+    # Refresh the expanded core, then compare against the original core+append receipts.
+    run('verify-expanded-core', ['.venv/bin/python', '-m', 'megasamples', 'verify', 'chicago_crimes', '--engine', 'mysql'])
 previous = json.loads((ROOT / 'build/client-evidence/client-final-mysql-frozen-live-records.json').read_text())
 current = {name: yaml.safe_load((ROOT/'build/live'/f'{name}.observed.yaml').read_text()) for name in previous}
-assert current == previous, 'Rebuilt live-feed records differ from the previously verified frozen corpus'
+specs = {name: yaml.safe_load((ROOT/'datasets'/name/'dataset.yaml').read_text()) for name in previous}
+compare_frozen_records(previous, current, specs)
 results['frozen_live_comparison'] = dict(status='Passed', datasets=sorted(current), records=current,
-                                         comparison='Exact counts, canonical fingerprints and view observations match the previous frozen corpus')
+                                         original_records=previous,
+                                         comparison='Exact original core+append counts, canonical fingerprints and views; no regenerated expectations')
 (OUT / 'build-steps.json').write_text(json.dumps(results, indent=2)+'\n')
 run('ports-lts', ['.venv/bin/python', '-m', 'megasamples', 'ports-check'])
 run('catalogue-lts', ['make', 'catalogue', 'PY=.venv/bin/python'])
