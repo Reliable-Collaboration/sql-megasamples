@@ -53,3 +53,11 @@ def test_view_stage_compares_all_existing_digest_fields_under_the_recorded_clock
     result = verify.Result()
     verify.stage_views(Ad(), {'database': 'example', 'mysql_view_clock': '2026-11-16T00:00:00Z'}, 'example', str(tmp_path), False, result)
     assert any('digest x' in failure for failure in result.failures)
+
+
+def test_verification_clock_sets_session_timezone_before_computing_rows(monkeypatch):
+    sql = []
+    monkeypatch.setattr(adapter.db, 'rows', lambda statement: sql.append(statement) or [['1', '2', '3']])
+    adapter.MySQLAdapter().with_clock('2026-11-16T00:00:00Z').fingerprint('example', 'ages', [('age', 'int')])
+    assert "SET time_zone='+00:00';" in sql[0]
+    assert sql[0].index("SET time_zone='+00:00';") < sql[0].index('SELECT')

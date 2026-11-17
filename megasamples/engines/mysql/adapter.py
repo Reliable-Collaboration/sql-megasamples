@@ -115,7 +115,7 @@ class MySQLAdapter:
     def fingerprint(self, schema, table, cols):
         sql = canon.fingerprint_sql(schema, table, cols)
         if getattr(self, "_clock_epoch", None) is not None:
-            sql = f"SET timestamp={self._clock_epoch}; " + sql
+            sql = f"SET timestamp={self._clock_epoch}; SET time_zone='+00:00'; " + sql
         row = db.rows(sql)[0]
         return int(row[0]), int(row[1]), int(row[2])
 
