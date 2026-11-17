@@ -226,7 +226,7 @@ BEGIN
 END;
 
 CREATE TRIGGER "usalesorderheader" AFTER UPDATE ON "salesorderheader" FOR EACH ROW
-WHEN NEW."status" IS NOT DISTINCT FROM OLD."status" AND NEW."revisionnumber" IS NOT DISTINCT FROM OLD."revisionnumber"
+WHEN NEW."status" IS OLD."status" AND NEW."revisionnumber" IS OLD."revisionnumber"
 BEGIN
   UPDATE "salesorderheader" SET "revisionnumber" = OLD."revisionnumber" + 1 WHERE rowid = NEW.rowid;
 END;
