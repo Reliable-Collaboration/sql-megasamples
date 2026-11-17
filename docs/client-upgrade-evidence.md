@@ -1,8 +1,8 @@
 # Client upgrade evidence
 
-Read/capture time: 2026-11-17T04:24:43.505534+00:00. Branch `upgrade/latest-stable-clients` starts from completed engine branch commit `7b3d5a35966d82abd69598ed795b9610ddf27c35`. Engine PR [9](https://github.com/Reliable-Collaboration/sql-megasamples/pull/9) was made ready and merged with merge commit `b80583cd28b02f144c1f19ddad68076c636fef4f`. No live deployment action was executed.
+Read/capture time: 2026-11-17T06:52:44.154292+00:00. Branch `upgrade/latest-stable-clients` starts from completed engine branch commit `7b3d5a35966d82abd69598ed795b9610ddf27c35`. Engine PR [9](https://github.com/Reliable-Collaboration/sql-megasamples/pull/9) was made ready and merged with merge commit `b80583cd28b02f144c1f19ddad68076c636fef4f`. Client PR [10](https://github.com/Reliable-Collaboration/sql-megasamples/pull/10) remains open while acceptance completes. No live deployment action was executed.
 
-The baseline already included the latest console tags and native engine clients from PR 9. Those exact vendor pins are retained. This follow-up updates the loader binaries/library, configured embedded console drivers, every resolved Python dependency, reproducible endpoint tooling, and optional Oracle query/load clients. Version/support statements below use primary publisher pages or registries, with exact read times in `clients.lock.yaml` and the receipt. Baseline observations come from the isolated images and the [base tree](https://github.com/Reliable-Collaboration/sql-megasamples/tree/7b3d5a35966d82abd69598ed795b9610ddf27c35), read 2026-11-17T04:20:19.886547+00:00.
+The baseline already included the latest console tags and native engine clients from PR 9. Those exact vendor pins are retained. This follow-up updates the loader binaries/library, configured embedded console drivers, every resolved Python dependency, reproducible endpoint tooling, and optional Oracle query/load clients. Version/support statements below use primary publisher pages or registries, with exact read times in `clients.lock.yaml` and the receipt. Baseline observations come from the isolated images and the [base tree](https://github.com/Reliable-Collaboration/sql-megasamples/tree/7b3d5a35966d82abd69598ed795b9610ddf27c35), read 2026-11-17T05:07:27.499016+00:00.
 
 ## Client inventory
 
@@ -27,7 +27,9 @@ The baseline already included the latest console tags and native engine clients 
 | sysbench-connector-c | 3.4.9 | 3.4.11 | [Publisher source](https://mariadb.org/connector-c/all-releases/), 2026-11-17T02:43:45.108646+00:00 |
 | adminer-libpq | 18.6 | 18.7-r0 | [Publisher source](https://pkgs.alpinelinux.org/package/v3.24/main/x86_64/libpq), 2026-11-17T04:06:09.391699+00:00 |
 | psycopg-libpq | 18.6 (initial binary-wheel probe) | 18.7 | [Publisher source](https://apt.postgresql.org/pub/repos/apt/dists/trixie-pgdg/main/binary-amd64/Packages.gz), 2026-11-17T04:09:43.044818+00:00 |
-| sqlcmd (ODBC implementation), bcp, msodbcsql18 | same pinned engine-tool distribution | 18.7.1.1 | [Publisher source](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver17), 2026-11-17T02:40:57.415308+00:00 |
+| adminer-mysqlnd | 8.4.27 | 8.4.27 | [Publisher source](https://hub.docker.com/v2/repositories/library/adminer/tags/6.3.0), 2026-11-17T05:07:04.152534+00:00 |
+| phpmyadmin-mysqlnd | 8.3.36 | 8.3.36 | [Publisher source](https://hub.docker.com/v2/repositories/library/phpmyadmin/tags/5.2.3), 2026-11-17T05:07:04.157874+00:00 |
+| sqlcmd (ODBC implementation), bcp, msodbcsql18 | 18.7.1.1 | 18.7.1.1 | [Publisher source](https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver17), 2026-11-17T02:40:57.415308+00:00 |
 | SQL*Plus, SQL*Loader | 23.26.3.0.0 | 23.26.4.0.0 | [Publisher source](https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html), 2026-11-17T03:33:50.395350+00:00 |
 | Playwright screenshot client | 1.65.0 | 1.65.0 | [Publisher source](https://playwright.dev/python/docs/release-notes), 2026-11-17T02:40:57.779038+00:00 |
 
@@ -84,13 +86,15 @@ phpMyAdmin's [requirements](https://docs.phpmyadmin.net/en/release_5_2_3/require
 - DuckDB 2.0 rejected true/false after cast pushdown; both existing full-archive and new core regressions failed before the boolean CASE/source-type fix. They pass with unchanged expectations. All four actual Chicago/NYC TSV outputs are byte-identical to their old outputs.
 - TPC-C transport regression: Failed before loopback/network-namespace change; Passed after. The actual latest-library first-auth/prepared queries and one-warehouse repository loader pass.
 - Optional Oracle client selection/archive tests: Failed first; Passed after. The explicit-license refusal test passes without any container action. An additional base-image-override test failed first and passed after preserving that override.
+- Actual Playwright screenshot helper: Failed on DbGate's analytics opt-in before the change; Passed after declining the optional prompt and retaining its existing navigation. All three expected outputs remain private.
+- Existing 30-dataset port reproduction: Failed before the generated AdventureWorks LT SQLite trigger record was refreshed; Passed afterward. Seven native SQLite scenarios for each null-safe equality spelling agree; see the vendor expression documentation and structured receipt.
 - Loader build-context regression: Failed first, then Passed after limiting the context to engines/mysql. A root context with already-baked data was stopped rather than transferred.
 
 ## Validation
 
 | Check | Result |
 |---|---|
-| Repository gate | **Passed**: 184 tests; assertions retained; mocked unit fixtures use a private TMPDIR |
+| Repository gate | **Passed**: 186 tests; assertions retained; mocked unit fixtures use a private TMPDIR |
 | Real CSV conversions | **Passed**: four conversions; all output TSV hashes unchanged |
 | Console HTTP/GraphQL/installed-driver connections | **Passed**: phpMyAdmin both accounts, Adminer both server engines, DbGate all engines, CloudBeaver 31 connections; complete database lists |
 | Loader CLI dump/restore | **Passed**: isolated disposable MySQL; removed afterward |
@@ -102,6 +106,15 @@ phpMyAdmin's [requirements](https://docs.phpmyadmin.net/en/release_5_2_3/require
 | Reset sqlite | **Passed**: same-count text/binary restoration and extra-object removal |
 | Reset all | **Passed**: same-count text/binary restoration and extra-object removal |
 | Append selector reset | **Passed**: core row and both SQLite copies restored |
+| Every configured pair selector | **Passed**: grouped invocation; physical databases deduplicated by the repository planner; all marker objects removed, SQLite bytes identical |
+| Restored mysql foreign keys | **Passed**: exact definitions match pristine image |
+| Restored postgres foreign keys | **Passed**: exact definitions match pristine image |
+| Running-stack repository verification | **Failed**: 86/90 completed combinations; full configured matrix has 90 |
+| Full MySQL rerun after memory correction | **Not run**: complete rerun uses the same frozen expectations; see receipt for current completion and native cgroup peak/restart observations |
+| Playwright screenshot path | **Passed**: see receipt for exact scope |
+| SQLGlot generated-trigger equivalence | **Passed**: see receipt for exact scope |
+| Native client version capture | **Passed**: see receipt for exact scope |
+| Running port-record reproduction | **Passed**: see receipt for exact scope |
 | Published endpoint authentication | **Passed**: see receipt for exact scope |
 | Optional Oracle binary probes | **Passed**: SQL*Plus and SQL*Loader report the selected version without starting a database |
 | Oracle native connection/load checks | **Not run**, pending explicit Oracle Free Use Terms acceptance |
@@ -113,13 +126,18 @@ phpMyAdmin's [requirements](https://docs.phpmyadmin.net/en/release_5_2_3/require
 
 The complete engine-branch build/port and image checks are retained in its receipt, including all 90 available combinations and the measured PostgreSQL startup correction. This follow-up does not rebuild unchanged engine images or re-pin any dataset: runtime native clients already come from those current engine distributions. It exercises the updated client paths and repeats the running-data verification after resets. Acceptance is still ongoing wherever a current result is absent; no absent result is counted as Passed.
 
-## Recovered harness failures and retained evidence
+## Failures, fixes and retained evidence
 
 - DuckDB 2.0 CSV boolean cast pushdown: full/core regression tests fail first, then pass after explicit BOOLEAN source types and CASE projection; real CSV outputs byte-identical.
 - Latest source-built Connector/C rejects the throwaway server's remote self-signed certificate. First real loader probe failed; loopback/network-namespace regression failed first, then passed, and actual first caching_sha2 auth/prepared queries and TPC-C cardinalities passed. No global verification bypass.
 - Adminer HTTP probe initially omitted its CSRF field; corrected the harness and both engine UI listings passed.
 - A source gate run during the real reset hit four valid global reset locks. A separate TMPDIR for mocked unit fixtures retained all assertions and the complete source gate passed.
+- The real Playwright screenshot path failed on DbGate's first-use analytics modal. Inspected that modal, changed the helper to decline optional analytics, retained its normal connection/table navigation, and reran it successfully for all three expected PNGs. Images remain private (directory 0700, PNGs 0600), not committed or displayed.
+- The final version-capture observer initially omitted mysqlsh --no-defaults and encountered the existing my.cnf default-character-set incompatibility. Corrected the observer to follow the repository dump/restore convention. The original MySQL verifier continued; a continuation observer completed PostgreSQL/SQLite and the remaining console checks. Its later MySQL OOM failures are preserved, and a separate full MySQL rerun records its actual process exit after the memory correction.
+- The first MySQL runtime matrix passed 26 datasets, then the 1 GiB cgroup OOM-killed mysqld during the full Contoso aggregation and the following three checks lost their socket. Kernel evidence identifies the isolated container. Two memory-budget tests failed before the 2 GiB/explicit-1-GiB-TempTable correction and pass after it; source gate 186 passes. All 30 MySQL datasets are repeated with unchanged query and checksum expectations; the receipt retains both attempts and native cgroup measurements.
 - The previous session's health helper was stopped. The project-checked isolated helper was restarted; the first MySQL engine reset includes this wait and is not a startup-performance measurement.
+- The 30-dataset port reproduction check failed after SQLGlot 30.32 changed SQLite null-safe equality from IS NOT DISTINCT FROM to IS. SQLite documents these as alternative spellings (https://sqlite.org/lang_expr.html, read 2026-11-17 05:05:26 UTC). Seven trigger scenarios passed for each form, including NULL and explicit revisions; regenerated the one-line record through ports-check --write, retaining translator and assertions.
+- An initial file search was scoped to the parent directory and was stopped; no sibling file contents were read or used. Subsequent repository searches stayed inside this clone.
 - An initial comparison harness preceded its image build; initial staging harness missed PYTHONPATH. Corrected before obtaining results. A broad loader build context was stopped and replaced with its small source directory; regression test passes.
 - The initial exported base tools image lacked the container's later SQLite/uv setup. It was discarded, replaced by an actual running-tools filesystem snapshot (bind mounts excluded), smoke-tested and hashed.
 

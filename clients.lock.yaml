@@ -2,7 +2,7 @@
 baseline:
   commit: 7b3d5a35966d82abd69598ed795b9610ddf27c35
   source: https://github.com/Reliable-Collaboration/sql-megasamples/tree/7b3d5a35966d82abd69598ed795b9610ddf27c35
-  read_at: '2026-11-17T04:20:19.886547+00:00'
+  read_at: '2026-11-17T05:07:27.499016+00:00'
 python:
   backports-zstd:
     before: 1.7.0
@@ -307,6 +307,24 @@ drivers:
       Filename: pool/main/p/postgresql-18/libpq5_18.7-1.pgdg13+2_amd64.deb
       SHA256: bfd1d4e64e1a87c637a84e8a712a517ae8059ec969ba57fe402b259ede61e2b8
     url: https://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-18/libpq5_18.7-1.pgdg13+2_amd64.deb
+  adminer-mysqlnd:
+    before: 8.4.27
+    version: 8.4.27
+    release_source: https://hub.docker.com/v2/repositories/library/adminer/tags/6.3.0
+    read_at: '2026-11-17T05:07:04.152534+00:00'
+    runtime_version_evidence: build/client-evidence/adminer-mysql-driver-version.txt
+    pin: adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c
+    scope: Observed PHP-bundled mysqlnd API from this exact vendor image; follows the selected application runtime, not an
+      independently versioned driver dependency
+  phpmyadmin-mysqlnd:
+    before: 8.3.36
+    version: 8.3.36
+    release_source: https://hub.docker.com/v2/repositories/library/phpmyadmin/tags/5.2.3
+    read_at: '2026-11-17T05:07:04.157874+00:00'
+    runtime_version_evidence: build/client-evidence/phpmyadmin-driver-version.txt
+    pin: phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40
+    scope: Observed PHP-bundled mysqlnd API from this exact vendor image; follows the selected application runtime, not an
+      independently versioned driver dependency
 native_clients:
   postgres:
     programs:
@@ -368,6 +386,7 @@ native_clients:
         GitHub tool or git operation used outside the permitted repository.
 optional_export_clients:
   mssql:
+    before: 18.7.1.1
     programs:
     - sqlcmd (ODBC implementation)
     - bcp
