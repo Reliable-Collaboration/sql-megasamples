@@ -17,7 +17,7 @@ a download does not match.
 | artifact | bytes | sha256 |
 |---|---:|---|
 | `bts_ontime/On_Time_Reporting_Carrier_On_Time_Performance_1987_present_2025_1.zip` | 27,108,664 | `868387dcedaef1b8d8392e608e642219fde50d594c3cf2094aec858167629ccf` |
-| `bts_ontime/L_AIRPORT.csv` | 319,686 | `7be383b4eb599a861aa19208e7fae9a97824abc094078e73ad05b118c0fc2405` |
+| `bts_ontime/L_AIRPORT.csv` | 320,236 | `7a3c2a0bbcdc6951c2ae6eefe1e5739cfeb86f5016006cec49e146bb54b9466d` |
 | `bts_ontime/L_AIRLINE_ID.csv` | 66,730 | `f84e6b89051a48910fe5487f25378b93173c10aa5752d01e1ddef09c3a50b5c2` |
 | `bts_ontime/L_UNIQUE_CARRIERS.csv` | 54,217 | `4ccd2b1edabe8d155efcbc8d00bb6df528872afd01c3afe038f9686902bc25cb` |
 
@@ -28,7 +28,7 @@ a download does not match.
   The month is **not** zero-padded and the parentheses of the table name must be **removed from the URL** (`..._(1987_present)_..." returns 404`). The CSV *inside* the zip does keep the parentheses in its member name. This settles the frequently reported "TranStats blocks non-browser requests" problem: the interactive `DL_SelectFields.aspx` form does need a session, the `PREZIP` path does not.
 * **Recommended pin - January 2025:** `Content-Length: 27,108,664`, `Last-Modified: Thu, 08 May 2025 14:59:27 GMT`. Members: `On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2025_1.csv` (**243,177,378 bytes uncompressed**, deflate) and `readme.html` (12,152 bytes, the record layout).
   Recent months for comparison: 2026-05 = 31,716,693 B; 2026-06 = 31,606,062 B (latest, published 2026-08-12).
-* **Lookup tables** (verified 200 + `Content-Disposition`): `https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=<ROT13 of table name>` - `Y_NVecbeg` -> `L_AIRPORT.csv` (319,686 B), `Y_NVeYVaR_VQ` -> `L_AIRLINE_ID.csv` (66,730 B), `Y_haVdhR_PNeeVRef` -> `L_UNIQUE_CARRIERS.csv` (54,217 B).
+* **Lookup tables** (verified 200 + `Content-Disposition`): `https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=<ROT13 of table name>` - `Y_NVecbeg` -> `L_AIRPORT.csv` (320,236 B, refreshed 2026-11-17), `Y_NVeYVaR_VQ` -> `L_AIRLINE_ID.csv` (66,730 B), `Y_haVdhR_PNeeVRef` -> `L_UNIQUE_CARRIERS.csv` (54,217 B).
 * **Auth / click-through:** none for either path.
 * **Checksums:** BTS publishes none. Record `sha256` at fetch time.
 
@@ -46,6 +46,6 @@ None upstream. This project adds a view `v_ontime_delay` (flight, carrier name v
 
 ## Measured
 
-4 tables, 550,232 rows. Per-table counts, digests, index sets,
+4 tables, 550,245 rows. Per-table counts, digests, index sets,
 query plans and canonical query results are pinned under `tests/` and are
 checked on every build.

@@ -10,3 +10,21 @@ load:
 # Re-deriving this database from Microsoft's .bak runs SQL Server, which needs its EULA accepted.
 # Nothing under that licence is redistributed; see PROVENANCE.md and `make wwi-export`.
 build_license: microsoft-sql-server-developer-eula
+
+# Measured dispositions; see the dated receipt for phases and capability limits.
+validation:
+  date: '2026-11-17'
+  evidence: docs/dataset-upgrade-evidence.md
+  engines:
+    mysql:
+      status: Passed
+    postgres:
+      status: Unsupported
+      reason: 'wideworldimporters: application_people.searchname is generated with
+        concat, which postgres lacks; the dataset cannot be ported to postgres until
+        the expression is translated (megasamples/port/ddl.py)'
+    sqlite:
+      status: Unsupported
+      reason: 'wideworldimporters: application_people.searchname is generated with
+        concat, which sqlite lacks; the dataset cannot be ported to sqlite until the
+        expression is translated (megasamples/port/ddl.py)'

@@ -12,8 +12,8 @@ application_cities:
   - validto
   excluded: []
   n: 37940
-  s: 16219337559159682180
-  x: 4507629804472251712
+  s: 312861780517158762
+  x: 6735625259573066116
 application_cities_archive:
   columns:
   - cityid
@@ -26,8 +26,8 @@ application_cities_archive:
   - validto
   excluded: []
   n: 28
-  s: 6887691594683785430
-  x: 1345619199829998912
+  s: 14737488119177392153
+  x: 10429824891521468099
 application_countries:
   columns:
   - countryid
@@ -46,8 +46,8 @@ application_countries:
   - validto
   excluded: []
   n: 190
-  s: 5997892828104006945
-  x: 15341270223541961129
+  s: 17583937016603517193
+  x: 1425095345194106471
 application_countries_archive:
   columns:
   - countryid
@@ -66,8 +66,8 @@ application_countries_archive:
   - validto
   excluded: []
   n: 37
-  s: 5124005709495390862
-  x: 554023383433127930
+  s: 6518621158686021452
+  x: 10669774194503469474
 application_deliverymethods:
   columns:
   - deliverymethodid
@@ -180,8 +180,8 @@ application_stateprovinces:
   - validto
   excluded: []
   n: 53
-  s: 6882193958328376943
-  x: 4691453213289502061
+  s: 3362018121277439013
+  x: 15177311867757041183
 application_stateprovinces_archive:
   columns:
   - stateprovinceid
@@ -196,8 +196,8 @@ application_stateprovinces_archive:
   - validto
   excluded: []
   n: 104
-  s: 6465635852461325332
-  x: 6430459954969562152
+  s: 13817821251839490819
+  x: 7084668878436842555
 application_systemparameters:
   columns:
   - systemparameterid
@@ -215,8 +215,8 @@ application_systemparameters:
   excluded:
   - applicationsettings
   n: 1
-  s: 2157305026322130524
-  x: 2157305026322130524
+  s: 18009151036368565944
+  x: 18009151036368565944
 application_transactiontypes:
   columns:
   - transactiontypeid
@@ -330,8 +330,8 @@ purchasing_suppliers:
   - validto
   excluded: []
   n: 13
-  s: 6684544239104671100
-  x: 9957329550293883136
+  s: 3495763281050745048
+  x: 1534186529903638992
 purchasing_suppliers_archive:
   columns:
   - supplierid
@@ -467,8 +467,8 @@ sales_customers:
   - validto
   excluded: []
   n: 663
-  s: 17074012341241004484
-  x: 17193904155976444274
+  s: 15062874395378306165
+  x: 5835989084913653967
 sales_customers_archive:
   columns:
   - customerid
@@ -504,8 +504,8 @@ sales_customers_archive:
   - validto
   excluded: []
   n: 51
-  s: 7049434545409133487
-  x: 16272734704658140093
+  s: 7514985172129761556
+  x: 1885799833431724360
 sales_customertransactions:
   columns:
   - customertransactionid

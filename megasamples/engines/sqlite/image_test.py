@@ -13,10 +13,10 @@ import yaml
 from megasamples.paths import ROOT
 from megasamples.engines import unique_databases
 from megasamples.registry import image_counts
+from megasamples.engines.image_startup import probe_startup
 
 IMAGE = os.environ.get("MEGASAMPLES_SQLITE_IMAGE", "sql-megasamples-sqlite:dev")
 NAME = "megasamples-test-sqlite"
-BUDGET_SECONDS = 30
 
 
 def sh(*args, **kw):
@@ -38,21 +38,14 @@ def main(argv=None):
     datasets = list(sys.argv[1:] if argv is None else argv) or ["sakila"]
     c = Checks()
     sh("docker", "rm", "-f", NAME)
-    started = time.time()
+    started = time.monotonic()
     run = sh("docker", "run", "-d", "--name", NAME, "--label", "megasamples.transient=true",
              "--label", "megasamples.role=test", IMAGE)
     if run.returncode != 0:
         sys.exit(f"could not start {IMAGE}: {run.stderr}")
+    provisioned = time.monotonic() - started
     try:
-        ready = None
-        while time.time() - started < BUDGET_SECONDS * 2:
-            if q("SELECT 1").returncode == 0:
-                ready = time.time() - started
-                break
-            time.sleep(0.2)
-        c.expect(ready is not None, "container answers a query")
-        c.expect(ready is not None and ready <= BUDGET_SECONDS,
-                 f"ready in {ready:.1f}s (budget {BUDGET_SECONDS}s)" if ready else "never became ready")
+        ready = probe_startup(c, "sqlite", started, provisioned, lambda: q("SELECT 1"))
         if ready is None:
             return 1
         registry = q("SELECT name FROM datasets ORDER BY name").stdout.split()
