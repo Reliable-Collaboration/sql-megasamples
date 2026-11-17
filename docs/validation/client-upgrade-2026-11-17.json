@@ -202,10 +202,11 @@
   },
   "base_commit": "7b3d5a35966d82abd69598ed795b9610ddf27c35",
   "branch": "upgrade/latest-stable-clients",
-  "captured_at": "2026-11-17T06:52:44.154292+00:00",
+  "captured_at": "2026-11-17T07:48:21.245982+00:00",
   "client_pr": {
     "draft": true,
     "merge_commit": null,
+    "merge_disposition": "Not run: remains draft pending explicit Oracle Free Use Terms decision and optional native connection/load verification; binaries built/probed, database not started.",
     "number": 10,
     "state": "OPEN",
     "url": "https://github.com/Reliable-Collaboration/sql-megasamples/pull/10"
@@ -1883,14 +1884,16 @@
     "build/client-evidence/client-memory-mysql-runtime-mysql-adventureworks_dw.log": "f97fdbba5624ce8d6f95023e6ca51b72823c41e78281c66ea36e6dc95099ddbe",
     "build/client-evidence/client-memory-mysql-runtime-mysql-adventureworks_lt.log": "52edeee0fa291889df289c890dc75f9fb35577ec21b2d4e45def166026c61b45",
     "build/client-evidence/client-memory-mysql-runtime-mysql-chicago_crimes.log": "09ce55a319a844e001291b723d7e83702ce6e668d8342c911403060fdcc80c1d",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-chicago_crimes_full.log": "ae6d2f0a250084ddecc60e087f380693f550120a2824b54ed9e09898fed6f051",
     "build/client-evidence/client-memory-mysql-runtime-mysql-chinook.log": "c4e3d928202a083b243555571c269824e1d3c10d80d3f95b3957e76a7d0194d4",
     "build/client-evidence/client-memory-mysql-runtime-mysql-contoso.log": "b0d7b2c4d55f148c711eba378ed9cd8d235166ed7f1170d988751ffdd5cd8411",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-contoso_10m.log": "d648d6a405581b87e2f5cd7925ebadfbac20c8559e67afcdd81cf136521fb722",
     "build/client-evidence/client-memory-mysql-runtime-mysql-contoso_1m.log": "f1770e2c8f70c96c8f20db140544d66bec8bfa151d12e8ff872a34744bf198fe",
     "build/client-evidence/client-memory-mysql-runtime-mysql-dvdstore.log": "dfa85766bfb57b0095cbaf60ca8477e921c119cd87f917828c4570cff5189d49",
     "build/client-evidence/client-memory-mysql-runtime-mysql-dvdstore_reviews.log": "c3a3fee2d6642d25611804c985c261bd9761892a5f06aa0f3fc1b0fd7ff2a145",
     "build/client-evidence/client-memory-mysql-runtime-mysql-employees.log": "e7e2f2ac4da5c3af833cc31ed3e175459b86fed624174d7baad698f200905d81",
     "build/client-evidence/client-memory-mysql-runtime-mysql-enron.log": "26514d6617bd0ae1840c0d7fbfbea2d550ac7ffe0c065eec5caafc579772a167",
-    "build/client-evidence/client-memory-mysql-runtime-mysql-enron_full.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-enron_full.log": "54992d423b913fde82ae9617acbf933cebdc93c8417bacb20e81cb1ea19c5db3",
     "build/client-evidence/client-memory-mysql-runtime-mysql-jaffle_shop.log": "df1283a148c7ae542808dc988d6c4193947aaf846f52e94c80961f702050769a",
     "build/client-evidence/client-memory-mysql-runtime-mysql-lahman.log": "ad542e6ffaab36f5e385a498d0f13ef8dd0dcb211030ddbb052c8ca66f93bd09",
     "build/client-evidence/client-memory-mysql-runtime-mysql-northwind.log": "ed49b4f51e194b3675186f2263a5d0015ce951e50a3cc054b7b186eb3bc535d2",
@@ -1905,9 +1908,12 @@
     "build/client-evidence/client-memory-mysql-runtime-mysql-smallsets.log": "d7597da416592176fc2db256ee1295c24ad3f9497a8d853fd9b6326962145093",
     "build/client-evidence/client-memory-mysql-runtime-mysql-stackexchange_beer.log": "8c93f6853744ada254d587fab72a6fe67fe6fc5119fc77f847e79e1686b67ab6",
     "build/client-evidence/client-memory-mysql-runtime-mysql-stackexchange_dba.log": "ce5d0d1d5bed59e1b2282c120c0549b5a09d2ddf7003a3b0b75db5546733f6a5",
-    "build/client-evidence/client-memory-mysql-runtime-results.json": "72781037f744418ccf2c8b7891eff3815f092711c12e1b8a46d472a752ad7864",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-wikipedia_simple.log": "672cc88443d493b13afe98a5da782983ca65741ba822d98ccbee4e6aff3691eb",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-wikipedia_simple_full.log": "8000d352da57fb0938d079e2b6e6ff99d0370935ed0b3864a7f9ec1993470896",
+    "build/client-evidence/client-memory-mysql-runtime-results.json": "68e3b3066e5ceab4f496eb4b2c5040870a4299c890a13fcc7d809a1149f39651",
     "build/client-evidence/client-pins-current-libraries.log": "d5943a9aaa948b3f3e93f328500c1913034f75d2c4c784d5076771172a62e62e",
     "build/client-evidence/client-pins-final.log": "5cbb93b14df607d25e57e30f8d2ba7b9f19a71201b91b2ede351f8eabd17a17b",
+    "build/client-evidence/client-pr-final-state.json": "a61e6bc6bbc7044fde06e4af983807a23308c1ec21ab5ce56a3e3ee9a18350b9",
     "build/client-evidence/client-releases-before-corrected-harness.log": "c6941bbbf5c3b6f43a4ad8161aec31f7fe61b97772713ad1690a6a833ad2de39",
     "build/client-evidence/client-releases-before.log": "34efe30eac4c75f62fc9f2ea48b6e81b855ffbbf96a6615cdf641832857ff04d",
     "build/client-evidence/clients-console-shallow.log": "b14365e89f57c5ff61bd860f486d58bbeb42ec24da785b09c85c490f38b3988d",
@@ -1951,27 +1957,33 @@
     "build/client-evidence/driver-releases.json": "0df8c77396f8296f2b6226639875c95caab916c7a7489fd22f59b6028a6d59fe",
     "build/client-evidence/duckdb-extension-probe.log": "41817fa77b6bc18f0d2c1092db424fefc8aa56c70f31b6c6b844c7da1f76d9b5",
     "build/client-evidence/duckdb-extension-results.json": "41817fa77b6bc18f0d2c1092db424fefc8aa56c70f31b6c6b844c7da1f76d9b5",
-    "build/client-evidence/endpoint-results.json": "e6c6b8159af44c8475b641e51f667fe8fe4a0ab735d5c0104da8b3918533c943",
+    "build/client-evidence/endpoint-results.json": "6063b29cf00406d208c2b2c92f45228258bbfc50f5341158cc633b00ef8cbb49",
     "build/client-evidence/endpoints-after-memory-fix.log": "c8acee2354ff84bf072a64767bae8fd48dc6dad527b4b496f9ce567392822d27",
     "build/client-evidence/endpoints-before-memory-fix.json": "29a8d6008875508fe02c23252370443e1d820f938ff5239452ce7b4bdb432aaa",
     "build/client-evidence/engine-followup-check.log": "c5698846115f6f470d81d1b60914efd6df3c4cc6ca4ef29172c6aa1e82389cfa",
+    "build/client-evidence/engine-pr-final-state.json": "3e6a82f117bc0142d56af2843de6a43e02eae051914a5f1bd843ccbcd0ddcaa8",
     "build/client-evidence/engine-pr-merge.json": "8fdd8493bc8fb0582674f2b1e294c9d41ad8100ad3424487439e8df01fbf5050",
+    "build/client-evidence/final-console-close.log": "f5aa010f866d3b84855ce5659ac3a7c09f8561386dc84c2cff7f9594c3a54f14",
     "build/client-evidence/final-console-deep-driver.log": "f5aa010f866d3b84855ce5659ac3a7c09f8561386dc84c2cff7f9594c3a54f14",
+    "build/client-evidence/final-console-shallow-close.log": "ea098f47659e9ce6f02cf006fb3470f8f91e98b5973c8bf213f15601efa92bab",
     "build/client-evidence/final-console-shallow-driver.log": "ea098f47659e9ce6f02cf006fb3470f8f91e98b5973c8bf213f15601efa92bab",
+    "build/client-evidence/final-endpoints-close.log": "c8acee2354ff84bf072a64767bae8fd48dc6dad527b4b496f9ce567392822d27",
     "build/client-evidence/final-endpoints-driver.log": "c8acee2354ff84bf072a64767bae8fd48dc6dad527b4b496f9ce567392822d27",
+    "build/client-evidence/final-native-clients-close.log": "dab55535f2c67d2aad748af6806324ccc67c6c9367ee9cc83b6897aaa0312f90",
     "build/client-evidence/final-native-clients-driver.log": "dab55535f2c67d2aad748af6806324ccc67c6c9367ee9cc83b6897aaa0312f90",
     "build/client-evidence/final-pipeline-before-mysqlsh-defaults.json": "63a1a30a9e3bc7996d22ed650ac89f3278169ecfcc8417d8baaa24ed6f39446f",
     "build/client-evidence/final-pipeline-before-mysqlsh-defaults.log": "7611b02a3c69379adda65149b62d18ddb710ef7bacf898d74dbd3d73ac4f0d28",
     "build/client-evidence/final-pipeline-before-sqlglot-refresh.json": "c9cbed18fadff9916b465e61d7a8e56da1c5e0724e4f7298e3d1988ab6c5e51a",
     "build/client-evidence/final-pipeline-before-sqlglot-refresh.log": "9d04985ad3eb76e9452e90606292e910faf7321915525c7d30b10de6837dbe2c",
     "build/client-evidence/final-pipeline-continuation.log": "d73feadb15b51e55d71b3d0c51a8d332bda87dcdaaf27a3d606d5b706a6635d5",
-    "build/client-evidence/final-pipeline-results.json": "c265837c594ba0a16e4172bff817a05cac19cfaa027de6546d4213d168003999",
+    "build/client-evidence/final-pipeline-results.json": "56a5680b31311e238d29797f2ff2dc9aa50f8fc2c83a61f950dd4f1b25234ec9",
     "build/client-evidence/final-pipeline.log": "7611b02a3c69379adda65149b62d18ddb710ef7bacf898d74dbd3d73ac4f0d28",
     "build/client-evidence/final-running-ports-driver.log": "2077829b0be9834e85d202e0da729bb9b815d8d7a5ae1abf5e26c186311d191a",
     "build/client-evidence/final-up-driver.log": "e3592b931495b5e0457b5b9c79f4a95bab13a519026f44f0c6eaf9aac8330887",
     "build/client-evidence/foreign-key-comparison-driver.log": "a1f5ba0a761dd0edbcf1c1e0db95e85cc65442ab1d9e3ad848d1a9a3ac76a005",
+    "build/client-evidence/frozen-expectations-unchanged.json": "5118046751984aa2f947d3c3d2875f976a9b62b5769b19ee04401f4deac6b3c4",
     "build/client-evidence/health-probe-runner.log": "389f86383c5fb8279da6e7f0c909bd36ab15d8a7433d09de63b35ee02e5bceb3",
-    "build/client-evidence/isolated-containers.txt": "3bda9d2bfa056e7ac4c9cda68be76ac4cffdbc8ab5a61b228b7bf436aef2dbd7",
+    "build/client-evidence/isolated-containers.txt": "540873ead3d11b96320197dad8219ca3f67c608e168721b82f461f4f752fb67e",
     "build/client-evidence/jar-pins.json": "43fc382c5067e55580051272f5294fc8a3ccc89781b0556f270b1c06c7a91ec0",
     "build/client-evidence/live-isolation.json": "9bc8e36bf1ad91c56c3e9b269ac40f23f49ad3e7d8bd0cc8efaff3fa1ac04f20",
     "build/client-evidence/loader-baseline-connector-version.txt": "a1674da0721b13df2deac3e1d8d63a28873f4212c08ed19a588d92114d1331ad",
@@ -1986,6 +1998,8 @@
     "build/client-evidence/microsoft-tools-packages.json": "8457d873fe3e3e9c81b6f767de6b93311118bae19468718fab2d385d680f96c7",
     "build/client-evidence/mssql-tools-image-pull.log": "11b9381b95225e28cc2d2e4ffa511df830e1b394ef6a037dc6c6f5b59d8c4fa0",
     "build/client-evidence/mssql-tools-versions.txt": "cf4e12ec4c910ebac7cd1a1d42287d97350211c5b6daaab44ade98b647e0e4ab",
+    "build/client-evidence/mysql-allocator-observer.log": "1809c18b367ec95b533541f744d694f415d10622fe3a67b46bbeba690257aa5a",
+    "build/client-evidence/mysql-allocator-samples.json": "e769fa496248d18ac4ee326a0bb367ade269f20c0d00ad3071bcfff5c11e873b",
     "build/client-evidence/mysql-budget-up.log": "7e88601a7664ff8757a94d910bc0db9b6f63a55f99955825f1dc6af8ffd091f1",
     "build/client-evidence/mysql-client-libraries.txt": "ea03228dc258d836ea8f03fcb4b3d704b19bad9621f5505ab098f734d02f1eb7",
     "build/client-evidence/mysql-client-versions.txt": "2b667d5a45b10ed7e476ab3f7b9a2f66ec06101bece842b466e696cf6dda6e56",
@@ -1994,8 +2008,8 @@
     "build/client-evidence/mysql-memory-budget-after.log": "89d3ec78cb0fbd89b7737bfe3078876ad657c2c3b955758b5a26267a44a5d86b",
     "build/client-evidence/mysql-memory-budget-before-final-cases.log": "2026f2c0547c373ff2faf8a56f9dae361afc8cdaf223b95c1ee6c7071930af1d",
     "build/client-evidence/mysql-memory-budget-before.log": "bbe30c09b2b1ad3bbfb1536118763a159af747f9ea42f232345a1a6e52fb76f0",
-    "build/client-evidence/mysql-memory-profile-samples.json": "9a914fffbaf0b3032a35861b8e981a3c183f062d88a74786a98b4dea4f65fee1",
-    "build/client-evidence/mysql-memory-rerun.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/client-evidence/mysql-memory-profile-samples.json": "80ce54841deb697b508f572d580c55fe070acdaefb3b01bdf0f8a1d33176e57b",
+    "build/client-evidence/mysql-memory-rerun.log": "5060caffb03926aa3a58079fd73c1c1c68f3107ecb6b47c9511dc2baf0cf5bba",
     "build/client-evidence/mysql-oom-query-plan.json": "82c3d68d8382dfc29d456f257a1f4d37783c58eae1fd5eed0542c83b2f50edee",
     "build/client-evidence/mysql-runtime-before-memory-fix-results.json": "19cd09b394a2c5f5edc7b1c1acdd2ba926030d4e9f1e5b65448318f4c4efc8b6",
     "build/client-evidence/mysql-runtime-exec-observation.json": "114ac88cc83a92513a46079a9db24685cce183d1850400b921cf5c15a6cfe422",
@@ -2004,9 +2018,10 @@
     "build/client-evidence/mysql-runtime-failure-state.json": "81854f0be774dc79cfc40aa5c498b71c93fb3faa3548bb6b5bd53e3fb41ab359",
     "build/client-evidence/mysql-runtime-memory-after-config.json": "bcfe96380e2f9ea00d43ed8f737b376824b7cd691f97b782bc6a320947156456",
     "build/client-evidence/mysql-runtime-memory-baseline.json": "924ca7f537a88fa9a5653bdb4aa28c5dfab3712fb11ab205fdaed8a76b6fe9eb",
+    "build/client-evidence/mysql-runtime-memory-rerun-process.json": "5809a879bd669c7608c4b6ba348a2021547d1a33b48386e0e00c297460c2b7c0",
     "build/client-evidence/mysqlsh-version-with-defaults-before.log": "83a19b5a3e6b84483e7d640e3ebaf90c2aec7dc49029c956e17df70026d30a7f",
     "build/client-evidence/native-client-capture-before-mysqlsh-defaults.log": "b83ef2d5911d278f9bb68d3963cceccd3372a8a54101284d63416f38efe1bb8b",
-    "build/client-evidence/native-client-versions.json": "e6071465920eae2e58f252a616ca85162cf51f453e57cc02670d97740561c1eb",
+    "build/client-evidence/native-client-versions.json": "7fc064022f6b3c159da901cb5dc34d992e0f637434ddd870583e10c9b706f5dc",
     "build/client-evidence/oracle-base-override-before.log": "21614690a4c684a39b891e00af2ffc36ac6b873ad43daa5a6392076d0111f943",
     "build/client-evidence/oracle-baseline-client-binaries.log": "cbebbdc2908a2b04b8cf9da31fe1f2e5fca665f58911e33a5f236e2a03947d11",
     "build/client-evidence/oracle-binary-results.json": "c0b49569037d1b88ab1b467742d3a4e2708f1cdefdcb8e2186ac5638729b628c",
@@ -2036,6 +2051,7 @@
     "build/client-evidence/postgres-18.6-build.log": "53cb6265e24a83d30fee46dcc2021abb06e037f3fdeebde8b2d88f44216f151b",
     "build/client-evidence/postgres-client-versions.txt": "a1f53ac2ff8b28d19cf65dbfe75350706ef8dbadcd72757a248179710fead5ff",
     "build/client-evidence/postgres-full-image-after.log": "481c09b49836640959ca72c83aa143bee242410a64bce60638d32b191b5d6912",
+    "build/client-evidence/postgres-stable-source.json": "731c01c8f9f038eede486fe67f9abfa08bac7cbbc144ce05a29b6538b8425ab1",
     "build/client-evidence/postgres-startup-after.log": "ebd938888ffaa2af3581cec946b9b58fbc84d3d34af429b416dd4a0ad79f1a12",
     "build/client-evidence/postgres-startup-before-final-cases.log": "61f7ec4d596be7016ebeb6f8612abd1c1fefd61b23c0b3432eaae55b8db5cd14",
     "build/client-evidence/postgres-startup-before.log": "cdff1cd2855e4b385e17524b5824de2751b53aad1ab66aa9cdda4de19196962b",
@@ -2064,10 +2080,10 @@
     "build/client-evidence/running-ports-before-sqlglot-refresh.log": "ac9d8d0b35581bca8ee61424dc9c44c22f43923bbf28da924ad1ca04e3c60eae",
     "build/client-evidence/running-ports-result.json": "5c5af31904e01d3df0bb00fc8c54028ecdc0d4001e5623b8d63409733614cb6b",
     "build/client-evidence/runtime-mysql-driver.log": "0a2f2da8f22f14d5584935e3e9a0a986aaf4fac05e1a47d0c14b45fb11aa97e8",
-    "build/client-evidence/runtime-mysql-memory-driver.log": "c50028d5debc9d10d0796d5f3b888a7b5e69d24c4d9023992e5c20cc0945cb98",
+    "build/client-evidence/runtime-mysql-memory-driver.log": "505a232546d023a3d1fcab170a0662d94968aa9a161c3bbf861c75f7f6574394",
     "build/client-evidence/runtime-postgres-driver.log": "9153e50b577012850f9d95d82482c185047f96502029d749767a714b0cde169b",
     "build/client-evidence/runtime-sqlite-driver.log": "93912fda1db1292eb1dd2e8bab42747d38957693596532f2552cdb463e9d9aa7",
-    "build/client-evidence/runtime-state.json": "f15dec87c11c582b8f884ae9a27dde7c340ac0666cd0ff2fea2cd1350c5ccf94",
+    "build/client-evidence/runtime-state.json": "bba1697474212b36fd9a71e08ee2d3476f5060115a8ba4c91a71e473256e6b7b",
     "build/client-evidence/source-docker_shared_network.txt": "e41da393126a7c1767612e11429bd0c2b9cd34e25ed72dd7ac81698d20175be9",
     "build/client-evidence/source-mariadb_tls.txt": "71e36a07f93581f8a990c089ff752f715eb0b61a73f10d7527a6fca47a886e36",
     "build/client-evidence/source-oracle_free.txt": "9b5a96c7c860eca7f61ed562abee2c2362ac0061b10875dd8f8621ec20370f53",
@@ -2137,6 +2153,13 @@
       "seconds": 3.94,
       "status": "Passed"
     },
+    "runtime-mysql": {
+      "returncode": 0,
+      "scope": "Complete repeated 30-dataset matrix under corrected memory bounds; original failed attempt retained separately.",
+      "seconds": 4231.59,
+      "source": "mysql-runtime-memory-rerun-process.json",
+      "status": "Passed"
+    },
     "runtime-postgres": {
       "returncode": 0,
       "seconds": 2365.07,
@@ -2147,6 +2170,14 @@
       "seconds": 1955.05,
       "status": "Passed"
     }
+  },
+  "frozen_expectations_unchanged": {
+    "scope": "The MySQL rerun used the same frozen live-feed expectations as the original matrix; no repinning.",
+    "sha256": {
+      "client-final-mysql-frozen-live-records.json": "f6b3bccb4e5522e94268bf6f77ae3abef1badd589670c1d49d12ccfd660d9dfd",
+      "client-memory-mysql-frozen-live-records.json": "f6b3bccb4e5522e94268bf6f77ae3abef1badd589670c1d49d12ccfd660d9dfd"
+    },
+    "status": "Passed"
   },
   "limitations": [
     "Native Oracle connection/load checks await explicit Free Use Terms acceptance; binary probes pass and the gate is retained.",
@@ -2409,7 +2440,26 @@
     "status": "Failed"
   },
   "mysql_memory_rerun": {
-    "process": null,
+    "final_cgroup_sample": {
+      "memory.current": "568721408",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
+      "memory.max": "2147483648",
+      "memory.peak": "1177419776",
+      "seconds": 4226.54
+    },
+    "peak_instrumented_bytes": 789974981,
+    "process": {
+      "captured_at": "2026-11-17T07:38:14.145204+00:00",
+      "container_id_after": "94d26816493e0a92805837c2fcad0fb9c2a6f34f6c69f8e3498ed742163ed990",
+      "container_id_before": "94d26816493e0a92805837c2fcad0fb9c2a6f34f6c69f8e3498ed742163ed990",
+      "memory_limit": 2147483648,
+      "peak_cgroup_bytes": 1177419776,
+      "restart_count": 0,
+      "returncode": 0,
+      "scope": "All 30 MySQL datasets, every repository stage; frozen row/checksum expectations retained; 2 GiB container, explicit 1 GiB TempTable, unchanged 256 MiB pool.",
+      "seconds": 4231.59,
+      "status": "Passed"
+    },
     "results": {
       "mysql:adventureworks": {
         "failures": 0,
@@ -2431,6 +2481,11 @@
         "seconds": 78.06,
         "status": "Passed"
       },
+      "mysql:chicago_crimes_full": {
+        "failures": 0,
+        "seconds": 114.13,
+        "status": "Passed"
+      },
       "mysql:chinook": {
         "failures": 0,
         "seconds": 7.81,
@@ -2439,6 +2494,11 @@
       "mysql:contoso": {
         "failures": 0,
         "seconds": 15.77,
+        "status": "Passed"
+      },
+      "mysql:contoso_10m": {
+        "failures": 0,
+        "seconds": 2021.21,
         "status": "Passed"
       },
       "mysql:contoso_1m": {
@@ -2464,6 +2524,11 @@
       "mysql:enron": {
         "failures": 0,
         "seconds": 6.0,
+        "status": "Passed"
+      },
+      "mysql:enron_full": {
+        "failures": 0,
+        "seconds": 392.07,
         "status": "Passed"
       },
       "mysql:jaffle_shop": {
@@ -2535,6 +2600,16 @@
         "failures": 0,
         "seconds": 49.29,
         "status": "Passed"
+      },
+      "mysql:wikipedia_simple": {
+        "failures": 0,
+        "seconds": 18.45,
+        "status": "Passed"
+      },
+      "mysql:wikipedia_simple_full": {
+        "failures": 0,
+        "seconds": 345.08,
+        "status": "Passed"
       }
     }
   },
@@ -2546,7 +2621,7 @@
       "sql-megasamples-loader:dev": "sha256:7d6d42e09d5502dbcfea4fb40adcb2b1897fd9e7f20c74cfcd5c676e9520b26a",
       "sql-megasamples-oracle-verifier:23.26.3-clients-23.26.4": "sha256:55bb975cb67f8dab02442bf57db164704e5fdf8b6e1bde86a262183f32002370"
     },
-    "captured_at": "2026-11-17T05:29:15.932987+00:00",
+    "captured_at": "2026-11-17T07:40:19.319869+00:00",
     "programs": {
       "adminer:php:mysqlnd": {
         "output": "mysqlnd\n\nmysqlnd => enabled\nVersion => mysqlnd 8.4.27\nCompression => supported\ncore SSL => supported\nextended SSL => supported\nCommand buffer size => 4096\nRead buffer size => 32768\nRead timeout => 86400\nCollecting statistics => Yes\nCollecting memory statistics => No\nTracing => n/a\nLoaded plugins => mysqlnd,debug_trace,auth_plugin_mysql_native_password,auth_plugin_mysql_clear_password,auth_plugin_caching_sha2_password,auth_plugin_sha256_password\nAPI Extensions => mysqli",
@@ -2744,7 +2819,7 @@
         "temporary_account_removed": true
       }
     },
-    "read_at": "2026-11-17T06:27:42.449888+00:00",
+    "read_at": "2026-11-17T07:40:17.830391+00:00",
     "results": {
       "mysql": {
         "admin_writes": true,
@@ -2784,7 +2859,7 @@
   "releases": {
     "baseline": {
       "commit": "7b3d5a35966d82abd69598ed795b9610ddf27c35",
-      "read_at": "2026-11-17T05:07:27.499016+00:00",
+      "read_at": "2026-11-17T07:22:49.427810+00:00",
       "source": "https://github.com/Reliable-Collaboration/sql-megasamples/tree/7b3d5a35966d82abd69598ed795b9610ddf27c35"
     },
     "consoles": {
@@ -2994,9 +3069,16 @@
       },
       "postgres": {
         "before_client_followup": "18.7",
-        "current_read_at": "2026-11-17T02:40:50.644194+00:00",
-        "current_release_source": "https://www.postgresql.org/docs/release/18.7/",
+        "current_read_at": "2026-11-17T07:16:14+00:00",
+        "current_release_source": "https://www.postgresql.org/support/versioning/",
         "image": "docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc",
+        "latest_stable_verification": {
+          "latest_stable": "18.7",
+          "next_major_published": "19 RC 2",
+          "read_at": "2026-11-17T07:16:14+00:00",
+          "selection": "Release candidate is not selected; latest stable clients remain 18.7, matching the target server.",
+          "source": "https://www.postgresql.org/support/versioning/"
+        },
         "programs": [
           "psql",
           "pg_dump",
@@ -3473,9 +3555,9 @@
       "status": "Passed"
     },
     "mysql:chicago_crimes_full": {
-      "failures": 1,
-      "seconds": 0.08,
-      "status": "Failed"
+      "failures": 0,
+      "seconds": 114.13,
+      "status": "Passed"
     },
     "mysql:chinook": {
       "failures": 0,
@@ -3488,9 +3570,9 @@
       "status": "Passed"
     },
     "mysql:contoso_10m": {
-      "failures": 1,
-      "seconds": 1806.86,
-      "status": "Failed"
+      "failures": 0,
+      "seconds": 2021.21,
+      "status": "Passed"
     },
     "mysql:contoso_1m": {
       "failures": 0,
@@ -3519,7 +3601,7 @@
     },
     "mysql:enron_full": {
       "failures": 0,
-      "seconds": 300.26,
+      "seconds": 392.07,
       "status": "Passed"
     },
     "mysql:jaffle_shop": {
@@ -3593,14 +3675,14 @@
       "status": "Passed"
     },
     "mysql:wikipedia_simple": {
-      "failures": 1,
-      "seconds": 0.27,
-      "status": "Failed"
+      "failures": 0,
+      "seconds": 18.45,
+      "status": "Passed"
     },
     "mysql:wikipedia_simple_full": {
-      "failures": 1,
-      "seconds": 0.07,
-      "status": "Failed"
+      "failures": 0,
+      "seconds": 345.08,
+      "status": "Passed"
     },
     "postgres:adventureworks": {
       "failures": 0,
@@ -3906,7 +3988,7 @@
   "runtime_state": {
     "all_eight_application_services_running": true,
     "all_published_ports_loopback_only": true,
-    "captured_at": "2026-11-17T05:44:18.167913+00:00",
+    "captured_at": "2026-11-17T07:40:14.460428+00:00",
     "compose_project": "megasamples-upgrade",
     "containers": [
       {
@@ -4034,24 +4116,6 @@
       },
       {
         "compose_project": "megasamples-upgrade",
-        "id": "294abd0cf1de11ee9989a409ff548733f52419b0c165dd2426d558fd38b10b2e",
-        "image_id": "77813c185ab5c5a07f0606e5f7291796a1d962d65f80d597b33d3994da696662",
-        "name": "megasamples-mysql",
-        "published_ports": {
-          "3306/tcp": [
-            {
-              "HostIp": "127.0.0.1",
-              "HostPort": "13306"
-            }
-          ],
-          "33060/tcp": null
-        },
-        "role": null,
-        "started_at": "2026-11-16T21:30:33.26146444-06:00",
-        "status": "running"
-      },
-      {
-        "compose_project": "megasamples-upgrade",
         "id": "9bfc9f6af5467cddd8dc71188f4234b099aa2b60cd68d69cacba860c65a44314",
         "image_id": "6fbdfbdf91577dab053028f28352c3cc09d734e3ab9989d868315f172d8bd0b6",
         "name": "megasamples-postgres",
@@ -4082,6 +4146,24 @@
         },
         "role": null,
         "started_at": "2026-11-16T23:27:53.328563084-06:00",
+        "status": "running"
+      },
+      {
+        "compose_project": "megasamples-upgrade",
+        "id": "94d26816493e0a92805837c2fcad0fb9c2a6f34f6c69f8e3498ed742163ed990",
+        "image_id": "77813c185ab5c5a07f0606e5f7291796a1d962d65f80d597b33d3994da696662",
+        "name": "megasamples-mysql",
+        "published_ports": {
+          "3306/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "13306"
+            }
+          ],
+          "33060/tcp": null
+        },
+        "role": null,
+        "started_at": "2026-11-17T00:20:48.38334716-06:00",
         "status": "running"
       }
     ],

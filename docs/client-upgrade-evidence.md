@@ -1,14 +1,14 @@
 # Client upgrade evidence
 
-Read/capture time: 2026-11-17T06:52:44.154292+00:00. Branch `upgrade/latest-stable-clients` starts from completed engine branch commit `7b3d5a35966d82abd69598ed795b9610ddf27c35`. Engine PR [9](https://github.com/Reliable-Collaboration/sql-megasamples/pull/9) was made ready and merged with merge commit `b80583cd28b02f144c1f19ddad68076c636fef4f`. Client PR [10](https://github.com/Reliable-Collaboration/sql-megasamples/pull/10) remains open while acceptance completes. No live deployment action was executed.
+Read/capture time: 2026-11-17T07:48:21.245982+00:00. Branch `upgrade/latest-stable-clients` starts from completed engine branch commit `7b3d5a35966d82abd69598ed795b9610ddf27c35`. Engine PR [9](https://github.com/Reliable-Collaboration/sql-megasamples/pull/9) was made ready and merged with merge commit `b80583cd28b02f144c1f19ddad68076c636fef4f`. Client PR [10](https://github.com/Reliable-Collaboration/sql-megasamples/pull/10) remains draft pending the Oracle native-verification license decision. The configured three-engine matrix is complete; the optional Oracle database has not been started. No live deployment action was executed.
 
-The baseline already included the latest console tags and native engine clients from PR 9. Those exact vendor pins are retained. This follow-up updates the loader binaries/library, configured embedded console drivers, every resolved Python dependency, reproducible endpoint tooling, and optional Oracle query/load clients. Version/support statements below use primary publisher pages or registries, with exact read times in `clients.lock.yaml` and the receipt. Baseline observations come from the isolated images and the [base tree](https://github.com/Reliable-Collaboration/sql-megasamples/tree/7b3d5a35966d82abd69598ed795b9610ddf27c35), read 2026-11-17T05:07:27.499016+00:00.
+The baseline already included the latest console tags and native engine clients from PR 9. Those exact vendor pins are retained. This follow-up updates the loader binaries/library, configured embedded console drivers, every resolved Python dependency, reproducible endpoint tooling, and optional Oracle query/load clients. Version/support statements below use primary publisher pages or registries, with exact read times in `clients.lock.yaml` and the receipt. Baseline observations come from the isolated images and the [base tree](https://github.com/Reliable-Collaboration/sql-megasamples/tree/7b3d5a35966d82abd69598ed795b9610ddf27c35), read 2026-11-17T07:22:49.427810+00:00.
 
 ## Client inventory
 
 | Client | Before this follow-up | Selected | Primary source / read time UTC |
 |---|---|---|---|
-| psql, pg_dump, pg_dumpall, pg_restore, pg_isready | 18.7 | 18.7 | [Publisher source](https://www.postgresql.org/docs/release/18.7/), 2026-11-17T02:40:50.644194+00:00 |
+| psql, pg_dump, pg_dumpall, pg_restore, pg_isready | 18.7 | 18.7 | [Publisher source](https://www.postgresql.org/support/versioning/), 2026-11-17T07:16:14+00:00 |
 | mysql, mysqladmin, mysqldump, mysqlsh | 26.10.0 | 26.10.0 | [Publisher source](https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html), 2026-11-17T02:40:51.624426+00:00 |
 | sqlite3 | 3.54.1 | 3.54.1 | [Publisher source](https://sqlite.org/download.html), 2026-11-16T18:58:36.461111+00:00 |
 | mysql, mysqladmin, mysqldump | MariaDB 11.8.6 (unversioned Debian default-mysql-client) | 26.10.0 | [Publisher source](https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html), 2026-11-17T02:40:51.624426+00:00 |
@@ -109,8 +109,8 @@ phpMyAdmin's [requirements](https://docs.phpmyadmin.net/en/release_5_2_3/require
 | Every configured pair selector | **Passed**: grouped invocation; physical databases deduplicated by the repository planner; all marker objects removed, SQLite bytes identical |
 | Restored mysql foreign keys | **Passed**: exact definitions match pristine image |
 | Restored postgres foreign keys | **Passed**: exact definitions match pristine image |
-| Running-stack repository verification | **Failed**: 86/90 completed combinations; full configured matrix has 90 |
-| Full MySQL rerun after memory correction | **Not run**: complete rerun uses the same frozen expectations; see receipt for current completion and native cgroup peak/restart observations |
+| Running-stack repository verification | **Passed**: 90/90 completed combinations; full configured matrix has 90 |
+| Full MySQL rerun after memory correction | **Passed**: complete rerun uses the same frozen expectations; see receipt for current completion and native cgroup peak/restart observations |
 | Playwright screenshot path | **Passed**: see receipt for exact scope |
 | SQLGlot generated-trigger equivalence | **Passed**: see receipt for exact scope |
 | Native client version capture | **Passed**: see receipt for exact scope |
@@ -124,7 +124,7 @@ phpMyAdmin's [requirements](https://docs.phpmyadmin.net/en/release_5_2_3/require
 | DataIntent, live cutover/rollback, Docker/BuildKit | **Not run** |
 | Other architectures | **Not run** for general stack; optional x86-64 Oracle client recipe **Unsupported** elsewhere |
 
-The complete engine-branch build/port and image checks are retained in its receipt, including all 90 available combinations and the measured PostgreSQL startup correction. This follow-up does not rebuild unchanged engine images or re-pin any dataset: runtime native clients already come from those current engine distributions. It exercises the updated client paths and repeats the running-data verification after resets. Acceptance is still ongoing wherever a current result is absent; no absent result is counted as Passed.
+The complete engine-branch build/port and image checks are retained in its receipt, including all 90 available combinations and the measured PostgreSQL startup correction. This follow-up does not rebuild unchanged engine images or re-pin any dataset: runtime native clients already come from those current engine distributions. It exercises the updated client paths and repeats the running-data verification after resets. The final configured matrix passes all 90 combinations after the MySQL memory correction. Oracle native connection/load verification remains Not run pending explicit license acceptance; this is why client PR 10 is still a draft. No absent result is counted as Passed.
 
 ## Failures, fixes and retained evidence
 
@@ -147,4 +147,4 @@ Raw logs, publisher captures and per-dataset results live under build/client-evi
 
 The live runbook now covers client/consoles preparation, exact loader/console/native-client rollback images, original generated console files and credentials, original Python environment, an immutable rollback branch, a separate tools container, all database/UI verifications, and restoring only the originally running service set. All shell blocks and embedded rollback Python are syntax-checked. No live runbook command was executed.
 
-The private rehearsal uses settings in megasamples.yaml and the mode-0600 .env in this clone, the supplied env.sh/socket/store, project megasamples-upgrade, and 127.0.0.1 only: MySQL 13306, PostgreSQL 15432, landing 18080, phpMyAdmin 18081, Adminer 18082, DbGate 18083, CloudBeaver 18084. The current isolated native health helper is recorded in build/client-evidence/health-probe-runner.pid and build/upgrade-evidence/healthcheck-runner-state.json. Final native store listings and the read-only live baseline comparison are recorded when complete. No proxy service is changed.
+The private rehearsal uses settings in megasamples.yaml and the mode-0600 .env in this clone, the supplied env.sh/socket/store, project megasamples-upgrade, and 127.0.0.1 only: MySQL 13306, PostgreSQL 15432, landing 18080, phpMyAdmin 18081, Adminer 18082, DbGate 18083, CloudBeaver 18084. The current isolated native health helper is recorded in build/client-evidence/health-probe-runner.pid and build/upgrade-evidence/healthcheck-runner-state.json. The final native store listing contains only the 12 expected isolated containers, including all eight running application services. The live IDs, image IDs and nanosecond start times match the supplied baseline; isolated IDs are disjoint and all host port bindings are loopback-only. No proxy service is changed.

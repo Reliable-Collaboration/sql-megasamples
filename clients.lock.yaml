@@ -2,7 +2,7 @@
 baseline:
   commit: 7b3d5a35966d82abd69598ed795b9610ddf27c35
   source: https://github.com/Reliable-Collaboration/sql-megasamples/tree/7b3d5a35966d82abd69598ed795b9610ddf27c35
-  read_at: '2026-11-17T05:07:27.499016+00:00'
+  read_at: '2026-11-17T07:22:49.427810+00:00'
 python:
   backports-zstd:
     before: 1.7.0
@@ -338,8 +338,14 @@ native_clients:
     image: docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
     release_source: https://www.postgresql.org/docs/release/18.7/
     read_at: '2026-11-16T18:58:36.214843+00:00'
-    current_release_source: https://www.postgresql.org/docs/release/18.7/
-    current_read_at: '2026-11-17T02:40:50.644194+00:00'
+    current_release_source: https://www.postgresql.org/support/versioning/
+    current_read_at: '2026-11-17T07:16:14+00:00'
+    latest_stable_verification:
+      source: https://www.postgresql.org/support/versioning/
+      read_at: '2026-11-17T07:16:14+00:00'
+      latest_stable: '18.7'
+      next_major_published: 19 RC 2
+      selection: Release candidate is not selected; latest stable clients remain 18.7, matching the target server.
   mysql:
     programs:
     - mysql
