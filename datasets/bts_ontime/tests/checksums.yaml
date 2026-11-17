@@ -13,9 +13,9 @@ l_airport:
   - code
   - description
   excluded: []
-  n: 6929
-  s: 2861332761622831348
-  x: 13169048756575951982
+  n: 6942
+  s: 3388410830110865038
+  x: 17097811671866272680
 l_unique_carriers:
   columns:
   - code

@@ -86,7 +86,11 @@ def main(argv=None):
         sys.exit(f"could not start {IMAGE}: {run.stderr}")
     try:
         ready = None
-        while time.time() - started < BUDGET_SECONDS * 2:
+        # Provisioning may consume the polling window before the first query. Still
+        # check the shipped data; the original end-to-end readiness assertion below
+        # fails any late start. Give the server a finite probe window after run returns.
+        probe_deadline = time.time() + BUDGET_SECONDS
+        while time.time() < probe_deadline:
             if q("SELECT 1").returncode == 0:
                 ready = time.time() - started
                 break

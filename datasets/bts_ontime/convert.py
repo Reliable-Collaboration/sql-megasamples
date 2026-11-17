@@ -18,8 +18,8 @@ converter:
 * Integral quantities are written as decimals (`Cancelled` = `0.00`, `Distance` = `2475.00`), so
   every numeric column is cast explicitly. All 31 numeric columns were checked for a fractional
   part first: there is none, so the narrow integer types are lossless.
-* `L_AIRPORT.csv` is **not UTF-8**. One byte in 319,686 is `0xCD`, the `Í` of "Scarlett MartÍnez
-  International" in Panama, which makes the file Latin-1 and makes a UTF-8 read fail outright. The
+* `L_AIRPORT.csv` is **not UTF-8**. The refreshed 320,236-byte snapshot still has one `0xCD` byte,
+  the `Í` of "Scarlett MartÍnez International" in Panama, which makes the file Latin-1 and makes a UTF-8 read fail outright. The
   record inferred these lookups were ASCII-transliterated and asked for a re-check; they are not.
 
 Record: knowledge/datasets/bts-ontime.md

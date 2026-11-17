@@ -1386,8 +1386,10 @@ artifacts:
     dataset: bts_ontime
     url: https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_NVecbeg
     mirrors: []
-    sha256: "7be383b4eb599a861aa19208e7fae9a97824abc094078e73ad05b118c0fc2405"
-    size_bytes: 319686
+    # Owner-authorized refresh, 2026-11-17; upstream read 2026-11-17T08:12:49.635146Z.
+    # Current upstream served valid CSV; preferred over the older archive candidates.
+    sha256: "7a3c2a0bbcdc6951c2ae6eefe1e5739cfeb86f5016006cec49e146bb54b9466d"
+    size_bytes: 320236
     license: us-government-public-domain
     ipv4_first: false
   - id: bts_ontime/L_AIRLINE_ID.csv

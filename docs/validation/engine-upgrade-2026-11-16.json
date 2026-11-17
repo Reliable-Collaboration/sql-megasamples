@@ -58,9 +58,14 @@
       "status": "Passed"
     },
     "mysql:bts_ontime": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+        "status": "Not run"
+      },
+      "reason": "Follow-up build, runtime, reset and console validation Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     "mysql:chicago_crimes": {
       "log": "build/upgrade-evidence/final-mysql-chicago_crimes.log",
@@ -207,14 +212,24 @@
       "status": "Passed"
     },
     "mysql:wideworldimporters": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+        "status": "Not run"
+      },
+      "reason": "Follow-up build, runtime, reset and console validation Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     "mysql:wideworldimporters_dw": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+        "status": "Not run"
+      },
+      "reason": "Follow-up build, runtime, reset and console validation Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     "mysql:wikipedia_simple": {
       "log": "build/upgrade-evidence/final-mysql-wikipedia_simple.log",
@@ -247,9 +262,14 @@
       "status": "Passed"
     },
     "postgres:bts_ontime": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+        "status": "Not run"
+      },
+      "reason": "Repository generated-clock expression guard: CAST/LEFT/MAKETIME/RIGHT are not translated.",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Unsupported"
     },
     "postgres:chicago_crimes": {
       "log": "build/upgrade-evidence/final-postgres-chicago_crimes.log",
@@ -400,14 +420,24 @@
       "status": "Passed"
     },
     "postgres:wideworldimporters": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+        "status": "Not run"
+      },
+      "reason": "Repository generated-column guard rejects application_people.searchname (CONCAT).",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Unsupported"
     },
     "postgres:wideworldimporters_dw": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+        "status": "Not run"
+      },
+      "reason": "Follow-up build, runtime, reset and console validation Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     "postgres:wikipedia_simple": {
       "log": "build/upgrade-evidence/final-postgres-wikipedia_simple.log",
@@ -440,9 +470,14 @@
       "status": "Passed"
     },
     "sqlite:bts_ontime": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+        "status": "Not run"
+      },
+      "reason": "Repository generated-clock expression guard: CAST/LEFT/MAKETIME/RIGHT are not translated.",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Unsupported"
     },
     "sqlite:chicago_crimes": {
       "log": "build/upgrade-evidence/final-sqlite-chicago_crimes.log",
@@ -589,14 +624,24 @@
       "status": "Passed"
     },
     "sqlite:wideworldimporters": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+        "status": "Not run"
+      },
+      "reason": "Repository generated-column guard rejects application_people.searchname (CONCAT).",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Unsupported"
     },
     "sqlite:wideworldimporters_dw": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+        "status": "Not run"
+      },
+      "reason": "Follow-up build, runtime, reset and console validation Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     "sqlite:wikipedia_simple": {
       "log": "build/upgrade-evidence/final-sqlite-wikipedia_simple.log",
@@ -723,6 +768,19 @@
       "running": true,
       "started_at": "2026-11-17T00:55:43.289173304Z"
     }
+  },
+  "dataset_follow_up": {
+    "historical_note": "Untouched fields describe the original run, including its original tool versions, timing, hashes and captured artifacts. Current nine-combination dispositions and client merge supersede only the named original deferrals.",
+    "image_gate": {
+      "mysql": "Failed",
+      "postgres": "Passed",
+      "sqlite": "Failed"
+    },
+    "oracle": "Not run, pending the owner's decision on Oracle's Free Use Terms",
+    "overall_validation": "Failed",
+    "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+    "recorded_at": "2026-11-17T10:58:42.308486+00:00",
+    "summary": "Five Passed, four Unsupported by repository generated-expression guard"
   },
   "dataset_snapshot_build_id": "41773f72f36ada673c87fa71b3a4ed3e84e90d17",
   "evidence_sha256": {
@@ -1033,69 +1091,143 @@
       "status": "Unsupported"
     }
   ],
+  "owner_deferrals_original_snapshot": [
+    {
+      "dataset": "bts_ontime",
+      "disposition": "pending the owner's decision",
+      "engine": "mysql",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters",
+      "disposition": "pending the owner's decision",
+      "engine": "mysql",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters_dw",
+      "disposition": "pending the owner's decision",
+      "engine": "mysql",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "bts_ontime",
+      "disposition": "pending the owner's decision",
+      "engine": "postgres",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters",
+      "disposition": "pending the owner's decision",
+      "engine": "postgres",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters_dw",
+      "disposition": "pending the owner's decision",
+      "engine": "postgres",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "bts_ontime",
+      "disposition": "pending the owner's decision",
+      "engine": "sqlite",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters",
+      "disposition": "pending the owner's decision",
+      "engine": "sqlite",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters_dw",
+      "disposition": "pending the owner's decision",
+      "engine": "sqlite",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    }
+  ],
   "owner_deferred_combinations": [
     {
       "dataset": "bts_ontime",
-      "disposition": "pending the owner's decision",
+      "disposition": "Owner authorized on 2026-11-17; follow-up complete",
       "engine": "mysql",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
-      "status": "Not run"
+      "reason": "All supported build/runtime/reset/console checks Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     {
       "dataset": "wideworldimporters",
-      "disposition": "pending the owner's decision",
+      "disposition": "Owner authorized on 2026-11-17; follow-up complete",
       "engine": "mysql",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "reason": "All supported build/runtime/reset/console checks Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     {
       "dataset": "wideworldimporters_dw",
-      "disposition": "pending the owner's decision",
+      "disposition": "Owner authorized on 2026-11-17; follow-up complete",
       "engine": "mysql",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "reason": "All supported build/runtime/reset/console checks Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     {
       "dataset": "bts_ontime",
-      "disposition": "pending the owner's decision",
+      "disposition": "Owner authorized on 2026-11-17; follow-up complete",
       "engine": "postgres",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
-      "status": "Not run"
+      "reason": "Repository generated-clock expression guard: CAST/LEFT/MAKETIME/RIGHT are not translated.",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Unsupported"
     },
     {
       "dataset": "wideworldimporters",
-      "disposition": "pending the owner's decision",
+      "disposition": "Owner authorized on 2026-11-17; follow-up complete",
       "engine": "postgres",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "reason": "Repository generated-column guard rejects application_people.searchname (CONCAT).",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Unsupported"
     },
     {
       "dataset": "wideworldimporters_dw",
-      "disposition": "pending the owner's decision",
+      "disposition": "Owner authorized on 2026-11-17; follow-up complete",
       "engine": "postgres",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "reason": "All supported build/runtime/reset/console checks Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     {
       "dataset": "bts_ontime",
-      "disposition": "pending the owner's decision",
+      "disposition": "Owner authorized on 2026-11-17; follow-up complete",
       "engine": "sqlite",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
-      "status": "Not run"
+      "reason": "Repository generated-clock expression guard: CAST/LEFT/MAKETIME/RIGHT are not translated.",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Unsupported"
     },
     {
       "dataset": "wideworldimporters",
-      "disposition": "pending the owner's decision",
+      "disposition": "Owner authorized on 2026-11-17; follow-up complete",
       "engine": "sqlite",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "reason": "Repository generated-column guard rejects application_people.searchname (CONCAT).",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Unsupported"
     },
     {
       "dataset": "wideworldimporters_dw",
-      "disposition": "pending the owner's decision",
+      "disposition": "Owner authorized on 2026-11-17; follow-up complete",
       "engine": "sqlite",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "reason": "All supported build/runtime/reset/console checks Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     }
   ],
   "packaging_source_commits": {
@@ -1358,9 +1490,14 @@
       "status": "Passed"
     },
     "mysql:bts_ontime": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+        "status": "Not run"
+      },
+      "reason": "Follow-up build, runtime, reset and console validation Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     "mysql:chicago_crimes": {
       "failures": 0,
@@ -1488,14 +1625,24 @@
       "status": "Passed"
     },
     "mysql:wideworldimporters": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+        "status": "Not run"
+      },
+      "reason": "Follow-up build, runtime, reset and console validation Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     "mysql:wideworldimporters_dw": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+        "status": "Not run"
+      },
+      "reason": "Follow-up build, runtime, reset and console validation Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     "mysql:wikipedia_simple": {
       "failures": 0,
@@ -1523,9 +1670,14 @@
       "status": "Passed"
     },
     "postgres:bts_ontime": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+        "status": "Not run"
+      },
+      "reason": "Repository generated-clock expression guard: CAST/LEFT/MAKETIME/RIGHT are not translated.",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Unsupported"
     },
     "postgres:chicago_crimes": {
       "failures": 0,
@@ -1653,14 +1805,24 @@
       "status": "Passed"
     },
     "postgres:wideworldimporters": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+        "status": "Not run"
+      },
+      "reason": "Repository generated-column guard rejects application_people.searchname (CONCAT).",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Unsupported"
     },
     "postgres:wideworldimporters_dw": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+        "status": "Not run"
+      },
+      "reason": "Follow-up build, runtime, reset and console validation Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     "postgres:wikipedia_simple": {
       "failures": 0,
@@ -1688,9 +1850,14 @@
       "status": "Passed"
     },
     "sqlite:bts_ontime": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+        "status": "Not run"
+      },
+      "reason": "Repository generated-clock expression guard: CAST/LEFT/MAKETIME/RIGHT are not translated.",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Unsupported"
     },
     "sqlite:chicago_crimes": {
       "failures": 0,
@@ -1818,14 +1985,24 @@
       "status": "Passed"
     },
     "sqlite:wideworldimporters": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+        "status": "Not run"
+      },
+      "reason": "Repository generated-column guard rejects application_people.searchname (CONCAT).",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Unsupported"
     },
     "sqlite:wideworldimporters_dw": {
-      "disposition": "pending the owner's decision",
-      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
-      "status": "Not run"
+      "previous_observation": {
+        "disposition": "pending the owner's decision",
+        "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+        "status": "Not run"
+      },
+      "reason": "Follow-up build, runtime, reset and console validation Passed",
+      "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+      "status": "Passed"
     },
     "sqlite:wikipedia_simple": {
       "failures": 0,

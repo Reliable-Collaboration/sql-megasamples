@@ -30,6 +30,9 @@ sources:
 - resource: /sources/transtats-download-lookup-tables.md
   title: Lookup-table endpoints
   accessed: "2026-09-02"
+- resource: https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_NVecbeg
+  title: Owner-approved airport lookup refresh
+  accessed: "2026-11-17"
 stale_after: "2027-03-01"
 ---
 
@@ -42,7 +45,7 @@ stale_after: "2027-03-01"
   The month is **not** zero-padded and the parentheses of the table name must be **removed from the URL** (`..._(1987_present)_..." returns 404`). The CSV *inside* the zip does keep the parentheses in its member name. This settles the frequently reported "TranStats blocks non-browser requests" problem: the interactive `DL_SelectFields.aspx` form does need a session, the `PREZIP` path does not.
 * **Recommended pin - January 2025:** `Content-Length: 27,108,664`, `Last-Modified: Thu, 08 May 2025 14:59:27 GMT`. Members: `On_Time_Reporting_Carrier_On_Time_Performance_(1987_present)_2025_1.csv` (**243,177,378 bytes uncompressed**, deflate) and `readme.html` (12,152 bytes, the record layout).
   Recent months for comparison: 2026-05 = 31,716,693 B; 2026-06 = 31,606,062 B (latest, published 2026-08-12).
-* **Lookup tables** (verified 200 + `Content-Disposition`): `https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=<ROT13 of table name>` - `Y_NVecbeg` -> `L_AIRPORT.csv` (319,686 B), `Y_NVeYVaR_VQ` -> `L_AIRLINE_ID.csv` (66,730 B), `Y_haVdhR_PNeeVRef` -> `L_UNIQUE_CARRIERS.csv` (54,217 B).
+* **Lookup tables** (verified 200 + `Content-Disposition`): `https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=<ROT13 of table name>` - `Y_NVecbeg` -> `L_AIRPORT.csv` (320,236 B, refreshed 2026-11-17), `Y_NVeYVaR_VQ` -> `L_AIRLINE_ID.csv` (66,730 B), `Y_haVdhR_PNeeVRef` -> `L_UNIQUE_CARRIERS.csv` (54,217 B).
 * **Auth / click-through:** none for either path.
 * **Checksums:** BTS publishes none. Record `sha256` at fetch time.
 
@@ -59,6 +62,26 @@ The prezipped CSV *is* the friendly form - no database product to stand up, no A
 [DuckDB reader -> typed CSV -> `util.importTable`](/decisions/large-tabular-conversion-path.md), with the lookups written directly through the DuckDB MySQL extension.
 
 **Downloader design.** Take a list of `(year, month)` pairs; build the URL with the non-padded month; `curl --fail --location --retry 5 --retry-all-errors --retry-delay 5 --connect-timeout 20 -C -`; **add `--ipv4`** - TranStats has a long history of stalling on IPv6-first resolvers, and forcing IPv4 is the cheapest mitigation (**Inferred**, but harmless). Verify the ZIP central directory before extracting, extract only the `.csv` member, and record the `sha256` of the zip plus the uncompressed member size.
+
+# Owner-approved airport refresh (2026-11-17)
+
+The owner authorized a new airport pin. The current upstream CSV was served at the original
+[lookup URL](https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_NVecbeg), read
+**2026-11-17T08:12:49.635146Z**: **320,236 bytes**, SHA-256
+`7a3c2a0bbcdc6951c2ae6eefe1e5739cfeb86f5016006cec49e146bb54b9466d`.
+It was preferred to older archive candidates because the owner requested current upstream when
+available. It has **6,942 unique airport keys**. MySQL loaded every key and description, with the
+existing tab-to-space normalization affecting code `2F5`. Every origin and destination in all
+539,747 flight rows joins (329 distinct codes on each side). The file still has one cp1252 `0xCD`
+byte. The flight and carrier pins and expectations remain unchanged; the licence remains
+`us-government-public-domain`. The old 319,686-byte snapshot and 6,929-row expectations below
+are historical measurements. Current exact expectations live in `datasets/bts_ontime/tests/`.
+
+The attempted PostgreSQL and SQLite builds are **Unsupported** by the repository's existing
+`megasamples/port/ddl.py:column_def` rule: generated clock columns require untranslated expressions
+(`cast`, `left`, `maketime`, `right`); the porter raises `UnportableColumn` before loading them.
+This is the repository's present capability boundary, not a claim that either engine could never
+represent the data. See `docs/dataset-upgrade-evidence.md` for the command evidence.
 
 # Built and measured (2026-09-03, task X-03)
 Every URL in `# Source artifact` works exactly as recorded — the `PREZIP` path with a non-padded

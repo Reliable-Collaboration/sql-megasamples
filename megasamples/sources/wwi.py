@@ -100,13 +100,17 @@ def read_rows(path, ncols, name):
             if not chunk:
                 break
             buf += chunk
+            start = 0
             while True:
-                i = buf.find(ROW)
+                i = buf.find(ROW, start)
                 if i < 0:
                     break
-                yield split_row(buf[:i], ncols, name)
-                buf = buf[i + len(ROW):]
+                yield split_row(buf[start:i], ncols, name)
+                start = i + len(ROW)
                 pending += 1
+            # Keep only the unfinished record, once per chunk. Slicing the suffix after
+            # every row copied terabytes while reading the WWI temperature-history table.
+            buf = buf[start:]
     if buf:
         yield split_row(buf, ncols, name)
 

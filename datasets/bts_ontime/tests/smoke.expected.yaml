@@ -11,6 +11,6 @@ diversion_blocks_are_nearly_empty: "1252\t23\t0\t0\t0\t1166"
 latin1_airport_name: "RIH\tRio Hato, Panama: Scarlett MartÍnez International"
 leading_zeros_survive: "0053\t00:50:00\t04\t310\n0055\t00:48:00\t06\t356\n0059\t01:25:00\t\
   49\t499"
-lookup_sizes: "6929\t1778\t1778"
+lookup_sizes: "6942\t1778\t1778"
 segment_tuple_is_unique_this_month: '0'
 totals_match_the_source_csv: "539747\t455119105\t7426076\t7381044\t16312\t1166"

@@ -11,3 +11,19 @@ artifacts:
 stage: {input: dir}
 load:
   - bts_ontime.sql
+
+# Measured dispositions; see the dated receipt for phases and capability limits.
+validation:
+  date: '2026-11-17'
+  evidence: docs/dataset-upgrade-evidence.md
+  engines:
+    mysql:
+      status: Passed
+    postgres:
+      status: Unsupported
+      reason: 'Repository generated-clock expression guard: CAST/LEFT/MAKETIME/RIGHT
+        are not translated.'
+    sqlite:
+      status: Unsupported
+      reason: 'Repository generated-clock expression guard: CAST/LEFT/MAKETIME/RIGHT
+        are not translated.'

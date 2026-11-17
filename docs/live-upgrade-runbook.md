@@ -1,8 +1,13 @@
 # Live engines, clients and consoles upgrade (coordinator only)
 
-This procedure is written for the coordinator. It has **not been executed** against the live deployment. Do not execute until both the engine and client PRs have merged, their evidence covers the configured datasets, and the DataIntent suites pass against the isolated endpoints. Keep the two existing socket-proxy services unchanged. BTS and both WideWorldImporters exports remain outside this upgrade, pending the owner's decisions; do not add them to the live configuration or accept an EULA through this procedure.
+This procedure is written for the coordinator. It has **not been executed** against the live deployment. Do not execute until the engine, client and owner-approved dataset PRs have merged, their evidence covers the configured datasets, and the DataIntent suites pass against the isolated endpoints. Keep the two existing socket-proxy services unchanged. The owner authorized the BTS refresh and accepted the SQL Server Developer EULA for the isolated WWI export on 2026-11-17. Loading these three datasets is part of this upgrade, on the engines that passed the dataset receipt. Oracle native verification remains **Not run, pending the owner's decision on Oracle's Free Use Terms**; do not accept those terms.
 
 The isolated build uses `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/env.sh`. The live commands below deliberately use the default rootless Podman store instead. Run them only in the coordinator's live maintenance session. Never run them from the isolated validation shell.
+
+The current dataset candidate has a recorded blocker: MySQL full-image cold readiness was
+49.0 seconds against 30 seconds, and SQLite cold readiness was 38.2 seconds against 30 seconds.
+Both gates are unchanged. Data/reset/console validation Passed, but these failures keep the dataset PR open. Resolve and rerun the gate before merging or live cutover;
+the procedure below does not authorize bypassing it.
 
 ## Prepare while the live servers are still running
 
@@ -55,6 +60,15 @@ chmod 600 "$BACKUP_DIR/containers.json"
 # Record the original running set; a console absent before the upgrade stays absent on rollback.
 docker compose -p sql-megasamples -f compose.yaml ps --services --status running \
   > "$BACKUP_DIR/original-running-services.txt"
+# CloudBeaver keeps its workspace in the container's writable layer in this deployment.
+# Retain it privately before any client-image or catalogue refresh; stop it for a consistent copy.
+if podman container exists megasamples-cloudbeaver; then
+  CB_WAS_RUNNING=$(podman inspect -f '{{.State.Running}}' megasamples-cloudbeaver)
+  if test "$CB_WAS_RUNNING" = true; then podman stop megasamples-cloudbeaver; fi
+  podman cp megasamples-cloudbeaver:/opt/cloudbeaver/workspace "$BACKUP_DIR/cloudbeaver-workspace"
+  chmod 700 "$BACKUP_DIR/cloudbeaver-workspace"
+  if test "$CB_WAS_RUNNING" = true; then podman start megasamples-cloudbeaver; fi
+fi
 : > "$BACKUP_DIR/rollback-image-tags.txt"
 for service in postgres mysql sqlite landing cloudbeaver dbgate adminer phpmyadmin; do
   if podman container exists "megasamples-$service"; then
@@ -86,9 +100,14 @@ podman save -o "$BACKUP_DIR/rollback-images.tar" "$@"
 APPROVED_ENGINE_MERGE=$(gh pr view 9 --repo Reliable-Collaboration/sql-megasamples \
   --json mergeCommit --jq '.mergeCommit.oid // empty')
 test -n "$APPROVED_ENGINE_MERGE"
-# Client PR 10 must be merged; its current draft/open state fails the check below.
+# Client PR 10 must be merged, followed by the owner-approved dataset PR.
 CLIENTS_PR=${CLIENTS_PR:-10}
-APPROVED_UPGRADE_MERGE=$(gh pr view "$CLIENTS_PR" --repo Reliable-Collaboration/sql-megasamples \
+APPROVED_CLIENTS_MERGE=$(gh pr view "$CLIENTS_PR" --repo Reliable-Collaboration/sql-megasamples \
+  --json mergeCommit --jq '.mergeCommit.oid // empty')
+test -n "$APPROVED_CLIENTS_MERGE"
+# Set DATASETS_PR to the merged PR linked in docs/dataset-upgrade-evidence.md.
+: "${DATASETS_PR:?set the reviewed owner-approved dataset PR number}"
+APPROVED_UPGRADE_MERGE=$(gh pr view "$DATASETS_PR" --repo Reliable-Collaboration/sql-megasamples \
   --json mergeCommit --jq '.mergeCommit.oid // empty')
 test -n "$APPROVED_UPGRADE_MERGE"
 git fetch origin
@@ -99,6 +118,7 @@ git switch main
 git merge --ff-only origin/main
 test "$(git rev-parse HEAD)" = "$APPROVED_UPGRADE_MERGE"
 git merge-base --is-ancestor "$APPROVED_ENGINE_MERGE" HEAD
+git merge-base --is-ancestor "$APPROVED_CLIENTS_MERGE" HEAD
 # Keep the existing console page available until make up regenerates it from the same credentials.
 if test -f "$BACKUP_DIR/adminer.generated.html"; then
   cp "$BACKUP_DIR/adminer.generated.html" consoles/landing/adminer.html
@@ -135,11 +155,53 @@ ms_tool make check PY="$MEGASAMPLES_PY"
 ms_tool make loader-image PY="$MEGASAMPLES_PY"
 ms_tool make oracle-client-image PY="$MEGASAMPLES_PY"  # binaries only; no database licence acceptance
 ms_tool "$MEGASAMPLES_PY" -c 'from megasamples import config,console_images; raise SystemExit(console_images.build(config.load()))'
+# Reuse only the pinned sample inputs/exports, never SQL Server image layers or tools.
+APPROVED_INPUTS=/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dataset-upgrade-evidence/approved-inputs.tar
+printf '%s  %s\n' '0a74cd4ee4def587889b373d11f29aa938cce91a0c21f3f501d7b328d62ce596' "$APPROVED_INPUTS" | sha256sum -c -
+mkdir -p downloads
+tar -xf "$APPROVED_INPUTS" -C downloads
+# Add the datasets on each configured engine whose complete receipt Passed; remove Unsupported pairs.
+# All existing ports, credentials, other datasets and consoles stay in the live configuration.
+ms_tool "$MEGASAMPLES_PY" -c '
+import json, pathlib, yaml
+p = pathlib.Path("megasamples.yaml")
+cfg = yaml.safe_load(p.read_text())
+receipt = json.loads(pathlib.Path("docs/validation/dataset-upgrade-2026-11-17.json").read_text())
+for engine, entry in cfg["engines"].items():
+    names = entry["datasets"]
+    for name in ["bts_ontime", "wideworldimporters", "wideworldimporters_dw"]:
+        status = receipt["matrix"][engine + ":" + name]["status"]
+        assert status in ["Passed", "Unsupported"], (engine, name, status)
+        if status == "Passed" and name not in names: names.append(name)
+        if status == "Unsupported" and name in names: names.remove(name)
+p.write_text(yaml.safe_dump(cfg, sort_keys=False))
+'
 ms_tool make run PY="$MEGASAMPLES_PY"
 ms_tool make test-image PY="$MEGASAMPLES_PY"
 ```
 
-`make run` must complete with every configured dataset included. A missing download is a failure. Supply the manually obtained Lahman archive through the documented fetch workflow. BTS and both WideWorldImporters exports are explicitly outside this upgrade. If the live configuration unexpectedly names one of them, resolve that configuration mismatch before building; do not refresh its pins or accept an EULA here. Every configured, in-scope dataset must pass. Read `docs/engine-upgrade-evidence.md` for exact validation coverage and unresolved inputs.
+`make run` must complete with every configured dataset included. A missing download is a failure. Supply the manually obtained Lahman archive through the documented fetch workflow. Include the three owner-approved datasets using the preparation instructions above. Reuse the verified isolated WWI exports; the live servers do not need SQL Server or a new EULA acceptance. Keep the refreshed BTS airport SHA-256 pinned; a mismatch is a failure rather than authority to refresh it again. Every configured, in-scope dataset must pass. Read `docs/engine-upgrade-evidence.md` for exact validation coverage and unresolved inputs.
+
+## Added dataset cost and scope
+
+The owner-approved additions are MySQL `bts_ontime` (4 tables / 550,245 rows),
+`wideworldimporters` (48 / 4,713,833) and `wideworldimporters_dw` (16 / 923,643).
+PostgreSQL and SQLite each add only the warehouse (16 / 923,643). The repository rejects BTS
+and OLTP generated expressions on those two ports; those four pairs are Unsupported and excluded.
+The dated [dataset evidence](dataset-upgrade-evidence.md) and receipt link the exact capability
+rule, its read time and attempted-command diagnostics.
+
+The isolated additional database/file footprint was **1,933,059,775 bytes**, including both SQLite
+copies, excluding shared WAL/engine overhead. The approved-input archive adds 899,993,600 bytes;
+retain space for extracted inputs/staging/dumps and both complete old/new images and data copies.
+Per-engine and per-dataset measurements are in the receipt. Whole-corpus image packaging took
+mysql 1641.39 s, postgres 1564.71 s, sqlite 326.52 s. The successful WWI source builds took 286.75 s for both on MySQL,
+plus 53.13 s for the warehouse PostgreSQL port and 39.19 s for SQLite.
+The SQL Server export took 114 s and is already reusable. Replacement-stack startup took 269.27 s;
+five-pair running verification took 200.15 s. These are observed isolated costs, not a live SLA.
+Complete downloads, export reuse, conversion and image packaging before the outage. Reserve cold
+copy, startup, actual fingerprint checks and DataIntent verification separately. Full reset tests
+are isolated rehearsal checks; do not run them as live verification.
 
 ## Final backups and cutover
 
@@ -158,6 +220,11 @@ chmod 600 "$BACKUP_DIR/"*.sql
 # Downtime starts here. SQLite consumers must be stopped before copying its files.
 # Stop every configured console as well as all engines; keep the proxy services running.
 docker compose -p sql-megasamples -f compose.yaml stop
+# Retain the final quiesced UI workspace too, including changes made during preparation.
+if podman container exists megasamples-cloudbeaver; then
+  podman cp megasamples-cloudbeaver:/opt/cloudbeaver/workspace "$BACKUP_DIR/cloudbeaver-workspace-final"
+  chmod 700 "$BACKUP_DIR/cloudbeaver-workspace-final"
+fi
 # Copy each stopped data mount inside Podman's user namespace, retaining its real UID/GID.
 # This includes the separate SQLite console volume and does not modify the source mounts.
 while read -r label container destination; do
@@ -178,6 +245,12 @@ podman volume ls --format json > "$BACKUP_DIR/volumes.json"
 # make up detects a changed image and renews anonymous data volumes for the three engines.
 # A replacement is the newly built sample corpus; application writes remain in the backups.
 ms_tool make up PY="$MEGASAMPLES_PY"
+# Initial connection files are seeded into the workspace. A restart retains the old catalogue.
+# The original workspace is backed up above; reseed the configured connection list now.
+if ms_tool "$MEGASAMPLES_PY" -c 'from megasamples import config; raise SystemExit(0 if "cloudbeaver" in config.load().consoles else 1)'; then
+  docker compose -p sql-megasamples -f compose.yaml up -d --force-recreate \
+    --renew-anon-volumes --no-deps --wait cloudbeaver
+fi
 ms_tool make test-console PY="$MEGASAMPLES_PY"
 ```
 
@@ -197,7 +270,7 @@ This is a conditional manual-probe fallback; automatic scheduling in the live st
 
 The Compose stop above includes every configured console, so SQLite consumers are closed before either copy. `make up` restarts configured consoles. The new containers receive the existing `.env` credentials. Do not print that file.
 
-In the isolated 30-dataset rehearsal, replacing all three engine containers and restoring SQLite's shared files took 121.65 seconds. Individual whole-engine resets took 23.07 seconds (MySQL), 26.4 seconds (PostgreSQL) and 92.4 seconds (SQLite). A stop/start of the existing eight-service stack, without replacing data volumes, took 38.66 seconds and preserved every recorded count, SQLite hash and inserted probe row. These measurements exclude cold-backup time and the coordinator's DataIntent checks and exclude the three owner-deferred manifest datasets. Initial stack startup took 328.32 seconds while this custom store waited for health scheduling; real probes then completed successfully through the isolated-only runner. These are observed preparation/outage components, not a full-manifest downtime guarantee. The complete full-Contoso repository check against the shipped MySQL configuration took 1,736.02 seconds in this rehearsal, dominated by an indexed nested-loop constraint query. If the maintenance window includes that full integrity audit, budget its verification time as well as startup, cold copies and DataIntent tests.
+In the isolated 30-dataset rehearsal, replacing all three engine containers and restoring SQLite's shared files took 121.65 seconds. Individual whole-engine resets took 23.07 seconds (MySQL), 26.4 seconds (PostgreSQL) and 92.4 seconds (SQLite). A stop/start of the existing eight-service stack, without replacing data volumes, took 38.66 seconds and preserved every recorded count, SQLite hash and inserted probe row. These measurements exclude cold-backup time and the coordinator's DataIntent checks and predate this follow-up; the added datasets have separate measurements in “Added dataset cost and scope”. Initial stack startup took 328.32 seconds while this custom store waited for health scheduling; real probes then completed successfully through the isolated-only runner. These are observed preparation/outage components, not a full-manifest downtime guarantee. The complete full-Contoso repository check against the shipped MySQL configuration took 1,736.02 seconds in this rehearsal, dominated by an indexed nested-loop constraint query. If the maintenance window includes that full integrity audit, budget its verification time as well as startup, cold copies and DataIntent tests.
 
 The outage lasts from the first stop through readiness and verification, plus any rollback. Reserve a maintenance window; measured isolated timings belong in the evidence report, not an assumed SLA. Rebuilding before cutover avoids putting download/conversion time in the outage.
 
@@ -215,6 +288,39 @@ podman exec megasamples-mysql sh -c \
   'export MYSQL_PWD="$ADMIN_PASSWORD"; mysql -uadmin -N -e "SELECT name,row_counts FROM megasamples.datasets ORDER BY name"'
 podman exec megasamples-sqlite sqlite3 /data/megasamples.sqlite \
   'SELECT name,row_counts FROM datasets ORDER BY name'
+# Actual added-dataset fingerprints against the replacement containers, without pinning fixtures.
+ms_tool "$MEGASAMPLES_PY" -c '
+import json, pathlib, shutil, subprocess
+from megasamples import config, verify
+from megasamples.engines.mysql import server as mysql
+from megasamples.engines.postgres import server as pg
+from megasamples.engines.sqlite import adapter as sq
+root = pathlib.Path.cwd()
+secret = dict(line.split("=", 1) for line in (root / ".env").read_text().splitlines() if line and not line.startswith("#"))
+mysql.NAME = "megasamples-mysql"
+mysql.PW = secret["MYSQL_ROOT_PASSWORD"]
+pg.NAME = "megasamples-postgres"
+receipt = json.loads((root / "docs/validation/dataset-upgrade-2026-11-17.json").read_text())
+cfg = config.load()
+checks = root / "build/live-upgrade-checks/sqlite"
+failures = 0
+for pair, result in receipt["matrix"].items():
+    engine, name = pair.split(":")
+    if result["status"] != "Passed" or engine not in cfg.engines: continue
+    assert name in cfg.datasets(engine), pair
+    if engine == "sqlite":
+        target = checks / name
+        target.mkdir(parents=True, exist_ok=True)
+        subprocess.run(["docker", "cp", "megasamples-sqlite:/data/" + name + ".sqlite", str(target / (name + ".sqlite"))], check=True, capture_output=True)
+        for filename in ["model.json", "dropped.txt"]:
+            source = root / "build/sqlite" / name / filename
+            if source.exists(): shutil.copy2(source, target / filename)
+        sq.engine_build_dir = lambda _: str(checks)
+    failures += verify.verify(name, engine=engine)
+assert failures == 0, failures
+joins = mysql.rows("SELECT COUNT(*), SUM(o.code IS NULL), SUM(d.code IS NULL) FROM bts_ontime.ontime f LEFT JOIN bts_ontime.l_airport o ON o.code=f.origin LEFT JOIN bts_ontime.l_airport d ON d.code=f.dest")
+assert joins == [["539747", "0", "0"]], joins
+'
 ```
 
 Verify both existing forwarded endpoints with the containers' installed clients (credentials stay inside each container):
@@ -230,9 +336,22 @@ Compare the complete registry sets and each table's actual row counts with the v
 
 Confirm PostgreSQL binds to `127.0.0.1:5432` and MySQL to `127.0.0.1:3306`. Run the coordinator's DataIntent server-bound suites against both the local endpoints and the existing forwarded endpoints `10.0.0.172:5432` and `10.0.0.172:3306`. The proxies continue forwarding to the same local ports and require no changes. Resume clients only after these checks pass.
 
+The added-dataset check above uses actual server tables and a fresh copy of the shipped SQLite file.
+It must pass exact counts and applicable canonical fingerprints, foreign keys, indexes and views.
+For BTS, also require 6,942 airport rows and zero unmatched origin/destination rows across 539,747
+flights. Check the complete console lists: three new MySQL databases and the supported warehouse
+ports, including the new SQLite connection in CloudBeaver and DbGate. Unsupported pairs must not
+be presented as available. Preserve the result logs with the maintenance receipt.
+
 ## Roll back
 
 Keep clients paused. Do not remove any backup, original image tag, original branch, original anonymous volume, or proxy service.
+
+The saved pre-upgrade configuration, console tree, images and cold volumes also roll back these
+new datasets. Restoring them removes the added databases/files and their console connections as
+part of restoring the original deployment. First retain any application writes made in the new
+datasets; the pre-upgrade cold copies cannot contain those writes. Do not use `make reset` for
+rollback: it restores the new image contents, including the added datasets.
 
 ```sh
 # Restore original configuration and its original branch (never reset a pushed branch).
@@ -316,10 +435,25 @@ for line in (backup/'rollback-image-tags.txt').read_text().splitlines():
 (backup/'rollback-consoles.override.json').write_text(json.dumps({"services":services},indent=2)+'\n')
 PY_CONSOLE_ROLLBACK
 set --
-while IFS= read -r service; do set -- "$@" "$service"; done < "$BACKUP_DIR/original-running-services.txt"
+RESTORE_CLOUDBEAVER=0
+while IFS= read -r service; do
+  if test "$service" = cloudbeaver; then RESTORE_CLOUDBEAVER=1; else set -- "$@" "$service"; fi
+done < "$BACKUP_DIR/original-running-services.txt"
 test "$#" -gt 0
 docker compose -p sql-megasamples -f compose.yaml -f "$BACKUP_DIR/rollback.override.yaml" \
   -f "$BACKUP_DIR/rollback-consoles.override.json" up -d --wait "$@"
+if test "$RESTORE_CLOUDBEAVER" = 1; then
+  # Populate a stopped fresh container before its first initialization, retaining original UI state.
+  docker compose -p sql-megasamples -f compose.yaml -f "$BACKUP_DIR/rollback.override.yaml" \
+    -f "$BACKUP_DIR/rollback-consoles.override.json" create --force-recreate --no-build cloudbeaver
+  CB_WORKSPACE_BACKUP="$BACKUP_DIR/cloudbeaver-workspace-final"
+  if ! test -d "$CB_WORKSPACE_BACKUP"; then CB_WORKSPACE_BACKUP="$BACKUP_DIR/cloudbeaver-workspace"; fi
+  if test -d "$CB_WORKSPACE_BACKUP"; then
+    podman cp "$CB_WORKSPACE_BACKUP/." megasamples-cloudbeaver:/opt/cloudbeaver/workspace/
+  fi
+  docker compose -p sql-megasamples -f compose.yaml -f "$BACKUP_DIR/rollback.override.yaml" \
+    -f "$BACKUP_DIR/rollback-consoles.override.json" up -d --no-deps --wait cloudbeaver
+fi
 ```
 
 If that default socket is absent, start a Podman API service for the **default** store in the coordinator's session before the Compose command. This is separate from the isolated build's service. The override also maps the original shared-volume name to the restored cold copy for every SQLite consumer. The SQLite service's original startup command republishes `/data` into that restored shared console volume; keep SQLite consoles stopped until that copy finishes. Repeat version, actual row-count, account and DataIntent endpoint checks against the restored stack, including the forwarded endpoints. Verify only the originally running consoles, using their restored image IDs, login flows and dataset lists. Keep the original tool invocation/environment for old-release build checks; do not run its converters under the upgraded dependency lock. Resume clients only after rollback validation succeeds. Record the failed upgrade and retain its data directories separately for diagnosis.
@@ -331,6 +465,14 @@ The MySQL runtime now uses a 2 GiB container limit and an explicit 1 GiB TempTab
 The release changes include the engine-supplied command-line clients; the Oracle MySQL clients and Connector/C in the loader; exact Python dependencies and `uv.lock`; CloudBeaver's MySQL/SQLite JDBC jars; DbGate's locked native SQLite driver; Adminer's current libpq and the separately pinned libpq used by pure Psycopg endpoint tests; and the digest-pinned phpMyAdmin, Adminer and nginx consoles; and independent pinned SQL*Plus/SQL*Loader archives for the optional Oracle verifier. The Oracle Free database still requires its explicit license gate before any native check. The new optional Oracle client recipe is Linux x86-64; other architectures are Unsupported by that recipe. Exact before/after versions, URLs, read times and compatibility evidence are in `docs/client-upgrade-evidence.md` and `clients.lock.yaml`. PostgreSQL uses matching server/client majors; the MySQL paths retain `caching_sha2_password` authentication. The TPC-C loader shares only its disposable build server's network namespace and uses loopback for Connector/C's local TLS behavior. No global certificate-verification bypass is set.
 
 Before cutover, check the loader CLI dump/restore, TPC-C cardinalities, the DuckDB CSV conversions, the Python gate, every configured reset selector and complete dataset fingerprints in isolation. Reset commands are destructive data-restoration tests and belong only in the isolated rehearsal. Do not use `make reset` as a live verification command.
+
+CloudBeaver's [initial configuration](https://dbeaver.com/docs/cloudbeaver/Initial-data-configuration/)
+and [workspace connection file](https://dbeaver.com/docs/cloudbeaver/Data-Sources-Json-Reference/)
+documentation were read 2026-11-17T10:14:42Z. The actual isolated upgrade showed that restarting
+retained its old 31-connection catalogue and omitted the new SQLite warehouse. A consistent private
+workspace backup followed by recreating only CloudBeaver reseeds the generated catalogue. Retain
+that backup (it can contain credentials and saved queries), and restore it into a stopped original
+console container for rollback as above. No engine data volume is renewed by this console step.
 
 After cutover, run `ms_tool make test-console PY="$MEGASAMPLES_PY"`. In addition, open the landing page and every configured console through their actual live localhost ports. In phpMyAdmin, list the MySQL datasets for both configured accounts. In Adminer, sign in for MySQL and PostgreSQL and list their databases. In DbGate, open each engine, including a SQLite file; in CloudBeaver, open both server accounts and every SQLite connection and list the databases. Confirm each shows the complete configured registry, test read-only denial and admin writes on a disposable table, then remove the probe. The isolated receipt records the automated HTTP/GraphQL/installed-driver probes; repeat those checks against live ports without substituting HTTP 200 for a database connection.
 

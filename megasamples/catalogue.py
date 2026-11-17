@@ -141,13 +141,16 @@ def collect(container=None):
         spec = yaml.safe_load(open(spec_path, encoding="utf-8")) or {}
         db = spec.get("database", d)
         append = bool(spec.get("append"))
-        counts = pinned_counts(d) if d in core_names else None
+        validation = spec.get("validation") or {}
+        measured = (validation.get("engines", {}).get("mysql", {}).get("status") == "Passed")
+        counts = pinned_counts(d) if d in core_names or measured else None
         ports_path = os.path.join(ROOT, "datasets", d, "ports", "not_ported.yaml")
         ports = yaml.safe_load(open(ports_path, encoding="utf-8")) or {} if os.path.exists(ports_path) else {}
         out.append(dict(
             name=d,
             database=db,
             ports={e: len(v or []) for e, v in ports.items()},
+            validation=validation,
             tier=spec.get("tier", "?"),
             licences=spec.get("licenses", []) or [],
             record=spec.get("record", ""),
@@ -165,16 +168,17 @@ def collect(container=None):
 
 def render(items):
     asks = licence_obligations()
-    in_image = [i for i in items if i["tables"] is not None]
+    in_image = [i for i in items if i["tables"] is not None and i["tier"] in ("core", "core-medium")]
     total_tables = sum(i["tables"] for i in in_image)
     total_rows = sum(i["rows"] or 0 for i in in_image)
 
     L = [GENERATED.rstrip(), "", "# Catalogue", "",
          f"**{len(in_image)} databases in the core image** — {total_tables:,} tables, {total_rows:,} rows — "
          "plus the datasets that are opt-in, generated on your machine, or that you fetch yourself.",
-         "", "Generated from `datasets/*/dataset.yaml`, each core dataset's pinned `tests/expected_counts.yaml` (the",
-         "counts every image is tested against) and each dataset's `ports/not_ported.yaml`, so it cannot drift",
-         "from what is built. `README.md`",
+         "", "Generated from `datasets/*/dataset.yaml`, verified `tests/expected_counts.yaml` (the counts",
+         "every image is tested against), `ports/not_ported.yaml` and dated `validation` metadata.",
+         "Measured opt-in datasets show their counts and explicit engine dispositions. Their evidence",
+         "and Unsupported reasons are linked from each dataset's `validation` record. `README.md`",
          "explains the project; `datasets/<name>/PROVENANCE.md` has the full derivation of any one row.",
          "", "The **engines** column names the engines a dataset has been built and verified on. PostgreSQL and",
          "SQLite are ports of the MySQL corpus with the same rows, checked by the same content digests;",
@@ -203,6 +207,11 @@ def render(items):
             for e, title in (("postgres", "PostgreSQL"), ("sqlite", "SQLite")):
                 if e in i["ports"]:
                     engines.append(f"{title} ({i['ports'][e]} not ported)" if i["ports"][e] else title)
+            validation = i.get("validation", {}).get("engines", {})
+            if validation:
+                engines = [f"{title} ({validation[e]['status']})"
+                           for e, title in (("mysql", "MySQL"), ("postgres", "PostgreSQL"), ("sqlite", "SQLite"))
+                           if e in validation]
             L.append(f"| {label} | {what} | {t} | {r} | {' · '.join(engines) or '—'} | {lic} | {ask} |")
         L.append("")
 

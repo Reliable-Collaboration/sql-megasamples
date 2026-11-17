@@ -1,0 +1,27 @@
+# S4v: every view's row count and canonical fingerprint (count, BIT_XOR, SUM mod
+# 2^64) over the row digest of megasamples/canon.py, pinned from MySQL. x_exact and
+# s_exact leave out the `inexact` columns: decimals the view computes, which an engine
+# without decimal arithmetic (SQLite) cannot reproduce to the digit.
+v_ontime_delay:
+  columns:
+  - flightdate
+  - reporting_airline
+  - carrier
+  - flight_number
+  - origin
+  - origin_airport
+  - dest
+  - dest_airport
+  - crs_dep_time
+  - dep_time
+  - depdelayminutes
+  - crs_arr_time
+  - arr_time
+  - arrdelayminutes
+  - cancelled
+  - cancellationcode
+  - diverted
+  excluded: []
+  n: 539747
+  s: 896074037464083808
+  x: 17213811468148301600

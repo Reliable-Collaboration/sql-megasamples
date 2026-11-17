@@ -5,9 +5,10 @@
 
 **21 databases in the core image** — 248 tables, 9,057,036 rows — plus the datasets that are opt-in, generated on your machine, or that you fetch yourself.
 
-Generated from `datasets/*/dataset.yaml`, each core dataset's pinned `tests/expected_counts.yaml` (the
-counts every image is tested against) and each dataset's `ports/not_ported.yaml`, so it cannot drift
-from what is built. `README.md`
+Generated from `datasets/*/dataset.yaml`, verified `tests/expected_counts.yaml` (the counts
+every image is tested against), `ports/not_ported.yaml` and dated `validation` metadata.
+Measured opt-in datasets show their counts and explicit engine dispositions. Their evidence
+and Unsupported reasons are linked from each dataset's `validation` record. `README.md`
 explains the project; `datasets/<name>/PROVENANCE.md` has the full derivation of any one row.
 
 The **engines** column names the engines a dataset has been built and verified on. PostgreSQL and
@@ -51,7 +52,7 @@ not carry, listed by name in `datasets/<name>/ports/not_ported.yaml`.
 | database | what it is | tables | rows | engines | licence | asks of a redistributor |
 |---|---|---:|---:|---|---|---|
 | `adventureworks_dw` | The AdventureWorks star-schema data warehouse (31 dbo tables, dimension/fact naming) | — | — | PostgreSQL (5 not ported) · SQLite (8 not ported) | [mit](knowledge/licenses/mit.md) | ship the notice |
-| `bts_ontime` | One month of the US DOT Reporting Carrier On-Time Performance table (~536k flights, 109 columns) plus the airport and carrier lookup tables | — | — | — | [us-government-public-domain](knowledge/licenses/us-government-public-domain.md) | none |
+| `bts_ontime` | One month of the US DOT Reporting Carrier On-Time Performance table (~536k flights, 109 columns) plus the airport and carrier lookup tables | 4 | 550,245 | MySQL (Passed) · PostgreSQL (Unsupported) · SQLite (Unsupported) | [us-government-public-domain](knowledge/licenses/us-government-public-domain.md) | none |
 | `chicago_crimes_full`<br>appends to `chicago_crimes` | The City of Chicago's 8.6 M-row reported-crime extract plus the 434-row IUCR code lookup — a live feed: a build takes the current extract, and this count is the snapshot's floor | — | — | PostgreSQL · SQLite | [chicago-data-portal-terms](knowledge/licenses/chicago-data-portal-terms.md) | attribution, verbatim disclaimer |
 | `contoso_10m` | SQLBI's synthetic Contoso retail star schema V2 | — | — | PostgreSQL · SQLite | [mit](knowledge/licenses/mit.md) | ship the notice |
 | `contoso_1m` | SQLBI's synthetic Contoso retail star schema V2 | — | — | PostgreSQL · SQLite | [mit](knowledge/licenses/mit.md) | ship the notice |
@@ -59,8 +60,8 @@ not carry, listed by name in `datasets/<name>/ports/not_ported.yaml`.
 | `enron_full` | About 517k real corporate emails from 150 Enron custodians, distributed by CMU as a maildir-style tree of RFC 822 files | — | — | PostgreSQL (1 not ported) · SQLite | [enron-public-record](knowledge/licenses/enron-public-record.md) | see the record |
 | `nyc_taxi_yellow`<br>appends to `nyc_taxi` | New York City yellow and green taxi trip records in Parquet, plus the 265-row taxi zone lookup | — | — | PostgreSQL · SQLite | [nyc-open-data-terms](knowledge/licenses/nyc-open-data-terms.md) | ship the notice |
 | `stackexchange_dba` | CC BY-SA XML dump of a Stack Exchange Q&A site (Posts, Users, Comments, Votes, Badges, Tags, PostLinks, PostHistory) converted to MySQL with FULLTEXT | — | — | PostgreSQL · SQLite | [cc-by-sa-4-0](knowledge/licenses/cc-by-sa-4-0.md) | share-alike, attribution |
-| `wideworldimporters` | Microsoft's SQL Server 2016+ showcase OLTP sample (wholesale importer): temporal tables, memory-optimized tables, columnstore, JSON, geography | — | — | — | [mit](knowledge/licenses/mit.md), [natural-earth-public-domain](knowledge/licenses/natural-earth-public-domain.md), [us-government-public-domain](knowledge/licenses/us-government-public-domain.md) | ship the notice |
-| `wideworldimporters_dw` | The star-schema warehouse companion of WideWorldImporters (Dimension/Fact/Integration schemas, 8 dimensions, 6 facts, table names with spaces) | — | — | — | [mit](knowledge/licenses/mit.md), [natural-earth-public-domain](knowledge/licenses/natural-earth-public-domain.md), [us-government-public-domain](knowledge/licenses/us-government-public-domain.md) | ship the notice |
+| `wideworldimporters` | Microsoft's SQL Server 2016+ showcase OLTP sample (wholesale importer): temporal tables, memory-optimized tables, columnstore, JSON, geography | 48 | 4,713,833 | MySQL (Passed) · PostgreSQL (Unsupported) · SQLite (Unsupported) | [mit](knowledge/licenses/mit.md), [natural-earth-public-domain](knowledge/licenses/natural-earth-public-domain.md), [us-government-public-domain](knowledge/licenses/us-government-public-domain.md) | ship the notice |
+| `wideworldimporters_dw` | The star-schema warehouse companion of WideWorldImporters (Dimension/Fact/Integration schemas, 8 dimensions, 6 facts, table names with spaces) | 16 | 923,643 | MySQL (Passed) · PostgreSQL (Passed) · SQLite (Passed) | [mit](knowledge/licenses/mit.md), [natural-earth-public-domain](knowledge/licenses/natural-earth-public-domain.md), [us-government-public-domain](knowledge/licenses/us-government-public-domain.md) | ship the notice |
 | `wikipedia_simple_full` | Current-revision article text plus MediaWiki link tables of the Simple English Wikipedia | — | — | PostgreSQL · SQLite | [cc-by-sa-4-0](knowledge/licenses/cc-by-sa-4-0.md), [gfdl-1-3](knowledge/licenses/gfdl-1-3.md) | share-alike, attribution |
 
 ## generated — generated on your machine

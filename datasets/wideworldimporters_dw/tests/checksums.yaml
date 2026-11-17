@@ -18,8 +18,8 @@ dimension_city:
   - lineage_key
   excluded: []
   n: 116295
-  s: 12090046503416816199
-  x: 6139414012753560817
+  s: 17904273180255008591
+  x: 12892259299130777823
 dimension_customer:
   columns:
   - customer_key

@@ -1,6 +1,6 @@
 # Engine upgrade evidence
 
-The owner's follow-up explicitly excludes BTS and both WideWorldImporters exports from this upgrade. Their nine combinations are **Not run, pending the owner's decision**, not merge blockers. The startup follow-up below supersedes the historical PostgreSQL readiness failure; the complete full-image retest **Passed**, clearing PR 9 to become ready. All 30 available datasets passed build/port and running-stack verification on all three engines (90 combinations in each phase). Historical failures and original limits remain below as evidence. This report does not authorize a live deployment. Raw logs and source captures remain under `build/upgrade-evidence/` and `build/client-evidence/`; no host packages were installed.
+The owner approved the BTS refresh and accepted the SQL Server Developer EULA for the isolated WWI export on 2026-11-17. The [dataset follow-up](dataset-upgrade-evidence.md) supersedes the nine original deferrals: **five Passed and four Unsupported** by the repository's generated-expression guard, with supported build, runtime, reset and console checks complete. The live upgrade now includes the supported additions. Oracle native verification remains **Not run, pending the owner's decision on Oracle's Free Use Terms**. Historical original-run measurements and failures remain below; no live deployment action was executed. The current candidate overall result is **Failed**; separate image-gate results in the dataset receipt control merging and live cutover.
 
 ## Branch integration
 
@@ -94,7 +94,7 @@ The upgrade candidate declares only that named full-corpus PostgreSQL FULLTEXT i
 The three-engine `pubs` image preflight first **Failed** because `.dockerignore` excluded the new image lock file; adding its precise allowlist entry made all three builds **Pass**. The actual preflight is the regression check; no existing assertion was weakened. MySQL's image test then **Failed** its read check because it hardcoded Sakila in a pubs-only image. The corrected checker creates a real table and modifying procedure in a shipped database, requires reads, denies all writes and routine execution, and also requires admin writes. The unchanged three-engine preflight command then **Passed**. Separate container checks **Passed** for the exact image-lock SHA-256 in every image (`preflight-provenance-results.json`). These are small preflight images, not the full-data image validation.
 
 
-The build/port phase **Passed for 30 available datasets on all three engines (90 combinations)**. Nine combinations are **Not run**: the pinned BTS airport bytes are unavailable, and both WideWorldImporters exports require explicit operator EULA acceptance. The complete requested configuration is saved at `build/upgrade-evidence/full-manifest-config.yaml`; the active rehearsal configuration explicitly excludes only those three datasets, as recorded in `rehearsal-coverage.json`.
+The build/port phase **Passed for 30 available datasets on all three engines (90 combinations)**. At that original snapshot, nine combinations were **Not run**: the pinned BTS airport bytes are unavailable, and both WideWorldImporters exports require explicit operator EULA acceptance. The complete requested configuration is saved at `build/upgrade-evidence/full-manifest-config.yaml`; the then-active rehearsal configuration explicitly excluded those three datasets, as recorded in `rehearsal-coverage.json`. The current configuration includes the five supported additions in the dataset follow-up receipt.
 
 | Dataset | MySQL | PostgreSQL | SQLite |
 |---|---|---|---|
@@ -114,14 +114,14 @@ The build/port phase **Passed for 30 available datasets on all three engines (90
 | contoso | Passed | Passed | Passed |
 | adventureworks_dw | Passed | Passed | Passed |
 | adventureworks | Passed | Passed | Passed |
-| bts_ontime | Not run | Not run | Not run |
+| bts_ontime | Passed | Unsupported | Unsupported |
 | lahman | Passed | Passed | Passed |
 | contoso_1m | Passed | Passed | Passed |
-| wideworldimporters_dw | Not run | Not run | Not run |
+| wideworldimporters_dw | Passed | Passed | Passed |
 | nyc_taxi_yellow | Passed | Passed | Passed |
 | chicago_crimes | Passed | Passed | Passed |
 | oracle_sh | Passed | Passed | Passed |
-| wideworldimporters | Not run | Not run | Not run |
+| wideworldimporters | Passed | Unsupported | Unsupported |
 | employees | Passed | Passed | Passed |
 | dvdstore_reviews | Passed | Passed | Passed |
 | stackexchange_dba | Passed | Passed | Passed |
@@ -182,13 +182,13 @@ The query followed `run` return by 0.437–0.607 seconds. PostgreSQL logs show a
 
 The gate now permits **100 seconds end to end**, calculated as twice the largest matched measurement rounded up to ten seconds (`ceil(2 × 46.704 / 10) × 10`). A separate **30-second server limit after `run` returns** retains the prior server-readiness expectation. Both limits must pass; a missing query fails both. This is a measured finite cold-copy allowance, not removal of the startup assertion. The clock is monotonic. Four regression cases **Failed** before implementation, then **Passed**: a measured-size cold start, a slow server, an excessive cold start, and no answer. Raw measurements, logs and the comparison build recipe are in `build/client-evidence/`; compact measurements are committed in the receipt. An initial measurement harness ran before its comparison image had finished building; that harness failure is retained separately and is not counted as a database result.
 
-## Owner-deferred combinations
+## Owner-approved follow-up combinations (2026-11-17)
 
 | Dataset | MySQL | PostgreSQL | SQLite | Reason |
 |---|---|---|---|---|
-| BTS on-time | Not run, pending the owner's decision | Not run, pending the owner's decision | Not run, pending the owner's decision | Absent from live catalogue; owner must decide whether to refresh the airport lookup. Pins unchanged. |
-| WideWorldImporters | Not run, pending the owner's decision | Not run, pending the owner's decision | Not run, pending the owner's decision | Absent from live catalogue; SQL Server Developer EULA acceptance is the owner's decision. No EULA accepted or export attempted. |
-| WideWorldImporters DW | Not run, pending the owner's decision | Not run, pending the owner's decision | Not run, pending the owner's decision | Same EULA decision; no export attempted. |
+| BTS on-time | Passed | Unsupported | Unsupported | Current upstream refresh; ports reject generated clock expressions. |
+| WideWorldImporters | Passed | Unsupported | Unsupported | Owner-attributed EULA export; ports reject generated searchname expression. |
+| WideWorldImporters DW | Passed | Passed | Passed | Owner-attributed export; all 16 loaded tables verified and reset on each engine. |
 
 The full Enron PostgreSQL FTS index remains **Unsupported** for the documented native vector-size limit. Its rows and canonical checksums are retained; no exception or dataset pin was weakened in this follow-up.
 
