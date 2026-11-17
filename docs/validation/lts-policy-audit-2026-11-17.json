@@ -64,6 +64,44 @@
       "notes": ""
     },
     {
+      "component": "MySQL Shell embedded Python",
+      "before": "Not separately recorded",
+      "current_pin": "3.13.12",
+      "target": "3.13.18",
+      "policy": "Python feature lines receive five years of maintenance; 3.13 is in security servicing. Shell links the 3.13 ABI, so a newer Python minor is not a supported binary transplant.",
+      "policy_source": {
+        "url": "https://devguide.python.org/versions/",
+        "read_at": "2026-11-17T17:16:24+00:00",
+        "read_status": "Passed"
+      },
+      "release_source": {
+        "url": "https://www.python.org/downloads/release/python-31318/",
+        "read_at": "2026-11-17T17:16:57+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Build current 3.13 security patch and replace its complete runtime/stdlib/native extensions",
+      "notes": "Observed in both inherited 26.10 and selected 9.7.1 Shell. Preserve vendor site-packages and Shell APIs; verify SSL/compression/ctypes, restore and dump. No independent LTS edition is claimed."
+    },
+    {
+      "component": "MySQL Shell embedded SQLite",
+      "before": "Not separately recorded",
+      "current_pin": "3.50.4",
+      "target": "3.54.1",
+      "policy": "Project long-term maintenance/compatibility through 2050; no separate public LTS release branch.",
+      "policy_source": {
+        "url": "https://sqlite.org/lts.html",
+        "read_at": "2026-11-17T15:10:43.457917+00:00",
+        "read_status": "Passed"
+      },
+      "release_source": {
+        "url": "https://sqlite.org/changes.html",
+        "read_at": "2026-11-17T15:10:43.638228+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Compile the existing checked SQLite source for the patched embedded Python",
+      "notes": "The inherited and unpatched 9.7.1 Python sqlite3 modules both reported 3.50.4; new embedded module must report the project target."
+    },
+    {
       "component": "MySQL binlog/config-editor helpers",
       "before": "Not separately recorded",
       "current_pin": "26.10.0 (inherited Shell payload)",
@@ -1628,6 +1666,28 @@
       "read_at": "2026-11-17T17:07:51+00:00",
       "status": "Failed",
       "reason": "HTTP 404; located current vendor policy URL instead."
+    },
+    "python-policy": {
+      "url": "https://devguide.python.org/versions/",
+      "read_at": "2026-11-17T17:16:24+00:00",
+      "read_status": "Passed"
+    },
+    "python-3.13.18": {
+      "url": "https://www.python.org/downloads/release/python-31318/",
+      "read_at": "2026-11-17T17:16:57+00:00",
+      "read_status": "Passed"
+    },
+    "python-3.13.12-supersession": {
+      "url": "https://www.python.org/downloads/release/python-31312/",
+      "read_at": "2026-11-17T17:16:24+00:00",
+      "read_status": "Passed",
+      "finding": "Explicitly superseded by 3.13.18."
+    },
+    "python-abi": {
+      "url": "https://docs.python.org/3/c-api/stable.html",
+      "read_at": "2026-11-17T17:24:13+00:00",
+      "read_status": "Passed",
+      "finding": "CPython ABI compatibility across patch releases depends on compatible compiler/platform settings; private APIs are excluded. Actual Shell/native-extension and full restore tests remain required."
     }
   },
   "limitations": [

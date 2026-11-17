@@ -1,6 +1,38 @@
 # Oracle's server image currently bundles Innovation Shell 26.10. Replace the
 # complete Shell payload with 9.7.1 from a second immutable Oracle-built input.
 FROM docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8 AS shell-lts
+# Shell links the CPython 3.13 ABI. Patch that runtime, including its native
+# extensions and stdlib, without transplanting an incompatible Python minor.
+RUN microdnf install -y gcc make tar gzip xz pkgconf-pkg-config zlib-devel openssl-devel bzip2-devel libffi-devel xz-devel readline-devel ncurses-devel libuuid-devel \
+ && microdnf clean all
+RUN curl -fL --retry 3 -o /tmp/sqlite.tar.gz https://sqlite.org/2026/sqlite-autoconf-3540100.tar.gz \
+ && test "$(openssl dgst -sha3-256 /tmp/sqlite.tar.gz | awk '{print $NF}')" = b6ced585c750916b1052667239a12c25a7ff34e7f06e1e6e01ecb0427657d9c4 \
+ && tar -xzf /tmp/sqlite.tar.gz -C /tmp \
+ && cd /tmp/sqlite-autoconf-3540100 \
+ && ./configure --prefix=/usr/lib/mysqlsh --enable-fts5 --disable-readline \
+ && make -j4 && make install \
+ && cp sqlite3.h /usr/share/doc/mysql-shell/SQLite-3.54.1.h
+RUN curl -fL --retry 3 -o /tmp/python.tar.xz https://www.python.org/ftp/python/3.13.18/Python-3.13.18.tar.xz \
+ && echo 'abb0102e6d4ae027509bcb82327d9dd85515b44a3ba8ad538cfc5e9847029f68  /tmp/python.tar.xz' | sha256sum -c - \
+ && tar -xJf /tmp/python.tar.xz -C /tmp \
+ && mv /usr/lib/mysqlsh/lib/python3.13/site-packages /tmp/shell-site-packages \
+ && rm -rf /usr/lib/mysqlsh/lib/python3.13 /usr/lib/mysqlsh/include/python3.13 /usr/lib/mysqlsh/lib/python313.zip \
+ && rm -f /usr/lib/mysqlsh/libpython3.13.so* /usr/lib/mysqlsh/lib/libpython3.13.so* \
+ && cd /tmp/Python-3.13.18 \
+ && CPPFLAGS=-I/usr/lib/mysqlsh/include \
+    LDFLAGS='-L. -L/usr/lib/mysqlsh/lib -Wl,-rpath,/usr/lib/mysqlsh -Wl,-rpath,/usr/lib/mysqlsh/lib' \
+    PKG_CONFIG_PATH=/usr/lib/mysqlsh/lib/pkgconfig \
+    ./configure --prefix=/usr/lib/mysqlsh --enable-shared --with-ensurepip=no --disable-test-modules \
+ && make -j4 libpython3.13.so \
+ && cp libpython3.13.so.1.0 /usr/lib/mysqlsh/libpython3.13.so.1.0 \
+ && make -j4 && make altinstall \
+ && cp libpython3.13.so.1.0 /usr/lib/mysqlsh/libpython3.13.so.1.0 \
+ && cp LICENSE /usr/share/doc/mysql-shell/Python-3.13.18.LICENSE \
+ && cp -a /tmp/shell-site-packages/. /usr/lib/mysqlsh/lib/python3.13/site-packages/ \
+ && readelf -d /usr/lib/mysqlsh/bin/python3.13 /usr/lib/mysqlsh/libpython3.13.so.1.0 /usr/lib/mysqlsh/lib/python3.13/lib-dynload/_sqlite3*.so > /usr/share/doc/mysql-shell/runtime-elf.txt \
+ && ! grep -E '(RPATH|RUNPATH).*/tmp' /usr/share/doc/mysql-shell/runtime-elf.txt \
+ && mysqlsh --no-defaults --py -e 'import platform,sqlite3,ssl,bz2,lzma,ctypes; assert platform.python_version() == "3.13.18"; assert sqlite3.sqlite_version == "3.54.1"; print(platform.python_version(),sqlite3.sqlite_version,ssl.OPENSSL_VERSION)' \
+ && rm -rf /tmp/sqlite* /tmp/Python* /tmp/python.tar.xz /tmp/shell-site-packages
 FROM container-registry.oracle.com/mysql/community-server:9.7.4@sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb AS native-tools
 RUN microdnf install -y cpio && microdnf clean all \
  && curl -fL --retry 3 -o /tmp/client.rpm https://repo.mysql.com/yum/mysql-9.7-community/el/9/x86_64/mysql-community-client-9.7.4-1.el9.x86_64.rpm \
@@ -30,7 +62,7 @@ RUN mkdir -p /usr/libexec/mysqlsh \
  && test -f /usr/lib/mysql/plugins/authentication_oci_client.so
 RUN mysql --version | grep -F '9.7.4' \
  && mysqlsh --version | grep -F '9.7.1' \
- && mysqlsh --no-defaults --py -e 'import sys; print(sys.version)' \
+ && mysqlsh --no-defaults --py -e 'import platform,sqlite3,ssl,bz2,lzma,ctypes; assert platform.python_version() == "3.13.18"; assert sqlite3.sqlite_version == "3.54.1"; print(platform.python_version(),sqlite3.sqlite_version,ssl.OPENSSL_VERSION)' \
  && ! ldd /usr/bin/mysqlsh | grep 'not found'
 # Preserve the existing stack's fresh-volume and cold-backup behavior.
 VOLUME ["/var/lib/mysql"]

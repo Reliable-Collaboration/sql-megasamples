@@ -73,6 +73,12 @@ if not resume:
     run('fresh-oracle-build-server', ['.venv/bin/python', '-m', 'megasamples', 'build-server', 'fresh'])
     physical = [name for name in configured if not yaml.safe_load((ROOT/'datasets'/name/'dataset.yaml').read_text()).get('append')]
     run('restore-oracle-all', ['make', 'restore', 'PY=.venv/bin/python', 'D='+' '.join(physical)])
+    # Exercise both directions of the patched embedded runtime with binary data,
+    # routines and WWI's richer JSON/spatial types, retaining all expected values.
+    run('shell-dump-lts', ['.venv/bin/python', '-m', 'megasamples', 'dump', 'pubs', 'wideworldimporters'])
+    run('shell-restore-lts', ['make', 'restore', 'PY=.venv/bin/python', 'D=pubs wideworldimporters'])
+    for name in ['pubs', 'wideworldimporters']:
+        run('verify-shell-roundtrip-'+name, ['.venv/bin/python', '-m', 'megasamples', 'verify', name, '--engine', 'mysql'])
     # Refresh the expanded core, then compare against the original core+append receipts.
     run('verify-expanded-core', ['.venv/bin/python', '-m', 'megasamples', 'verify', 'chicago_crimes', '--engine', 'mysql'])
 previous = json.loads((ROOT / 'build/client-evidence/client-final-mysql-frozen-live-records.json').read_text())

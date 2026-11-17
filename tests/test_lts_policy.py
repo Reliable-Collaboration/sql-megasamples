@@ -84,3 +84,17 @@ def test_asset_audit_compares_the_selected_mysql_base(monkeypatch):
     monkeypatch.setattr(audit, 'forbidden_files_in', lambda image, failures: seen.append(image) or set())
     assert audit.main([]) == 0
     assert seen[-1] == server.IMAGE
+
+
+def test_shell_embedded_runtime_has_current_security_patches():
+    text = (ROOT / 'engines/mysql/base.Dockerfile').read_text()
+    assert 'Python-3.13.18.tar.xz' in text
+    assert 'abb0102e6d4ae027509bcb82327d9dd85515b44a3ba8ad538cfc5e9847029f68' in text
+    assert 'sqlite-autoconf-3540100.tar.gz' in text
+    assert 'platform.python_version() == "3.13.18"' in text
+    assert 'sqlite3.sqlite_version == "3.54.1"' in text
+
+
+def test_shell_runtime_does_not_search_writable_build_paths():
+    text = (ROOT / 'engines/mysql/base.Dockerfile').read_text()
+    assert '-Wl,-rpath,/tmp' not in text

@@ -90,3 +90,18 @@ sqlite_source:
   sha3_256: b6ced585c750916b1052667239a12c25a7ff34e7f06e1e6e01ecb0427657d9c4
   release_source: https://sqlite.org/download.html
   read_at: '2026-11-16T18:58:36.461111+00:00'
+mysql_shell_embedded_runtime:
+  python:
+    version: 3.13.18
+    source: https://www.python.org/ftp/python/3.13.18/Python-3.13.18.tar.xz
+    sha256: abb0102e6d4ae027509bcb82327d9dd85515b44a3ba8ad538cfc5e9847029f68
+    release_source: https://www.python.org/downloads/release/python-31318/
+    read_at: '2026-11-17T17:16:57+00:00'
+    policy_source: https://devguide.python.org/versions/
+    policy_read_at: '2026-11-17T17:16:24+00:00'
+  sqlite:
+    version: 3.54.1
+    source: https://sqlite.org/2026/sqlite-autoconf-3540100.tar.gz
+    sha3_256: b6ced585c750916b1052667239a12c25a7ff34e7f06e1e6e01ecb0427657d9c4
+    release_source: https://sqlite.org/changes.html
+    read_at: '2026-11-17T15:10:43.638228+00:00'

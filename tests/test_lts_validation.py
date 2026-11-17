@@ -1,5 +1,6 @@
 """The LTS receipt must cover append tables without changing frozen values."""
 import importlib.util
+from copy import deepcopy
 from pathlib import Path
 import pytest
 
@@ -15,7 +16,7 @@ def records():
     expanded = {'core': {stage: {**previous['core'][stage], **previous['extra'][stage]} for stage in previous['core']},
                 'extra': previous['extra']}
     specs = {'core': {'database': 'db'}, 'extra': {'database': 'db', 'append': True}}
-    return previous, expanded, specs
+    return previous, deepcopy(expanded), specs
 
 
 def test_original_append_receipt_completes_expanded_core():
@@ -28,7 +29,10 @@ def test_original_append_receipt_completes_expanded_core():
 @pytest.mark.parametrize('table', ['base', 'appended'])
 def test_every_original_frozen_value_still_required(stage, table):
     previous, expanded, specs = records()
-    expanded['core'][stage][table] = 999
+    if stage == 'digests':
+        expanded['core'][stage][table]['x'] = 999
+    else:
+        expanded['core'][stage][table] = 999
     with pytest.raises(AssertionError):
         compare(previous, expanded, specs)
 
