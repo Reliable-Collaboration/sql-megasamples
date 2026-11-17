@@ -1,10 +1,10 @@
 # DL-074: correct the upgrade to supported LTS targets
 
-This supersedes the release-selection decisions in the four historical engine, client, dataset and cold-readiness reports; their receipts remain intact. The branch starts at `ab75c45a82cee444d2652581d6db151e1d5a3b98`, after fetching `origin`. The live deployment has not been changed. Work is still in progress; final validation and merge are pending.
+This supersedes the release-selection decisions in the four historical engine, client, dataset and cold-readiness reports; their receipts remain intact. The branch starts at `ab75c45a82cee444d2652581d6db151e1d5a3b98`, after fetching `origin`. The live deployment has not been changed. The corrected candidate has passed the required isolated validation; the [complete receipt](validation/lts-upgrade-2026-11-17.json) retains every dataset result, command, timing, image ID and isolation comparison. [PR 12](https://github.com/Reliable-Collaboration/sql-megasamples/pull/12) records delivery and merge status.
 
 The owner requires the newest LTS line reachable by a supported upgrade path, at its latest patch. If no eligible LTS exists, use the latest supported release of the current major. Vendor release numbers are not interchangeable: the selected MySQL server/C API is 9.7.4, Shell is 9.7.1 and Connector/J is 9.7.0. Oracle's policy gives connectors and Shell one upstream release track rather than independent LTS lifecycles. Selecting their available 9.7 releases follows the owner's explicit instruction; it does not invent an Oracle promise of continued 9.7 connector security fixes.
 
-Oracle’s [release notes](https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html), read 2026-11-17T16:46:19Z, identify 9.7.4 as released and 9.7.4.1 as not yet released. The MySQL server is pinned from Oracle Container Registry: `container-registry.oracle.com/mysql/community-server:9.7.4@sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb` (registry read 2026-11-17T15:40:01.485365+00:00). Oracle’s image bundles Shell 26.10.0, so `engines/mysql/base.Dockerfile` replaces the entire Shell payload with 9.7.1 from digest-pinned `docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8`. The payload includes its libraries, authentication plugins, helper paths, manual and licence documentation. A later embedded-runtime audit found Python 3.13.12 and SQLite 3.50.4 in both inherited and 9.7.1 Shell payloads. The base now builds SHA-256-pinned Python 3.13.18 in the same linked 3.13 ABI, including fresh stdlib/native extensions, against the existing SHA3-checked SQLite 3.54.1 source. The previous bake was stopped before deployment; fresh restore/bake validation is repeated for this correction. Vendor site-packages remain part of the selected Shell payload; unconfigured cloud-service dependencies are not independently selected project clients. A file-level audit caught missing auxiliary files in the first thin-base attempt. The completed base also extracts Oracle’s SHA-256-checked 9.7.4 full-client RPM for mysqlbinlog/mysql_config_editor and points Shell’s helper paths to those current-patch binaries; stock 26.10 helper versions and corrected 9.7.4 versions were both probed. The thin base preserves the existing data-volume convention, adds the project configuration include and adapts the entrypoint path. A real configuration probe failed before the include fix and passed afterward. The server and baked images both build/use that same thin base; the loader copies only the Oracle-registry native CLI binaries. Both registry manifest digests were verified against their response bytes. The first 9.7.4 build server was initialized from scratch using Docker Hub’s Oracle distribution. The final Oracle-registry thin base initialized a fresh build-server directory and restored all 30 physical databases from those new 9.7 logical dumps in 963.70 seconds before baking. Its first attempt to restore an old 26.10 dump Failed with Shell error 53011 (version mismatch). No `ignoreVersion` bypass was used: all 33 configured MySQL datasets passed rebuilding from the unchanged downloaded inputs and previously authorized WWI exports. No 26.10 data directory is reused.
+Oracle’s [release notes](https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html), read again 2026-11-17T20:51:49Z, identify 9.7.4 as released and 9.7.4.1 as not yet released. The MySQL server is pinned from Oracle Container Registry: `container-registry.oracle.com/mysql/community-server:9.7.4@sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb` (registry read 2026-11-17T15:40:01.485365+00:00). Oracle’s image bundles Shell 26.10.0, so `engines/mysql/base.Dockerfile` replaces the entire Shell payload with 9.7.1 from digest-pinned `docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8`. The payload includes its libraries, authentication plugins, helper paths, manual and licence documentation. A later embedded-runtime audit found Python 3.13.12 and SQLite 3.50.4 in both inherited and 9.7.1 Shell payloads. The base now builds SHA-256-pinned Python 3.13.18 in the same linked 3.13 ABI, including fresh stdlib/native extensions, against the existing SHA3-checked SQLite 3.54.1 source. The previous bake was stopped before deployment; the final fresh restore, rich-type Shell dump/restore and bake have Passed for this correction. Vendor site-packages remain part of the selected Shell payload; unconfigured cloud-service dependencies are not independently selected project clients. A file-level audit caught missing auxiliary files in the first thin-base attempt. The completed base also extracts Oracle’s SHA-256-checked 9.7.4 full-client RPM for mysqlbinlog/mysql_config_editor and points Shell’s helper paths to those current-patch binaries; stock 26.10 helper versions and corrected 9.7.4 versions were both probed. The thin base preserves the existing data-volume convention, adds the project configuration include and adapts the entrypoint path. A real configuration probe failed before the include fix and passed afterward. The server and baked images both build/use that same thin base; the loader copies only the Oracle-registry native CLI binaries. Both registry manifest digests were verified against their response bytes. The first 9.7.4 build server was initialized from scratch using Docker Hub’s Oracle distribution. The final Oracle-registry thin base initialized a fresh build-server directory and restored all 30 physical databases from those new 9.7 logical dumps in 985.05 seconds before baking. Its first attempt to restore an old 26.10 dump Failed with Shell error 53011 (version mismatch). No `ignoreVersion` bypass was used: all 33 configured MySQL datasets passed rebuilding from the unchanged downloaded inputs and previously authorized WWI exports. No 26.10 data directory is reused.
 
 Node 26.13.1 is the newest upstream LTS but failed to compile DbGate's bundled ssh2 native binding (`v8::Context::GetIsolate` was removed). Node 24.22.3 is the newest tested compatible LTS; the image rebuilds native bindings and opens SQLite under the new ABI. Both the failed candidate and successful native-binding probe are retained. npm's new install-script approval mechanism initially skipped native rebuilds; explicit version-pinned approvals and direct native-module loading now verify that the build actually ran. These are build-script approvals, not acceptance of vendor service/database terms.
 
@@ -88,18 +88,28 @@ The Before column uses each component baseline recorded in the historical runs a
 
 Playwright’s current-major patch was also stale: the publisher metadata and MCR manifest identify 1.65.2, so both the screenshot image and matching Python package are updated together (publisher read 2026-11-17T15:51:02.543206+00:00; registry read 2026-11-17T15:51:47.306498+00:00). All ten rechecked Docker Hub image pins still matched their registry digests, and the SQL Server MCR pin matched.
 
+The final release recheck still matched all 28 Python current-major pins and the 13 Docker Hub inputs, plus the Oracle MySQL and Playwright manifests. The SQL Server current tag negotiates a Docker v2 manifest while the retained pin identifies OCI bytes: both manifests have exactly the same config digest and ordered layer digests/sizes, so its image payload is unchanged. Raw negotiation responses, exact URLs and UTC read times are retained and summarized in the receipt.
+
+The running phpMyAdmin check caught an HTTP-200 session error after the PHP runtime transplant: cross-stage copying had reset `/sessions` to root-owned 0755. The vendor image's 1777, UID/GID 33 directory is now preserved explicitly. A new repository regression first Failed on accepting that error page; `make test-console` now requires every MySQL database for both configured accounts. The actual broken image then Failed that stronger gate before replacement. Native permissions and both actual UI database lists Passed afterward. The SQLite matrix also first Failed because tab-separated CLI output quotes JSON fields; a separate regression reproduced the exact JSON decoding error before switching to CSV-aware TSV decoding. Registry equality, frozen inputs, counts and fingerprints remain strict.
+
 ## Validation
 
 | Check | Status | Evidence |
 |---|---|---|
 | Pin regressions before implementation | Failed (expected) | Five LTS cases; separate SQLGlot, NGINX and unwanted distribution sysbench assertions failed for their stated pins. |
-| Locked Python unit suite | Passed | Last complete suite: 219 tests in 23.45 seconds; six additional frozen-record regression tests pass. Final whole-repository gate still required. |
+| Locked Python unit suite | Passed | 233 tests in 23.39 seconds after the session/TSV regressions; complete `make check` Passed with zero failures, including reproducible port records. `uv lock --check` also Passed. |
 | Corrected Oracle loader probe | Passed | CLI text/binary dump/restore, uncached caching_sha2_password and prepared queries, one-warehouse repository TPC-C loader; final source-built image retested. |
 | DbGate Node 26 candidate | Failed | Native ssh2 C++ API incompatibility; not selected. |
-| DbGate Node 24 candidate | Passed | Native ABI probe and build-time SQLite query. Running-console tests pending. |
+| DbGate Node 24 candidate | Passed | Native ABI probe, current SQLite runtime query, running-driver registry checks and browser film-grid capture Passed. |
 | Fresh 9.7 engine/dataset rebuild and restore | Passed | All 33 logical datasets rebuilt with full verification; all 30 physical databases restored onto the fresh Oracle base. No pins weakened. |
 | Frozen live-feed comparison | Passed | Original core plus append receipts match exactly. Initial strict record-shape comparison Failed because the expanded core now observes its append table; six regression tests protect every original value and reject unfrozen tables. |
-| Runtime matrix, resets, consoles, cold gates and whole repository gate | Not run (pending) | Must pass before merge. |
+| Stop/start persistence | Passed | All actual counts, SQLite bytes, inserted markers and engine IDs preserved; 44.16-second stop/start readiness, 691.77-second full command including snapshots/probe reset. |
+| Reset modes | Passed | Three pubs selectors; MySQL/PostgreSQL/SQLite whole-engine resets; all engines; append aliases; all 95 selectors (4,956.20 seconds), exact foreign keys and every configured dataset file in both SQLite copies. |
+| Complete engine image tests | Passed | MySQL 484.62 seconds; PostgreSQL 280.55 seconds; SQLite 781.70 seconds; zero failures. |
+| Six fresh-volume MySQL cold starts | Passed | Copy/run 23.886–26.167 seconds; subsequent query readiness 0.889–0.903 seconds; unchanged 170/30-second budgets. |
+| Running-console and endpoint checks | Passed | Both phpMyAdmin accounts; Adminer MySQL/PostgreSQL login; DbGate native drivers and all SQLite files; 32 CloudBeaver connections; endpoint authentication and permission probes. |
+| Browser capture | Passed | Three private screenshots; CloudBeaver film Data grid and DbGate actual film rows visually checked. Full-tree virtualization required scrolling; the original timeout is retained. Optional analytics declined; no terms accepted. |
+| Runtime matrix | Passed | 95 configured engine/dataset combinations, with actual counts and canonical fingerprints; SQLite bytes equal in both copies. The first TSV observer failure is retained and its corrected full rerun Passed. |
 | Four translator pairs | Unsupported | BTS and WWI OLTP on PostgreSQL/SQLite: existing generated-expression guard. |
 | Full Enron PostgreSQL FTS index | Unsupported | Existing native text-search vector-size limit; rows/digests remain required. |
 | Oracle native verification | Not run | No explicit Oracle terms acceptance; no Oracle database started. |
@@ -107,8 +117,48 @@ Playwright’s current-major patch was also stale: the publisher metadata and MC
 
 No new terms were accepted. WWI uses only the already exported owner-authorized input artifacts. No SQL Server export container is started by this correction.
 
+## Complete configured dataset matrix
+
+Every Passed cell has actual table counts and canonical `(n, x, s)` fingerprints with its column sets in the [machine-readable receipt](validation/lts-upgrade-2026-11-17.json), under `runtime_matrices`. SQLite also has SHA-256 equality between the verified build file and both running copies. The four Unsupported cells retain actual translator refusal evidence. Generated benchmark datasets outside this configuration keep their documented Not run/Unsupported scope.
+
+| Dataset | MySQL | PostgreSQL | SQLite |
+|---|---|---|---|
+| adventureworks | Passed | Passed | Passed |
+| adventureworks_dw | Passed | Passed | Passed |
+| adventureworks_lt | Passed | Passed | Passed |
+| bts_ontime | Passed | Unsupported | Unsupported |
+| chicago_crimes | Passed | Passed | Passed |
+| chicago_crimes_full | Passed | Passed | Passed |
+| chinook | Passed | Passed | Passed |
+| contoso | Passed | Passed | Passed |
+| contoso_10m | Passed | Passed | Passed |
+| contoso_1m | Passed | Passed | Passed |
+| dvdstore | Passed | Passed | Passed |
+| dvdstore_reviews | Passed | Passed | Passed |
+| employees | Passed | Passed | Passed |
+| enron | Passed | Passed | Passed |
+| enron_full | Passed | Passed | Passed |
+| jaffle_shop | Passed | Passed | Passed |
+| lahman | Passed | Passed | Passed |
+| northwind | Passed | Passed | Passed |
+| nyc_taxi | Passed | Passed | Passed |
+| nyc_taxi_yellow | Passed | Passed | Passed |
+| oracle_co | Passed | Passed | Passed |
+| oracle_hr | Passed | Passed | Passed |
+| oracle_oe | Passed | Passed | Passed |
+| oracle_sh | Passed | Passed | Passed |
+| pubs | Passed | Passed | Passed |
+| sakila | Passed | Passed | Passed |
+| smallsets | Passed | Passed | Passed |
+| stackexchange_beer | Passed | Passed | Passed |
+| stackexchange_dba | Passed | Passed | Passed |
+| wideworldimporters | Passed | Unsupported | Unsupported |
+| wideworldimporters_dw | Passed | Passed | Passed |
+| wikipedia_simple | Passed | Passed | Passed |
+| wikipedia_simple_full | Passed | Passed | Passed |
+
 ## Isolation and handoff
 
 Before any mutation, the isolated store contained exactly twelve inherited rehearsal containers. Its graph root is `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/graph`. The owner-supplied baseline matched all three live IDs, image IDs, nanosecond start times and running states on read-only inspection. The isolated API was stopped at handoff from the previous run; this task restarted only that isolated socket service. No proxy service action was performed.
 
-Final stack status, endpoints, measurements, complete validation receipt and PR merge will be recorded after validation. The existing alternate ports are retained: MySQL `127.0.0.1:13306`, PostgreSQL `127.0.0.1:15432`, landing/PMA/Adminer/DbGate/CloudBeaver `127.0.0.1:18080`–`:18084`.
+The final store listing contains exactly the twelve expected project containers. All eight runtime services are running, the three configured engine health checks are healthy, and the console/endpoint application probes Passed. Native container OOM/restart state and resource limits are recorded. The closing read-only default-store comparison still matches all three live IDs, image IDs, full nanosecond start times and running states; proxy-service actions remain None. The [receipt](validation/lts-upgrade-2026-11-17.json) contains the complete listing and comparison. No new terms were accepted. The existing alternate ports are retained: MySQL `127.0.0.1:13306`, PostgreSQL `127.0.0.1:15432`, landing/PMA/Adminer/DbGate/CloudBeaver `127.0.0.1:18080`–`:18084`.

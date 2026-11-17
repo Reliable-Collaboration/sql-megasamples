@@ -23,6 +23,16 @@
         "read_at": "2026-11-17T16:46:19+00:00",
         "web_read_status": "Passed",
         "finding": "9.7.4 released 2026-10-20; next 9.7.4.1 is explicitly not yet released."
+      },
+      "final_release_notes_recheck": {
+        "status": "Passed",
+        "read_at": "2026-11-17T20:51:49+00:00",
+        "urls": [
+          "https://dev.mysql.com/doc/relnotes/mysql/9.7/en/",
+          "https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html"
+        ],
+        "finding": "9.7.4 remains released; 9.7.4.1 explicitly Not yet released",
+        "method": "Web tool open of Oracle release notes, with UTC clock reading immediately afterward"
       }
     },
     {
@@ -271,7 +281,8 @@
         "read_at": "2026-11-17T15:11:52.936414+00:00",
         "read_status": "Passed"
       },
-      "notes": "Application retained; PHP runtime updated separately. Vendor publishes PHP >=7.2; no downgrade to the older 4.9 LTS line."
+      "notes": "Application retained; PHP runtime updated separately. Vendor publishes PHP >=7.2; no downgrade to the older 4.9 LTS line.",
+      "validation_note": "The first PHP 8.5 runtime copy lost the vendor session-directory mode/ownership. An actual HTTP-200 session error and a failing repository regression preceded the fix; /sessions now preserves vendor 1777 and www-data UID/GID 33, and both account database lists pass."
     },
     {
       "component": "adminer",
@@ -516,7 +527,14 @@
         "url": "https://pypi.org/pypi/backports-zstd/json",
         "read_at": "2026-11-17T15:18:19.201685+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/backports-zstd/json",
+        "read_at": "2026-11-17T20:51:37.498754+00:00",
+        "locked": "1.8.0",
+        "latest_current_major": "1.8.0",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python brotli",
@@ -534,7 +552,14 @@
         "url": "https://pypi.org/pypi/brotli/json",
         "read_at": "2026-11-17T15:18:19.141680+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/brotli/json",
+        "read_at": "2026-11-17T20:51:37.464932+00:00",
+        "locked": "1.2.1",
+        "latest_current_major": "1.2.1",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python brotlicffi",
@@ -552,7 +577,14 @@
         "url": "https://pypi.org/pypi/brotlicffi/json",
         "read_at": "2026-11-17T15:18:19.010763+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/brotlicffi/json",
+        "read_at": "2026-11-17T20:51:37.430110+00:00",
+        "locked": "1.2.1.0",
+        "latest_current_major": "1.2.1.0",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python cffi",
@@ -570,7 +602,14 @@
         "url": "https://pypi.org/pypi/cffi/json",
         "read_at": "2026-11-17T15:18:19.155026+00:00"
       },
-      "notes": ""
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/cffi/json",
+        "read_at": "2026-11-17T20:51:37.526378+00:00",
+        "locked": "2.1.1",
+        "latest_current_major": "2.1.1",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python colorama",
@@ -588,7 +627,14 @@
         "url": "https://pypi.org/pypi/colorama/json",
         "read_at": "2026-11-17T15:18:19.011413+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/colorama/json",
+        "read_at": "2026-11-17T20:51:37.422957+00:00",
+        "locked": "0.4.6",
+        "latest_current_major": "0.4.6",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python cryptography",
@@ -606,7 +652,14 @@
         "url": "https://pypi.org/pypi/cryptography/json",
         "read_at": "2026-11-17T15:18:19.182816+00:00"
       },
-      "notes": ""
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/cryptography/json",
+        "read_at": "2026-11-17T20:51:37.571404+00:00",
+        "locked": "50.0.2",
+        "latest_current_major": "50.0.2",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python duckdb",
@@ -624,7 +677,14 @@
         "url": "https://pypi.org/pypi/duckdb/json",
         "read_at": "2026-11-17T15:18:19.128278+00:00"
       },
-      "notes": ""
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/duckdb/json",
+        "read_at": "2026-11-17T20:51:37.609873+00:00",
+        "locked": "2.0.0",
+        "latest_current_major": "2.0.0",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python inflate64",
@@ -642,7 +702,14 @@
         "url": "https://pypi.org/pypi/inflate64/json",
         "read_at": "2026-11-17T15:18:19.093462+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/inflate64/json",
+        "read_at": "2026-11-17T20:51:37.480764+00:00",
+        "locked": "1.0.4",
+        "latest_current_major": "1.0.4",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python iniconfig",
@@ -660,7 +727,14 @@
         "url": "https://pypi.org/pypi/iniconfig/json",
         "read_at": "2026-11-17T15:18:20.113191+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/iniconfig/json",
+        "read_at": "2026-11-17T20:51:37.501436+00:00",
+        "locked": "2.3.1",
+        "latest_current_major": "2.3.1",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python lxml",
@@ -678,7 +752,14 @@
         "url": "https://pypi.org/pypi/lxml/json",
         "read_at": "2026-11-17T15:18:19.332371+00:00"
       },
-      "notes": ""
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/lxml/json",
+        "read_at": "2026-11-17T20:51:37.784965+00:00",
+        "locked": "6.1.3",
+        "latest_current_major": "6.1.3",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python multivolumefile",
@@ -696,7 +777,14 @@
         "url": "https://pypi.org/pypi/multivolumefile/json",
         "read_at": "2026-11-17T15:18:19.282055+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/multivolumefile/json",
+        "read_at": "2026-11-17T20:51:37.616021+00:00",
+        "locked": "0.2.3",
+        "latest_current_major": "0.2.3",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python packaging",
@@ -714,7 +802,14 @@
         "url": "https://pypi.org/pypi/packaging/json",
         "read_at": "2026-11-17T15:18:19.264379+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/packaging/json",
+        "read_at": "2026-11-17T20:51:37.615140+00:00",
+        "locked": "26.3",
+        "latest_current_major": "26.3",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python pluggy",
@@ -732,7 +827,14 @@
         "url": "https://pypi.org/pypi/pluggy/json",
         "read_at": "2026-11-17T15:18:19.246838+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pluggy/json",
+        "read_at": "2026-11-17T20:51:37.630807+00:00",
+        "locked": "1.7.0",
+        "latest_current_major": "1.7.0",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python psutil",
@@ -750,7 +852,14 @@
         "url": "https://pypi.org/pypi/psutil/json",
         "read_at": "2026-11-17T15:18:19.373152+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/psutil/json",
+        "read_at": "2026-11-17T20:51:37.712862+00:00",
+        "locked": "7.2.2",
+        "latest_current_major": "7.2.2",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python psycopg",
@@ -768,7 +877,14 @@
         "url": "https://pypi.org/pypi/psycopg/json",
         "read_at": "2026-11-17T15:18:19.266957+00:00"
       },
-      "notes": ""
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/psycopg/json",
+        "read_at": "2026-11-17T20:51:37.668125+00:00",
+        "locked": "3.3.9",
+        "latest_current_major": "3.3.9",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python py7zr",
@@ -786,7 +902,14 @@
         "url": "https://pypi.org/pypi/py7zr/json",
         "read_at": "2026-11-17T15:18:19.393326+00:00"
       },
-      "notes": ""
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/py7zr/json",
+        "read_at": "2026-11-17T20:51:37.696561+00:00",
+        "locked": "1.1.4",
+        "latest_current_major": "1.1.4",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python pybcj",
@@ -804,7 +927,14 @@
         "url": "https://pypi.org/pypi/pybcj/json",
         "read_at": "2026-11-17T15:18:19.413379+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pybcj/json",
+        "read_at": "2026-11-17T20:51:37.795089+00:00",
+        "locked": "1.0.8",
+        "latest_current_major": "1.0.8",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python pycparser",
@@ -822,7 +952,14 @@
         "url": "https://pypi.org/pypi/pycparser/json",
         "read_at": "2026-11-17T15:18:19.375070+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pycparser/json",
+        "read_at": "2026-11-17T20:51:37.687113+00:00",
+        "locked": "3.12",
+        "latest_current_major": "3.12",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python pycryptodomex",
@@ -840,7 +977,14 @@
         "url": "https://pypi.org/pypi/pycryptodomex/json",
         "read_at": "2026-11-17T15:18:19.446656+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pycryptodomex/json",
+        "read_at": "2026-11-17T20:51:37.805892+00:00",
+        "locked": "3.24.2",
+        "latest_current_major": "3.24.2",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python pygments",
@@ -858,7 +1002,14 @@
         "url": "https://pypi.org/pypi/pygments/json",
         "read_at": "2026-11-17T15:18:19.454309+00:00"
       },
-      "notes": ""
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pygments/json",
+        "read_at": "2026-11-17T20:51:37.790131+00:00",
+        "locked": "2.21.0",
+        "latest_current_major": "2.21.0",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python pymysql",
@@ -876,7 +1027,14 @@
         "url": "https://pypi.org/pypi/pymysql/json",
         "read_at": "2026-11-17T15:18:19.448264+00:00"
       },
-      "notes": ""
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pymysql/json",
+        "read_at": "2026-11-17T20:51:37.788183+00:00",
+        "locked": "1.2.4",
+        "latest_current_major": "1.2.4",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python pyppmd",
@@ -894,7 +1052,14 @@
         "url": "https://pypi.org/pypi/pyppmd/json",
         "read_at": "2026-11-17T15:18:19.527603+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pyppmd/json",
+        "read_at": "2026-11-17T20:51:37.868846+00:00",
+        "locked": "1.3.1",
+        "latest_current_major": "1.3.1",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python pytest",
@@ -912,7 +1077,14 @@
         "url": "https://pypi.org/pypi/pytest/json",
         "read_at": "2026-11-17T15:18:19.489065+00:00"
       },
-      "notes": ""
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pytest/json",
+        "read_at": "2026-11-17T20:51:37.882349+00:00",
+        "locked": "9.2.0",
+        "latest_current_major": "9.2.0",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python pyyaml",
@@ -930,7 +1102,14 @@
         "url": "https://pypi.org/pypi/pyyaml/json",
         "read_at": "2026-11-17T15:18:19.518640+00:00"
       },
-      "notes": ""
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pyyaml/json",
+        "read_at": "2026-11-17T20:51:37.896602+00:00",
+        "locked": "6.0.3",
+        "latest_current_major": "6.0.3",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python sqlglot",
@@ -948,7 +1127,14 @@
         "url": "https://pypi.org/pypi/sqlglot/json",
         "read_at": "2026-11-17T15:18:19.590573+00:00"
       },
-      "notes": ""
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/sqlglot/json",
+        "read_at": "2026-11-17T20:51:37.941595+00:00",
+        "locked": "30.33.0",
+        "latest_current_major": "30.33.0",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python texttable",
@@ -966,7 +1152,14 @@
         "url": "https://pypi.org/pypi/texttable/json",
         "read_at": "2026-11-17T15:18:19.555525+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/texttable/json",
+        "read_at": "2026-11-17T20:51:37.870654+00:00",
+        "locked": "1.7.3",
+        "latest_current_major": "1.7.3",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python typing-extensions",
@@ -984,7 +1177,14 @@
         "url": "https://pypi.org/pypi/typing-extensions/json",
         "read_at": "2026-11-17T15:18:19.533827+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/typing-extensions/json",
+        "read_at": "2026-11-17T20:51:37.897964+00:00",
+        "locked": "4.16.0",
+        "latest_current_major": "4.16.0",
+        "status": "Passed"
+      }
     },
     {
       "component": "Python tzdata",
@@ -1002,7 +1202,14 @@
         "url": "https://pypi.org/pypi/tzdata/json",
         "read_at": "2026-11-17T15:18:19.541518+00:00"
       },
-      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion."
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/tzdata/json",
+        "read_at": "2026-11-17T20:51:37.892719+00:00",
+        "locked": "2026.6",
+        "latest_current_major": "2026.6",
+        "status": "Passed"
+      }
     },
     {
       "component": "loader-base",
@@ -1816,5 +2023,51 @@
     "No separate lifecycle/support-policy page could be located for several small packages and Community consoles; release metadata is not a support contract.",
     "No user terms accepted. Oracle native verification Not run.",
     "Historical console tags and some base versions were not recovered; exact baseline source/digests are used instead of fabricated versions."
-  ]
+  ],
+  "final_registry_recheck": {
+    "node": {
+      "url": "https://hub.docker.com/v2/repositories/library/node/tags/24.22.3-bookworm-slim",
+      "read_at": "2026-11-17T20:57:58.126047+00:00",
+      "expected": "sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54",
+      "actual": "sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54",
+      "status": "Passed"
+    },
+    "php-apache": {
+      "url": "https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-apache-trixie",
+      "read_at": "2026-11-17T20:57:58.254099+00:00",
+      "expected": "sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46",
+      "actual": "sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46",
+      "status": "Passed"
+    },
+    "php-cli": {
+      "url": "https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-cli-alpine3.24",
+      "read_at": "2026-11-17T20:57:58.363201+00:00",
+      "expected": "sha256:1ff5b45922ab30f418447c6089dbe2eba5f01e0b2742863d0327ac349305d70f",
+      "actual": "sha256:1ff5b45922ab30f418447c6089dbe2eba5f01e0b2742863d0327ac349305d70f",
+      "status": "Passed"
+    },
+    "mysql": {
+      "url": "https://container-registry.oracle.com/v2/mysql/community-server/manifests/9.7.4",
+      "read_at": "2026-11-17T20:57:59.534924+00:00",
+      "expected": "sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb",
+      "actual": "sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb",
+      "status": "Passed"
+    },
+    "playwright": {
+      "url": "https://mcr.microsoft.com/v2/playwright/python/manifests/v1.65.2-noble",
+      "read_at": "2026-11-17T20:57:59.686672+00:00",
+      "expected": "sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f",
+      "actual": "sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f",
+      "status": "Passed"
+    },
+    "sqlserver-export": {
+      "url": "https://mcr.microsoft.com/v2/mssql/server/manifests/2025-CU11-ubuntu-24.04",
+      "read_at": "2026-11-17T20:57:59.825843+00:00",
+      "expected": "sha256:05644dad1266ca3d445d1e8f6d2ebb9a6a03df9a39376e0f7b48917356dca9d9",
+      "actual": "sha256:a554b8cf6ab60b92838737f03d0422c4babcd491d09cba3bec0e5e41e292b921",
+      "status": "Passed",
+      "verification": "The retained OCI digest remains accessible and byte-hash verified. Current tag uses a Docker v2 manifest with different wrapper bytes, but identical config digest and ordered layer digests/sizes.",
+      "payload_comparison": "build/lts-audit/final-source-recheck/mcr-payload-comparison.json"
+    }
+  }
 }
