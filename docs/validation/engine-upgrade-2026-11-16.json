@@ -58,9 +58,8 @@
       "status": "Passed"
     },
     "mysql:bts_ontime": {
-      "missing": [
-        "bts_ontime/L_AIRPORT.csv"
-      ],
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
       "status": "Not run"
     },
     "mysql:chicago_crimes": {
@@ -208,11 +207,13 @@
       "status": "Passed"
     },
     "mysql:wideworldimporters": {
-      "reason": "explicit SQL Server EULA acceptance/export pending",
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
       "status": "Not run"
     },
     "mysql:wideworldimporters_dw": {
-      "reason": "explicit SQL Server EULA acceptance/export pending",
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
       "status": "Not run"
     },
     "mysql:wikipedia_simple": {
@@ -246,7 +247,8 @@
       "status": "Passed"
     },
     "postgres:bts_ontime": {
-      "reason": "hub Not run",
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
       "status": "Not run"
     },
     "postgres:chicago_crimes": {
@@ -398,11 +400,13 @@
       "status": "Passed"
     },
     "postgres:wideworldimporters": {
-      "reason": "hub Not run",
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
       "status": "Not run"
     },
     "postgres:wideworldimporters_dw": {
-      "reason": "hub Not run",
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
       "status": "Not run"
     },
     "postgres:wikipedia_simple": {
@@ -436,7 +440,8 @@
       "status": "Passed"
     },
     "sqlite:bts_ontime": {
-      "reason": "hub Not run",
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
       "status": "Not run"
     },
     "sqlite:chicago_crimes": {
@@ -584,11 +589,13 @@
       "status": "Passed"
     },
     "sqlite:wideworldimporters": {
-      "reason": "hub Not run",
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
       "status": "Not run"
     },
     "sqlite:wideworldimporters_dw": {
-      "reason": "hub Not run",
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
       "status": "Not run"
     },
     "sqlite:wikipedia_simple": {
@@ -907,8 +914,16 @@
       "status": "Failed"
     }
   ],
+  "followup_captured_at": "2026-11-17T02:57:09.228440+00:00",
+  "followup_evidence_sha256": {
+    "build/client-evidence/engine-followup-check.log": "c5698846115f6f470d81d1b60914efd6df3c4cc6ca4ef29172c6aa1e82389cfa",
+    "build/client-evidence/pg-startup-measurements.json": "7baac7f1e28e0836d0f6f22010fa06c57ff28f54b50cf193b5c4756715c007c4",
+    "build/client-evidence/postgres-full-image-after.log": "481c09b49836640959ca72c83aa143bee242410a64bce60638d32b191b5d6912",
+    "build/client-evidence/postgres-startup-after.log": "ebd938888ffaa2af3581cec946b9b58fbc84d3d34af429b416dd4a0ad79f1a12",
+    "build/client-evidence/postgres-startup-before-final-cases.log": "61f7ec4d596be7016ebeb6f8612abd1c1fefd61b23c0b3432eaae55b8db5cd14"
+  },
   "full_manifest_validation": {
-    "reason": "Pinned BTS airport CSV unavailable; both WideWorldImporters exports await explicit operator EULA acceptance.",
+    "reason": "Nine combinations explicitly excluded by the owner's follow-up; pending the owner's decisions. See owner_deferred_combinations. No BTS pin change or EULA acceptance.",
     "status": "Not run"
   },
   "harness_recoveries": [
@@ -951,17 +966,27 @@
   },
   "image_gate": {
     "current_attempt": {
+      "cold_start_budget_seconds": 100,
+      "cold_start_seconds": 47.2,
+      "data_and_accounts": "Passed",
+      "log": "build/client-evidence/postgres-full-image-after.log",
+      "query_after_run_seconds": 0.6,
+      "returncode": 0,
+      "server_budget_seconds": 30,
+      "status": "Passed"
+    },
+    "historical_30_second_attempt": {
       "returncode": 2,
       "seconds": 386.35,
       "status": "Failed"
     },
-    "reason": "PostgreSQL readiness 57.6 seconds exceeds unchanged 30-second budget; all data/account checks passed.",
+    "reason": "All available-data image gates pass. The PostgreSQL cold-copy budget is based on matched 18.6/18.7 measurements, with a separate retained 30-second server gate.",
     "sqlite_final_attempt": {
       "returncode": 0,
       "seconds": 781.31,
       "status": "Passed"
     },
-    "status": "Failed"
+    "status": "Passed"
   },
   "limits": [
     "Full 33-dataset validation incomplete.",
@@ -1006,6 +1031,71 @@
       "object": "message.ft_message",
       "reason": "An observed message produces a 1491766-byte tsvector, above the native 1048575-byte maximum. Full message content and existing fingerprints retained.",
       "status": "Unsupported"
+    }
+  ],
+  "owner_deferred_combinations": [
+    {
+      "dataset": "bts_ontime",
+      "disposition": "pending the owner's decision",
+      "engine": "mysql",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters",
+      "disposition": "pending the owner's decision",
+      "engine": "mysql",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters_dw",
+      "disposition": "pending the owner's decision",
+      "engine": "mysql",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "bts_ontime",
+      "disposition": "pending the owner's decision",
+      "engine": "postgres",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters",
+      "disposition": "pending the owner's decision",
+      "engine": "postgres",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters_dw",
+      "disposition": "pending the owner's decision",
+      "engine": "postgres",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "bts_ontime",
+      "disposition": "pending the owner's decision",
+      "engine": "sqlite",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters",
+      "disposition": "pending the owner's decision",
+      "engine": "sqlite",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters_dw",
+      "disposition": "pending the owner's decision",
+      "engine": "sqlite",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
     }
   ],
   "packaging_source_commits": {
@@ -1267,6 +1357,11 @@
       "seconds": 13.47,
       "status": "Passed"
     },
+    "mysql:bts_ontime": {
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+      "status": "Not run"
+    },
     "mysql:chicago_crimes": {
       "failures": 0,
       "seconds": 68.92,
@@ -1392,6 +1487,16 @@
       "seconds": 40.26,
       "status": "Passed"
     },
+    "mysql:wideworldimporters": {
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    "mysql:wideworldimporters_dw": {
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
     "mysql:wikipedia_simple": {
       "failures": 0,
       "seconds": 14.63,
@@ -1416,6 +1521,11 @@
       "failures": 0,
       "seconds": 8.16,
       "status": "Passed"
+    },
+    "postgres:bts_ontime": {
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+      "status": "Not run"
     },
     "postgres:chicago_crimes": {
       "failures": 0,
@@ -1542,6 +1652,16 @@
       "seconds": 204.45,
       "status": "Passed"
     },
+    "postgres:wideworldimporters": {
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    "postgres:wideworldimporters_dw": {
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
     "postgres:wikipedia_simple": {
       "failures": 0,
       "seconds": 26.22,
@@ -1566,6 +1686,11 @@
       "failures": 0,
       "seconds": 0.13,
       "status": "Passed"
+    },
+    "sqlite:bts_ontime": {
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+      "status": "Not run"
     },
     "sqlite:chicago_crimes": {
       "failures": 0,
@@ -1692,6 +1817,16 @@
       "seconds": 28.14,
       "status": "Passed"
     },
+    "sqlite:wideworldimporters": {
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    "sqlite:wideworldimporters_dw": {
+      "disposition": "pending the owner's decision",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
     "sqlite:wikipedia_simple": {
       "failures": 0,
       "seconds": 9.27,
@@ -1704,10 +1839,269 @@
     }
   },
   "source_checks": {
-    "log": "final-source-check-160.log",
+    "command": "make check PY=/opt/locked-venv/bin/python",
+    "log": "build/client-evidence/engine-followup-check.log",
+    "port_reproduction_in_this_command": "Not run: stopped build server; prior running-stack reproduction remains Passed for all 30 available datasets.",
     "status": "Passed",
-    "unit_test_seconds": 22.69,
-    "unit_tests_passed": 160
+    "unit_test_seconds": 23.47,
+    "unit_tests_passed": 164
+  },
+  "startup_followup": {
+    "baseline_dockerfile": "FROM docker.io/library/sql-megasamples-postgres:dev AS seed\nFROM docker.io/library/postgres:18.6-trixie@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42\nCOPY --from=seed --chown=postgres:postgres /var/lib/postgresql/18/docker /var/lib/postgresql/18/docker\nCOPY --from=seed /usr/local/bin/entrypoint-wrapper.sh /usr/local/bin/entrypoint-wrapper.sh\nENTRYPOINT [\"entrypoint-wrapper.sh\"]\nCMD [\"postgres\"]\n",
+    "baseline_release_source": {
+      "read_at": "2026-11-17T02:56:47.635285+00:00",
+      "sha256": "3a7b445918048c8922d9538dec6eaa629b139db81c8ab20e8072037523fdc277",
+      "source": "https://www.postgresql.org/docs/release/18.6/"
+    },
+    "cold_start_budget_seconds": 100,
+    "derivation": "ceil(2 * max(matched readiness seconds) / 10) * 10 = 100 seconds; server-only budget retained",
+    "full_image_retest": "Passed",
+    "matched_content_proof": {
+      "files": 11170,
+      "manifest_sha256": "134077c6404fc0fa2a18403f5ec91afd241e3e43f4a85bcb06aa5ded7c5281ed",
+      "method": "SHA-256 of every regular file in the clean image PGDATA, with sorted relative filenames; read via isolated Podman image mounts, without starting a server",
+      "status": "Passed",
+      "wrapper_sha256": "6587b9f07bf81dba3adf34c8608a81a2590a4b9b4082cde2b399eec7d265972a"
+    },
+    "measurements": [
+      {
+        "container_started_at": "2026-11-16T20:45:15.419783434-06:00",
+        "image": "localhost/megasamples-upgrade-pg-baseline:18.6",
+        "iteration": 0,
+        "query_ready_seconds": 44.19188165094238,
+        "registry": [
+          "adventureworks",
+          "adventureworks_dw",
+          "adventureworks_lt",
+          "chicago_crimes",
+          "chinook",
+          "contoso",
+          "contoso_10m",
+          "contoso_1m",
+          "dvdstore",
+          "employees",
+          "enron",
+          "enron_full",
+          "jaffle_shop",
+          "lahman",
+          "northwind",
+          "nyc_taxi",
+          "oracle_co",
+          "oracle_hr",
+          "oracle_oe",
+          "oracle_sh",
+          "pubs",
+          "sakila",
+          "smallsets",
+          "stackexchange_beer",
+          "stackexchange_dba",
+          "wikipedia_simple",
+          "wikipedia_simple_full"
+        ],
+        "run_return_seconds": 43.75468461692799,
+        "version": "18.6",
+        "wall_start": "2026-11-17T02:44:31.672876+00:00"
+      },
+      {
+        "container_started_at": "2026-11-16T20:45:57.854081023-06:00",
+        "image": "docker.io/library/sql-megasamples-postgres:dev",
+        "iteration": 0,
+        "query_ready_seconds": 40.75670762092341,
+        "registry": [
+          "adventureworks",
+          "adventureworks_dw",
+          "adventureworks_lt",
+          "chicago_crimes",
+          "chinook",
+          "contoso",
+          "contoso_10m",
+          "contoso_1m",
+          "dvdstore",
+          "employees",
+          "enron",
+          "enron_full",
+          "jaffle_shop",
+          "lahman",
+          "northwind",
+          "nyc_taxi",
+          "oracle_co",
+          "oracle_hr",
+          "oracle_oe",
+          "oracle_sh",
+          "pubs",
+          "sakila",
+          "smallsets",
+          "stackexchange_beer",
+          "stackexchange_dba",
+          "wikipedia_simple",
+          "wikipedia_simple_full"
+        ],
+        "run_return_seconds": 40.150593630969524,
+        "version": "18.7",
+        "wall_start": "2026-11-17T02:45:17.713040+00:00"
+      },
+      {
+        "container_started_at": "2026-11-16T20:46:43.107625729-06:00",
+        "image": "localhost/megasamples-upgrade-pg-baseline:18.6",
+        "iteration": 1,
+        "query_ready_seconds": 42.8180912398966,
+        "registry": [
+          "adventureworks",
+          "adventureworks_dw",
+          "adventureworks_lt",
+          "chicago_crimes",
+          "chinook",
+          "contoso",
+          "contoso_10m",
+          "contoso_1m",
+          "dvdstore",
+          "employees",
+          "enron",
+          "enron_full",
+          "jaffle_shop",
+          "lahman",
+          "northwind",
+          "nyc_taxi",
+          "oracle_co",
+          "oracle_hr",
+          "oracle_oe",
+          "oracle_sh",
+          "pubs",
+          "sakila",
+          "smallsets",
+          "stackexchange_beer",
+          "stackexchange_dba",
+          "wikipedia_simple",
+          "wikipedia_simple_full"
+        ],
+        "run_return_seconds": 42.38026537990663,
+        "version": "18.6",
+        "wall_start": "2026-11-17T02:46:00.736368+00:00"
+      },
+      {
+        "container_started_at": "2026-11-16T20:47:28.321923043-06:00",
+        "image": "docker.io/library/sql-megasamples-postgres:dev",
+        "iteration": 1,
+        "query_ready_seconds": 43.41523365699686,
+        "registry": [
+          "adventureworks",
+          "adventureworks_dw",
+          "adventureworks_lt",
+          "chicago_crimes",
+          "chinook",
+          "contoso",
+          "contoso_10m",
+          "contoso_1m",
+          "dvdstore",
+          "employees",
+          "enron",
+          "enron_full",
+          "jaffle_shop",
+          "lahman",
+          "northwind",
+          "nyc_taxi",
+          "oracle_co",
+          "oracle_hr",
+          "oracle_oe",
+          "oracle_sh",
+          "pubs",
+          "sakila",
+          "smallsets",
+          "stackexchange_beer",
+          "stackexchange_dba",
+          "wikipedia_simple",
+          "wikipedia_simple_full"
+        ],
+        "run_return_seconds": 42.80796246603131,
+        "version": "18.7",
+        "wall_start": "2026-11-17T02:46:45.522326+00:00"
+      },
+      {
+        "container_started_at": "2026-11-16T20:48:17.523514882-06:00",
+        "image": "localhost/megasamples-upgrade-pg-baseline:18.6",
+        "iteration": 2,
+        "query_ready_seconds": 46.703911739983596,
+        "registry": [
+          "adventureworks",
+          "adventureworks_dw",
+          "adventureworks_lt",
+          "chicago_crimes",
+          "chinook",
+          "contoso",
+          "contoso_10m",
+          "contoso_1m",
+          "dvdstore",
+          "employees",
+          "enron",
+          "enron_full",
+          "jaffle_shop",
+          "lahman",
+          "northwind",
+          "nyc_taxi",
+          "oracle_co",
+          "oracle_hr",
+          "oracle_oe",
+          "oracle_sh",
+          "pubs",
+          "sakila",
+          "smallsets",
+          "stackexchange_beer",
+          "stackexchange_dba",
+          "wikipedia_simple",
+          "wikipedia_simple_full"
+        ],
+        "run_return_seconds": 46.192321455921046,
+        "version": "18.6",
+        "wall_start": "2026-11-17T02:47:31.338601+00:00"
+      },
+      {
+        "container_started_at": "2026-11-16T20:49:02.668496201-06:00",
+        "image": "docker.io/library/sql-megasamples-postgres:dev",
+        "iteration": 2,
+        "query_ready_seconds": 42.48080542800017,
+        "registry": [
+          "adventureworks",
+          "adventureworks_dw",
+          "adventureworks_lt",
+          "chicago_crimes",
+          "chinook",
+          "contoso",
+          "contoso_10m",
+          "contoso_1m",
+          "dvdstore",
+          "employees",
+          "enron",
+          "enron_full",
+          "jaffle_shop",
+          "lahman",
+          "northwind",
+          "nyc_taxi",
+          "oracle_co",
+          "oracle_hr",
+          "oracle_oe",
+          "oracle_sh",
+          "pubs",
+          "sakila",
+          "smallsets",
+          "stackexchange_beer",
+          "stackexchange_dba",
+          "wikipedia_simple",
+          "wikipedia_simple_full"
+        ],
+        "run_return_seconds": 42.06659999105614,
+        "version": "18.7",
+        "wall_start": "2026-11-17T02:48:20.617975+00:00"
+      }
+    ],
+    "method": "18.6-trixie baseline Dockerfile COPYs the exact clean baked PGDATA and entrypoint wrapper from the 18.7 full image; fresh anonymous volume per run; alternating versions; no cache dropping; no ports published",
+    "read_at": "2026-11-17T02:49:45.447386+00:00",
+    "scope": "matched measurements only; full-image gate recorded separately",
+    "server_after_run_budget_seconds": 30,
+    "status": "Passed",
+    "test_first": {
+      "after": "Passed: four regression cases",
+      "before": "Failed: four regression cases"
+    }
   },
   "verifier_source_commit": "6f0b1274152403fcb66be07aba0d8ae66715e99a",
   "versions": {

@@ -1,6 +1,6 @@
 # Engine upgrade evidence
 
-Branch integration is complete. Upgrade PR [9](https://github.com/Reliable-Collaboration/sql-megasamples/pull/9) remains a draft and must not merge or deploy: three manifest datasets are blocked, and PostgreSQL's latest full-image readiness test **Failed** at 57.6 seconds against its unchanged 30-second limit. All 30 available datasets passed build/port and running-stack verification on all three engines (90 combinations in each phase); the source gate passed 160 tests. This report is not authorization to change the live deployment. The raw command logs, source captures and per-dataset JSON results live under `build/upgrade-evidence/` in the isolated clone; downloaded inputs are under `downloads/`. No host packages were installed.
+The owner's follow-up explicitly excludes BTS and both WideWorldImporters exports from this upgrade. Their nine combinations are **Not run, pending the owner's decision**, not merge blockers. The startup follow-up below supersedes the historical PostgreSQL readiness failure; the complete full-image retest **Passed**, clearing PR 9 to become ready. All 30 available datasets passed build/port and running-stack verification on all three engines (90 combinations in each phase). Historical failures and original limits remain below as evidence. This report does not authorize a live deployment. Raw logs and source captures remain under `build/upgrade-evidence/` and `build/client-evidence/`; no host packages were installed.
 
 ## Branch integration
 
@@ -164,3 +164,34 @@ Read-only inspection of the default store matched all three supplied live baseli
 Settings: ignored `megasamples.yaml` and mode-0600 `.env` in this clone. Running endpoints: MySQL `127.0.0.1:13306`, PostgreSQL `127.0.0.1:15432`; consoles `127.0.0.1:18080`–`:18084`. Published-port probes **Passed** again after stopping this run's isolated API process. All eight application services remain running; the isolated-only native health-probe runner remains active and its PID/stop file are recorded in the runbook. The unused browser was stopped with SIGKILL after it ignored its stop signal; no application container was stopped during final cleanup. The tools container remains available with locked dependencies. The final isolated `podman ps -a` lists only this run's containers (`isolated-store-final.txt`). Follow `docs/live-upgrade-runbook.md` only after the upgrade and DataIntent validations are complete.
 
 A machine-readable [validation receipt](validation/engine-upgrade-2026-11-16.json) records the actual image/container IDs, release pins and read times, build and runtime matrices, reset/persistence results, final source gate, branch/PR state, isolation comparison and hashes of the local evidence files. Raw evidence remains in this clone; source downloads and credentials are not published. The live runbook's eight shell blocks passed syntax checking only; its native mount-source lookup was tested against the isolated PostgreSQL container. No live backup, cutover, rollback or DataIntent suite was run. The live checkout's Python prerequisites and automatic health scheduling were not inspected.
+
+## PostgreSQL startup follow-up (2026-11-17)
+
+The old 30-second end-to-end gate measured fresh-volume materialization as well as server readiness. An 18.6-trixie comparison image was built by copying the **same clean baked cluster and wrapper** from the final 18.7 image; no datasets were reloaded or expectations changed. Its Dockerfile and exact base digest are embedded in the receipt. Three alternating starts per version each used a fresh anonymous volume, no published ports, the same isolated Podman store, and no cache dropping. All six registries listed the same 27 physical sample databases. COPY preserves the source cluster bytes; the only intended comparison change is the vendor base/minor release. This is a matched-content comparison, not an attempt to reconstruct the old deployment's different dataset selection or bookworm base.
+
+| Release | Run | `podman run` return (s) | First successful TCP query (s) |
+|---|---:|---:|---:|
+| 18.6 | 1 | 43.755 | 44.192 |
+| 18.7 | 1 | 40.151 | 40.757 |
+| 18.6 | 2 | 42.380 | 42.818 |
+| 18.7 | 2 | 42.808 | 43.415 |
+| 18.6 | 3 | 46.192 | 46.704 |
+| 18.7 | 3 | 42.067 | 42.481 |
+
+The query followed `run` return by 0.437–0.607 seconds. PostgreSQL logs show a clean existing cluster, skipped initialization, and prompt readiness. The 18.7 result is not slower than 18.6 in these observations. Together with the earlier independent 38.45-second `cp -a` measurement, the evidence identifies materializing the approximately 21 GiB cluster as the dominant cold-start cost. It does not demonstrate a PostgreSQL startup regression.
+
+The gate now permits **100 seconds end to end**, calculated as twice the largest matched measurement rounded up to ten seconds (`ceil(2 × 46.704 / 10) × 10`). A separate **30-second server limit after `run` returns** retains the prior server-readiness expectation. Both limits must pass; a missing query fails both. This is a measured finite cold-copy allowance, not removal of the startup assertion. The clock is monotonic. Four regression cases **Failed** before implementation, then **Passed**: a measured-size cold start, a slow server, an excessive cold start, and no answer. Raw measurements, logs and the comparison build recipe are in `build/client-evidence/`; compact measurements are committed in the receipt. An initial measurement harness ran before its comparison image had finished building; that harness failure is retained separately and is not counted as a database result.
+
+## Owner-deferred combinations
+
+| Dataset | MySQL | PostgreSQL | SQLite | Reason |
+|---|---|---|---|---|
+| BTS on-time | Not run, pending the owner's decision | Not run, pending the owner's decision | Not run, pending the owner's decision | Absent from live catalogue; owner must decide whether to refresh the airport lookup. Pins unchanged. |
+| WideWorldImporters | Not run, pending the owner's decision | Not run, pending the owner's decision | Not run, pending the owner's decision | Absent from live catalogue; SQL Server Developer EULA acceptance is the owner's decision. No EULA accepted or export attempted. |
+| WideWorldImporters DW | Not run, pending the owner's decision | Not run, pending the owner's decision | Not run, pending the owner's decision | Same EULA decision; no export attempted. |
+
+The full Enron PostgreSQL FTS index remains **Unsupported** for the documented native vector-size limit. Its rows and canonical checksums are retained; no exception or dataset pin was weakened in this follow-up.
+
+The final full-image retest **Passed with zero failures**: cold start 47.2 seconds against 100 seconds; query ready 0.6 seconds after `run` returned against 30 seconds; all configured dataset counts, registry, read/write account privileges and four network password-override assertions passed. The repository gate **Passed: 164 tests in 23.47 seconds**. `gh pr checks` reported no configured checks, so GitHub CI is **Not run**, not an additional passing test.
+
+A separate read-only comparison hashed every regular file in each clean image's PGDATA: **Passed**, all 11170 file hashes and relative names identical. Both manifests have SHA-256 `134077c6404fc0fa2a18403f5ec91afd241e3e43f4a85bcb06aa5ded7c5281ed`; the wrappers also match byte for byte. This verifies the matched contents independently of the Dockerfile COPY instruction.
