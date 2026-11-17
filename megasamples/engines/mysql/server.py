@@ -43,6 +43,12 @@ def start(fresh=False):
     if fresh and container_state():
         stop()
     if container_state() == "running":
+        running = run(["docker", "inspect", "-f", "{{.Image}}", NAME])
+        expected = run(["docker", "image", "inspect", "-f", "{{.Id}}", IMAGE])
+        if (running.returncode or expected.returncode or
+                running.stdout.strip().removeprefix("sha256:") != expected.stdout.strip().removeprefix("sha256:")):
+            sys.exit("Build server uses a different image; run `build-server fresh` to initialize "
+                     "the pinned LTS image. Do not reuse an Innovation data directory.")
         return
     if container_state():
         run(["docker", "rm", "-f", NAME])

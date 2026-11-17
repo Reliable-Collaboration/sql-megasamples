@@ -15,6 +15,8 @@ and maintenance-window section below records the fresh measurements and their li
 
 The live MySQL change is **9.7.2 → 9.7.4**, a patch upgrade within 9.7 LTS. PostgreSQL remains **18.6 → 18.7** within major 18. SQLite remains the verified **3.54.1** target. Do not deploy the superseded 26.10 Innovation candidate, reuse its data directory, or bypass MySQL Shell dump-version checks. Prepare a fresh 9.7.4 build server and rebuild the sample corpus from verified inputs. The [DL-074 audit and receipt](lts-upgrade-evidence.md) identify the matching native clients, Oracle C API, Shell and JDBC versions and all retained pins. Client patch numbers differ by product.
 
+The engine transition itself is an LTS patch. This procedure also packages the previously approved sample additions, so its preparation and outage components include fresh baked-volume materialization.
+
 The corrected client changes include the loader CLI/C API at 9.7.4 (source-built sysbench), Shell 9.7.1, Connector/J 9.7.0, DbGate on the newest tested compatible Node 24 LTS patch, NGINX 1.31.8 under the no-LTS current-major rule, and SQLGlot 30.33.0. DuckDB 2.0.0 and Java 25.0.5+8 are already on their newest eligible LTS lines. Preserve the unchanged memory limits until the corrected full-corpus workload proves them; this task does not infer a smaller MySQL allocation from the version number.
 
 The DL-074 PR must be merged with a merge commit and all corrected validation must pass before live execution. Historical timing numbers below remain useful context, not measurements of the corrected candidate. A final DL-074 timing/disk subsection will identify measured preparation, startup, reset, verification and rollback costs separately. No live outage or rollback duration is verified.

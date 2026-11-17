@@ -58,3 +58,19 @@ def test_build_server_explicitly_allows_only_loopback_root(monkeypatch, tmp_path
     monkeypatch.setattr(server, 'run', lambda args, **kw: calls.append(args) or SimpleNamespace(returncode=0))
     server.start()
     assert 'MYSQL_ROOT_HOST=127.0.0.1' in calls[0]
+
+
+def test_start_refuses_to_reuse_a_different_build_server_image(monkeypatch):
+    from types import SimpleNamespace
+    import pytest
+    calls = []
+    monkeypatch.setattr(server, 'container_state', lambda: 'running')
+
+    def run(args, **kwargs):
+        calls.append(args)
+        return SimpleNamespace(returncode=0, stdout=('target-image' if args[1:3] == ['image', 'inspect'] else 'innovation-image')+'\n')
+
+    monkeypatch.setattr(server, 'run', run)
+    with pytest.raises(SystemExit, match='fresh'):
+        server.start()
+    assert all(args[1] in ['inspect', 'image'] for args in calls)

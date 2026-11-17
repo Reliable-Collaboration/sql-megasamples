@@ -44,7 +44,8 @@ results = {'input_rebuild': {'status': 'Passed', 'dataset_results': verified,
 
 
 def run(label, args):
-    command = ['podman', 'exec', '-e', 'PYTHONPATH=.', '-e', 'PYTHONUNBUFFERED=1',
+    command = ['podman', 'exec', '-e', 'CONTAINERS_STORAGE_CONF', '-e', 'CONTAINERS_CONF',
+               '-e', 'DOCKER_HOST', '-e', 'COMPOSE_PROJECT_NAME', '-e', 'PYTHONPATH=.', '-e', 'PYTHONUNBUFFERED=1',
                'megasamples-upgrade-tools', *args]
     start = time.monotonic()
     started_at = datetime.datetime.now(datetime.timezone.utc).isoformat()
