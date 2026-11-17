@@ -30,7 +30,7 @@ def test_build_server_and_baked_image_use_identical_pinned_input(engine, server)
     else:
         base = (ROOT / "engines/mysql/base.Dockerfile").read_text()
         upstream = re.findall(r"^FROM (\S+)", base, re.M)
-        assert len(upstream) == 2 and all(PIN.fullmatch(item) for item in upstream)
+        assert len(upstream) == 3 and all(PIN.fullmatch(item) for item in upstream)
     assert all(item == server.IMAGE for item in resolved)
 
 

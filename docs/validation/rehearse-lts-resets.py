@@ -65,6 +65,20 @@ def restored(engines,whole):
    if whole:
     for directory in ['/data','/shared']:
      assert subprocess.run(['docker','exec','megasamples-sqlite','test','-e',directory+'/upgrade_reset_probe.sqlite']).returncode!=0
+# Exact definitions are held after each scope, so a later whole reset cannot
+# conceal a constraint lost by an earlier dataset selector. SQLite is byte-checked.
+MYSQL_FK = "SELECT rc.constraint_schema,rc.constraint_name,rc.table_name,k.ordinal_position,k.column_name,k.referenced_table_schema,k.referenced_table_name,k.referenced_column_name,rc.update_rule,rc.delete_rule FROM information_schema.referential_constraints rc JOIN information_schema.key_column_usage k ON k.constraint_schema=rc.constraint_schema AND k.constraint_name=rc.constraint_name WHERE rc.constraint_schema NOT IN ('mysql','sys','information_schema','performance_schema') ORDER BY 1,2,4"
+PG_FK = "SELECT n.nspname,c.relname,k.conname,pg_get_constraintdef(k.oid) FROM pg_constraint k JOIN pg_class c ON c.oid=k.conrelid JOIN pg_namespace n ON n.oid=c.relnamespace WHERE k.contype='f' AND n.nspname NOT IN ('pg_catalog','information_schema') ORDER BY 1,2,3"
+def fk_definitions(engine):
+ if engine=='mysql':return mysql.rows(MYSQL_FK)
+ return {db:pg.rows(PG_FK,db) for db in __import__('megasamples.engines',fromlist=['unique_databases']).unique_databases(cfg.datasets('postgres'))}
+fk_baseline={e:fk_definitions(e) for e in ['mysql','postgres']}
+fk_results={'initial':fk_baseline}
+def check_foreign_keys(engines,label):
+ current={e:fk_definitions(e) for e in engines if e in fk_baseline}
+ for e,value in current.items():assert value==fk_baseline[e],e+' foreign key definitions changed in '+label
+ fk_results[label]={'status':'Passed','definitions':current}
+ (out/'reset-foreign-keys.json').write_text(json.dumps(fk_results,indent=2)+'\n')
 results={}
 cases=[('pairs',list(cfg.engines),False,['R='+' '.join(e+':pubs' for e in cfg.engines)])]
 cases += [(engine,[engine],True,['ENGINE='+engine]) for engine in cfg.engines]
@@ -76,12 +90,13 @@ for name,engines,whole,flags in cases:
  result={'status':'Passed' if rc==0 else 'Failed','returncode':rc,'seconds':round(time.time()-started,2)}
  if rc==0:
   try:
-   restored(engines,whole);result['same_count_row_and_binary_values_restored']=True
+   restored(engines,whole);check_foreign_keys(engines,name);result['same_count_row_and_binary_values_restored']=True
   except Exception as exc:result.update(status='Failed',reason=type(exc).__name__+': '+str(exc))
  results[name]=result;print(name,result,flush=True)
  (out/'reset-results.json').write_text(json.dumps(results,indent=2)+'\n')
  if result['status']!='Passed':raise SystemExit(1)
 subprocess.run([sys.executable,'-u',str(root/'docs/validation/rehearse-lts-append-reset.py')],check=True)
+check_foreign_keys(list(cfg.engines),'append-selectors')
 print('All reset scopes restored same-count row mutations and removed added tables/databases',flush=True)
 # Every configured engine:dataset selector in one grouped invocation, including append aliases.
 from megasamples.engines import unique_databases
@@ -102,6 +117,7 @@ with __import__('megasamples.reset',fromlist=['sqlite_connections_closed']).sqli
   rc=subprocess.run(['make','reset','PY='+sys.executable,'R='+' '.join(selectors)],stdout=log,stderr=subprocess.STDOUT).returncode
  assert rc==0,'Grouped pair reset failed; see log'
  restored(list(cfg.engines),False)
+ check_foreign_keys(list(cfg.engines),'every-selector')
  for engine,databases in physical.items():
   for database in databases:
    if engine=='mysql':assert mysql.rows(f"SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='{database}' AND table_name='client_upgrade_reset_probe'")[0][0]=='0'

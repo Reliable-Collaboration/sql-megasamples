@@ -58,6 +58,24 @@
       "notes": ""
     },
     {
+      "component": "MySQL binlog/config-editor helpers",
+      "before": "Not separately recorded",
+      "current_pin": "26.10.0 (inherited Shell payload)",
+      "target": "9.7.4",
+      "policy": "Native utilities follow the MySQL 9.7 LTS server patch; do not retain Innovation helpers inside an LTS Shell package.",
+      "policy_source": {
+        "url": "https://dev.mysql.com/doc/refman/9.7/en/mysql-releases.html",
+        "read_at": "2026-11-17T15:09:36+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Extract checked Oracle client RPM; point Shell helper paths to 9.7.4 utilities",
+      "release_source": {
+        "url": "https://repo.mysql.com/yum/mysql-9.7-community/el/9/x86_64/repodata/0b78fab130245914c0d45461947016370ace4ffce9bb1b8c5d4dfd700e7ec618-primary.xml.gz",
+        "read_at": "2026-11-17T16:18:44.863731+00:00"
+      },
+      "notes": "Stock Oracle image and corrected thin-base binary versions were both probed; package payload checksum is pinned in base.Dockerfile."
+    },
+    {
       "component": "Loader C API",
       "before": "MariaDB Connector/C 3.4.9",
       "current_pin": "MariaDB Connector/C 3.4.11",
@@ -930,7 +948,7 @@
     },
     {
       "component": "loader-base",
-      "before": "See engine-upgrade baseline; version not independently recovered",
+      "before": "debian@sha256:5ae3c39ebd15e229dcedd5cee596b2497182493d41ff162e824ba13fc1b2b867 (Makefile pulled 12-slim)",
       "current_pin": "13.7",
       "target": "13.7",
       "policy": "Debian stable release plus LTS lifecycle; 13 is current stable.",
@@ -966,7 +984,7 @@
     },
     {
       "component": "playwright",
-      "before": "See engine-upgrade baseline; version not independently recovered",
+      "before": "1.49.1-noble (repository image/package pin)",
       "current_pin": "1.65.0",
       "target": "1.65.2",
       "policy": "No separate LTS; current major 1 release. Bundled Noble Ubuntu 24.04 LTS is the supported official image base.",
@@ -984,7 +1002,7 @@
     },
     {
       "component": "dockerfile-frontend",
-      "before": "See engine-upgrade baseline; version not independently recovered",
+      "before": "1.7 (repository syntax pin)",
       "current_pin": "1.29.0",
       "target": "1.29.0",
       "policy": "Stable Dockerfile frontend major 1; no separate LTS release line.",
@@ -1020,7 +1038,7 @@
     },
     {
       "component": "oracle-verifier",
-      "before": "See engine-upgrade baseline; version not independently recovered",
+      "before": "gvenzl/oracle-free:23 (mutable, binary version unverified)",
       "current_pin": "26ai Free 23.26.3.0.0",
       "target": "26ai Free 23.26.3.0.0",
       "policy": "26ai is Oracle long-term release. Free published server package remains 23.26.3; Free is not an Enterprise support entitlement.",
@@ -1070,7 +1088,7 @@
       "component": "sysbench",
       "before": "1.0.20+ds-7",
       "current_pin": "1.0.20+ds-7",
-      "target": "1.0.20 (same Debian source revision)",
+      "target": "1.0.20 (Debian orig source with required build patch)",
       "policy": "No separate LTS; existing major 1 source release retained; Oracle C API linkage corrected.",
       "policy_source": {
         "url": "https://deb.debian.org/debian/pool/main/s/sysbench/sysbench_1.0.20+ds-7.dsc",
@@ -1566,6 +1584,22 @@
       "digest": "sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f",
       "read_at": "2026-11-17T15:51:47.306498+00:00",
       "status": "Passed"
+    },
+    "mysql-native-binutils": {
+      "url": "https://repo.mysql.com/yum/mysql-9.7-community/el/9/x86_64/repodata/0b78fab130245914c0d45461947016370ace4ffce9bb1b8c5d4dfd700e7ec618-primary.xml.gz",
+      "read_at": "2026-11-17T16:18:44.863731+00:00",
+      "packages": [
+        {
+          "name": "mysql-community-client",
+          "version": {
+            "epoch": "0",
+            "ver": "9.7.4",
+            "rel": "1.el9"
+          },
+          "location": "mysql-community-client-9.7.4-1.el9.x86_64.rpm",
+          "sha256": "669fe797e36ee181ecfe2d46146f6db0fdd4ea422991d2c9c0150fc65d87f59e"
+        }
+      ]
     }
   },
   "limitations": [

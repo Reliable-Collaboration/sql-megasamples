@@ -437,6 +437,18 @@ native_clients:
     runtime_image: sql-megasamples-mysql-base:9.7.4-shell-9.7.1
     source: Complete payload copied from digest-pinned input; includes Python runtime,
       libraries, helpers and documentation.
+  mysql-binutils:
+    programs:
+    - mysqlbinlog
+    - mysql_config_editor
+    before: 26.10.0 in the inherited upgraded Shell payload
+    version: 9.7.4
+    source: https://repo.mysql.com/yum/mysql-9.7-community/el/9/x86_64/mysql-community-client-9.7.4-1.el9.x86_64.rpm
+    sha256: 669fe797e36ee181ecfe2d46146f6db0fdd4ea422991d2c9c0150fc65d87f59e
+    release_source: https://repo.mysql.com/yum/mysql-9.7-community/el/9/x86_64/repodata/0b78fab130245914c0d45461947016370ace4ffce9bb1b8c5d4dfd700e7ec618-primary.xml.gz
+    read_at: '2026-11-17T16:18:44.863731+00:00'
+    pin: Checked RPM extraction in engines/mysql/base.Dockerfile; Shell libexec paths
+      resolve to these binaries
 optional_export_clients:
   mssql:
     before: 18.7.1.1

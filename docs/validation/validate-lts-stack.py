@@ -71,6 +71,20 @@ if engine == 'sqlite':
         assert len(set(values.values())) == 1, database + ': SQLite bytes differ'
         sqlite_hashes[database] = values
 
+container = 'megasamples-'+engine
+image = command('inspect', '--format', '{{.Image}}', container)
+expected_image = command('image', 'inspect', 'sql-megasamples-'+engine+':dev', '--format', '{{.Id}}')
+assert image.removeprefix('sha256:') == expected_image.removeprefix('sha256:'), 'Running container is not the corrected image'
+if engine == 'mysql':
+    version = mysql.rows('SELECT VERSION()')[0][0]
+    assert version == '9.7.4'
+elif engine == 'postgres':
+    version = pg.rows('SHOW server_version')[0][0]
+    assert version.split()[0] == '18.7'
+else:
+    version = command('exec', container, 'sqlite3', ':memory:', 'SELECT sqlite_version()')
+    assert version == '3.54.1'
+
 rows = registry_rows = None
 if engine == 'mysql':
     rows = mysql.rows('SELECT name,CAST(row_counts AS CHAR) FROM megasamples.datasets ORDER BY name')
@@ -119,7 +133,7 @@ for name in cfg.datasets(engine):
             failures = 1
     results[f'{engine}:{name}'] = dict(status='Passed' if failures == 0 else 'Failed', failures=failures,
                                      started_at=started_at, seconds=time.monotonic()-started, **observed)
-    value = dict(engine=engine, results=results, registry_counts=registry_rows, sqlite_hashes=sqlite_hashes,
+    value = dict(engine=engine, version=version, image=image, results=results, registry_counts=registry_rows, sqlite_hashes=sqlite_hashes,
                  frozen_live_records=frozen)
     (OUT / f'runtime-{engine}.json').write_text(json.dumps(value, indent=2)+'\n')
     print(engine, name, results[f'{engine}:{name}']['status'], f'{time.monotonic()-started:.2f}s', flush=True)
