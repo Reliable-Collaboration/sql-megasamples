@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PIN = re.compile(r".+@sha256:[0-9a-f]{64}$")
 
 
-@pytest.mark.parametrize("engine, version", [("mysql", "26.10.0"), ("postgres", "18.7"), ("sqlite", "3.54.1")])
+@pytest.mark.parametrize("engine, version", [("mysql", "9.7.4"), ("postgres", "18.7"), ("sqlite", "3.54.1")])
 def test_advertised_engine_release(engine, version):
     assert get(engine).version == version
 
@@ -24,7 +24,13 @@ def test_build_server_and_baked_image_use_identical_pinned_input(engine, server)
     arguments = dict(re.findall(r"^ARG (\w+)=(\S+)$", text, re.M))
     inputs = re.findall(r"^FROM (\S+)", text, re.M)
     resolved = [re.sub(r"\$\{(\w+)\}", lambda m: arguments[m[1]], item) for item in inputs]
-    assert resolved and all(PIN.fullmatch(item) for item in resolved)
+    assert resolved
+    if engine == "postgres":
+        assert all(PIN.fullmatch(item) for item in resolved)
+    else:
+        base = (ROOT / "engines/mysql/base.Dockerfile").read_text()
+        upstream = re.findall(r"^FROM (\S+)", base, re.M)
+        assert len(upstream) == 3 and all(PIN.fullmatch(item) for item in upstream)
     assert all(item == server.IMAGE for item in resolved)
 
 
@@ -32,7 +38,7 @@ def test_every_console_is_pinned():
     assert all(PIN.fullmatch(c.image) for c in consoles.CONSOLES)
 
 
-@pytest.mark.parametrize("name, version", [("landing", "1.30.6"), ("cloudbeaver", "26.2.5"), ("dbgate", "7.3.6"), ("adminer", "6.3.0"), ("phpmyadmin", "5.2.3")])
+@pytest.mark.parametrize("name, version", [("landing", "1.31.8"), ("cloudbeaver", "26.2.5"), ("dbgate", "7.3.6"), ("adminer", "6.3.0"), ("phpmyadmin", "5.2.3")])
 def test_console_release(name, version):
     assert f":{version}@sha256:" in consoles.get(name).image
 
@@ -49,8 +55,8 @@ def test_sql_server_exporter_uses_current_release():
 
 def test_build_tools_use_current_pinned_releases():
     makefile = (ROOT / "Makefile").read_text()
-    assert "python:v1.65.0-noble@sha256:" in makefile
-    assert "playwright==1.65.0" in makefile
+    assert "python:v1.65.2-noble@sha256:" in makefile
+    assert "playwright==1.65.2" in makefile
     assert "debian:13.7-slim@sha256:" in (ROOT / "engines/mysql/loader.Dockerfile").read_text()
 
 

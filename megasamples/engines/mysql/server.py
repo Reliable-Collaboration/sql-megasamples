@@ -10,7 +10,8 @@ tested there, and dumped from it; the container is disposable.
 import json, os, shlex, subprocess, sys, time
 
 from megasamples.paths import BUILD, DATASETS, ENGINES, STAGE
-IMAGE = os.environ.get("MYSQL_IMAGE", 'docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999')
+from megasamples.engines.mysql import base_image
+IMAGE = os.environ.get("MYSQL_IMAGE", base_image.IMAGE)
 NAME = os.environ.get("BUILD_SERVER", "megasamples-build-mysql")
 PW = "build"
 
@@ -42,15 +43,24 @@ def start(fresh=False):
     if fresh and container_state():
         stop()
     if container_state() == "running":
+        running = run(["docker", "inspect", "-f", "{{.Image}}", NAME])
+        expected = run(["docker", "image", "inspect", "-f", "{{.Id}}", IMAGE])
+        if (running.returncode or expected.returncode or
+                running.stdout.strip().removeprefix("sha256:") != expected.stdout.strip().removeprefix("sha256:")):
+            sys.exit("Build server uses a different image; run `build-server fresh` to initialize "
+                     "the pinned LTS image. Do not reuse an Innovation data directory.")
         return
     if container_state():
         run(["docker", "rm", "-f", NAME])
+    if IMAGE == base_image.IMAGE:
+        base_image.build()
     os.makedirs(STAGE, exist_ok=True)     # mounted below; Docker would otherwise create it as root
     p = run(["docker", "run", "-d", "--name", NAME,
              # transient: `python3 -m megasamples status clean` removes everything so labelled, and
              # Docker Desktop shows them apart from the compose stack rather than mixed into it
              "--label", "megasamples.transient=true", "--label", "megasamples.role=build",
              "-e", f"MYSQL_ROOT_PASSWORD={PW}",
+             "-e", "MYSQL_ROOT_HOST=127.0.0.1",
              "-v", f"{os.path.join(ENGINES, 'mysql', 'my.cnf')}:/etc/mysql/conf.d/megasamples.cnf:ro",
              "-v", f"{DATASETS}:/datasets:ro",
              # read-only: staged inputs are produced on the host. The context must NOT be the

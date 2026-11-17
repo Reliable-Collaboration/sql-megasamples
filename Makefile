@@ -11,7 +11,7 @@ endif
 
 .PHONY: help configure list list-core list-quick fetch build image test-image run up down reset status clean clean-all \
         compose console-page catalogue provenance check okf-check audit-assets prepub-check \
-        test-console screenshots build-server build-server-stop restore loader-image \
+        mysql-base-image test-console screenshots build-server build-server-stop restore loader-image \
         wwi-export verify-oracle oracle-client-image load-citibike load-divvy load-tpcc bench $(DATASETS)
 
 help:
@@ -72,6 +72,7 @@ okf-check:      ; @$(MS) okf-check --bundle knowledge && $(MS) okf-fix-quotes --
 audit-assets:   ; @$(MS) audit-assets
 prepub-check:   ; @$(MS) prepub-check
 test-console:   ; @$(MS) test-console
+mysql-base-image: ; @$(MS) mysql-base-image
 build-server:   ; @$(MS) build-server start
 build-server-stop: ; @$(MS) build-server stop
 restore:        ; @$(MS) restore $(D)
@@ -80,7 +81,7 @@ bench:          ; @$(MS) bench --dataset $(or $(DATASET),employees) --repeat $(o
 # the README's screenshots, taken by docs/screenshots/capture.py in the Playwright image on the stack's network
 screenshots:
 	@docker run --rm --network $${COMPOSE_PROJECT_NAME:-sql-megasamples}_default -v "$(CURDIR)/docs/screenshots:/out" --label megasamples.transient=true \
-	  mcr.microsoft.com/playwright/python:v1.65.0-noble@sha256:f9294526294a7bdfb8ca8aa7d815c049125a10e73b65d47fb9a80f5d74f284a6 sh -c "pip install -q --break-system-packages playwright==1.65.0 && python3 /out/capture.py"
+	  mcr.microsoft.com/playwright/python:v1.65.2-noble@sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f sh -c "pip install -q --break-system-packages playwright==1.65.2 && python3 /out/capture.py"
 	@ls -l docs/screenshots/*.png
 
 # the build-time loader image: compiles SSB's dbgen and carries sysbench for TPC-C. Nothing from it

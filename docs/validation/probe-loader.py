@@ -5,9 +5,9 @@ from megasamples.engines.mysql import server as mysql
 from megasamples.sources import tpcc_load
 assert os.environ['COMPOSE_PROJECT_NAME']=='megasamples-upgrade'
 assert os.environ['DOCKER_HOST']=='unix:///home/rcc-vstudio/working/sql-megasamples-upgrade-env/podman.sock'
-out=Path('build/client-evidence');out.mkdir(parents=True,exist_ok=True);name='megasamples-upgrade-client-mysql';password=secrets.token_urlsafe(30);created=False;results={}
+out=Path(os.environ.get('MEGASAMPLES_VALIDATION_OUT', 'build/client-evidence'));out.mkdir(parents=True,exist_ok=True);name='megasamples-upgrade-client-mysql';password=secrets.token_urlsafe(30);created=False;results={}
 env={**os.environ,'MYSQL_ROOT_PASSWORD':password,'MYSQL_PWD':password}
-image='docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999'
+image=mysql.IMAGE
 def run(args,**kw):
  p=subprocess.run(['docker',*args],capture_output=True,text=True,env=env,**kw)
  if p.returncode:raise RuntimeError((p.stderr or p.stdout).replace(password,'[redacted]')[-700:])
@@ -44,7 +44,7 @@ try:
  query("CREATE DATABASE connector_probe; CREATE USER 'connector_probe'@'%' IDENTIFIED BY '"+password+"'; GRANT ALL ON connector_probe.* TO 'connector_probe'@'%'")
  assert query("SELECT plugin FROM mysql.user WHERE user='connector_probe'")=='caching_sha2_password'
  env['MYSQL_HOST']='127.0.0.1'
- common='sysbench /usr/share/sysbench/oltp_read_only.lua --mysql-host="$MYSQL_HOST" --mysql-user=connector_probe --mysql-password="$MYSQL_PWD" --mysql-db=connector_probe --tables=1 --table-size=32'
+ common='sysbench /usr/local/share/sysbench/oltp_read_only.lua --mysql-host="$MYSQL_HOST" --mysql-user=connector_probe --mysql-password="$MYSQL_PWD" --mysql-db=connector_probe --tables=1 --table-size=32'
  output=run(['run','--rm','--label','megasamples.transient=true','-e','MYSQL_HOST','-e','MYSQL_PWD','--network','container:'+name,'sql-megasamples-loader:dev','sh','-c',common+' prepare && '+common+' --events=10 --threads=1 run'])
  results['connector_c_first_auth_and_prepared_queries']={'status':'Passed','authentication_plugin':'caching_sha2_password','rows':query('SELECT COUNT(*) FROM connector_probe.sbtest1')};save()
  # Run the repository's exact TPC-C loader against this throwaway server.

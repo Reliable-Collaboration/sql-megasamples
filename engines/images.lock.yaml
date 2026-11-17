@@ -1,15 +1,21 @@
-# Image/release provenance for the engine upgrade. Runtime references remain in their consumers.
+# Reviewed image pins; historical receipts retain their original versions.
 images:
   mysql:
-    image: docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999
-    version: 26.10.0
-    release_source: https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html
-    read_at: '2026-11-16T18:58:36.215868+00:00'
+    image: container-registry.oracle.com/mysql/community-server:9.7.4@sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb
+    version: 9.7.4
+    release_source: https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html
+    read_at: '2026-11-17T16:46:19+00:00'
+    registry_source: https://container-registry.oracle.com/v2/mysql/community-server/manifests/9.7.4
+    registry_read_at: '2026-11-17T15:40:01.485365+00:00'
+    runtime_base_image: sql-megasamples-mysql-base:9.7.4-shell-9.7.1
+    base_dockerfile: engines/mysql/base.Dockerfile
   mysql-shell:
-    image: docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999
-    version: 26.10.0
-    release_source: https://dev.mysql.com/downloads/shell/
-    read_at: '2026-11-16T18:58:36.217605+00:00'
+    image: docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8
+    version: 9.7.1
+    release_source: https://repo.mysql.com/apt/debian/dists/trixie/mysql-9.7-lts/binary-amd64/Packages.gz
+    read_at: '2026-11-17T15:11:53.345079+00:00'
+    consumer: Complete Shell payload copied into the Oracle-registry base; upstream
+      Oracle image bundles Innovation Shell 26.10 and is corrected.
   postgres:
     image: docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
     version: '18.7'
@@ -26,10 +32,12 @@ images:
     release_source: https://www.debian.org/releases/
     read_at: '2026-11-16T18:58:36.997618+00:00'
   playwright:
-    image: mcr.microsoft.com/playwright/python:v1.65.0-noble@sha256:f9294526294a7bdfb8ca8aa7d815c049125a10e73b65d47fb9a80f5d74f284a6
-    version: 1.65.0
+    image: mcr.microsoft.com/playwright/python:v1.65.2-noble@sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f
+    version: 1.65.2
     release_source: https://pypi.org/pypi/playwright/json
-    read_at: '2026-11-16T18:58:36.838819+00:00'
+    read_at: '2026-11-17T15:51:02.543206+00:00'
+    registry_source: https://mcr.microsoft.com/v2/playwright/python/manifests/v1.65.2-noble
+    registry_read_at: '2026-11-17T15:51:47.306498+00:00'
   sqlserver-export:
     image: mcr.microsoft.com/mssql/server:2025-CU11-ubuntu-24.04@sha256:05644dad1266ca3d445d1e8f6d2ebb9a6a03df9a39376e0f7b48917356dca9d9
     version: 2025 CU11 (17.0.5065.9)
@@ -41,10 +49,10 @@ images:
     release_source: https://www.oracle.com/database/free/get-started/
     read_at: '2026-11-16T19:41:23.043634+00:00'
   landing:
-    image: nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703
-    version: 1.30.6
-    release_source: https://nginx.org/en/download.html
-    read_at: '2026-11-16T18:58:36.520324+00:00'
+    image: nginx:1.31.8@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82
+    version: 1.31.8
+    release_source: https://hub.docker.com/v2/repositories/library/nginx/tags/1.31.8
+    read_at: '2026-11-17T15:22:39.042627+00:00'
   cloudbeaver:
     image: dbeaver/cloudbeaver:26.2.5@sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f
     version: 26.2.5
@@ -71,9 +79,43 @@ images:
     release_source: https://registry-1.docker.io/v2/docker/dockerfile/manifests/1.29.0
     read_at: '2026-11-16T19:02:44.308731+00:00'
     registry_source: https://registry-1.docker.io/v2/docker/dockerfile/manifests/1.29.0
+  node:
+    image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    version: 24.22.3
+    release_source: https://nodejs.org/dist/index.json
+    read_at: '2026-11-17T15:10:43.916765+00:00'
+  php-apache:
+    image: php:8.5.12-apache-trixie@sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46
+    version: 8.5.12
+    release_source: https://www.php.net/releases/index.php?json&version=8
+    read_at: '2026-11-17T17:52:04.583187+00:00'
+    registry_source: https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-apache-trixie
+    registry_read_at: '2026-11-17T17:52:04.725626+00:00'
+  php-cli:
+    image: php:8.5.12-cli-alpine3.24@sha256:1ff5b45922ab30f418447c6089dbe2eba5f01e0b2742863d0327ac349305d70f
+    version: 8.5.12
+    release_source: https://www.php.net/releases/index.php?json&version=8
+    read_at: '2026-11-17T17:52:04.583187+00:00'
+    registry_source: https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-cli-alpine3.24
+    registry_read_at: '2026-11-17T17:52:04.879190+00:00'
 sqlite_source:
   version: 3.54.1
   url: https://sqlite.org/2026/sqlite-autoconf-3540100.tar.gz
   sha3_256: b6ced585c750916b1052667239a12c25a7ff34e7f06e1e6e01ecb0427657d9c4
   release_source: https://sqlite.org/download.html
   read_at: '2026-11-16T18:58:36.461111+00:00'
+mysql_shell_embedded_runtime:
+  python:
+    version: 3.13.18
+    source: https://www.python.org/ftp/python/3.13.18/Python-3.13.18.tar.xz
+    sha256: abb0102e6d4ae027509bcb82327d9dd85515b44a3ba8ad538cfc5e9847029f68
+    release_source: https://www.python.org/downloads/release/python-31318/
+    read_at: '2026-11-17T17:16:57+00:00'
+    policy_source: https://devguide.python.org/versions/
+    policy_read_at: '2026-11-17T17:16:24+00:00'
+  sqlite:
+    version: 3.54.1
+    source: https://sqlite.org/2026/sqlite-autoconf-3540100.tar.gz
+    sha3_256: b6ced585c750916b1052667239a12c25a7ff34e7f06e1e6e01ecb0427657d9c4
+    release_source: https://sqlite.org/changes.html
+    read_at: '2026-11-17T15:10:43.638228+00:00'

@@ -5,8 +5,8 @@
 runs this inside the Playwright image (browsers included) on the stack's network:
 
   docker run --rm --network "${COMPOSE_PROJECT_NAME:-sql-megasamples}_default" -v "$PWD/docs/screenshots:/out" \\
-      mcr.microsoft.com/playwright/python:v1.65.0-noble@sha256:f9294526294a7bdfb8ca8aa7d815c049125a10e73b65d47fb9a80f5d74f284a6 sh -c \\
-      "pip install -q --break-system-packages playwright==1.65.0 && python3 /out/capture.py"
+      mcr.microsoft.com/playwright/python:v1.65.2-noble@sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f sh -c \\
+      "pip install -q --break-system-packages playwright==1.65.2 && python3 /out/capture.py"
 
 Three pictures: the console index tall enough to show the connection help, the consoles and the
 first rows of the database table; CloudBeaver with the MySQL read-only connection opened down to
@@ -48,7 +48,15 @@ with sync_playwright() as p:
     expand("Databases")
     expand("sakila")
     expand("Tables")
-    page.locator('[data-tree-node-control="true"]').filter(has=page.get_by_text("film", exact=True)).first.dblclick()
+    film = page.locator('[data-tree-node-control="true"]').filter(has=page.get_by_text("film", exact=True))
+    # A full catalogue virtualizes rows below the navigation viewport.
+    for attempt in range(12):
+        if film.count():
+            break
+        page.locator('[data-tree-node-control="true"]').last.hover()
+        page.mouse.wheel(0, 350)
+        page.wait_for_timeout(350)
+    film.first.dblclick()
     time.sleep(10)
     tab = page.get_by_role("tab", name="Data").first
     if tab.count():

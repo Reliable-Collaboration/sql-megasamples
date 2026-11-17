@@ -34,7 +34,7 @@ class Console:
 
 CONSOLES = [
     Console("landing", "Console index", (),
-            "nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703", 80, "32m",
+            "nginx:1.31.8@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82", 80, "32m",
             "Start here: every database with its size, licence and provenance, and how to connect your own tool.",
             volumes=["./consoles/landing:/usr/share/nginx/html:ro"]),
     Console("cloudbeaver", "CloudBeaver", ("mysql", "postgres", "sqlite"),
@@ -49,7 +49,7 @@ CONSOLES = [
                          "CLOUDBEAVER_APP_READ_ONLY_CONNECTION_INFO": "true",
                          "CLOUDBEAVER_SYSTEM_VARIABLES_RESOLVING_ENABLED": "true",
                          "DEMO_PASSWORD": "${DEMO_PASSWORD:-demo}", "ADMIN_PASSWORD": "${ADMIN_PASSWORD:-admin}"},
-            build_image="sql-megasamples-cloudbeaver:26.2.5-mysql-26.10.0-sqlite-3.54.1.0",
+            build_image="sql-megasamples-cloudbeaver:26.2.5-mysql-9.7.0-sqlite-3.54.1.0",
             dockerfile="consoles/cloudbeaver/Dockerfile"),
     # the Debian-based image, not the Alpine one: the SQLite driver's native module (better-sqlite3)
     # is built against glibc and fails to load on musl ("fcntl64: symbol not found"), measured on
@@ -57,19 +57,21 @@ CONSOLES = [
     Console("dbgate", "DbGate", ("mysql", "postgres", "sqlite"),
             "dbgate/dbgate:7.3.6@sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953", 3000, "320m",
             "Every connection preconfigured in the sidebar: both accounts on each server engine, one per SQLite file.",
-            build_image="sql-megasamples-dbgate:7.3.6-sqlite-13.2.0",
+            build_image="sql-megasamples-dbgate:7.3.6-node-24.22.3-sqlite-13.2.0",
             dockerfile="consoles/dbgate/Dockerfile"),
     Console("adminer", "Adminer", ("mysql", "postgres"),
             "adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c", 8080, "160m",
             "Its login form remains: the page behind this card says what to type for each engine, and opens it filled in.",
             "http://127.0.0.1:{port}/?server=mysql&username=demo&db={db}", "A",
-            build_image="sql-megasamples-adminer:6.3.0-libpq-18.7-r0",
+            build_image="sql-megasamples-adminer:6.3.0-php-8.5.12-libpq-18.7-r0",
             dockerfile="consoles/adminer/Dockerfile"),
     Console("phpmyadmin", "phpMyAdmin", ("mysql",),
             "phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40", 80, "256m",
             "MySQL only. Signed in already; the server menu switches account.",
             "http://127.0.0.1:{port}/index.php?route=/database/structure&db={db}&server=1", "P",
-            volumes=["./consoles/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro"]),
+            volumes=["./consoles/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro"],
+            build_image="sql-megasamples-phpmyadmin:5.2.3-php-8.5.12",
+            dockerfile="consoles/phpmyadmin/Dockerfile"),
 ]
 _BY_NAME = {c.name: c for c in CONSOLES}
 

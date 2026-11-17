@@ -7,7 +7,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
 RELEASES = {'pyyaml': '6.0.3', 'pymysql': '1.2.4', 'duckdb': '2.0.0',
-            'lxml': '6.1.3', 'sqlglot': '30.32.0', 'py7zr': '1.1.4',
+            'lxml': '6.1.3', 'sqlglot': '30.33.0', 'py7zr': '1.1.4',
             'backports-zstd': '1.8.0', 'pytest': '9.2.0', 'psycopg': '3.3.9'}
 
 
@@ -25,10 +25,11 @@ def test_direct_python_client_pin_and_lock(name, version):
 def test_loader_uses_oracle_client_and_pinned_connector():
     text = (ROOT / 'engines/mysql/loader.Dockerfile').read_text()
     assert 'default-mysql-client' not in text
-    assert 'mysql:26.10.0@sha256:' in text
-    assert 'mariadb-connector-c-3.4.11' in text
+    assert 'community-server:9.7.4@sha256:' in text
+    assert 'libmysqlclient24_9.7.4' in text
     assert 'sha256sum -c' in text
-    assert 'sysbench=1.0.20+ds-7' in text
+    assert 'sysbench=1.0.20+ds-7' not in text
+    assert 'sysbench_1.0.20+ds-7.debian.tar.xz' in text
 
 
 def test_console_driver_pins_are_built_and_selected():
@@ -36,7 +37,7 @@ def test_console_driver_pins_are_built_and_selected():
     from megasamples.consoles import get
     cfg = config.Config({'engines': {e: {'datasets': ['pubs']} for e in ['mysql', 'postgres', 'sqlite']},
                          'consoles': ['cloudbeaver', 'dbgate', 'adminer']})
-    for name,versions in [('cloudbeaver', ['26.10.0', '3.54.1.0']), ('dbgate', ['13.2.0']), ('adminer', ['18.7'])]:
+    for name,versions in [('cloudbeaver', ['9.7.0', '3.54.1.0']), ('dbgate', ['13.2.0']), ('adminer', ['18.7'])]:
         text = (ROOT / f'consoles/{name}/Dockerfile').read_text()
         assert get(name).image in text
         assert all(version in text for version in versions)

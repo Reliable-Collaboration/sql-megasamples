@@ -79,9 +79,11 @@ def image_schemas(image, failures):
 
 
 def main(argv=None):
+    from .engines.mysql.server import IMAGE as mysql_base
+
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--image", default=os.environ.get("MEGASAMPLES_MYSQL_IMAGE", "sql-megasamples-mysql:dev"))
-    ap.add_argument("--base", default="mysql:9.7.2",
+    ap.add_argument("--base", default=mysql_base,
                     help="the image this one is built FROM; its own files are not our doing")
     ap.add_argument("--skip-image", action="store_true", help="audit only the repository")
     a = ap.parse_args(argv)

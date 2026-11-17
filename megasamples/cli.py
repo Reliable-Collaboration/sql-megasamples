@@ -28,6 +28,7 @@ COMMANDS = {
     "image":        ("megasamples.job", "image", "bake the configured datasets into an engine's image"),
     "test-image":   ("megasamples.job", "test_image", "run the image-level tests against a built image"),
     "test-console": ("megasamples.console_test", "main", "assert the consoles are up and the accounts behave"),
+    "mysql-base-image": ("megasamples.engines.mysql.base_image", "main", "build the pinned Oracle server with LTS Shell"),
     "build-server": ("megasamples.engines.mysql.server", "main", "start | stop | fresh | status of the MySQL build server"),
     "pg-server":    ("megasamples.engines.postgres.server", "main", "start | stop | fresh | status of the PostgreSQL build server"),
     "pg-port":      ("megasamples.engines.postgres.port", "main", "port a dataset from the MySQL corpus to PostgreSQL and load it"),

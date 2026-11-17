@@ -1,0 +1,2073 @@
+{
+  "baseline_commit": "ab75c45a82cee444d2652581d6db151e1d5a3b98",
+  "rows": [
+    {
+      "component": "MySQL server",
+      "before": "9.7.2",
+      "current_pin": "26.10.0",
+      "target": "9.7.4",
+      "policy": "9.7 LTS; five years Premier plus three Extended; next LTS only, no skipping.",
+      "policy_source": {
+        "url": "https://dev.mysql.com/doc/refman/9.7/en/mysql-releases.html",
+        "read_at": "2026-11-17T15:09:36+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Rebuild from inputs on a fresh data directory",
+      "release_source": {
+        "url": "https://container-registry.oracle.com/v2/mysql/community-server/manifests/9.7.4",
+        "read_at": "2026-11-17T15:40:01.485365+00:00"
+      },
+      "notes": "Oracle registry server pinned by digest. Oracle image bundles Shell 26.10, so the thin base replaces its complete payload with digest-pinned 9.7.1 and preserves the existing volume/config/entrypoint conventions.",
+      "release_notes_source": {
+        "url": "https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html",
+        "read_at": "2026-11-17T16:46:19+00:00",
+        "web_read_status": "Passed",
+        "finding": "9.7.4 released 2026-10-20; next 9.7.4.1 is explicitly not yet released."
+      },
+      "final_release_notes_recheck": {
+        "status": "Passed",
+        "read_at": "2026-11-17T20:51:49+00:00",
+        "urls": [
+          "https://dev.mysql.com/doc/relnotes/mysql/9.7/en/",
+          "https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html"
+        ],
+        "finding": "9.7.4 remains released; 9.7.4.1 explicitly Not yet released",
+        "method": "Web tool open of Oracle release notes, with UTC clock reading immediately afterward"
+      }
+    },
+    {
+      "component": "MySQL mysql/mysqladmin/mysqldump",
+      "before": "9.7.2",
+      "current_pin": "26.10.0",
+      "target": "9.7.4",
+      "policy": "Engine-supplied tools follow the server LTS patch.",
+      "policy_source": {
+        "url": "https://repo.mysql.com/apt/debian/dists/trixie/mysql-9.7-lts/binary-amd64/Packages.gz",
+        "read_at": "2026-11-17T15:11:53.345079+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Replace in server and loader",
+      "release_source": {
+        "url": "https://hub.docker.com/v2/repositories/library/mysql/tags/9.7.4",
+        "read_at": "2026-11-17T15:10:43.360607+00:00",
+        "read_status": "Passed"
+      },
+      "notes": ""
+    },
+    {
+      "component": "MySQL Shell",
+      "before": "Before engine upgrade not separately recorded",
+      "current_pin": "26.10.0",
+      "target": "9.7.1",
+      "policy": "Upstream has one connector/tool release track, not an independent LTS track; owner explicitly requires 9.7.",
+      "policy_source": {
+        "url": "https://dev.mysql.com/doc/refman/9.7/en/mysql-releases.html",
+        "read_at": "2026-11-17T16:46:19+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Use 9.7 Shell bundled in pinned 9.7.4 image",
+      "release_source": {
+        "url": "https://repo.mysql.com/apt/debian/dists/trixie/mysql-9.7-lts/binary-amd64/Packages.gz",
+        "read_at": "2026-11-17T15:11:53.345079+00:00",
+        "read_status": "Passed"
+      },
+      "notes": ""
+    },
+    {
+      "component": "MySQL Shell embedded Python",
+      "before": "Not separately recorded",
+      "current_pin": "3.13.12",
+      "target": "3.13.18",
+      "policy": "Python feature lines receive five years of maintenance; 3.13 is in security servicing. Inference from the observed libpython3.13 linkage and CPython ABI policy: patch the linked 3.13 line; a different minor requires rebuilding Shell.",
+      "policy_source": {
+        "url": "https://devguide.python.org/versions/",
+        "read_at": "2026-11-17T17:16:24+00:00",
+        "read_status": "Passed"
+      },
+      "release_source": {
+        "url": "https://www.python.org/downloads/release/python-31318/",
+        "read_at": "2026-11-17T17:16:57+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Build current 3.13 security patch and replace its complete runtime/stdlib/native extensions",
+      "notes": "Observed in both inherited 26.10 and selected 9.7.1 Shell. Preserve vendor site-packages and Shell APIs; verify SSL/compression/ctypes, restore and dump. No independent LTS edition is claimed.",
+      "abi_source": {
+        "url": "https://docs.python.org/3/c-api/stable.html",
+        "read_at": "2026-11-17T17:24:13+00:00",
+        "read_status": "Passed",
+        "finding": "CPython ABI compatibility across patch releases depends on compatible compiler/platform settings; private APIs are excluded. Actual Shell/native-extension and full restore tests remain required."
+      }
+    },
+    {
+      "component": "MySQL Shell embedded SQLite",
+      "before": "Not separately recorded",
+      "current_pin": "3.50.4",
+      "target": "3.54.1",
+      "policy": "Project long-term maintenance/compatibility through 2050; no separate public LTS release branch.",
+      "policy_source": {
+        "url": "https://sqlite.org/lts.html",
+        "read_at": "2026-11-17T15:10:43.457917+00:00",
+        "read_status": "Passed"
+      },
+      "release_source": {
+        "url": "https://sqlite.org/changes.html",
+        "read_at": "2026-11-17T15:10:43.638228+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Compile the existing checked SQLite source for the patched embedded Python",
+      "notes": "The inherited and unpatched 9.7.1 Python sqlite3 modules both reported 3.50.4; new embedded module must report the project target."
+    },
+    {
+      "component": "MySQL binlog/config-editor helpers",
+      "before": "Not separately recorded",
+      "current_pin": "26.10.0 (inherited Shell payload)",
+      "target": "9.7.4",
+      "policy": "Native utilities follow the MySQL 9.7 LTS server patch; do not retain Innovation helpers inside an LTS Shell package.",
+      "policy_source": {
+        "url": "https://dev.mysql.com/doc/refman/9.7/en/mysql-releases.html",
+        "read_at": "2026-11-17T15:09:36+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Extract checked Oracle client RPM; point Shell helper paths to 9.7.4 utilities",
+      "release_source": {
+        "url": "https://repo.mysql.com/yum/mysql-9.7-community/el/9/x86_64/repodata/0b78fab130245914c0d45461947016370ace4ffce9bb1b8c5d4dfd700e7ec618-primary.xml.gz",
+        "read_at": "2026-11-17T16:18:44.863731+00:00"
+      },
+      "notes": "Stock Oracle image and corrected thin-base binary versions were both probed; package payload checksum is pinned in base.Dockerfile."
+    },
+    {
+      "component": "Loader C API",
+      "before": "MariaDB Connector/C 3.4.9",
+      "current_pin": "MariaDB Connector/C 3.4.11",
+      "target": "Oracle libmysqlclient 9.7.4",
+      "policy": "Oracle C API is distributed with MySQL; select server LTS patch.",
+      "policy_source": {
+        "url": "https://repo.mysql.com/apt/debian/dists/trixie/mysql-9.7-lts/binary-amd64/Packages.gz",
+        "read_at": "2026-11-17T15:11:53.345079+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Replace vendor library and rebuild sysbench",
+      "release_source": {
+        "url": "https://repo.mysql.com/apt/debian/dists/trixie/mysql-9.7-lts/binary-amd64/Packages.gz",
+        "read_at": "2026-11-17T15:11:53.345079+00:00",
+        "read_status": "Passed"
+      },
+      "notes": ""
+    },
+    {
+      "component": "CloudBeaver Connector/J",
+      "before": "8.2.0",
+      "current_pin": "26.10.0",
+      "target": "9.7.0",
+      "policy": "Single upstream connector track; owner explicitly requires newest available 9.7 connector.",
+      "policy_source": {
+        "url": "https://dev.mysql.com/doc/refman/9.7/en/mysql-releases.html",
+        "read_at": "2026-11-17T16:46:19+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Replace jar with SHA-256-verified 9.7.0",
+      "release_source": {
+        "url": "https://repo.maven.apache.org/maven2/com/mysql/mysql-connector-j/9.7.0/mysql-connector-j-9.7.0.jar",
+        "read_at": "2026-11-17T15:11:52.984733+00:00",
+        "read_status": "Passed"
+      },
+      "notes": "Maven metadata lists 9.7.0, not fabricated 9.7.4. Server support lifecycle does not automatically promise ongoing 9.7 connector fixes."
+    },
+    {
+      "component": "PostgreSQL server and native tools",
+      "before": "18.6",
+      "current_pin": "18.7",
+      "target": "18.7",
+      "policy": "Five-year major-version maintenance; use latest minor.",
+      "policy_source": {
+        "url": "https://www.postgresql.org/support/versioning/",
+        "read_at": "2026-11-17T15:10:45.752139+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": null,
+      "notes": ""
+    },
+    {
+      "component": "SQLite engine/CLI/Python sqlite3",
+      "before": "Previous runtime unverified",
+      "current_pin": "3.54.1",
+      "target": "3.54.1",
+      "policy": "Project long-term maintenance/compatibility through 2050; no separate public LTS release branch.",
+      "policy_source": {
+        "url": "https://sqlite.org/lts.html",
+        "read_at": "2026-11-17T15:10:43.457917+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://sqlite.org/changes.html",
+        "read_at": "2026-11-17T15:10:43.638228+00:00",
+        "read_status": "Passed"
+      },
+      "notes": ""
+    },
+    {
+      "component": "landing",
+      "before": "nginx@sha256:3bcf852aed06467cf075c6105892e4d5a6ebbbafa0ce22d35062db9e90ddef4c",
+      "current_pin": "1.30.6",
+      "target": "1.31.8",
+      "policy": "No LTS designation; Stable and production Mainline branches. Apply latest supported current major 1.",
+      "policy_source": {
+        "url": "https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/",
+        "read_at": "2026-11-17T15:22:38.900938+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Update digest pin",
+      "release_source": {
+        "url": "https://hub.docker.com/v2/repositories/library/nginx/tags/1.31.8",
+        "read_at": "2026-11-17T15:22:39.042627+00:00",
+        "read_status": "Passed"
+      },
+      "notes": "Historical baseline tag version unverified; the exact before digest is recorded."
+    },
+    {
+      "component": "cloudbeaver",
+      "before": "dbeaver/cloudbeaver@sha256:3b4bf82287cf4febe0d335873f1346a01100f3951d266cd6a78c27fe30429cbc",
+      "current_pin": "26.2.5",
+      "target": "26.2.5",
+      "policy": "Community release support; no separate LTS line found in consulted vendor support/release information.",
+      "policy_source": {
+        "url": "https://dbeaver.com/sla/",
+        "read_at": "2026-11-17T15:10:43.560144+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://hub.docker.com/v2/repositories/dbeaver/cloudbeaver/tags/26.2.5",
+        "read_at": "2026-11-17T15:21:17.331414+00:00",
+        "read_status": "Passed"
+      },
+      "notes": "Historical baseline tag version unverified; the exact before digest is recorded."
+    },
+    {
+      "component": "dbgate",
+      "before": "dbgate/dbgate@sha256:7f8c7a155673e910270563054be27868421da961d4e909f568eafd61e6541fe2",
+      "current_pin": "7.3.6",
+      "target": "7.3.6",
+      "policy": "No separate LTS or fixed lifecycle commitment found in consulted publisher documentation.",
+      "policy_source": {
+        "url": "https://dbgate.org/docs/",
+        "read_at": "2026-11-17T15:10:44.847290+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://hub.docker.com/v2/repositories/dbgate/dbgate/tags/7.3.6",
+        "read_at": "2026-11-17T15:21:17.316565+00:00",
+        "read_status": "Passed"
+      },
+      "notes": "Historical baseline tag version unverified; the exact before digest is recorded."
+    },
+    {
+      "component": "phpmyadmin",
+      "before": "phpmyadmin@sha256:20fa6f724ba77d41abc25b1aeb4d97692ce344c7ace305594e57c5893f60f0f7",
+      "current_pin": "5.2.3",
+      "target": "5.2.3",
+      "policy": "4.9 is LTS but older than deployed 5.2 and needs PHP <8.0; no supported upgrade to that older line. Keep supported 5.2.",
+      "policy_source": {
+        "url": "https://www.phpmyadmin.net/downloads/",
+        "read_at": "2026-11-17T15:11:52.936414+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://www.phpmyadmin.net/downloads/",
+        "read_at": "2026-11-17T15:11:52.936414+00:00",
+        "read_status": "Passed"
+      },
+      "notes": "Application retained; PHP runtime updated separately. Vendor publishes PHP >=7.2; no downgrade to the older 4.9 LTS line.",
+      "validation_note": "The first PHP 8.5 runtime copy lost the vendor session-directory mode/ownership. An actual HTTP-200 session error and a failing repository regression preceded the fix; /sessions now preserves vendor 1777 and www-data UID/GID 33, and both account database lists pass."
+    },
+    {
+      "component": "adminer",
+      "before": "adminer@sha256:f1e2ba27b10a565ac77b2d8555d803be4ddb3232f4216dcf0ea85bcd8f2f1343",
+      "current_pin": "6.3.0",
+      "target": "6.3.0",
+      "policy": "No separate LTS branch found; current major 6 release.",
+      "policy_source": {
+        "url": "https://www.adminer.org/",
+        "read_at": "2026-11-17T15:10:44.470696+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://www.adminer.org/",
+        "read_at": "2026-11-17T15:10:44.470696+00:00",
+        "read_status": "Passed"
+      },
+      "notes": "Historical baseline tag version unverified; the exact before digest is recorded."
+    },
+    {
+      "component": "CloudBeaver Java",
+      "before": "Before engine upgrade not separately recorded",
+      "current_pin": "Temurin 25.0.5+8",
+      "target": "Temurin 25.0.5+8",
+      "policy": "25 is newest LTS; Adoptium maintains LTS for at least four years.",
+      "policy_source": {
+        "url": "https://adoptium.net/support/",
+        "read_at": "2026-11-17T15:10:44.043513+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://api.adoptium.net/v3/info/release_versions?architecture=x64&heap_size=normal&image_type=jre&jvm_impl=hotspot&os=linux&project=jdk&release_type=ga&version=%5B25,26%29",
+        "read_at": "2026-11-17T15:10:43.857430+00:00",
+        "read_status": "Passed"
+      },
+      "notes": ""
+    },
+    {
+      "component": "DbGate Node",
+      "before": "Before engine upgrade not separately recorded",
+      "current_pin": "22.23.5",
+      "target": "24.22.3",
+      "policy": "Newest tested compatible LTS. Vendor package requires >=24; 26.13.1 failed bundled ssh2 C++ build.",
+      "policy_source": {
+        "url": "https://nodejs.org/en/about/previous-releases",
+        "read_at": "2026-11-17T15:21:17.355702+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Replace runtime and rebuild native bindings",
+      "release_source": {
+        "url": "https://nodejs.org/dist/index.json",
+        "read_at": "2026-11-17T15:10:43.916765+00:00",
+        "read_status": "Passed"
+      },
+      "notes": "Node 26 is newest vendor LTS but not compatible with the shipped native binding; retain failure logs, do not patch upstream binding or use an ABI alias."
+    },
+    {
+      "component": "postgresql",
+      "before": "42.7.14",
+      "current_pin": "42.7.14",
+      "target": "42.7.14",
+      "policy": "No separate LTS release branch identified in consulted publisher documentation; retain current-major release.",
+      "policy_source": {
+        "url": "https://jdbc.postgresql.org/download/",
+        "read_at": "2026-11-17T15:11:52.982504+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://repo.maven.apache.org/maven2/org/postgresql/postgresql/maven-metadata.xml",
+        "read_at": "2026-11-17T02:42:57.194811+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "cloudbeaver-sqlite-jdbc",
+      "before": "3.48.0.0",
+      "current_pin": "3.54.1.0",
+      "target": "3.54.1.0",
+      "policy": "No separate LTS release branch identified in consulted publisher documentation; retain current-major release.",
+      "policy_source": {
+        "url": "https://xerial.org/software/",
+        "read_at": "2026-11-17T15:21:17.680579+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://repo.maven.apache.org/maven2/org/xerial/sqlite-jdbc/maven-metadata.xml",
+        "read_at": "2026-11-17T02:47:32.557960+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "mysql2",
+      "before": "3.24.6",
+      "current_pin": "3.24.6",
+      "target": "3.24.6",
+      "policy": "No separate LTS release branch identified in consulted publisher documentation; retain current-major release.",
+      "policy_source": {
+        "url": "https://registry.npmjs.org/mysql2/latest",
+        "read_at": "2026-11-17T15:10:45.409970+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://registry.npmjs.org/mysql2/latest",
+        "read_at": "2026-11-17T02:42:57.655541+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "pg",
+      "before": "8.23.1",
+      "current_pin": "8.23.1",
+      "target": "8.23.1",
+      "policy": "No separate LTS release branch identified in consulted publisher documentation; retain current-major release.",
+      "policy_source": {
+        "url": "https://node-postgres.com/",
+        "read_at": "2026-11-17T15:10:45.724880+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://registry.npmjs.org/pg/latest",
+        "read_at": "2026-11-17T02:42:57.860116+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "better-sqlite3",
+      "before": "13.0.3",
+      "current_pin": "13.2.0",
+      "target": "13.2.0",
+      "policy": "No separate LTS release branch identified in consulted publisher documentation; retain current-major release.",
+      "policy_source": {
+        "url": "https://registry.npmjs.org/better-sqlite3/latest",
+        "read_at": "2026-11-17T15:10:45.291860+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://registry.npmjs.org/better-sqlite3/latest",
+        "read_at": "2026-11-17T02:42:58.043635+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "adminer-libpq",
+      "before": "18.6",
+      "current_pin": "18.7-r0",
+      "target": "18.7-r0",
+      "policy": "PostgreSQL five-year major maintenance; matching latest 18.7 client library.",
+      "policy_source": {
+        "url": "https://www.postgresql.org/support/versioning/",
+        "read_at": "2026-11-17T15:10:45.752139+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pkgs.alpinelinux.org/package/v3.24/main/x86_64/libpq",
+        "read_at": "2026-11-17T04:06:09.391699+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "psycopg-libpq",
+      "before": "18.6 (initial binary-wheel probe)",
+      "current_pin": "18.7",
+      "target": "18.7",
+      "policy": "PostgreSQL five-year major maintenance; matching latest 18.7 client library.",
+      "policy_source": {
+        "url": "https://www.postgresql.org/support/versioning/",
+        "read_at": "2026-11-17T15:10:45.752139+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://apt.postgresql.org/pub/repos/apt/dists/trixie-pgdg/main/binary-amd64/Packages.gz",
+        "read_at": "2026-11-17T04:09:43.044818+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "adminer-mysqlnd",
+      "before": "8.4.27",
+      "current_pin": "8.4.27",
+      "target": "8.5.12",
+      "policy": "PHP has two years of active maintenance plus two years of security servicing per branch; no separate LTS edition. Use latest stable PHP 8 (8.5.12); mysqlnd follows PHP.",
+      "policy_source": {
+        "url": "https://www.php.net/supported-versions.php",
+        "read_at": "2026-11-17T17:51:05+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Rebuild the application with PHP 8.5.12 and matching extension ABI",
+      "release_source": {
+        "url": "https://www.php.net/releases/index.php?json&version=8",
+        "read_at": "2026-11-17T17:52:04.583187+00:00",
+        "status": 200,
+        "sha256": "daefedf879e64f5b5922c36250e78f07b77171eff7bc0cdb09fe56a930abe97b",
+        "version": "8.5.12",
+        "digest": null
+      },
+      "notes": "All inherited PHP modules preserved in native probes. phpMyAdmin publishes PHP >=7.2, with no upper bound on its download page; the earlier draft upper-bound claim was incorrect."
+    },
+    {
+      "component": "phpmyadmin-mysqlnd",
+      "before": "8.3.36",
+      "current_pin": "8.3.36",
+      "target": "8.5.12",
+      "policy": "PHP has two years of active maintenance plus two years of security servicing per branch; no separate LTS edition. Use latest stable PHP 8 (8.5.12); mysqlnd follows PHP.",
+      "policy_source": {
+        "url": "https://www.php.net/supported-versions.php",
+        "read_at": "2026-11-17T17:51:05+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Rebuild the application with PHP 8.5.12 and matching extension ABI",
+      "release_source": {
+        "url": "https://www.php.net/releases/index.php?json&version=8",
+        "read_at": "2026-11-17T17:52:04.583187+00:00",
+        "status": 200,
+        "sha256": "daefedf879e64f5b5922c36250e78f07b77171eff7bc0cdb09fe56a930abe97b",
+        "version": "8.5.12",
+        "digest": null
+      },
+      "notes": "All inherited PHP modules preserved in native probes. phpMyAdmin publishes PHP >=7.2, with no upper bound on its download page; the earlier draft upper-bound claim was incorrect."
+    },
+    {
+      "component": "Python backports-zstd",
+      "before": "1.7.0",
+      "current_pin": "1.8.0",
+      "target": "1.8.0",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/backports-zstd/json",
+        "read_at": "2026-11-17T15:18:19.201685+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/backports-zstd/json",
+        "read_at": "2026-11-17T15:18:19.201685+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/backports-zstd/json",
+        "read_at": "2026-11-17T20:51:37.498754+00:00",
+        "locked": "1.8.0",
+        "latest_current_major": "1.8.0",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python brotli",
+      "before": "1.2.0",
+      "current_pin": "1.2.1",
+      "target": "1.2.1",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/brotli/json",
+        "read_at": "2026-11-17T15:18:19.141680+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/brotli/json",
+        "read_at": "2026-11-17T15:18:19.141680+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/brotli/json",
+        "read_at": "2026-11-17T20:51:37.464932+00:00",
+        "locked": "1.2.1",
+        "latest_current_major": "1.2.1",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python brotlicffi",
+      "before": "1.2.0.2",
+      "current_pin": "1.2.1.0",
+      "target": "1.2.1.0",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/brotlicffi/json",
+        "read_at": "2026-11-17T15:18:19.010763+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/brotlicffi/json",
+        "read_at": "2026-11-17T15:18:19.010763+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/brotlicffi/json",
+        "read_at": "2026-11-17T20:51:37.430110+00:00",
+        "locked": "1.2.1.0",
+        "latest_current_major": "1.2.1.0",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python cffi",
+      "before": "2.1.1",
+      "current_pin": "2.1.1",
+      "target": "2.1.1",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://cffi.readthedocs.io/en/latest/whatsnew.html",
+        "read_at": "2026-11-17T15:10:45.118112+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/cffi/json",
+        "read_at": "2026-11-17T15:18:19.155026+00:00"
+      },
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/cffi/json",
+        "read_at": "2026-11-17T20:51:37.526378+00:00",
+        "locked": "2.1.1",
+        "latest_current_major": "2.1.1",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python colorama",
+      "before": "0.4.6",
+      "current_pin": "0.4.6",
+      "target": "0.4.6",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/colorama/json",
+        "read_at": "2026-11-17T15:18:19.011413+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/colorama/json",
+        "read_at": "2026-11-17T15:18:19.011413+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/colorama/json",
+        "read_at": "2026-11-17T20:51:37.422957+00:00",
+        "locked": "0.4.6",
+        "latest_current_major": "0.4.6",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python cryptography",
+      "before": "50.0.1",
+      "current_pin": "50.0.2",
+      "target": "50.0.2",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://cryptography.io/en/latest/api-stability/",
+        "read_at": "2026-11-17T15:10:44.976024+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/cryptography/json",
+        "read_at": "2026-11-17T15:18:19.182816+00:00"
+      },
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/cryptography/json",
+        "read_at": "2026-11-17T20:51:37.571404+00:00",
+        "locked": "50.0.2",
+        "latest_current_major": "50.0.2",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python duckdb",
+      "before": "1.5.5",
+      "current_pin": "2.0.0",
+      "target": "2.0.0",
+      "policy": "2.0 is LTS, supported through at least October 2027; 1.5 has extended support through March 2027.",
+      "policy_source": {
+        "url": "https://duckdb.org/2026/10/21/announcing-duckdb-200",
+        "read_at": "2026-11-17T15:10:43.533402+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/duckdb/json",
+        "read_at": "2026-11-17T15:18:19.128278+00:00"
+      },
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/duckdb/json",
+        "read_at": "2026-11-17T20:51:37.609873+00:00",
+        "locked": "2.0.0",
+        "latest_current_major": "2.0.0",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python inflate64",
+      "before": "1.0.4",
+      "current_pin": "1.0.4",
+      "target": "1.0.4",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/inflate64/json",
+        "read_at": "2026-11-17T15:18:19.093462+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/inflate64/json",
+        "read_at": "2026-11-17T15:18:19.093462+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/inflate64/json",
+        "read_at": "2026-11-17T20:51:37.480764+00:00",
+        "locked": "1.0.4",
+        "latest_current_major": "1.0.4",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python iniconfig",
+      "before": "2.3.0",
+      "current_pin": "2.3.1",
+      "target": "2.3.1",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/iniconfig/json",
+        "read_at": "2026-11-17T15:18:20.113191+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/iniconfig/json",
+        "read_at": "2026-11-17T15:18:20.113191+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/iniconfig/json",
+        "read_at": "2026-11-17T20:51:37.501436+00:00",
+        "locked": "2.3.1",
+        "latest_current_major": "2.3.1",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python lxml",
+      "before": "6.1.3",
+      "current_pin": "6.1.3",
+      "target": "6.1.3",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://lxml.de/FAQ.html",
+        "read_at": "2026-11-17T15:10:45.836066+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/lxml/json",
+        "read_at": "2026-11-17T15:18:19.332371+00:00"
+      },
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/lxml/json",
+        "read_at": "2026-11-17T20:51:37.784965+00:00",
+        "locked": "6.1.3",
+        "latest_current_major": "6.1.3",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python multivolumefile",
+      "before": "0.2.3",
+      "current_pin": "0.2.3",
+      "target": "0.2.3",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/multivolumefile/json",
+        "read_at": "2026-11-17T15:18:19.282055+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/multivolumefile/json",
+        "read_at": "2026-11-17T15:18:19.282055+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/multivolumefile/json",
+        "read_at": "2026-11-17T20:51:37.616021+00:00",
+        "locked": "0.2.3",
+        "latest_current_major": "0.2.3",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python packaging",
+      "before": "26.3",
+      "current_pin": "26.3",
+      "target": "26.3",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/packaging/json",
+        "read_at": "2026-11-17T15:18:19.264379+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/packaging/json",
+        "read_at": "2026-11-17T15:18:19.264379+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/packaging/json",
+        "read_at": "2026-11-17T20:51:37.615140+00:00",
+        "locked": "26.3",
+        "latest_current_major": "26.3",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python pluggy",
+      "before": "1.6.0",
+      "current_pin": "1.7.0",
+      "target": "1.7.0",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/pluggy/json",
+        "read_at": "2026-11-17T15:18:19.246838+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/pluggy/json",
+        "read_at": "2026-11-17T15:18:19.246838+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pluggy/json",
+        "read_at": "2026-11-17T20:51:37.630807+00:00",
+        "locked": "1.7.0",
+        "latest_current_major": "1.7.0",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python psutil",
+      "before": "7.2.2",
+      "current_pin": "7.2.2",
+      "target": "7.2.2",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/psutil/json",
+        "read_at": "2026-11-17T15:18:19.373152+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/psutil/json",
+        "read_at": "2026-11-17T15:18:19.373152+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/psutil/json",
+        "read_at": "2026-11-17T20:51:37.712862+00:00",
+        "locked": "7.2.2",
+        "latest_current_major": "7.2.2",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python psycopg",
+      "before": "not declared",
+      "current_pin": "3.3.9",
+      "target": "3.3.9",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://www.psycopg.org/psycopg3/docs/basic/install.html",
+        "read_at": "2026-11-17T15:10:45.542847+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/psycopg/json",
+        "read_at": "2026-11-17T15:18:19.266957+00:00"
+      },
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/psycopg/json",
+        "read_at": "2026-11-17T20:51:37.668125+00:00",
+        "locked": "3.3.9",
+        "latest_current_major": "3.3.9",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python py7zr",
+      "before": "1.1.3",
+      "current_pin": "1.1.4",
+      "target": "1.1.4",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://py7zr.readthedocs.io/en/latest/",
+        "read_at": "2026-11-17T15:10:45.399300+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/py7zr/json",
+        "read_at": "2026-11-17T15:18:19.393326+00:00"
+      },
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/py7zr/json",
+        "read_at": "2026-11-17T20:51:37.696561+00:00",
+        "locked": "1.1.4",
+        "latest_current_major": "1.1.4",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python pybcj",
+      "before": "1.0.8",
+      "current_pin": "1.0.8",
+      "target": "1.0.8",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/pybcj/json",
+        "read_at": "2026-11-17T15:18:19.413379+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/pybcj/json",
+        "read_at": "2026-11-17T15:18:19.413379+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pybcj/json",
+        "read_at": "2026-11-17T20:51:37.795089+00:00",
+        "locked": "1.0.8",
+        "latest_current_major": "1.0.8",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python pycparser",
+      "before": "3.0",
+      "current_pin": "3.12",
+      "target": "3.12",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/pycparser/json",
+        "read_at": "2026-11-17T15:18:19.375070+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/pycparser/json",
+        "read_at": "2026-11-17T15:18:19.375070+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pycparser/json",
+        "read_at": "2026-11-17T20:51:37.687113+00:00",
+        "locked": "3.12",
+        "latest_current_major": "3.12",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python pycryptodomex",
+      "before": "3.23.0",
+      "current_pin": "3.24.2",
+      "target": "3.24.2",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/pycryptodomex/json",
+        "read_at": "2026-11-17T15:18:19.446656+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/pycryptodomex/json",
+        "read_at": "2026-11-17T15:18:19.446656+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pycryptodomex/json",
+        "read_at": "2026-11-17T20:51:37.805892+00:00",
+        "locked": "3.24.2",
+        "latest_current_major": "3.24.2",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python pygments",
+      "before": "2.21.0",
+      "current_pin": "2.21.0",
+      "target": "2.21.0",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pygments.org/docs/changelog/",
+        "read_at": "2026-11-17T15:21:17.860588+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/pygments/json",
+        "read_at": "2026-11-17T15:18:19.454309+00:00"
+      },
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pygments/json",
+        "read_at": "2026-11-17T20:51:37.790131+00:00",
+        "locked": "2.21.0",
+        "latest_current_major": "2.21.0",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python pymysql",
+      "before": "1.2.0",
+      "current_pin": "1.2.4",
+      "target": "1.2.4",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pymysql.readthedocs.io/en/latest/user/installation.html",
+        "read_at": "2026-11-17T15:10:45.284896+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/pymysql/json",
+        "read_at": "2026-11-17T15:18:19.448264+00:00"
+      },
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pymysql/json",
+        "read_at": "2026-11-17T20:51:37.788183+00:00",
+        "locked": "1.2.4",
+        "latest_current_major": "1.2.4",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python pyppmd",
+      "before": "1.3.1",
+      "current_pin": "1.3.1",
+      "target": "1.3.1",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/pyppmd/json",
+        "read_at": "2026-11-17T15:18:19.527603+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/pyppmd/json",
+        "read_at": "2026-11-17T15:18:19.527603+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pyppmd/json",
+        "read_at": "2026-11-17T20:51:37.868846+00:00",
+        "locked": "1.3.1",
+        "latest_current_major": "1.3.1",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python pytest",
+      "before": "9.1.1",
+      "current_pin": "9.2.0",
+      "target": "9.2.0",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://docs.pytest.org/en/stable/backwards-compatibility.html",
+        "read_at": "2026-11-17T15:10:45.095538+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/pytest/json",
+        "read_at": "2026-11-17T15:18:19.489065+00:00"
+      },
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pytest/json",
+        "read_at": "2026-11-17T20:51:37.882349+00:00",
+        "locked": "9.2.0",
+        "latest_current_major": "9.2.0",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python pyyaml",
+      "before": "6.0.3",
+      "current_pin": "6.0.3",
+      "target": "6.0.3",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pyyaml.org/wiki/PyYAML",
+        "read_at": "2026-11-17T15:10:45.163617+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/pyyaml/json",
+        "read_at": "2026-11-17T15:18:19.518640+00:00"
+      },
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/pyyaml/json",
+        "read_at": "2026-11-17T20:51:37.896602+00:00",
+        "locked": "6.0.3",
+        "latest_current_major": "6.0.3",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python sqlglot",
+      "before": "30.18.0",
+      "current_pin": "30.32.0",
+      "target": "30.33.0",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://sqlglot.com/",
+        "read_at": "2026-11-17T15:10:44.988089+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Update exact requirement and uv lock",
+      "release_source": {
+        "url": "https://pypi.org/pypi/sqlglot/json",
+        "read_at": "2026-11-17T15:18:19.590573+00:00"
+      },
+      "notes": "",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/sqlglot/json",
+        "read_at": "2026-11-17T20:51:37.941595+00:00",
+        "locked": "30.33.0",
+        "latest_current_major": "30.33.0",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python texttable",
+      "before": "1.7.0",
+      "current_pin": "1.7.3",
+      "target": "1.7.3",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/texttable/json",
+        "read_at": "2026-11-17T15:18:19.555525+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/texttable/json",
+        "read_at": "2026-11-17T15:18:19.555525+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/texttable/json",
+        "read_at": "2026-11-17T20:51:37.870654+00:00",
+        "locked": "1.7.3",
+        "latest_current_major": "1.7.3",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python typing-extensions",
+      "before": "not declared",
+      "current_pin": "4.16.0",
+      "target": "4.16.0",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/typing-extensions/json",
+        "read_at": "2026-11-17T15:18:19.533827+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/typing-extensions/json",
+        "read_at": "2026-11-17T15:18:19.533827+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/typing-extensions/json",
+        "read_at": "2026-11-17T20:51:37.897964+00:00",
+        "locked": "4.16.0",
+        "latest_current_major": "4.16.0",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "Python tzdata",
+      "before": "not declared",
+      "current_pin": "2026.6",
+      "target": "2026.6",
+      "policy": "No separate LTS line found in consulted upstream release/documentation metadata; use latest non-yanked stable current-major release.",
+      "policy_source": {
+        "url": "https://pypi.org/pypi/tzdata/json",
+        "read_at": "2026-11-17T15:18:19.541518+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://pypi.org/pypi/tzdata/json",
+        "read_at": "2026-11-17T15:18:19.541518+00:00"
+      },
+      "notes": "A separate vendor lifecycle/support policy was not located; absence of LTS is an inference from consulted release metadata, not a contractual support assertion.",
+      "final_release_recheck": {
+        "url": "https://pypi.org/pypi/tzdata/json",
+        "read_at": "2026-11-17T20:51:37.892719+00:00",
+        "locked": "2026.6",
+        "latest_current_major": "2026.6",
+        "status": "Passed"
+      }
+    },
+    {
+      "component": "loader-base",
+      "before": "debian@sha256:5ae3c39ebd15e229dcedd5cee596b2497182493d41ff162e824ba13fc1b2b867 (Makefile pulled 12-slim)",
+      "current_pin": "13.7",
+      "target": "13.7",
+      "policy": "Debian stable release plus LTS lifecycle; 13 is current stable.",
+      "policy_source": {
+        "url": "https://www.debian.org/releases/",
+        "read_at": "2026-11-17T15:10:44.537326+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://www.debian.org/releases/",
+        "read_at": "2026-11-16T18:58:36.997618+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "sqlite-base",
+      "before": "See engine-upgrade baseline; version not independently recovered",
+      "current_pin": "3.24.4",
+      "target": "3.24.4",
+      "policy": "No separate LTS label; maintained 3.24 branch, latest patch.",
+      "policy_source": {
+        "url": "https://alpinelinux.org/releases/",
+        "read_at": "2026-11-17T15:10:44.399874+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://www.alpinelinux.org/releases/",
+        "read_at": "2026-11-16T18:58:36.942611+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "playwright",
+      "before": "1.49.1-noble (repository image/package pin)",
+      "current_pin": "1.65.0",
+      "target": "1.65.2",
+      "policy": "No separate LTS; current major 1 release. Bundled Noble Ubuntu 24.04 LTS is the supported official image base.",
+      "policy_source": {
+        "url": "https://playwright.dev/python/docs/release-notes",
+        "read_at": "2026-11-17T15:10:44.809982+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Update image digest and matching package patch",
+      "release_source": {
+        "url": "https://pypi.org/pypi/playwright/json",
+        "read_at": "2026-11-17T15:51:02.543206+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "dockerfile-frontend",
+      "before": "1.7 (repository syntax pin)",
+      "current_pin": "1.29.0",
+      "target": "1.29.0",
+      "policy": "Stable Dockerfile frontend major 1; no separate LTS release line.",
+      "policy_source": {
+        "url": "https://docs.docker.com/build/buildkit/frontend/",
+        "read_at": "2026-11-17T15:10:44.948264+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://registry-1.docker.io/v2/docker/dockerfile/manifests/1.29.0",
+        "read_at": "2026-11-16T19:02:44.308731+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "sqlserver-export",
+      "before": "See engine-upgrade baseline; version not independently recovered",
+      "current_pin": "2025 CU11 (17.0.5065.9)",
+      "target": "2025 CU11 (17.0.5065.9)",
+      "policy": "SQL Server 2025 fixed lifecycle through 2036; latest CU11.",
+      "policy_source": {
+        "url": "https://learn.microsoft.com/en-us/lifecycle/products/sql-server-2025",
+        "read_at": "2026-11-17T15:10:44.536807+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://support.microsoft.com/en-au/servicing/sql/sql-server-2025/kb5005684-build-versions",
+        "read_at": "2026-11-16T18:58:37.116706+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "oracle-verifier",
+      "before": "gvenzl/oracle-free:23 (mutable, binary version unverified)",
+      "current_pin": "26ai Free 23.26.3.0.0",
+      "target": "26ai Free 23.26.3.0.0",
+      "policy": "26ai is Oracle long-term release. Free published server package remains 23.26.3; Free is not an Enterprise support entitlement.",
+      "policy_source": {
+        "url": "https://www.oracle.com/assets/lsp-tech-chart-069290.pdf",
+        "read_at": "2026-11-17T17:08:30.137866+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": {
+        "url": "https://www.oracle.com/database/free/get-started/",
+        "read_at": "2026-11-16T19:41:23.043634+00:00"
+      },
+      "notes": ""
+    },
+    {
+      "component": "SQL Server ODBC/sqlcmd/bcp",
+      "before": "18.7.1.1",
+      "current_pin": "18.7.1.1",
+      "target": "18.7.1.1",
+      "policy": "ODBC/tools major 18 servicing; no separately selected LTS connector line. SQL Server lifecycle does not transfer to every driver.",
+      "policy_source": {
+        "url": "https://learn.microsoft.com/en-us/sql/connect/odbc/windows/release-notes-odbc-sql-server-windows?view=sql-server-ver17",
+        "read_at": "2026-11-17T15:11:53.272076+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": null,
+      "notes": ""
+    },
+    {
+      "component": "Oracle SQL*Plus/SQL*Loader",
+      "before": "23.26.3.0.0",
+      "current_pin": "23.26.4.0.0",
+      "target": "23.26.4.0.0",
+      "policy": "26ai/23.26 current supported Instant Client; vendor recommends newest supported client for database release.",
+      "policy_source": {
+        "url": "https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html",
+        "read_at": "2026-11-17T15:10:44.327066+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": null,
+      "notes": ""
+    },
+    {
+      "component": "sysbench",
+      "before": "1.0.20+ds-7",
+      "current_pin": "1.0.20+ds-7",
+      "target": "1.0.20 (Debian orig source with required build patch)",
+      "policy": "No separate LTS; existing major 1 source release retained; Oracle C API linkage corrected.",
+      "policy_source": {
+        "url": "https://deb.debian.org/debian/pool/main/s/sysbench/sysbench_1.0.20+ds-7.dsc",
+        "read_at": "2026-11-17T15:12:24.724305+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Build existing source against Oracle libmysqlclient",
+      "release_source": null,
+      "notes": ""
+    },
+    {
+      "component": "Ubuntu bases",
+      "before": "Not separately recorded",
+      "current_pin": "24.04 (official Playwright/SQL Server images)",
+      "target": "24.04",
+      "policy": "Ubuntu LTS five-year standard maintenance; newest base must also be supported by the consuming vendor.",
+      "policy_source": {
+        "url": "https://ubuntu.com/about/release-cycle",
+        "read_at": "2026-11-17T15:11:58.722778+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": null,
+      "notes": "Ubuntu 26.04 is newer LTS, but no supported official image migration is established for these exact application releases; retain publisher base."
+    },
+    {
+      "component": "Debian console bases",
+      "before": "Not separately recorded",
+      "current_pin": "12 (DbGate), 13 (other selected Debian images)",
+      "target": "Vendor-maintained latest patches of these lines",
+      "policy": "Debian stable/LTS lifecycle. Exact vendor application base is retained; no unsupported full-distribution transplant.",
+      "policy_source": {
+        "url": "https://www.debian.org/releases/",
+        "read_at": "2026-11-17T15:10:44.537326+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": null,
+      "notes": ""
+    },
+    {
+      "component": "Oracle Linux base",
+      "before": "Not separately recorded",
+      "current_pin": "9.8 (MySQL image)",
+      "target": "9.8",
+      "policy": "Oracle Linux long-term support lifecycle; retain official MySQL image-supported distribution line.",
+      "policy_source": {
+        "url": "https://www.oracle.com/a/ocom/docs/elsp-lifetime-069338.pdf",
+        "read_at": "2026-11-17T15:21:17.447464+00:00",
+        "read_status": "Passed"
+      },
+      "change": "Retain",
+      "release_source": null,
+      "notes": ""
+    },
+    {
+      "component": "phpMyAdmin PHP runtime base",
+      "before": "Not independently recorded before engine run",
+      "current_pin": "PHP 8.3.36 on Debian 13",
+      "target": "PHP 8.5.12 apache-trixie",
+      "policy": "No separately designated PHP LTS; four-year servicing per branch. Latest stable current-major PHP 8 is 8.5.12. Retain the existing supported Debian/Alpine distribution line.",
+      "policy_source": {
+        "url": "https://www.php.net/supported-versions.php",
+        "read_at": "2026-11-17T17:51:05+00:00",
+        "read_status": "Passed"
+      },
+      "release_source": {
+        "url": "https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-apache-trixie",
+        "read_at": "2026-11-17T17:52:04.725626+00:00",
+        "status": 200,
+        "sha256": "1ad27a2cfeb0666a37bdd372f39a5d674673ffcaed04ea1ea431dc6d6f4a32fb",
+        "version": "8.5.12-apache-trixie",
+        "digest": "sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46"
+      },
+      "change": "Pin official PHP runtime image by digest; preserve released application, configuration and every inherited module",
+      "notes": "Module/ABI probes Passed; full HTTP/SQL console validation follows with the corrected stack."
+    },
+    {
+      "component": "Adminer PHP runtime base",
+      "before": "Not independently recorded before engine run",
+      "current_pin": "PHP 8.4.27 on Alpine 3.24",
+      "target": "PHP 8.5.12 cli-alpine3.24",
+      "policy": "No separately designated PHP LTS; four-year servicing per branch. Latest stable current-major PHP 8 is 8.5.12. Retain the existing supported Debian/Alpine distribution line.",
+      "policy_source": {
+        "url": "https://www.php.net/supported-versions.php",
+        "read_at": "2026-11-17T17:51:05+00:00",
+        "read_status": "Passed"
+      },
+      "release_source": {
+        "url": "https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-cli-alpine3.24",
+        "read_at": "2026-11-17T17:52:04.879190+00:00",
+        "status": 200,
+        "sha256": "faa89b106479dfd9eb75eef91ab60398753f0c3c654d940d97e2a43817d45f79",
+        "version": "8.5.12-cli-alpine3.24",
+        "digest": "sha256:1ff5b45922ab30f418447c6089dbe2eba5f01e0b2742863d0327ac349305d70f"
+      },
+      "change": "Pin official PHP runtime image by digest; preserve released application, configuration and every inherited module",
+      "notes": "Module/ABI probes Passed; full HTTP/SQL console validation follows with the corrected stack."
+    },
+    {
+      "component": "phpMyAdmin uploadprogress",
+      "before": "Not separately recorded before engine run",
+      "current_pin": "2.0.2",
+      "target": "2.0.2",
+      "policy": "No separate LTS policy located in the publisher release metadata (inference); latest published major-2 release is retained.",
+      "policy_source": {
+        "url": "https://pecl.php.net/rest/r/uploadprogress/latest.txt",
+        "read_at": "2026-11-17T17:52:05.269127+00:00",
+        "status": 200,
+        "sha256": "31186721be50d1033545dfeee9d6ee118b54fb1b974ea909ab2e960e0b7c049b"
+      },
+      "release_source": {
+        "url": "https://pecl.php.net/get/uploadprogress-2.0.2.tgz",
+        "final_url": "https://pecl.php.net/get/uploadprogress-2.0.2.tgz",
+        "read_at": "2026-11-17T17:58:59.788653+00:00",
+        "sha256": "2c63ce727340121044365f0fd83babd60dfa785fa5979fae2520b25dad814226",
+        "bytes": 19969
+      },
+      "change": "Retain version; checksum-pin PECL archive and rebuild for PHP 8.5 ABI",
+      "notes": "Original vendor image and rebuilt image both report 2.0.2. Source archive retained inside the image with its licence."
+    }
+  ],
+  "sources": {
+    "mysql-releases": {
+      "url": "https://dev.mysql.com/doc/refman/9.7/en/mysql-releases.html",
+      "error": "HTTP Error 403: Forbidden",
+      "read_at": "2026-11-17T15:10:43.312316+00:00",
+      "web_read_at": "2026-11-17T15:09:36+00:00",
+      "web_read_status": "Passed",
+      "web_reread_at": "2026-11-17T16:46:19+00:00"
+    },
+    "mysql-tags": {
+      "url": "https://hub.docker.com/v2/repositories/library/mysql/tags/9.7.4",
+      "status": 200,
+      "final_url": "https://hub.docker.com/v2/repositories/library/mysql/tags/9.7.4",
+      "read_at": "2026-11-17T15:10:43.360607+00:00",
+      "sha256": "466d8637c6b37bddfa1f0b61f902f9e501fda088ec8af6d77088b1b8c57061ad"
+    },
+    "mysql-j": {
+      "url": "https://repo.maven.apache.org/maven2/com/mysql/mysql-connector-j/maven-metadata.xml",
+      "status": 200,
+      "final_url": "https://repo.maven.apache.org/maven2/com/mysql/mysql-connector-j/maven-metadata.xml",
+      "read_at": "2026-11-17T15:10:43.341701+00:00",
+      "sha256": "068ccbaee6701ce87e68ec3f5d3c55eec0e614f104f4a525fcec4c8f5cee0f2b"
+    },
+    "duckdb-lts": {
+      "url": "https://duckdb.org/2026/10/21/announcing-duckdb-200",
+      "status": 200,
+      "final_url": "https://duckdb.org/2026/10/21/announcing-duckdb-200",
+      "read_at": "2026-11-17T15:10:43.533402+00:00",
+      "sha256": "1d56504c71bfdd9b84f61187bfa6b5bdba3b5cb2cb10d229fb33df8ac31209da"
+    },
+    "postgres-policy": {
+      "url": "https://www.postgresql.org/support/versioning/",
+      "status": 200,
+      "final_url": "https://www.postgresql.org/support/versioning/",
+      "read_at": "2026-11-17T15:10:45.752139+00:00",
+      "sha256": "1ed157b7bb15a7176dbf70b80b21a51652c0ed1a8e1c1c15098867904ef55242"
+    },
+    "sqlite-policy": {
+      "url": "https://sqlite.org/lts.html",
+      "status": 200,
+      "final_url": "https://sqlite.org/lts.html",
+      "read_at": "2026-11-17T15:10:43.457917+00:00",
+      "sha256": "1c8bc5dfbfca0f3cf7317cef15663ac0a9a2022770d0f06e0c05643d38108361"
+    },
+    "sqlite-release": {
+      "url": "https://sqlite.org/changes.html",
+      "status": 200,
+      "final_url": "https://sqlite.org/changes.html",
+      "read_at": "2026-11-17T15:10:43.638228+00:00",
+      "sha256": "50e63c6da18d2efd035d0f66d98098384fb4d64119ee578dda5b5aadfdddaf6b"
+    },
+    "cloudbeaver-policy": {
+      "url": "https://dbeaver.com/sla/",
+      "status": 200,
+      "final_url": "https://dbeaver.com/sla/",
+      "read_at": "2026-11-17T15:10:43.560144+00:00",
+      "sha256": "a10627208dbca3df1c0f92152c68fb1fac24b677ae393f75c5bfd2afa2b32687"
+    },
+    "dbgate-policy": {
+      "url": "https://dbgate.org/docs/",
+      "status": 200,
+      "final_url": "https://www.dbgate.io/",
+      "read_at": "2026-11-17T15:10:44.847290+00:00",
+      "sha256": "809054f4ff97d2a242089490a197fa7ef41dd7765f7a300e56e8b23296181ecc"
+    },
+    "adminer-policy": {
+      "url": "https://www.adminer.org/",
+      "status": 200,
+      "final_url": "https://www.adminer.org/",
+      "read_at": "2026-11-17T15:10:44.470696+00:00",
+      "sha256": "12116aad569c2b30d24691c4d8f8e2dbe62e543b5fd0a9b56cacb2a3e6af78b0"
+    },
+    "java-policy": {
+      "url": "https://adoptium.net/support/",
+      "status": 200,
+      "final_url": "https://adoptium.net/support/",
+      "read_at": "2026-11-17T15:10:44.043513+00:00",
+      "sha256": "a9af7f24fe26e19eff77de7bda29f18187954fb78e9dfdb2e99de913c90b575c"
+    },
+    "java-releases": {
+      "url": "https://api.adoptium.net/v3/info/release_versions?architecture=x64&heap_size=normal&image_type=jre&jvm_impl=hotspot&os=linux&project=jdk&release_type=ga&version=%5B25,26%29",
+      "status": 200,
+      "final_url": "https://api.adoptium.net/v3/info/release_versions?architecture=x64&heap_size=normal&image_type=jre&jvm_impl=hotspot&os=linux&project=jdk&release_type=ga&version=%5B25,26%29",
+      "read_at": "2026-11-17T15:10:43.857430+00:00",
+      "sha256": "eb1e38063d28e4f03e7c07776829948c28a14aeb357eeba1e28db40b848673be"
+    },
+    "node-releases": {
+      "url": "https://nodejs.org/dist/index.json",
+      "status": 200,
+      "final_url": "https://nodejs.org/dist/index.json",
+      "read_at": "2026-11-17T15:10:43.916765+00:00",
+      "sha256": "cb36ee534b08ef30f63c0c8e1bff66ec143fb2ceedb26b331b58309165a4451d"
+    },
+    "debian-policy": {
+      "url": "https://www.debian.org/releases/",
+      "status": 200,
+      "final_url": "https://www.debian.org/releases/",
+      "read_at": "2026-11-17T15:10:44.537326+00:00",
+      "sha256": "c1b386b0c24d64a29f6cca76d185d864343f10bac7950bb5e9bd389198a7d7c1"
+    },
+    "alpine-policy": {
+      "url": "https://alpinelinux.org/releases/",
+      "status": 200,
+      "final_url": "https://alpinelinux.org/releases/",
+      "read_at": "2026-11-17T15:10:44.399874+00:00",
+      "sha256": "0cc79f81592555ffc642faafa50702710bd486c6d292d899447d852dff86283e"
+    },
+    "ubuntu-policy": {
+      "url": "https://ubuntu.com/about/release-cycle",
+      "error": "HTTP Error 503: Service Unavailable",
+      "read_at": "2026-11-17T15:10:49.535776+00:00"
+    },
+    "php-policy": {
+      "url": "https://www.php.net/supported-versions.php",
+      "status": 200,
+      "final_url": "https://www.php.net/supported-versions.php",
+      "read_at": "2026-11-17T15:10:44.167596+00:00",
+      "sha256": "196c936b7ff44536ace4a7d2bb29311765eda25b4d5ea081a86d556e085b5591"
+    },
+    "oracle-client": {
+      "url": "https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html",
+      "status": 200,
+      "final_url": "https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html",
+      "read_at": "2026-11-17T15:10:44.327066+00:00",
+      "sha256": "ce3c2f9e9e46e7d5b440d91c77d4b67dc574024a9cd9d7fdd60e7fab7f8d482a"
+    },
+    "mssql-policy": {
+      "url": "https://learn.microsoft.com/en-us/lifecycle/products/sql-server-2025",
+      "status": 200,
+      "final_url": "https://learn.microsoft.com/en-us/lifecycle/products/sql-server-2025",
+      "read_at": "2026-11-17T15:10:44.536807+00:00",
+      "sha256": "60c4255dc3fd8a14bc43bef095ff65c89c92d57df68632b702bc8e9da0ead19c"
+    },
+    "playwright-policy": {
+      "url": "https://playwright.dev/python/docs/release-notes",
+      "status": 200,
+      "final_url": "https://playwright.dev/python/docs/release-notes",
+      "read_at": "2026-11-17T15:10:44.809982+00:00",
+      "sha256": "a101ef24eda90dfcc95ceb982fcc39cde73a2f71143b4c785dbcb83070109145"
+    },
+    "dockerfile-policy": {
+      "url": "https://docs.docker.com/build/buildkit/frontend/",
+      "status": 200,
+      "final_url": "https://docs.docker.com/build/buildkit/frontend/",
+      "read_at": "2026-11-17T15:10:44.948264+00:00",
+      "sha256": "9892ec1f000b97c1df179ee75595ac161605460ec073ba341797b998a2bc68cc"
+    },
+    "cryptography-policy": {
+      "url": "https://cryptography.io/en/latest/api-stability/",
+      "status": 200,
+      "final_url": "https://cryptography.io/en/latest/api-stability/",
+      "read_at": "2026-11-17T15:10:44.976024+00:00",
+      "sha256": "be9fc9554faa823761d54977bc423ff3d491605e2819e74f973c9bcba5495722"
+    },
+    "pytest-policy": {
+      "url": "https://docs.pytest.org/en/stable/backwards-compatibility.html",
+      "status": 200,
+      "final_url": "https://docs.pytest.org/en/stable/backwards-compatibility.html",
+      "read_at": "2026-11-17T15:10:45.095538+00:00",
+      "sha256": "a75fa68d6ced2ad9175d73904a4dff035d79c61be504ba993314ab5e23e5673e"
+    },
+    "sqlglot-policy": {
+      "url": "https://sqlglot.com/",
+      "status": 200,
+      "final_url": "https://sqlglot.com/",
+      "read_at": "2026-11-17T15:10:44.988089+00:00",
+      "sha256": "b4a90afbda2c2e6c1e15e0aaae540d2defb1082bac7b62ea584314113eebcbea"
+    },
+    "lxml-policy": {
+      "url": "https://lxml.de/FAQ.html",
+      "status": 200,
+      "final_url": "https://lxml.de/FAQ.html",
+      "read_at": "2026-11-17T15:10:45.836066+00:00",
+      "sha256": "bb7a1d05d6c17b7b6e0ae054d5fa71a99b8a686a2d4409ddabab90a460281b63"
+    },
+    "cffi-policy": {
+      "url": "https://cffi.readthedocs.io/en/latest/whatsnew.html",
+      "status": 200,
+      "final_url": "https://cffi.readthedocs.io/en/latest/whatsnew.html",
+      "read_at": "2026-11-17T15:10:45.118112+00:00",
+      "sha256": "31bbeb2659a0aa088351f71d3799cf010540e839b167cea60cd344936b2d01fe"
+    },
+    "pyyaml-policy": {
+      "url": "https://pyyaml.org/wiki/PyYAML",
+      "status": 200,
+      "final_url": "https://pyyaml.org/wiki/PyYAML",
+      "read_at": "2026-11-17T15:10:45.163617+00:00",
+      "sha256": "bb96bebfcbd42a2c1b8325db6c7fb9e1de2e30a57cb9924117e08196949e34b0"
+    },
+    "psycopg-policy": {
+      "url": "https://www.psycopg.org/psycopg3/docs/basic/install.html",
+      "status": 200,
+      "final_url": "https://www.psycopg.org/psycopg3/docs/basic/install.html",
+      "read_at": "2026-11-17T15:10:45.542847+00:00",
+      "sha256": "2fda60fea77da47516d554a706ee5a3d7154a4009bab783e5bc332f60be824bc"
+    },
+    "pymysql-policy": {
+      "url": "https://pymysql.readthedocs.io/en/latest/user/installation.html",
+      "status": 200,
+      "final_url": "https://pymysql.readthedocs.io/en/latest/user/installation.html",
+      "read_at": "2026-11-17T15:10:45.284896+00:00",
+      "sha256": "42c5eb22f5142a15879d16afd05dee95078d9a7ab2e2b4e61eff2fbf8444489f"
+    },
+    "py7zr-policy": {
+      "url": "https://py7zr.readthedocs.io/en/latest/",
+      "status": 200,
+      "final_url": "https://py7zr.readthedocs.io/en/latest/",
+      "read_at": "2026-11-17T15:10:45.399300+00:00",
+      "sha256": "92a3a10ab103058466f9d32dd84e117c056cbbced367fa17f239666ff8511aaf"
+    },
+    "better-sqlite-policy": {
+      "url": "https://registry.npmjs.org/better-sqlite3/latest",
+      "status": 200,
+      "final_url": "https://registry.npmjs.org/better-sqlite3/latest",
+      "read_at": "2026-11-17T15:10:45.291860+00:00",
+      "sha256": "f4a330a94e512196f84cda6f6e89c113212ab8e5260e6c30507ad5bd127a94e5"
+    },
+    "mysql2-policy": {
+      "url": "https://registry.npmjs.org/mysql2/latest",
+      "status": 200,
+      "final_url": "https://registry.npmjs.org/mysql2/latest",
+      "read_at": "2026-11-17T15:10:45.409970+00:00",
+      "sha256": "8a173d7af79b73793d53039f19cf7f5836d0dcd7fe4d1874c96085d779297ca0"
+    },
+    "pg-policy": {
+      "url": "https://node-postgres.com/",
+      "status": 200,
+      "final_url": "https://node-postgres.com/",
+      "read_at": "2026-11-17T15:10:45.724880+00:00",
+      "sha256": "d5de325fd2f4696e4811e17ca71ef9f77bf3c8741802137470fbf53c349e2b57"
+    },
+    "mysql-apt": {
+      "url": "https://repo.mysql.com/apt/debian/dists/trixie/mysql-9.7-lts/binary-amd64/Packages.gz",
+      "status": 200,
+      "sha256": "8f3cd9872a322a83a3235485f47ef430d66604c572bd431848022fb091adda67",
+      "read_at": "2026-11-17T15:11:53.345079+00:00"
+    },
+    "mysql-j97": {
+      "url": "https://repo.maven.apache.org/maven2/com/mysql/mysql-connector-j/9.7.0/mysql-connector-j-9.7.0.jar",
+      "status": 200,
+      "sha256": "0353648eaa1c91e0f4020c959abf756bc866ffd583df22ae6b6f6e0cbd43eb44",
+      "read_at": "2026-11-17T15:11:52.984733+00:00"
+    },
+    "phpmyadmin-support": {
+      "url": "https://www.phpmyadmin.net/downloads/",
+      "status": 200,
+      "sha256": "b0cfad81091e85e4a3e3733c56559c34bcc747332f719c57a2f71532b1c0f405",
+      "read_at": "2026-11-17T15:11:52.936414+00:00"
+    },
+    "pgjdbc-support": {
+      "url": "https://jdbc.postgresql.org/download/",
+      "status": 200,
+      "sha256": "94d09ff08e944bec3ef0e9370c09779e0ce1045655bf481888f4905954fb31a6",
+      "read_at": "2026-11-17T15:11:52.982504+00:00"
+    },
+    "odbc-support": {
+      "url": "https://learn.microsoft.com/en-us/sql/connect/odbc/windows/release-notes-odbc-sql-server-windows?view=sql-server-ver17",
+      "status": 200,
+      "sha256": "96d60a6cc1025350f4302a8de28489b363a7a103eb8963068dc39ba9976d4306",
+      "read_at": "2026-11-17T15:11:53.272076+00:00"
+    },
+    "ubuntu-support": {
+      "url": "https://ubuntu.com/about/release-cycle",
+      "status": 200,
+      "sha256": "ad899289f89b405884b4d9ed5e465a4d11ebc56c3f814ae4566b67196b57683f",
+      "read_at": "2026-11-17T15:11:58.722778+00:00"
+    },
+    "sysbench-dsc": {
+      "url": "https://deb.debian.org/debian/pool/main/s/sysbench/sysbench_1.0.20+ds-7.dsc",
+      "read_at": "2026-11-17T15:12:24.724305+00:00",
+      "sha256": "fffd4132cdb6700b565a1f5de7e62a272a71f5cb952716bc56e8842d174f0635",
+      "status": 200
+    },
+    "oracle-free-release": {
+      "url": "https://www.oracle.com/database/free/get-started/",
+      "status": 200,
+      "sha256": "ee1d32c87189543c89b9b727b2fd0b54e417919e40fc959a80f8cf8b50bec678",
+      "read_at": "2026-11-17T15:21:17.427207+00:00"
+    },
+    "mssql-builds": {
+      "url": "https://support.microsoft.com/en-au/servicing/sql/sql-server-2025/kb5005684-build-versions",
+      "status": 200,
+      "sha256": "42a8716aea78adef5314837d6da52dffae89973cc82346f8331c3591c60bdb2f",
+      "read_at": "2026-11-17T15:21:17.525657+00:00"
+    },
+    "cloudbeaver-tags": {
+      "url": "https://hub.docker.com/v2/repositories/dbeaver/cloudbeaver/tags/26.2.5",
+      "status": 200,
+      "sha256": "dcad3966bb41243afff2c6c70a5b7fd2d7ac849a3a54325313ea80cd7dda7a4c",
+      "read_at": "2026-11-17T15:21:17.331414+00:00"
+    },
+    "dbgate-tags": {
+      "url": "https://hub.docker.com/v2/repositories/dbgate/dbgate/tags/7.3.6",
+      "status": 200,
+      "sha256": "90d649caaaf1f46697f375974f183b4a6426eae57585dabcbed1b0994b605b74",
+      "read_at": "2026-11-17T15:21:17.316565+00:00"
+    },
+    "node-support": {
+      "url": "https://nodejs.org/en/about/previous-releases",
+      "status": 200,
+      "sha256": "56a5fa49bf345ddd14ecb6214d69feca6a6f7c2b469755db91b1f6d3b3ee1e78",
+      "read_at": "2026-11-17T15:21:17.355702+00:00"
+    },
+    "oracle-linux-policy": {
+      "url": "https://www.oracle.com/a/ocom/docs/elsp-lifetime-069338.pdf",
+      "status": 200,
+      "sha256": "cbdccc1276d1dca08ec7f24c2bb670a162d92c901c258e25bc5e8a5eebf55746",
+      "read_at": "2026-11-17T15:21:17.447464+00:00"
+    },
+    "sqlite-jdbc-support": {
+      "url": "https://xerial.org/software/",
+      "status": 200,
+      "sha256": "220951f545ad73a458938a74b3fbea34378d6787e540e1df58fd4d3703a27452",
+      "read_at": "2026-11-17T15:21:17.680579+00:00"
+    },
+    "pkg-pygments": {
+      "url": "https://pygments.org/docs/changelog/",
+      "status": 200,
+      "sha256": "fbe06c386ce5beb812c7739d12617a2d1c7d9819fb6411b07087e4895e3e9e46",
+      "read_at": "2026-11-17T15:21:17.860588+00:00"
+    },
+    "nginx-support": {
+      "url": "https://docs.nginx.com/nginx/admin-guide/installing-nginx/installing-nginx-open-source/",
+      "status": 200,
+      "read_at": "2026-11-17T15:22:38.900938+00:00",
+      "sha256": "aaea9f6c25c743dd0b48d9b78fa5324c0f810039554a07c799f02660ef7a5c40"
+    },
+    "nginx-image": {
+      "url": "https://hub.docker.com/v2/repositories/library/nginx/tags/1.31.8",
+      "status": 200,
+      "read_at": "2026-11-17T15:22:39.042627+00:00",
+      "sha256": "08a1cecb97efe314be5bc8c5089e06fc6bd9110e88c406d5a6cae234f1f6caa3"
+    },
+    "oracle-lts": {
+      "url": "https://docs.oracle.com/en/database/oracle/oracle-database/26/nfcoa/all-nfg.html",
+      "status": 200,
+      "read_at": "2026-11-17T15:22:39.302718+00:00",
+      "sha256": "6d8ae7675b35af09e0d212a2cda65344b96543d9d76067b910963b8461e63b28"
+    },
+    "pypi-backports-zstd": {
+      "url": "https://pypi.org/pypi/backports-zstd/json",
+      "read_at": "2026-11-17T15:18:19.201685+00:00",
+      "status": 200
+    },
+    "pypi-brotli": {
+      "url": "https://pypi.org/pypi/brotli/json",
+      "read_at": "2026-11-17T15:18:19.141680+00:00",
+      "status": 200
+    },
+    "pypi-brotlicffi": {
+      "url": "https://pypi.org/pypi/brotlicffi/json",
+      "read_at": "2026-11-17T15:18:19.010763+00:00",
+      "status": 200
+    },
+    "pypi-colorama": {
+      "url": "https://pypi.org/pypi/colorama/json",
+      "read_at": "2026-11-17T15:18:19.011413+00:00",
+      "status": 200
+    },
+    "pypi-inflate64": {
+      "url": "https://pypi.org/pypi/inflate64/json",
+      "read_at": "2026-11-17T15:18:19.093462+00:00",
+      "status": 200
+    },
+    "pypi-iniconfig": {
+      "url": "https://pypi.org/pypi/iniconfig/json",
+      "read_at": "2026-11-17T15:18:20.113191+00:00",
+      "status": 200
+    },
+    "pypi-multivolumefile": {
+      "url": "https://pypi.org/pypi/multivolumefile/json",
+      "read_at": "2026-11-17T15:18:19.282055+00:00",
+      "status": 200
+    },
+    "pypi-packaging": {
+      "url": "https://pypi.org/pypi/packaging/json",
+      "read_at": "2026-11-17T15:18:19.264379+00:00",
+      "status": 200
+    },
+    "pypi-pluggy": {
+      "url": "https://pypi.org/pypi/pluggy/json",
+      "read_at": "2026-11-17T15:18:19.246838+00:00",
+      "status": 200
+    },
+    "pypi-psutil": {
+      "url": "https://pypi.org/pypi/psutil/json",
+      "read_at": "2026-11-17T15:18:19.373152+00:00",
+      "status": 200
+    },
+    "pypi-pybcj": {
+      "url": "https://pypi.org/pypi/pybcj/json",
+      "read_at": "2026-11-17T15:18:19.413379+00:00",
+      "status": 200
+    },
+    "pypi-pycparser": {
+      "url": "https://pypi.org/pypi/pycparser/json",
+      "read_at": "2026-11-17T15:18:19.375070+00:00",
+      "status": 200
+    },
+    "pypi-pycryptodomex": {
+      "url": "https://pypi.org/pypi/pycryptodomex/json",
+      "read_at": "2026-11-17T15:18:19.446656+00:00",
+      "status": 200
+    },
+    "pypi-pyppmd": {
+      "url": "https://pypi.org/pypi/pyppmd/json",
+      "read_at": "2026-11-17T15:18:19.527603+00:00",
+      "status": 200
+    },
+    "pypi-texttable": {
+      "url": "https://pypi.org/pypi/texttable/json",
+      "read_at": "2026-11-17T15:18:19.555525+00:00",
+      "status": 200
+    },
+    "pypi-typing-extensions": {
+      "url": "https://pypi.org/pypi/typing-extensions/json",
+      "read_at": "2026-11-17T15:18:19.533827+00:00",
+      "status": 200
+    },
+    "pypi-tzdata": {
+      "url": "https://pypi.org/pypi/tzdata/json",
+      "read_at": "2026-11-17T15:18:19.541518+00:00",
+      "status": 200
+    },
+    "oracle-mysql-registry": {
+      "url": "https://container-registry.oracle.com/v2/mysql/community-server/manifests/9.7.4",
+      "status": "Passed",
+      "digest": "sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb",
+      "read_at": "2026-11-17T15:40:01.485365+00:00"
+    },
+    "playwright-release": {
+      "url": "https://pypi.org/pypi/playwright/json",
+      "read_at": "2026-11-17T15:51:02.543206+00:00",
+      "latest": "1.65.2"
+    },
+    "playwright-image": {
+      "url": "https://mcr.microsoft.com/v2/playwright/python/manifests/v1.65.2-noble",
+      "digest": "sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f",
+      "read_at": "2026-11-17T15:51:47.306498+00:00",
+      "status": "Passed"
+    },
+    "mysql-native-binutils": {
+      "url": "https://repo.mysql.com/yum/mysql-9.7-community/el/9/x86_64/repodata/0b78fab130245914c0d45461947016370ace4ffce9bb1b8c5d4dfd700e7ec618-primary.xml.gz",
+      "read_at": "2026-11-17T16:18:44.863731+00:00",
+      "packages": [
+        {
+          "name": "mysql-community-client",
+          "version": {
+            "epoch": "0",
+            "ver": "9.7.4",
+            "rel": "1.el9"
+          },
+          "location": "mysql-community-client-9.7.4-1.el9.x86_64.rpm",
+          "sha256": "669fe797e36ee181ecfe2d46146f6db0fdd4ea422991d2c9c0150fc65d87f59e"
+        }
+      ]
+    },
+    "mysql-9.7.4-release-notes": {
+      "url": "https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html",
+      "read_at": "2026-11-17T16:46:19+00:00",
+      "web_read_status": "Passed",
+      "finding": "9.7.4 released 2026-10-20; next 9.7.4.1 is explicitly not yet released."
+    },
+    "oracle-database-lifecycle": {
+      "url": "https://www.oracle.com/assets/lsp-tech-chart-069290.pdf",
+      "read_at": "2026-11-17T17:08:30.137866+00:00",
+      "status": 200,
+      "content_type": "application/pdf",
+      "sha256": "4c26af1a025144b6a8e4f5204e131f83d5a5c69153b73674551c18a977058a15",
+      "web_text_read_at": "2026-11-17T17:08:04+00:00",
+      "finding": "Oracle 26ai Enterprise Edition is a long-term support release. This is not a Free support entitlement."
+    },
+    "oracle-database-lifecycle-old-url": {
+      "url": "https://www.oracle.com/support/library/lifetime-support-technology.pdf",
+      "read_at": "2026-11-17T17:07:51+00:00",
+      "status": "Failed",
+      "reason": "HTTP 404; located current vendor policy URL instead."
+    },
+    "python-policy": {
+      "url": "https://devguide.python.org/versions/",
+      "read_at": "2026-11-17T17:16:24+00:00",
+      "read_status": "Passed"
+    },
+    "python-3.13.18": {
+      "url": "https://www.python.org/downloads/release/python-31318/",
+      "read_at": "2026-11-17T17:16:57+00:00",
+      "read_status": "Passed"
+    },
+    "python-3.13.12-supersession": {
+      "url": "https://www.python.org/downloads/release/python-31312/",
+      "read_at": "2026-11-17T17:16:24+00:00",
+      "read_status": "Passed",
+      "finding": "Explicitly superseded by 3.13.18."
+    },
+    "python-abi": {
+      "url": "https://docs.python.org/3/c-api/stable.html",
+      "read_at": "2026-11-17T17:24:13+00:00",
+      "read_status": "Passed",
+      "finding": "CPython ABI compatibility across patch releases depends on compatible compiler/platform settings; private APIs are excluded. Actual Shell/native-extension and full restore tests remain required."
+    },
+    "php-policy-current": {
+      "url": "https://www.php.net/supported-versions.php",
+      "read_at": "2026-11-17T17:51:05+00:00",
+      "read_status": "Passed"
+    },
+    "php-current-major": {
+      "url": "https://www.php.net/releases/index.php?json&version=8",
+      "read_at": "2026-11-17T17:52:04.583187+00:00",
+      "status": 200,
+      "sha256": "daefedf879e64f5b5922c36250e78f07b77171eff7bc0cdb09fe56a930abe97b",
+      "version": "8.5.12",
+      "digest": null
+    },
+    "php-apache-current": {
+      "url": "https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-apache-trixie",
+      "read_at": "2026-11-17T17:52:04.725626+00:00",
+      "status": 200,
+      "sha256": "1ad27a2cfeb0666a37bdd372f39a5d674673ffcaed04ea1ea431dc6d6f4a32fb",
+      "version": "8.5.12-apache-trixie",
+      "digest": "sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46"
+    },
+    "php-cli-current": {
+      "url": "https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-cli-alpine3.24",
+      "read_at": "2026-11-17T17:52:04.879190+00:00",
+      "status": 200,
+      "sha256": "faa89b106479dfd9eb75eef91ab60398753f0c3c654d940d97e2a43817d45f79",
+      "version": "8.5.12-cli-alpine3.24",
+      "digest": "sha256:1ff5b45922ab30f418447c6089dbe2eba5f01e0b2742863d0327ac349305d70f"
+    },
+    "uploadprogress-current": {
+      "url": "https://pecl.php.net/rest/r/uploadprogress/latest.txt",
+      "read_at": "2026-11-17T17:52:05.269127+00:00",
+      "status": 200,
+      "sha256": "31186721be50d1033545dfeee9d6ee118b54fb1b974ea909ab2e960e0b7c049b"
+    },
+    "uploadprogress-source": {
+      "url": "https://pecl.php.net/get/uploadprogress-2.0.2.tgz",
+      "final_url": "https://pecl.php.net/get/uploadprogress-2.0.2.tgz",
+      "read_at": "2026-11-17T17:58:59.788653+00:00",
+      "sha256": "2c63ce727340121044365f0fd83babd60dfa785fa5979fae2520b25dad814226",
+      "bytes": 19969
+    }
+  },
+  "limitations": [
+    "No separate lifecycle/support-policy page could be located for several small packages and Community consoles; release metadata is not a support contract.",
+    "No user terms accepted. Oracle native verification Not run.",
+    "Historical console tags and some base versions were not recovered; exact baseline source/digests are used instead of fabricated versions."
+  ],
+  "final_registry_recheck": {
+    "node": {
+      "url": "https://hub.docker.com/v2/repositories/library/node/tags/24.22.3-bookworm-slim",
+      "read_at": "2026-11-17T20:57:58.126047+00:00",
+      "expected": "sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54",
+      "actual": "sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54",
+      "status": "Passed"
+    },
+    "php-apache": {
+      "url": "https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-apache-trixie",
+      "read_at": "2026-11-17T20:57:58.254099+00:00",
+      "expected": "sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46",
+      "actual": "sha256:08af36df144462d84c7f16190557eec06cb9f656882685610b712a15eec54d46",
+      "status": "Passed"
+    },
+    "php-cli": {
+      "url": "https://hub.docker.com/v2/repositories/library/php/tags/8.5.12-cli-alpine3.24",
+      "read_at": "2026-11-17T20:57:58.363201+00:00",
+      "expected": "sha256:1ff5b45922ab30f418447c6089dbe2eba5f01e0b2742863d0327ac349305d70f",
+      "actual": "sha256:1ff5b45922ab30f418447c6089dbe2eba5f01e0b2742863d0327ac349305d70f",
+      "status": "Passed"
+    },
+    "mysql": {
+      "url": "https://container-registry.oracle.com/v2/mysql/community-server/manifests/9.7.4",
+      "read_at": "2026-11-17T20:57:59.534924+00:00",
+      "expected": "sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb",
+      "actual": "sha256:cb9cfddeccbbd9922bf927cd67bdb58067b357a1fc75d132988d1f5cc4cb17bb",
+      "status": "Passed"
+    },
+    "playwright": {
+      "url": "https://mcr.microsoft.com/v2/playwright/python/manifests/v1.65.2-noble",
+      "read_at": "2026-11-17T20:57:59.686672+00:00",
+      "expected": "sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f",
+      "actual": "sha256:38dd67fc654b56b3cba611e4c8eb71cd33750e1cd29eea2a5dc00b484817a75f",
+      "status": "Passed"
+    },
+    "sqlserver-export": {
+      "url": "https://mcr.microsoft.com/v2/mssql/server/manifests/2025-CU11-ubuntu-24.04",
+      "read_at": "2026-11-17T20:57:59.825843+00:00",
+      "expected": "sha256:05644dad1266ca3d445d1e8f6d2ebb9a6a03df9a39376e0f7b48917356dca9d9",
+      "actual": "sha256:a554b8cf6ab60b92838737f03d0422c4babcd491d09cba3bec0e5e41e292b921",
+      "status": "Passed",
+      "verification": "The retained OCI digest remains accessible and byte-hash verified. Current tag uses a Docker v2 manifest with different wrapper bytes, but identical config digest and ordered layer digests/sizes.",
+      "payload_comparison": "build/lts-audit/final-source-recheck/mcr-payload-comparison.json"
+    }
+  }
+}

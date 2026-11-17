@@ -1,11 +1,11 @@
 # syntax=docker/dockerfile:1.29.0@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183
-# sql-megasamples-mysql: MySQL Innovation with sample databases baked into the data directory.
+# sql-megasamples-mysql: MySQL LTS with sample databases baked into the data directory.
 # The builder initialises a data directory, loads each configured dataset from its MySQL Shell dump,
 # creates the accounts and the provenance registry, and shuts down cleanly; the final stage carries
 # only that directory. Build context: the repository root, filtered by .dockerignore; the dumps and
 # registry come from build/mysql/image/, which `megasamples image` fills with exactly the datasets
 # being baked. See ARCHITECTURE.md section 4.
-ARG MYSQL_IMAGE=docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999
+ARG MYSQL_IMAGE=sql-megasamples-mysql-base:9.7.4-shell-9.7.1
 
 FROM ${MYSQL_IMAGE} AS builder
 COPY engines/mysql/my.cnf /etc/mysql/conf.d/megasamples.cnf
@@ -56,7 +56,7 @@ SH
 
 FROM ${MYSQL_IMAGE}
 LABEL org.opencontainers.image.title="sql-megasamples-mysql" \
-      org.opencontainers.image.description="MySQL 26.10 Innovation preloaded with well-known sample databases (sql-megasamples)" \
+      org.opencontainers.image.description="MySQL 9.7 LTS preloaded with well-known sample databases (sql-megasamples)" \
       org.opencontainers.image.licenses="MIT AND BSD-3-Clause AND CC-BY-SA-3.0"
 COPY engines/mysql/my.cnf /etc/mysql/conf.d/megasamples.cnf
 COPY engines/mysql/entrypoint-wrapper.sh /usr/local/bin/entrypoint-wrapper.sh

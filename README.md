@@ -9,9 +9,9 @@ choice and one command builds it.
 
 | engine | what ships | size |
 |---|---|---|
-| **MySQL 26.10.0** | `sql-megasamples-mysql`: an image with the databases baked into its data directory | depends on the selected datasets; see [upgrade evidence](docs/engine-upgrade-evidence.md) |
-| **PostgreSQL 18.7** | `sql-megasamples-postgres`: an image with the databases in its cluster, ported from the verified MySQL corpus | depends on the selected datasets; see [upgrade evidence](docs/engine-upgrade-evidence.md) |
-| **SQLite 3.54.1** | `sql-megasamples-sqlite`: one `.sqlite` file per database with the `sqlite3` shell beside them; the files are also under `build/sqlite/` to copy anywhere | depends on the selected datasets; see [upgrade evidence](docs/engine-upgrade-evidence.md) |
+| **MySQL 9.7.4** | `sql-megasamples-mysql`: an image with the databases baked into its data directory | depends on the selected datasets; see [LTS upgrade evidence](docs/lts-upgrade-evidence.md) |
+| **PostgreSQL 18.7** | `sql-megasamples-postgres`: an image with the databases in its cluster, ported from the verified MySQL corpus | depends on the selected datasets; see [LTS upgrade evidence](docs/lts-upgrade-evidence.md) |
+| **SQLite 3.54.1** | `sql-megasamples-sqlite`: one `.sqlite` file per database with the `sqlite3` shell beside them; the files are also under `build/sqlite/` to copy anywhere | depends on the selected datasets; see [LTS upgrade evidence](docs/lts-upgrade-evidence.md) |
 
 Every dataset is built and verified on all three engines. PostgreSQL and SQLite are **ports of the
 MySQL corpus**: the same rows, proved by the same per-table content digests, foreign-key checks and
@@ -105,9 +105,10 @@ the same rows, the same views and the same behaviour as in MySQL.
 
 ### MySQL
 
-`sql-megasamples-mysql:dev` is `mysql:26.10.0` (`utf8mb4`, InnoDB) with the chosen databases already
-in its data directory: first start answers a real query in about two seconds, and nothing is loaded
-at startup. Two accounts are offered from every console, and both are usable from any client:
+`sql-megasamples-mysql:dev` is `mysql:9.7.4` (`utf8mb4`, InnoDB) with the chosen databases already
+in its data directory. First start copies that directory into a fresh volume, then starts the
+server; [LTS validation](docs/lts-upgrade-evidence.md) records these separate readiness costs.
+Two accounts are offered from every console, and both are usable from any client:
 
 | account | password | privileges |
 |---|---|---|
@@ -517,10 +518,10 @@ If a `docker pull` or a download hangs with no error, suspect IPv6 first — see
 covers the `make pull-image` workaround this project uses to fetch images over IPv4.
 
 The reviewed client inputs and vendor-source read times are in `clients.lock.yaml`.
-`make up` builds CloudBeaver, DbGate and Adminer extensions from pinned vendor images,
-with current JDBC jars, a locked native SQLite module and a current PostgreSQL library. The loader
-uses Oracle's matching MySQL command-line clients and an independently pinned
-Connector/C. `make oracle-client-image` builds the optional current SQL*Plus and
+`make up` builds CloudBeaver, DbGate, Adminer and phpMyAdmin extensions from pinned vendor images,
+with the selected JDBC jars, native SQLite module, PostgreSQL library and PHP/Node runtimes. The loader
+uses Oracle's matching MySQL command-line clients and C API, with sysbench built against that library.
+The complete [LTS audit](docs/lts-upgrade-evidence.md) records policies, source read times and compatible targets. `make oracle-client-image` builds the optional current SQL*Plus and
 SQL*Loader binaries; `make verify-oracle` retains its explicit database license gate.
 
 For a deliberate Python refresh, update the exact requirements in `pyproject.toml`,

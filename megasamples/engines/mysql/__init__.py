@@ -32,7 +32,7 @@ def link_tree(src, dst):
 class MySQL(Engine):
     name = "mysql"
     title = "MySQL"
-    version = "26.10.0"
+    version = "9.7.4"
     image = os.environ.get("MEGASAMPLES_MYSQL_IMAGE", "sql-megasamples-mysql:dev")
     container = "megasamples-mysql"
     port = 3306
@@ -83,6 +83,8 @@ class MySQL(Engine):
         return self.build(dataset)
 
     def image_build(self, datasets, keep=False, threads=4, from_dumps=False):
+        from megasamples.engines.mysql import base_image
+        base_image.build()
         dumps = os.path.join(engine_build_dir(self.name), "dumps")
         databases = unique_databases(datasets)
         if from_dumps:
