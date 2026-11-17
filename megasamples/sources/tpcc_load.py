@@ -33,16 +33,16 @@ def main(argv=None):
 
     db.start()
     db.sql("DROP DATABASE IF EXISTS `tpcc`; CREATE DATABASE `tpcc`")
-    ip = subprocess.run(["docker", "inspect", db.NAME, "-f",
-                         "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}"],
-                        capture_output=True, text=True).stdout.strip()
-    if not ip:
-        sys.exit(f"could not find {db.NAME}'s address; is the build server running?")
-    cmd = (f"cd /opt/sysbench-tpcc && ./tpcc.lua --mysql-host={ip} --mysql-user=root "
+    # Connector/C 3.4 verifies remote TLS peers by default. The throwaway build
+    # server has a generated local certificate. Share only its network namespace
+    # and use its loopback, which Connector/C treats as local, without globally
+    # disabling peer verification or exposing another published port.
+    cmd = (f"cd /opt/sysbench-tpcc && ./tpcc.lua --mysql-host=127.0.0.1 --mysql-user=root "
            f"--mysql-password={db.PW} --mysql-db=tpcc --threads={a.threads} --tables=1 "
            f"--scale={a.warehouses} --use_fk=0 --db-driver=mysql --rand-seed={a.seed} prepare")
     print(f"  . loading {a.warehouses} warehouse(s) with sysbench-tpcc in {IMAGE}")
     p = subprocess.run(["docker", "run", "--rm",
+                        "--network", f"container:{db.NAME}",
                         "--label", "megasamples.transient=true",
                         "--label", "megasamples.role=loader", IMAGE, "sh", "-c", cmd],
                        capture_output=True, text=True)

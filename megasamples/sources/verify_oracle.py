@@ -23,7 +23,11 @@ is not used: the image ships SQL*Loader, which loads the SH CSVs.
 import argparse, json, os, re, subprocess, sys, time
 
 from megasamples.paths import ROOT
+from megasamples import container_engine
 IMAGE = os.environ.get("ORACLE_IMAGE", "gvenzl/oracle-free:23@sha256:7ed34d0ade89c91a553c9cbe9d42457c758fa29a762aaaa3137541ff30a2d1cb")
+CLIENT_IMAGE = "sql-megasamples-oracle-verifier:23.26.3-clients-23.26.4"
+SQLPLUS = "/usr/local/bin/megasamples-sqlplus"
+SQLLDR = "/usr/local/bin/megasamples-sqlldr"
 NAME = os.environ.get("ORACLE_CONTAINER", "megasamples-build-oracle")
 SYS_PW = "oracle"
 MYSQL_CONTAINER = os.environ.get("MEGASAMPLES_CONTAINER", "megasamples-mysql")
@@ -72,7 +76,7 @@ class Slow(Exception):
 def sqlplus(user, pw, statements, timeout=1800):
     script = "SET PAGESIZE 0 FEEDBACK OFF HEADING OFF LINESIZE 32767 TRIMSPOOL ON\n" + statements + "\nEXIT\n"
     return subprocess.run(
-        ["docker", "exec", "-i", NAME, "sqlplus", "-s", f"{user}/{pw}@localhost/FREEPDB1"],
+        ["docker", "exec", "-i", NAME, SQLPLUS, "-s", f"{user}/{pw}@localhost/FREEPDB1"],
         input=script, capture_output=True, text=True, timeout=timeout)
 
 
@@ -83,13 +87,23 @@ def mysql(sql):
     return [line.split("\t") for line in p.stdout.splitlines() if line.strip()]
 
 
+def build_client_image():
+    """Build binaries only; the main command retains its explicit database licence gate."""
+    return subprocess.run(["docker", "build", "-f", "engines/oracle-client/Dockerfile",
+                           "--build-arg", f"ORACLE_IMAGE={IMAGE}",
+                           "-t", CLIENT_IMAGE, "engines/oracle-client"],
+                          cwd=ROOT, env=container_engine.build_env()).returncode
+
+
 def container_ready(timeout=900):
+    if build_client_image():
+        sys.exit("could not build the pinned Oracle client image")
     state = sh("docker", "inspect", "-f", "{{.State.Status}}", NAME).stdout.strip()
     if state != "running":
         sh("docker", "rm", "-f", NAME)
         p = sh("docker", "run", "-d", "--name", NAME,
                "--label", "megasamples.transient=true", "--label", "megasamples.role=oracle",
-               "-e", f"ORACLE_PASSWORD={SYS_PW}", IMAGE)
+               "-e", f"ORACLE_PASSWORD={SYS_PW}", CLIENT_IMAGE)
         if p.returncode != 0:
             sys.exit(f"could not start {IMAGE}: {p.stderr.strip()[:200]}")
     started = time.time()
@@ -103,7 +117,7 @@ def container_ready(timeout=900):
 def run_as_sysdba(statements):
     script = "SET PAGESIZE 0 FEEDBACK OFF HEADING OFF\n" + statements + "\nEXIT\n"
     return subprocess.run(
-        ["docker", "exec", "-i", NAME, "sqlplus", "-s", f"sys/{SYS_PW}@localhost/FREEPDB1", "as", "sysdba"],
+        ["docker", "exec", "-i", NAME, SQLPLUS, "-s", f"sys/{SYS_PW}@localhost/FREEPDB1", "as", "sysdba"],
         input=script, capture_output=True, text=True, timeout=600)
 
 
@@ -136,7 +150,7 @@ def prepare(name, spec):
 
     body = "WHENEVER SQLERROR CONTINUE\n" + "\n".join(f"@{s}" for s in spec["scripts"]) + "\nCOMMIT;"
     p = subprocess.run(["docker", "exec", "-i", "-w", f"/tmp/{name}", NAME,
-                        "sqlplus", "-s", f"{user}/{user}@localhost/FREEPDB1"],
+                        SQLPLUS, "-s", f"{user}/{user}@localhost/FREEPDB1"],
                        input="SET PAGESIZE 0 FEEDBACK OFF HEADING OFF\n" + body + "\nEXIT\n",
                        capture_output=True, text=True, timeout=3600)
     errs = sorted({m for m in re.findall(r"ORA-\d{5}", p.stdout)})
@@ -184,7 +198,7 @@ def sqlldr(name, user, table):
            f"({', '.join(spec)})\n")
     sh("docker", "exec", NAME, "sh", "-c",
        f"cat > /tmp/{name}/{table}.ctl <<'CTL'\n{ctl}CTL")
-    p = sh("docker", "exec", "-w", f"/tmp/{name}", NAME, "sqlldr",
+    p = sh("docker", "exec", "-w", f"/tmp/{name}", NAME, SQLLDR,
            f"{user}/{user}@localhost/FREEPDB1", f"control={table}.ctl", "skip=1",
            "direct=true", "errors=0", f"log={table}.log")
     ok = "successfully loaded" in (p.stdout + p.stderr).lower() or p.returncode == 0
@@ -393,7 +407,7 @@ def main(argv=None):
     TIMEOUT = a.timeout
     container_ready()
     banner = subprocess.run(
-        ["docker", "exec", "-i", NAME, "sqlplus", "-s", f"sys/{SYS_PW}@localhost/FREEPDB1", "as", "sysdba"],
+        ["docker", "exec", "-i", NAME, SQLPLUS, "-s", f"sys/{SYS_PW}@localhost/FREEPDB1", "as", "sysdba"],
         input="SET PAGESIZE 0 FEEDBACK OFF HEADING OFF\nSELECT banner FROM v$version;\nEXIT\n",
         capture_output=True, text=True).stdout.strip().splitlines()
     print(f"  . {banner[0].strip() if banner else IMAGE}")

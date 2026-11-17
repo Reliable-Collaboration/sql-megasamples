@@ -15,6 +15,13 @@
 !LICENSES.md
 !CATALOGUE.md
 !README.md
+# Console extensions use the same small repository-root build context.
+!consoles/
+consoles/*/*
+!consoles/cloudbeaver/Dockerfile
+!consoles/dbgate/Dockerfile
+!consoles/adminer/Dockerfile
+!consoles/dbgate/driver/
 # The datasets' licence files, re-included through their directory: BuildKit honours a bare
 # `!datasets/*/LICENSE` under `*`, Buildah (Podman's builder) does not re-include the parent.
 !datasets/

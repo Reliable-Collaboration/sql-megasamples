@@ -1,0 +1,467 @@
+# Reviewed client releases, reproducible inputs and primary-source read times.
+baseline:
+  commit: 7b3d5a35966d82abd69598ed795b9610ddf27c35
+  source: https://github.com/Reliable-Collaboration/sql-megasamples/tree/7b3d5a35966d82abd69598ed795b9610ddf27c35
+  read_at: '2026-11-17T04:20:19.886547+00:00'
+python:
+  backports-zstd:
+    before: 1.7.0
+    version: 1.8.0
+    release_source: https://pypi.org/pypi/backports-zstd/json
+    read_at: '2026-11-17T02:39:53.263367+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  brotli:
+    before: 1.2.0
+    version: 1.2.1
+    release_source: https://pypi.org/pypi/brotli/json
+    read_at: '2026-11-17T02:39:53.470571+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  brotlicffi:
+    before: 1.2.0.2
+    version: 1.2.1.0
+    release_source: https://pypi.org/pypi/brotlicffi/json
+    read_at: '2026-11-17T02:39:53.565570+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  cffi:
+    before: 2.1.1
+    version: 2.1.1
+    release_source: https://pypi.org/pypi/cffi/json
+    read_at: '2026-11-17T02:39:53.825212+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  colorama:
+    before: 0.4.6
+    version: 0.4.6
+    release_source: https://pypi.org/pypi/colorama/json
+    read_at: '2026-11-17T02:39:54.192197+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  cryptography:
+    before: 50.0.1
+    version: 50.0.2
+    release_source: https://pypi.org/pypi/cryptography/json
+    read_at: '2026-11-17T02:39:54.385937+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  duckdb:
+    before: 1.5.5
+    version: 2.0.0
+    release_source: https://pypi.org/pypi/duckdb/json
+    read_at: '2026-11-17T02:39:54.569904+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  inflate64:
+    before: 1.0.4
+    version: 1.0.4
+    release_source: https://pypi.org/pypi/inflate64/json
+    read_at: '2026-11-17T02:39:54.749548+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  iniconfig:
+    before: 2.3.0
+    version: 2.3.1
+    release_source: https://pypi.org/pypi/iniconfig/json
+    read_at: '2026-11-17T02:39:54.831508+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  lxml:
+    before: 6.1.3
+    version: 6.1.3
+    release_source: https://pypi.org/pypi/lxml/json
+    read_at: '2026-11-17T02:39:55.142111+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  multivolumefile:
+    before: 0.2.3
+    version: 0.2.3
+    release_source: https://pypi.org/pypi/multivolumefile/json
+    read_at: '2026-11-17T02:39:55.250535+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  packaging:
+    before: '26.3'
+    version: '26.3'
+    release_source: https://pypi.org/pypi/packaging/json
+    read_at: '2026-11-17T02:39:55.339472+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  pluggy:
+    before: 1.6.0
+    version: 1.7.0
+    release_source: https://pypi.org/pypi/pluggy/json
+    read_at: '2026-11-17T02:39:55.629026+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  psutil:
+    before: 7.2.2
+    version: 7.2.2
+    release_source: https://pypi.org/pypi/psutil/json
+    read_at: '2026-11-17T02:39:55.785694+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  psycopg:
+    before: not declared
+    version: 3.3.9
+    release_source: https://pypi.org/pypi/psycopg/json
+    read_at: '2026-11-17T03:08:19.577223+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  py7zr:
+    before: 1.1.3
+    version: 1.1.4
+    release_source: https://pypi.org/pypi/py7zr/json
+    read_at: '2026-11-17T02:39:56.024069+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  pybcj:
+    before: 1.0.8
+    version: 1.0.8
+    release_source: https://pypi.org/pypi/pybcj/json
+    read_at: '2026-11-17T02:39:56.176487+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  pycparser:
+    before: '3.0'
+    version: '3.12'
+    release_source: https://pypi.org/pypi/pycparser/json
+    read_at: '2026-11-17T02:39:56.339181+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  pycryptodomex:
+    before: 3.23.0
+    version: 3.24.2
+    release_source: https://pypi.org/pypi/pycryptodomex/json
+    read_at: '2026-11-17T02:39:56.870877+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  pygments:
+    before: 2.21.0
+    version: 2.21.0
+    release_source: https://pypi.org/pypi/pygments/json
+    read_at: '2026-11-17T02:39:56.982886+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  pymysql:
+    before: 1.2.0
+    version: 1.2.4
+    release_source: https://pypi.org/pypi/pymysql/json
+    read_at: '2026-11-17T02:39:57.145327+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  pyppmd:
+    before: 1.3.1
+    version: 1.3.1
+    release_source: https://pypi.org/pypi/pyppmd/json
+    read_at: '2026-11-17T02:39:57.423471+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  pytest:
+    before: 9.1.1
+    version: 9.2.0
+    release_source: https://pypi.org/pypi/pytest/json
+    read_at: '2026-11-17T02:39:57.587685+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  pyyaml:
+    before: 6.0.3
+    version: 6.0.3
+    release_source: https://pypi.org/pypi/pyyaml/json
+    read_at: '2026-11-17T02:39:57.705138+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  sqlglot:
+    before: 30.18.0
+    version: 30.32.0
+    release_source: https://pypi.org/pypi/sqlglot/json
+    read_at: '2026-11-17T02:39:57.837512+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  texttable:
+    before: 1.7.0
+    version: 1.7.3
+    release_source: https://pypi.org/pypi/texttable/json
+    read_at: '2026-11-17T02:39:58.055272+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  typing-extensions:
+    before: not declared
+    version: 4.16.0
+    release_source: https://pypi.org/pypi/typing-extensions/json
+    read_at: '2026-11-17T03:47:39.637215+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+  tzdata:
+    before: not declared
+    version: '2026.6'
+    release_source: https://pypi.org/pypi/tzdata/json
+    read_at: '2026-11-17T03:47:39.714806+00:00'
+    pin: uv.lock (exact version and distribution hashes)
+consoles:
+  landing:
+    image: nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703
+    version: 1.30.6
+    release_source: https://nginx.org/en/download.html
+    read_at: '2026-11-16T18:58:36.520324+00:00'
+    before_client_followup: 1.30.6
+    runtime_image: nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703
+    dockerfile: null
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:26.2.5@sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f
+    version: 26.2.5
+    release_source: https://hub.docker.com/v2/repositories/dbeaver/cloudbeaver/tags?page_size=20
+    read_at: '2026-11-16T18:58:36.671862+00:00'
+    before_client_followup: 26.2.5
+    publisher_stable_tags:
+      latest:
+        source: https://hub.docker.com/v2/repositories/dbeaver/cloudbeaver/tags/latest
+        digest: sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f
+        read_at: '2026-11-17T02:54:22.501334+00:00'
+      26.2.5:
+        source: https://hub.docker.com/v2/repositories/dbeaver/cloudbeaver/tags/26.2.5
+        digest: sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f
+        read_at: '2026-11-17T02:54:22.625447+00:00'
+    runtime_image: sql-megasamples-cloudbeaver:26.2.5-mysql-26.10.0-sqlite-3.54.1.0
+    dockerfile: consoles/cloudbeaver/Dockerfile
+  dbgate:
+    image: dbgate/dbgate:7.3.6@sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953
+    version: 7.3.6
+    release_source: https://hub.docker.com/v2/repositories/dbgate/dbgate/tags?page_size=20
+    read_at: '2026-11-16T18:58:36.830920+00:00'
+    before_client_followup: 7.3.6
+    publisher_stable_tags:
+      latest:
+        source: https://hub.docker.com/v2/repositories/dbgate/dbgate/tags/latest
+        digest: sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953
+        read_at: '2026-11-17T02:54:22.769151+00:00'
+      7.3.6:
+        source: https://hub.docker.com/v2/repositories/dbgate/dbgate/tags/7.3.6
+        digest: sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953
+        read_at: '2026-11-17T02:54:22.932047+00:00'
+    runtime_image: sql-megasamples-dbgate:7.3.6-sqlite-13.2.0
+    dockerfile: consoles/dbgate/Dockerfile
+  adminer:
+    image: adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c
+    version: 6.3.0
+    release_source: https://www.adminer.org/
+    read_at: '2026-11-16T18:58:36.571475+00:00'
+    before_client_followup: 6.3.0
+    runtime_image: sql-megasamples-adminer:6.3.0-libpq-18.7-r0
+    dockerfile: consoles/adminer/Dockerfile
+  phpmyadmin:
+    image: phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40
+    version: 5.2.3
+    release_source: https://www.phpmyadmin.net/downloads/
+    read_at: '2026-11-16T18:58:36.655862+00:00'
+    before_client_followup: 5.2.3
+    runtime_image: phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40
+    dockerfile: null
+drivers:
+  cloudbeaver-mysql-connector-j:
+    before: 8.2.0
+    version: 26.10.0
+    url: https://repo.maven.apache.org/maven2/com/mysql/mysql-connector-j/26.10.0/mysql-connector-j-26.10.0.jar
+    sha256: cef70caf532833c9ab8f41f74773ce22c08bf503fad215c9c2ee1e9db87e759e
+    read_at: '2026-11-17T02:47:32.251990+00:00'
+    release_source: https://repo.maven.apache.org/maven2/com/mysql/mysql-connector-j/maven-metadata.xml
+    release_read_at: '2026-11-17T02:42:57.279826+00:00'
+    pin: SHA-256 in consoles/cloudbeaver/Dockerfile
+  cloudbeaver-sqlite-jdbc:
+    before: 3.48.0.0
+    version: 3.54.1.0
+    url: https://repo.maven.apache.org/maven2/org/xerial/sqlite-jdbc/3.54.1.0/sqlite-jdbc-3.54.1.0.jar
+    sha256: f8dce420a6016278497f4f0560f65602b9db858de141b541cf91a4644ebe4639
+    read_at: '2026-11-17T02:47:32.557960+00:00'
+    release_source: https://repo.maven.apache.org/maven2/org/xerial/sqlite-jdbc/maven-metadata.xml
+    release_read_at: '2026-11-17T02:42:57.355956+00:00'
+    pin: SHA-256 in consoles/cloudbeaver/Dockerfile
+  postgresql:
+    before: 42.7.14
+    version: 42.7.14
+    release_source: https://repo.maven.apache.org/maven2/org/postgresql/postgresql/maven-metadata.xml
+    read_at: '2026-11-17T02:42:57.194811+00:00'
+    pin: vendor console image digest
+  mysql2:
+    before: 3.24.6
+    version: 3.24.6
+    release_source: https://registry.npmjs.org/mysql2/latest
+    read_at: '2026-11-17T02:42:57.655541+00:00'
+    pin: vendor console image digest
+  pg:
+    before: 8.23.1
+    version: 8.23.1
+    release_source: https://registry.npmjs.org/pg/latest
+    read_at: '2026-11-17T02:42:57.860116+00:00'
+    pin: vendor console image digest
+  better-sqlite3:
+    before: 13.0.3
+    version: 13.2.0
+    release_source: https://registry.npmjs.org/better-sqlite3/latest
+    read_at: '2026-11-17T02:42:58.043635+00:00'
+    pin: consoles/dbgate/driver/package-lock.json (integrity hashes)
+  sysbench-connector-c:
+    before: 3.4.9
+    baseline_package: libmariadb3 1:11.8.6-0+deb13u1
+    baseline_image_id: ef3fcadcb52e
+    version: 3.4.11
+    source: https://archive.mariadb.org/connector-c-3.4.11/mariadb-connector-c-3.4.11-src.tar.gz
+    sha256: 521c0712e9291fa96558df9e2ff431376a3a79329f13751896b694cae12765b4
+    vendor_checksum_source: https://archive.mariadb.org/connector-c-3.4.11/sha256sums.txt
+    read_at: '2026-11-17T02:46:35.436041+00:00'
+    release_source: https://mariadb.org/connector-c/all-releases/
+    release_read_at: '2026-11-17T02:43:45.108646+00:00'
+    pin: vendor source SHA-256 in engines/mysql/loader.Dockerfile
+    transport: build-server network namespace, loopback; remote TLS defaults retained
+  adminer-libpq:
+    before: '18.6'
+    version: 18.7-r0
+    pin: libpq=18.7-r0 in consoles/adminer/Dockerfile
+    source: https://pkgs.alpinelinux.org/package/v3.24/main/x86_64/libpq
+    read_at: '2026-11-17T04:06:09.391699+00:00'
+    binary_version: '18.7'
+    status: 200
+  psycopg-libpq:
+    before: 18.6 (initial binary-wheel probe)
+    version: '18.7'
+    pin: verified exact PGDG package in the isolated tools runtime; Psycopg uses its pure Python binding
+    source: https://apt.postgresql.org/pub/repos/apt/dists/trixie-pgdg/main/binary-amd64/Packages.gz
+    read_at: '2026-11-17T04:09:43.044818+00:00'
+    package:
+      Package: libpq5
+      Version: 18.7-1.pgdg13+2
+      Filename: pool/main/p/postgresql-18/libpq5_18.7-1.pgdg13+2_amd64.deb
+      SHA256: bfd1d4e64e1a87c637a84e8a712a517ae8059ec969ba57fe402b259ede61e2b8
+    url: https://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-18/libpq5_18.7-1.pgdg13+2_amd64.deb
+native_clients:
+  postgres:
+    programs:
+    - psql
+    - pg_dump
+    - pg_dumpall
+    - pg_restore
+    - pg_isready
+    before_client_followup: '18.7'
+    version: '18.7'
+    image: docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
+    release_source: https://www.postgresql.org/docs/release/18.7/
+    read_at: '2026-11-16T18:58:36.214843+00:00'
+    current_release_source: https://www.postgresql.org/docs/release/18.7/
+    current_read_at: '2026-11-17T02:40:50.644194+00:00'
+  mysql:
+    programs:
+    - mysql
+    - mysqladmin
+    - mysqldump
+    - mysqlsh
+    before_client_followup: 26.10.0
+    version: 26.10.0
+    image: docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999
+    release_source: https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html
+    read_at: '2026-11-16T18:58:36.215868+00:00'
+    current_release_source: https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html
+    current_read_at: '2026-11-17T02:40:51.624426+00:00'
+  sqlite3:
+    version: 3.54.1
+    url: https://sqlite.org/2026/sqlite-autoconf-3540100.tar.gz
+    sha3_256: b6ced585c750916b1052667239a12c25a7ff34e7f06e1e6e01ecb0427657d9c4
+    release_source: https://sqlite.org/download.html
+    read_at: '2026-11-16T18:58:36.461111+00:00'
+    before_client_followup: 3.54.1
+    pin: vendor archive SHA3-256 in engines/sqlite/Dockerfile
+  loader-oracle-cli:
+    programs:
+    - mysql
+    - mysqladmin
+    - mysqldump
+    before: MariaDB 11.8.6 (unversioned Debian default-mysql-client)
+    version: 26.10.0
+    image: docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999
+    release_source: https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html
+    read_at: '2026-11-17T02:40:51.624426+00:00'
+    pin: COPY exact binaries from digest-pinned vendor image
+  sysbench:
+    before: 1.0.20+ds-7
+    version: 1.0.20+ds-7
+    pin: exact Debian package version in loader.Dockerfile
+    source: https://packages.debian.org/trixie/sysbench
+    read_at: '2026-11-17T02:43:47.330267+00:00'
+    upstream_latest_release_verification:
+      version: 1.0.20
+      source: https://github.com/akopytov/sysbench/releases
+      read_at: '2026-11-17T03:32:12.781355+00:00'
+      evidence: Vendor release list returned in a software-only web search labels Release 1.0.20 as Latest; no authenticated
+        GitHub tool or git operation used outside the permitted repository.
+optional_export_clients:
+  mssql:
+    programs:
+    - sqlcmd (ODBC implementation)
+    - bcp
+    - msodbcsql18
+    version: 18.7.1.1
+    image: mcr.microsoft.com/mssql/server:2025-CU11-ubuntu-24.04@sha256:05644dad1266ca3d445d1e8f6d2ebb9a6a03df9a39376e0f7b48917356dca9d9
+    release_source: https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver17
+    read_at: '2026-11-17T02:40:57.415308+00:00'
+    package_metadata:
+      source: https://packages.microsoft.com/ubuntu/24.04/prod/dists/noble/main/binary-amd64/Packages.gz
+      read_at: '2026-11-17T02:51:27.531389+00:00'
+      packages:
+        mssql-tools18:
+        - Package: mssql-tools18
+          Version: 18.4.1.1-1
+          Filename: pool/main/m/mssql-tools18/mssql-tools18_18.4.1.1-1_amd64.deb
+          SHA256: 0700e0636b70f4473858dd4b1ebc1dc583787ba04dfd31369e92ce6fc5b8d98b
+        - Package: mssql-tools18
+          Version: 18.6.2.1-1
+          Filename: pool/main/m/mssql-tools18/mssql-tools18_18.6.2.1-1_amd64.deb
+          SHA256: 8685523bc60cfafb70c7d354046d012edc82bbb20efd3e90dcb3b2bd98b6a770
+        - Package: mssql-tools18
+          Version: 18.7.1.1-1
+          Filename: pool/main/m/mssql-tools18/mssql-tools18_18.7.1.1-1_amd64.deb
+          SHA256: d7c3496c1ff3fd38a455c44ae966b2938acc91d082e12bed809b07960687cedb
+        - Package: mssql-tools18
+          Version: 18.6.1.1-1
+          Filename: pool/main/m/mssql-tools18/mssql-tools18_18.6.1.1-1_amd64.deb
+          SHA256: c90c16188a533576d0c3b0f4af82cb679edccd369e2626b928998918840c7787
+        msodbcsql18:
+        - Package: msodbcsql18
+          Version: 18.5.1.1-1
+          Filename: pool/main/m/msodbcsql18/msodbcsql18_18.5.1.1-1_amd64.deb
+          SHA256: f484d54869110529eb84ddb9261ed5a0aa6258ba15027b83da931a9821ed3664
+        - Package: msodbcsql18
+          Version: 18.6.2.1-1
+          Filename: pool/main/m/msodbcsql18/msodbcsql18_18.6.2.1-1_amd64.deb
+          SHA256: 73438bb02bc26fb3d1c3d8cac36b3c26cb11629dbd0a3784990fc3235331b334
+        - Package: msodbcsql18
+          Version: 18.4.1.1-1
+          Filename: pool/main/m/msodbcsql18/msodbcsql18_18.4.1.1-1_amd64.deb
+          SHA256: 4d1036224ed11259bea297158c5e40884f6d24b274997cff5fe0ec53aafbd70c
+        - Package: msodbcsql18
+          Version: 18.7.1.1-1
+          Filename: pool/main/m/msodbcsql18/msodbcsql18_18.7.1.1-1_amd64.deb
+          SHA256: f506cb3de8b34cd94e9014d247b39e9dfd7effad79edad3ab67096dc3c1b6b0e
+        - Package: msodbcsql18
+          Version: 18.6.1.1-1
+          Filename: pool/main/m/msodbcsql18/msodbcsql18_18.6.1.1-1_amd64.deb
+          SHA256: cd217d3bf471d521dac6886456e6c758c21d4f84f88f7adf48ef672c70e57cb0
+    binary_probe: Passed without starting SQL Server or accepting the EULA
+    export: Not run, pending the owner's decision
+  oracle-clients:
+    programs:
+    - SQL*Plus
+    - SQL*Loader
+    before: 23.26.3.0.0
+    version: 23.26.4.0.0
+    image: sql-megasamples-oracle-verifier:23.26.3-clients-23.26.4
+    base_image: gvenzl/oracle-free:23@sha256:7ed34d0ade89c91a553c9cbe9d42457c758fa29a762aaaa3137541ff30a2d1cb
+    release_source: https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html
+    read_at: '2026-11-17T03:33:50.395350+00:00'
+    archive_pins:
+      version: 23.26.4.0.0
+      source: https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html
+      read_at: '2026-11-17T03:33:50.395350+00:00'
+      downloads:
+      - https://download.oracle.com/otn_software/linux/instantclient/2326400/instantclient-basic-linux.x64-23.26.4.0.0.zip
+      - https://download.oracle.com/otn_software/linux/instantclient/2326400/instantclient-sqlplus-linux.x64-23.26.4.0.0.zip
+      - https://download.oracle.com/otn_software/linux/instantclient/2326400/instantclient-tools-linux.x64-23.26.4.0.0.zip
+      basic_sha256: cab59aa3b411b3b50898e456fa9aabfe48d67e25cbc1bb23303800390ce7de26
+      sqlplus_sha256: 3cd43219cbaad59bb75cee18e7af074ada707446f13397b6f93ec7e4ca870490
+      tools_sha256: 95e60dedcaf64a4ebc4dded73f5614c494a8c17fa272cd3c0485e0d13e825000
+    pin: vendor SHA-256 values in engines/oracle-client/Dockerfile
+    binary_probe: Passed; no Oracle database started
+    native_connection_load_check: Not run, pending explicit Oracle Free Use Terms acceptance
+    platform: Linux x86-64; other architectures Unsupported by this optional recipe
+scope_notes:
+- Console image pins already upgraded in engine PR 9 are retained; configured older embedded drivers are upgraded independently.
+- Python sqlite3 uses the validated tools runtime library 3.54.1; it is part of that runtime rather than a PyPI dependency.
+- psycopg is a new exact dev dependency for the published-endpoint probe, previously an undeclared helper dependency.
+- No psycopg2, SQLAlchemy, python-oracledb, mysql-connector-python, pgloader or SQLcl import/execution exists in the current
+  repository; knowledge-only references are not installed clients.
+- CloudBeaver MariaDB driver is present in the vendor image but no MariaDB connection is configured. Other unused vendor drivers
+  are not independently selected clients.
+- PHP mysqlnd follows the selected current vendor PHP runtime. Adminer libpq is independently upgraded to 18.7. The endpoint
+  driver uses pure Psycopg with a separately pinned 18.7 libpq package; it does not use the older library bundled in the binary
+  wheel.
+- Transport/build utilities such as curl, git, compilers, Docker/Compose and Python itself are tooling runtimes, not independent
+  database clients. Their observed versions/identities are captured where used; no claim is made that the host tooling was
+  upgraded.
+screenshot_client:
+  image: mcr.microsoft.com/playwright/python:v1.65.0-noble@sha256:f9294526294a7bdfb8ca8aa7d815c049125a10e73b65d47fb9a80f5d74f284a6
+  version: 1.65.0
+  release_source: https://playwright.dev/python/docs/release-notes
+  read_at: '2026-11-17T02:40:57.779038+00:00'
+  pip_pin: playwright==1.65.0 in Makefile

@@ -60,7 +60,7 @@ def compare(got, want, tolerance=TOLERANCE):
 
 def reference(con, sf, nr, database="tpch"):
     if database == "tpcds":
-        # DuckDB 1.5.5 ships no usable TPC-DS answers: tpcds_answers() reports "Don't have TPC-DS
+        # DuckDB 1.5.5 and 2.0.0 ship no usable TPC-DS answers: tpcds_answers() reports "Don't have TPC-DS
         # answers for SF 10.000000" whatever has been generated. The TPC-DS queries are therefore
         # compared against DuckDB's own results on the same generated rows -- two independent
         # engines over identical data -- which catches a mistranslation but is *not* the

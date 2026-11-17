@@ -12,7 +12,7 @@ endif
 .PHONY: help configure list list-core list-quick fetch build image test-image run up down reset status clean clean-all \
         compose console-page catalogue provenance check okf-check audit-assets prepub-check \
         test-console screenshots build-server build-server-stop restore loader-image \
-        wwi-export verify-oracle load-citibike load-divvy load-tpcc bench $(DATASETS)
+        wwi-export verify-oracle oracle-client-image load-citibike load-divvy load-tpcc bench $(DATASETS)
 
 help:
 	@echo "The stack (reads megasamples.yaml; \`make configure\` writes it):"
@@ -87,12 +87,13 @@ screenshots:
 # reaches any published image.
 loader-image:
 	@$(MS) pull-image debian:13.7-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
-	@$(if $(shell docker version -f "{{json .Server.Components}}" 2>/dev/null | grep -q Podman && echo podman),,DOCKER_BUILDKIT=1 )docker build -f engines/mysql/loader.Dockerfile -t sql-megasamples-loader:dev .
+	@$(if $(shell docker version -f "{{json .Server.Components}}" 2>/dev/null | grep -q Podman && echo podman),,DOCKER_BUILDKIT=1 )docker build -f engines/mysql/loader.Dockerfile -t sql-megasamples-loader:dev engines/mysql
 
 #   MEGASAMPLES_ACCEPT_MSSQL_EULA=1 make wwi-export
 wwi-export:
 	@$(MS) fetch wideworldimporters wideworldimporters_dw
 	@$(MS) wwi-export
+oracle-client-image: ; @$(PY) -c 'from megasamples.sources.verify_oracle import build_client_image; raise SystemExit(build_client_image())'
 #   MEGASAMPLES_ACCEPT_ORACLE_LICENSE=1 make verify-oracle [ONLY=oracle_hr] [KEEP=1]
 verify-oracle:  ; @$(MS) verify-oracle $(if $(ONLY),--only $(ONLY),) $(if $(KEEP),--keep,)
 #   MEGASAMPLES_ACCEPT_BIKESHARE_LICENSE=1 make load-citibike [MONTH=JC-202602]
