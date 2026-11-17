@@ -89,6 +89,25 @@ CREATE TABLE "reorder" (
   "date_expected" DATE
 );
 
+CREATE TABLE "reviews" (
+  "review_id" INTEGER PRIMARY KEY,
+  "prod_id" INTEGER NOT NULL,
+  "review_date" DATE NOT NULL,
+  "stars" INTEGER NOT NULL,
+  "customerid" INTEGER NOT NULL,
+  "review_summary" VARCHAR(50) NOT NULL,
+  "review_text" VARCHAR(1000) NOT NULL,
+  CONSTRAINT "fk_review_customerid" FOREIGN KEY ("customerid") REFERENCES "customers" ("customerid") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
+CREATE TABLE "reviews_helpfulness" (
+  "reviews_helpfulness_id" INTEGER PRIMARY KEY,
+  "review_id" INTEGER NOT NULL,
+  "customerid" INTEGER NOT NULL,
+  "helpfulness" INTEGER NOT NULL,
+  CONSTRAINT "fk_review_id" FOREIGN KEY ("review_id") REFERENCES "reviews" ("review_id") ON UPDATE NO ACTION ON DELETE CASCADE
+);
+
 CREATE UNIQUE INDEX "customers_ix_cust_username" ON "customers" ("username");
 CREATE INDEX "cust_hist_ix_cust_hist_customerid" ON "cust_hist" ("customerid");
 CREATE INDEX "cust_hist_ix_cust_hist_customerid_prodid" ON "cust_hist" ("customerid", "prod_id");
@@ -123,3 +142,11 @@ CREATE TRIGGER "products_ix_prod_title_fts_au" AFTER UPDATE ON "products" BEGIN
 END;
 INSERT INTO "products_ix_prod_title_fts"("products_ix_prod_title_fts") VALUES ('rebuild');
 CREATE INDEX "reorder_ix_reorder_prodid" ON "reorder" ("prod_id");
+CREATE INDEX "reviews_fk_review_customerid" ON "reviews" ("customerid");
+CREATE INDEX "reviews_ix_reviews_prod_id" ON "reviews" ("prod_id");
+CREATE INDEX "reviews_ix_reviews_prodid_revid_date" ON "reviews" ("prod_id", "review_id", "review_date");
+CREATE INDEX "reviews_ix_reviews_prodstars" ON "reviews" ("prod_id", "stars");
+CREATE INDEX "reviews_ix_reviews_stars" ON "reviews" ("stars");
+CREATE INDEX "reviews_helpfulness_ix_review_help_id_helpid" ON "reviews_helpfulness" ("review_id", "reviews_helpfulness_id");
+CREATE INDEX "reviews_helpfulness_ix_reviews_help_custid" ON "reviews_helpfulness" ("customerid");
+CREATE INDEX "reviews_helpfulness_ix_reviews_help_revid" ON "reviews_helpfulness" ("review_id");

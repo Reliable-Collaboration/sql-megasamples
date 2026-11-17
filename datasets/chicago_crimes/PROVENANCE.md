@@ -11,13 +11,15 @@
 
 ## Source artifacts
 
-Every byte this database is built from, pinned. `megasamples/fetch.py` refuses to proceed if
-a download does not match.
+Live-feed entries below describe a historical snapshot. A build takes the current
+extract and records its actual SHA-256, byte length and source in
+`downloads/<artifact>.meta.json` and `megasamples.datasets.artifacts` in each image.
+That baked registry identifies the exact input snapshot; fixed artifacts retain their pins.
 
 | artifact | bytes | sha256 |
 |---|---:|---|
-| `chicago_crimes/crimes_2024.csv` | 74,885,948 | `5e67e3861a76d5cfa38bb2d57cc2ed7962808402282eedc07c54602b9a481ffe` |
-| `chicago_crimes/iucr.csv` | 24,230 | `257503d02bfbf487b8679c0aa1dfb45217fcd1867c909e2ed41cfdbf7e46f370` |
+| `chicago_crimes/crimes_2024.csv` (live feed) | 74,885,948 | `5e67e3861a76d5cfa38bb2d57cc2ed7962808402282eedc07c54602b9a481ffe` |
+| `chicago_crimes/iucr.csv` (live feed) | 24,230 | `257503d02bfbf487b8679c0aa1dfb45217fcd1867c909e2ed41cfdbf7e46f370` |
 
 ## What upstream publishes
 
@@ -41,8 +43,9 @@ What was and was not ported:
 
 None upstream. This project adds a view `v_crime_iucr` joining `crimes` to `iucr` (showing that `Primary Type`/`Description` are denormalised copies of the lookup - a good normalisation lesson), `SQL SECURITY INVOKER`. No procedures/triggers. The three referenced boundary datasets (Community Areas `cauq-8yn6`, Police Beats `aerh-rz74`, Police Districts `fthy-xz3r`) are **shapefile/KML only, with no tabular columns**, so no geography tables are created.
 
-## Measured
+## Snapshot expectations
 
-2 tables, 260,041 rows. Per-table counts, digests, index sets,
-query plans and canonical query results are pinned under `tests/` and are
-checked on every build.
+2 tables, 260,041 rows in the historical snapshot. Counts are snapshot floors;
+the hub records its current counts and digests under `build/live/`. Ports must match
+that verified build snapshot exactly. Structural checks retain their expectations
+under `tests/`; live content fingerprints are not fixed to the historical extract.

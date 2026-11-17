@@ -12,10 +12,17 @@ import os, subprocess, sys, time
 import yaml
 
 from megasamples.paths import ROOT
+from megasamples.engines import unique_databases
+from megasamples.registry import image_counts
 
 IMAGE = os.environ.get("MEGASAMPLES_POSTGRES_IMAGE", "sql-megasamples-postgres:dev")
 NAME = "megasamples-test-postgres"
-BUDGET_SECONDS = 30
+# Includes materializing the 21 GiB baked cluster into a fresh volume. Matched
+# 18.6/18.7 starts took 40.8–46.7s, with queries answering within 0.7s after run
+# returned. Twice that maximum, rounded up to ten seconds, is 100s. Keep the
+# original server-only 30s limit as a separate assertion. See the evidence report.
+BUDGET_SECONDS = 100
+SERVER_BUDGET_SECONDS = 30
 
 
 def sh(*args, **kw):
@@ -44,25 +51,34 @@ class Checks:
     def expect(self, cond, label): (self.ok if cond else self.fail)(label)
 
 
+def check_startup(checks, provisioned, ready):
+    checks.expect(ready is not None and ready <= BUDGET_SECONDS,
+                  f"cold start in {ready:.1f}s (budget {BUDGET_SECONDS}s)" if ready is not None else "never became ready")
+    server = ready - provisioned if ready is not None else None
+    checks.expect(server is not None and server <= SERVER_BUDGET_SECONDS,
+                  f"query ready {server:.1f}s after run returned (budget {SERVER_BUDGET_SECONDS}s)"
+                  if server is not None else "server never answered a query")
+
+
 def main(argv=None):
     datasets = list(sys.argv[1:] if argv is None else argv) or ["sakila"]
     c = Checks()
     sh("docker", "rm", "-f", NAME)
-    started = time.time()
+    started = time.monotonic()
     run = sh("docker", "run", "-d", "--name", NAME,
              "--label", "megasamples.transient=true", "--label", "megasamples.role=test", IMAGE)
     if run.returncode != 0:
         sys.exit(f"could not start {IMAGE}: {run.stderr}")
+    provisioned = time.monotonic() - started
     try:
         ready = None
-        while time.time() - started < BUDGET_SECONDS * 2:
+        while time.monotonic() - started < BUDGET_SECONDS + SERVER_BUDGET_SECONDS:
             if q("SELECT 1").returncode == 0:
-                ready = time.time() - started
+                ready = time.monotonic() - started
                 break
             time.sleep(0.2)
         c.expect(ready is not None, "container answers a real query")
-        c.expect(ready is not None and ready <= BUDGET_SECONDS,
-                 f"ready in {ready:.1f}s (budget {BUDGET_SECONDS}s)" if ready else "never became ready")
+        check_startup(c, provisioned, ready)
         if ready is None:
             print(sh("docker", "logs", "--tail", "30", NAME).stdout); return 1
         logs = sh("docker", "logs", NAME).stdout + sh("docker", "logs", NAME).stderr
@@ -70,20 +86,19 @@ def main(argv=None):
                  "entrypoint did not re-initialise the shipped cluster")
 
         registry = q("SELECT name FROM datasets ORDER BY name", database="megasamples").stdout.split()
-        c.expect(sorted(registry) == sorted(datasets),
-                 f"registry lists exactly the built datasets ({len(registry)})")
+        c.expect(sorted(registry) == sorted(unique_databases(datasets)),
+                 f"registry lists exactly the built databases ({len(registry)})")
 
         for name in datasets:
             cfg = yaml.safe_load(open(os.path.join(ROOT, "datasets", name, "dataset.yaml"), encoding="utf-8"))
             schema = cfg["database"]
-            counts = yaml.safe_load(open(os.path.join(ROOT, "datasets", name, "tests",
-                                                     "expected_counts.yaml"), encoding="utf-8"))
+            counts = image_counts(name)
             bad = []
             for table, want in counts.items():
                 got = q(f'SELECT count(*) FROM "{table}"', database=schema).stdout.strip()
                 if got != str(want):
                     bad.append(f"{table}={got} want {want}")
-            c.expect(not bad, f"{schema}: {len(counts)} tables match their pinned counts"
+            c.expect(not bad, f"{schema}: {len(counts)} tables match their expected snapshot counts"
                               + (f" -- {bad[:3]}" if bad else ""))
 
         first = datasets[0]
@@ -109,7 +124,7 @@ def main(argv=None):
         n = q("SELECT count(*) FROM pg_database WHERE NOT datistemplate").stdout.strip()
         print(f"  . data directory: {size} MB across {n} databases")
     finally:
-        sh("docker", "rm", "-f", NAME)
+        sh("docker", "rm", "-fv", NAME)
         sh("docker", "run", "-d", "--name", NAME + "2",
            "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
            "-e", "POSTGRES_PASSWORD=sekret", "-e", "DEMO_PASSWORD=viewer", IMAGE)
@@ -125,7 +140,7 @@ def main(argv=None):
                  "DEMO_PASSWORD override applied")
         c.expect(q_net("SELECT 1", user="demo", pw="demo", database="megasamples", container=NAME + "2").returncode != 0,
                  "the baked demo password no longer works after an override")
-        sh("docker", "rm", "-f", NAME + "2")
+        sh("docker", "rm", "-fv", NAME + "2")
     print(f"image test: {len(c.failures)} failure(s)")
     return 1 if c.failures else 0
 

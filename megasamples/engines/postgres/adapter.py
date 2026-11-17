@@ -219,6 +219,9 @@ class PostgresAdapter:
     def carries_index(self, spec):
         return spec.get("type") in ("BTREE", "FULLTEXT")
 
+    def indexes_not_ported(self, schema):
+        return self.model.get("indexes_not_ported", {})
+
     def explain_json(self, schema, query):
         raise NotImplementedError
 

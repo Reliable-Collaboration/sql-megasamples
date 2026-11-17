@@ -250,11 +250,14 @@ def schema(table, dialect):
     return f"CREATE TABLE {dialect.quote(table.name)} (\n  {body}\n);", dropped
 
 
-def indexes(table, dialect):
+def indexes(table, dialect, omissions=None):
     """(statements, dropped) for every secondary index the dialect can carry."""
     out, dropped = [], []
     for index in table.indexes:
         if index.primary:
+            continue
+        if index.name in (omissions or {}):
+            dropped.append(f"{table.name}.{index.name}: {omissions[index.name]}")
             continue
         if index.type == "FULLTEXT":
             out += dialect.fulltext_index(table, index)
@@ -371,7 +374,7 @@ def constraints(table, dialect):
     return [f"ALTER TABLE {t} ADD {c};" for c in clauses], dropped
 
 
-def render(database, dialect_name, result_columns=None, probe=None):
+def render(database, dialect_name, result_columns=None, probe=None, index_omissions=None):
     """Every statement for a database, grouped: {"schema", "indexes", "constraints", "routines",
     "views", "triggers", "dropped", "notes"}. `result_columns` records the result-set columns of the
     procedures PostgreSQL turns into table functions (datasets/<name>/ports/result_sets.yaml);
@@ -379,15 +382,32 @@ def render(database, dialect_name, result_columns=None, probe=None):
     from megasamples.port.model import load_order
     from megasamples.port import triggers as trigger_port
     dialect = DIALECTS[dialect_name]
+    # Only a named, explained native FULLTEXT limit may be declared. Other index expectations
+    # remain mandatory, and misspelled declarations must never silently remove a check.
+    index_omissions = index_omissions or {}
+    for table_name, omitted in index_omissions.items():
+        if dialect_name != "postgres":
+            raise ValueError("named FULLTEXT limits are PostgreSQL-only")
+        try:
+            table = database.table(table_name)
+        except KeyError as exc:
+            raise ValueError(f"unknown index-limit table: {table_name}") from exc
+        by_name = {index.name: index for index in table.indexes}
+        for name, reason in omitted.items():
+            index = by_name.get(name)
+            if index is None or index.type != "FULLTEXT" or index.primary:
+                raise ValueError(f"{table_name}.{name}: only an existing FULLTEXT index may have a native limit")
+            if not isinstance(reason, str) or not reason.strip():
+                raise ValueError(f"{table_name}.{name}: a native limit requires its reason")
     out = {"schema": [], "indexes": [], "constraints": [], "routines": [], "views": [], "triggers": [],
-           "dropped": [], "notes": {}}
+           "dropped": [], "notes": {}, "indexes_not_ported": index_omissions}
     TRIGGER_DEFAULTS.clear()
     TRIGGER_DEFAULTS.update(trigger_port.insert_defaults(database))
     for table in load_order(database):
         s, d = schema(table, dialect)
         out["schema"].append(s)
         out["dropped"] += d
-        i, d = indexes(table, dialect)
+        i, d = indexes(table, dialect, index_omissions.get(table.name))
         out["indexes"] += i
         out["dropped"] += d
         c, d = constraints(table, dialect)

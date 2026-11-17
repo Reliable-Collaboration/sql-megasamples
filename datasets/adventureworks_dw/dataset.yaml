@@ -7,3 +7,7 @@ artifacts: [adventureworks_dw/AdventureWorksDW-data-warehouse-install-script.zip
 stage: {input: artifact}
 load:
   - adventureworks_dw.sql
+
+# The age projections use the current date. Keep their existing view fingerprints reproducible
+# at the UTC date on which these baselines were generated; served views retain their real clock.
+mysql_view_clock: '2026-11-16T00:00:00Z'

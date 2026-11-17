@@ -127,13 +127,20 @@ def build_provenance(name, cfg, arts, record, measurements, licences):
                 "this dataset states the cardinalities the specification requires, which is what the",
                 "tests assert instead of a content digest.", ""]
     else:
-        out += ["## Source artifacts", "",
-                "Every byte this database is built from, pinned. `megasamples/fetch.py` refuses to proceed if",
-                "a download does not match.", "",
-                "| artifact | bytes | sha256 |", "|---|---:|---|"]
+        out += ["## Source artifacts", ""]
+        if any(art.get("live") for art in arts):
+            out += ["Live-feed entries below describe a historical snapshot. A build takes the current",
+                    "extract and records its actual SHA-256, byte length and source in",
+                    "`downloads/<artifact>.meta.json` and `megasamples.datasets.artifacts` in each image.",
+                    "That baked registry identifies the exact input snapshot; fixed artifacts retain their pins.", ""]
+        else:
+            out += ["Every byte this database is built from, pinned. `megasamples/fetch.py` refuses to proceed if",
+                    "a download does not match.", ""]
+        out += ["| artifact | bytes | sha256 |", "|---|---:|---|"]
         for art in arts:
             size = art.get("size_bytes") or 0
-            out.append(f"| `{art['id']}` | {size:,} | `{art.get('sha256') or '(unpinned)'}` |")
+            label = f"`{art['id']}`" + (" (live feed)" if art.get("live") else "")
+            out.append(f"| {label} | {size:,} | `{art.get('sha256') or '(unpinned)'}` |")
         if not arts:
             out.append("| (none listed in manifest.yaml) | | |")
         out.append("")
@@ -182,10 +189,17 @@ def build_provenance(name, cfg, arts, record, measurements, licences):
         if os.path.exists(counts_path):
             counts = yaml.safe_load(open(counts_path, encoding="utf-8"))
             total = sum(v for v in counts.values() if isinstance(v, int))
-            out += ["## Measured", "",
-                    f"{len(counts)} tables, {total:,} rows. Per-table counts, digests, index sets,",
-                    "query plans and canonical query results are pinned under `tests/` and are",
-                    "checked on every build.", ""]
+            if cfg.get("live"):
+                out += ["## Snapshot expectations", "",
+                        f"{len(counts)} tables, {total:,} rows in the historical snapshot. Counts are snapshot floors;",
+                        "the hub records its current counts and digests under `build/live/`. Ports must match",
+                        "that verified build snapshot exactly. Structural checks retain their expectations",
+                        "under `tests/`; live content fingerprints are not fixed to the historical extract.", ""]
+            else:
+                out += ["## Measured", "",
+                        f"{len(counts)} tables, {total:,} rows. Per-table counts, digests, index sets,",
+                        "query plans and canonical query results are pinned under `tests/` and are",
+                        "checked on every build.", ""]
     return "\n".join(out).rstrip() + "\n"
 
 

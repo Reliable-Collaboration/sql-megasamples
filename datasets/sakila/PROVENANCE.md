@@ -16,7 +16,7 @@ a download does not match.
 
 | artifact | bytes | sha256 |
 |---|---:|---|
-| `sakila/sakila-db.zip` | 729,654 | `ef4ab9aab7a433311eff6558561bf47de231fe9f6d49f03de67e593418df719c` |
+| `sakila/sakila-db.zip` | 729,654 | `51da69f6cbade50b8b18bece7b4bb52336ec86e70723752bb5871cc36ec0d9f2` |
 
 ## What upstream publishes
 

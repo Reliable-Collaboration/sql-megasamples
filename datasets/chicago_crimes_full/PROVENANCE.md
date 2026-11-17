@@ -11,35 +11,37 @@
 
 ## Source artifacts
 
-Every byte this database is built from, pinned. `megasamples/fetch.py` refuses to proceed if
-a download does not match.
+Live-feed entries below describe a historical snapshot. A build takes the current
+extract and records its actual SHA-256, byte length and source in
+`downloads/<artifact>.meta.json` and `megasamples.datasets.artifacts` in each image.
+That baked registry identifies the exact input snapshot; fixed artifacts retain their pins.
 
 | artifact | bytes | sha256 |
 |---|---:|---|
-| `chicago_crimes/full/crimes_2001.csv` | 132,932,015 | `24d518cf29f62008629982b171c8e54ba6dfb45ac615a2737c5d36d0752460c5` |
-| `chicago_crimes/full/crimes_2002.csv` | 135,998,717 | `71d1ce92fdebcede3f45ebef6112eed40dbc1fc6d7cbfddd79f0598655eff101` |
-| `chicago_crimes/full/crimes_2003.csv` | 135,452,707 | `66341216763ab77ed03f7e7bcb43372b31fe3c1b591a006921ede6f84a75f7c1` |
-| `chicago_crimes/full/crimes_2004.csv` | 133,823,716 | `c59f2acb4b857dadb989cfed8d6d8fe159964d0092809d9f4910ef323b225e1a` |
-| `chicago_crimes/full/crimes_2005.csv` | 129,375,533 | `a08448ff1f30c1a5b59f2fbcb72ed9eb6adb272ece6ab0f83630209e3d5d68f8` |
-| `chicago_crimes/full/crimes_2006.csv` | 127,886,299 | `97c8ceb35d5cbbc8b3236eff3c411640e00c1a8aa4406afc442253156dc07cdd` |
-| `chicago_crimes/full/crimes_2007.csv` | 124,712,551 | `cb37d6883c4e78b53b484c4063aedf0c114a2f46b351db9a8cbfbda17513c89f` |
-| `chicago_crimes/full/crimes_2008.csv` | 121,380,361 | `d04c2d56421bd7d65c3a7889701443d6ae4db0c92406408835a93af92e8eddea` |
-| `chicago_crimes/full/crimes_2009.csv` | 111,733,260 | `ebc93897195d574009bc513e2b37b805f4f53a22f1e947bb73c4dd4d40326f98` |
-| `chicago_crimes/full/crimes_2010.csv` | 105,918,385 | `b8b58a31c5be02cecd799eb49596f9a9789292a6c68a4b11ee77d809b61a625f` |
-| `chicago_crimes/full/crimes_2011.csv` | 100,664,384 | `6916ee16282be1c84955a2af79d14c138fd049ec86cd68505d9d424113ddd79c` |
-| `chicago_crimes/full/crimes_2012.csv` | 96,157,167 | `6bb11408841c9b38c61806d8ed30b1bbc9b237774495e30c362a63f5e2960c27` |
-| `chicago_crimes/full/crimes_2013.csv` | 87,983,901 | `738dffa74ae75fdc84440c937f3b79391b08fd73252f2b07047e4fe09ac5ff81` |
-| `chicago_crimes/full/crimes_2014.csv` | 78,866,106 | `7309620a608f11eee648d10c21c22fa7160a13cd85711404ef69ec9cd46ea748` |
-| `chicago_crimes/full/crimes_2015.csv` | 75,575,689 | `001f647291fd773197e9730a5e3870088b505094be4a84d091e20033381a081f` |
-| `chicago_crimes/full/crimes_2016.csv` | 77,382,197 | `56e2478e405090cd1907353bf7bf3e69c6f5c3d78549ef3c4974e72c1deed0ed` |
-| `chicago_crimes/full/crimes_2017.csv` | 77,061,081 | `dabe8a66cd01d8a94c99c9a2aa5590991187485fdfa51a8bd9e2f7c0b5284327` |
-| `chicago_crimes/full/crimes_2018.csv` | 76,960,081 | `44f9e642e68c79cf6cbacc7c30b90277d7fab2d91fd31f8ff873cc5c68815953` |
-| `chicago_crimes/full/crimes_2019.csv` | 75,139,643 | `21ee001ee72204d3c3cc0ff51263c1bd8f418eb812b120d1b5c98d5b46e32160` |
-| `chicago_crimes/full/crimes_2020.csv` | 61,297,573 | `ffa61ca985606820a7aad3ca14ef5e2ecfd42bd3aa47fdd54caab265f0b52f49` |
-| `chicago_crimes/full/crimes_2021.csv` | 60,239,381 | `80648a808b9652172e6002c233c3f95fd57f5258afef401802125e5bd6d3214a` |
-| `chicago_crimes/full/crimes_2022.csv` | 68,982,515 | `cd4e677cee78bd390668d279094480ec2066143033ecd1d70d63d9c0bfb0cf5f` |
-| `chicago_crimes/full/crimes_2023.csv` | 75,992,181 | `47cf48a02fdebd9403874a1846b5afab7149afa71ec1e20cfb849ea94fcbed59` |
-| `chicago_crimes/full/crimes_2024.csv` | 74,811,578 | `243fb805b601e958ce12461f32746187fe9588da21146e96ffdfe11bbac736b6` |
+| `chicago_crimes/full/crimes_2001.csv` (live feed) | 132,932,015 | `24d518cf29f62008629982b171c8e54ba6dfb45ac615a2737c5d36d0752460c5` |
+| `chicago_crimes/full/crimes_2002.csv` (live feed) | 135,998,717 | `71d1ce92fdebcede3f45ebef6112eed40dbc1fc6d7cbfddd79f0598655eff101` |
+| `chicago_crimes/full/crimes_2003.csv` (live feed) | 135,452,707 | `66341216763ab77ed03f7e7bcb43372b31fe3c1b591a006921ede6f84a75f7c1` |
+| `chicago_crimes/full/crimes_2004.csv` (live feed) | 133,823,716 | `c59f2acb4b857dadb989cfed8d6d8fe159964d0092809d9f4910ef323b225e1a` |
+| `chicago_crimes/full/crimes_2005.csv` (live feed) | 129,375,533 | `a08448ff1f30c1a5b59f2fbcb72ed9eb6adb272ece6ab0f83630209e3d5d68f8` |
+| `chicago_crimes/full/crimes_2006.csv` (live feed) | 127,886,299 | `97c8ceb35d5cbbc8b3236eff3c411640e00c1a8aa4406afc442253156dc07cdd` |
+| `chicago_crimes/full/crimes_2007.csv` (live feed) | 124,712,551 | `cb37d6883c4e78b53b484c4063aedf0c114a2f46b351db9a8cbfbda17513c89f` |
+| `chicago_crimes/full/crimes_2008.csv` (live feed) | 121,380,361 | `d04c2d56421bd7d65c3a7889701443d6ae4db0c92406408835a93af92e8eddea` |
+| `chicago_crimes/full/crimes_2009.csv` (live feed) | 111,733,260 | `ebc93897195d574009bc513e2b37b805f4f53a22f1e947bb73c4dd4d40326f98` |
+| `chicago_crimes/full/crimes_2010.csv` (live feed) | 105,918,385 | `b8b58a31c5be02cecd799eb49596f9a9789292a6c68a4b11ee77d809b61a625f` |
+| `chicago_crimes/full/crimes_2011.csv` (live feed) | 100,664,384 | `6916ee16282be1c84955a2af79d14c138fd049ec86cd68505d9d424113ddd79c` |
+| `chicago_crimes/full/crimes_2012.csv` (live feed) | 96,157,167 | `6bb11408841c9b38c61806d8ed30b1bbc9b237774495e30c362a63f5e2960c27` |
+| `chicago_crimes/full/crimes_2013.csv` (live feed) | 87,983,901 | `738dffa74ae75fdc84440c937f3b79391b08fd73252f2b07047e4fe09ac5ff81` |
+| `chicago_crimes/full/crimes_2014.csv` (live feed) | 78,866,106 | `7309620a608f11eee648d10c21c22fa7160a13cd85711404ef69ec9cd46ea748` |
+| `chicago_crimes/full/crimes_2015.csv` (live feed) | 75,575,689 | `001f647291fd773197e9730a5e3870088b505094be4a84d091e20033381a081f` |
+| `chicago_crimes/full/crimes_2016.csv` (live feed) | 77,382,197 | `56e2478e405090cd1907353bf7bf3e69c6f5c3d78549ef3c4974e72c1deed0ed` |
+| `chicago_crimes/full/crimes_2017.csv` (live feed) | 77,061,081 | `dabe8a66cd01d8a94c99c9a2aa5590991187485fdfa51a8bd9e2f7c0b5284327` |
+| `chicago_crimes/full/crimes_2018.csv` (live feed) | 76,960,081 | `44f9e642e68c79cf6cbacc7c30b90277d7fab2d91fd31f8ff873cc5c68815953` |
+| `chicago_crimes/full/crimes_2019.csv` (live feed) | 75,139,643 | `21ee001ee72204d3c3cc0ff51263c1bd8f418eb812b120d1b5c98d5b46e32160` |
+| `chicago_crimes/full/crimes_2020.csv` (live feed) | 61,297,573 | `ffa61ca985606820a7aad3ca14ef5e2ecfd42bd3aa47fdd54caab265f0b52f49` |
+| `chicago_crimes/full/crimes_2021.csv` (live feed) | 60,239,381 | `80648a808b9652172e6002c233c3f95fd57f5258afef401802125e5bd6d3214a` |
+| `chicago_crimes/full/crimes_2022.csv` (live feed) | 68,982,515 | `cd4e677cee78bd390668d279094480ec2066143033ecd1d70d63d9c0bfb0cf5f` |
+| `chicago_crimes/full/crimes_2023.csv` (live feed) | 75,992,181 | `47cf48a02fdebd9403874a1846b5afab7149afa71ec1e20cfb849ea94fcbed59` |
+| `chicago_crimes/full/crimes_2024.csv` (live feed) | 74,811,578 | `243fb805b601e958ce12461f32746187fe9588da21146e96ffdfe11bbac736b6` |
 
 ## What upstream publishes
 
@@ -63,8 +65,9 @@ What was and was not ported:
 
 None upstream. This project adds a view `v_crime_iucr` joining `crimes` to `iucr` (showing that `Primary Type`/`Description` are denormalised copies of the lookup - a good normalisation lesson), `SQL SECURITY INVOKER`. No procedures/triggers. The three referenced boundary datasets (Community Areas `cauq-8yn6`, Police Beats `aerh-rz74`, Police Districts `fthy-xz3r`) are **shapefile/KML only, with no tabular columns**, so no geography tables are created.
 
-## Measured
+## Snapshot expectations
 
-1 tables, 8,240,594 rows. Per-table counts, digests, index sets,
-query plans and canonical query results are pinned under `tests/` and are
-checked on every build.
+1 tables, 8,240,594 rows in the historical snapshot. Counts are snapshot floors;
+the hub records its current counts and digests under `build/live/`. Ports must match
+that verified build snapshot exactly. Structural checks retain their expectations
+under `tests/`; live content fingerprints are not fixed to the historical extract.

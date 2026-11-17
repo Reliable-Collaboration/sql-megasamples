@@ -34,3 +34,12 @@ def test_unknown_selector_is_an_error():
     import pytest
     with pytest.raises(KeyError):
         inventory.select("no_such_dataset")
+def test_declared_downloads_exist_in_the_manifest():
+    import yaml
+    from pathlib import Path
+    from megasamples import datasets
+    manifest = Path(__file__).resolve().parents[1] / "manifest.yaml"
+    known = {artifact["id"] for artifact in yaml.safe_load(manifest.read_text())["artifacts"]}
+    unknown = {name: sorted(set(datasets.load(name).get("artifacts") or []) - known)
+               for name in datasets.names()}
+    assert not {name: ids for name, ids in unknown.items() if ids}

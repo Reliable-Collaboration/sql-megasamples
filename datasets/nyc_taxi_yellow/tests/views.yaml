@@ -1,0 +1,117 @@
+# S4v: every view's row count and canonical fingerprint (count, BIT_XOR, SUM mod
+# 2^64) over the row digest of megasamples/canon.py, pinned from MySQL. x_exact and
+# s_exact leave out the `inexact` columns: decimals the view computes, which an engine
+# without decimal arithmetic (SQLite) cannot reproduce to the digit.
+v_green_daily:
+  columns:
+  - trip_date
+  - trips
+  - revenue
+  excluded:
+  - avg_distance
+  inexact:
+  - revenue
+  n: 38
+  s: 5956044533541205765
+  s_exact: 4099948395859077836
+  x: 12908808224104722595
+  x_exact: 12441265789535911672
+v_suspect_trips:
+  columns:
+  - trip_id
+  - vendorid
+  - pickup_datetime
+  - dropoff_datetime
+  - store_and_fwd_flag
+  - ratecodeid
+  - pulocationid
+  - dolocationid
+  - passenger_count
+  - fare_amount
+  - extra
+  - mta_tax
+  - tip_amount
+  - tolls_amount
+  - ehail_fee
+  - improvement_surcharge
+  - total_amount
+  - payment_type
+  - trip_type
+  - congestion_surcharge
+  - cbd_congestion_fee
+  excluded:
+  - trip_distance
+  n: 3447
+  s: 3467817055438286794
+  x: 17842885649316666918
+v_suspect_yellow_trips:
+  columns:
+  - trip_id
+  - vendorid
+  - pickup_datetime
+  - dropoff_datetime
+  - store_and_fwd_flag
+  - ratecodeid
+  - pulocationid
+  - dolocationid
+  - passenger_count
+  - fare_amount
+  - extra
+  - mta_tax
+  - tip_amount
+  - tolls_amount
+  - improvement_surcharge
+  - total_amount
+  - payment_type
+  - congestion_surcharge
+  - airport_fee
+  - cbd_congestion_fee
+  excluded:
+  - trip_distance
+  n: 173644
+  s: 17181072286832847368
+  x: 13907382634887880782
+v_trip_zone:
+  columns:
+  - trip_id
+  - pickup_datetime
+  - dropoff_datetime
+  - total_amount
+  - pickup_borough
+  - pickup_zone
+  - dropoff_borough
+  - dropoff_zone
+  excluded:
+  - trip_distance
+  n: 48326
+  s: 13690169431069505904
+  x: 2952202170194206374
+v_yellow_daily:
+  columns:
+  - trip_date
+  - trips
+  - revenue
+  excluded:
+  - avg_distance
+  inexact:
+  - revenue
+  n: 33
+  s: 1177354569667351377
+  s_exact: 4309993797331427424
+  x: 9277699286152391337
+  x_exact: 14910132006844043122
+v_yellow_zone:
+  columns:
+  - trip_id
+  - pickup_datetime
+  - dropoff_datetime
+  - total_amount
+  - pickup_borough
+  - pickup_zone
+  - dropoff_borough
+  - dropoff_zone
+  excluded:
+  - trip_distance
+  n: 3475226
+  s: 14202802915571356747
+  x: 16942165386237694595

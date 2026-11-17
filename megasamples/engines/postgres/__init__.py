@@ -22,7 +22,7 @@ from megasamples import container_engine
 class Postgres(Engine):
     name = "postgres"
     title = "PostgreSQL"
-    version = "18.6"
+    version = "18.7"
     image = os.environ.get("MEGASAMPLES_POSTGRES_IMAGE", "sql-megasamples-postgres:dev")
     container = "megasamples-postgres"
     port = 5432

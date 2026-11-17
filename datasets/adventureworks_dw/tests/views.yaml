@@ -1,0 +1,98 @@
+# S4v: every view's row count and canonical fingerprint (count, BIT_XOR, SUM mod
+# 2^64) over the row digest of megasamples/canon.py, pinned from MySQL. x_exact and
+# s_exact leave out the `inexact` columns: decimals the view computes, which an engine
+# without decimal arithmetic (SQLite) cannot reproduce to the digit.
+vassocseqlineitems:
+  columns:
+  - OrderNumber
+  - LineNumber
+  - Model
+  excluded: []
+  n: 32166
+  s: 11123071124029700930
+  x: 18298853155287500224
+vassocseqorders:
+  columns:
+  - OrderNumber
+  - CustomerKey
+  - Region
+  - IncomeGroup
+  excluded: []
+  n: 13006
+  s: 7468348334978419078
+  x: 11396446260388942002
+vdmprep:
+  columns:
+  - englishproductcategoryname
+  - model
+  - customerkey
+  - region
+  - age
+  - incomegroup
+  - calendaryear
+  - fiscalyear
+  - month
+  - ordernumber
+  - LineNumber
+  - Quantity
+  - Amount
+  excluded: []
+  n: 60398
+  s: 5771118775985476786
+  x: 14412823430858542530
+vtargetmail:
+  columns:
+  - customerkey
+  - geographykey
+  - customeralternatekey
+  - title
+  - firstname
+  - middlename
+  - lastname
+  - namestyle
+  - birthdate
+  - maritalstatus
+  - suffix
+  - gender
+  - emailaddress
+  - yearlyincome
+  - totalchildren
+  - numberchildrenathome
+  - englisheducation
+  - spanisheducation
+  - frencheducation
+  - englishoccupation
+  - spanishoccupation
+  - frenchoccupation
+  - houseownerflag
+  - numbercarsowned
+  - addressline1
+  - addressline2
+  - phone
+  - datefirstpurchase
+  - commutedistance
+  - region
+  - age
+  - bikebuyer
+  excluded: []
+  n: 18484
+  s: 11138035751180553545
+  x: 5461449112393090435
+vtimeseries:
+  columns:
+  - modelregion
+  - timeindex
+  - quantity
+  - amount
+  - CalendarYear
+  - month
+  - ReportingDate
+  excluded: []
+  inexact:
+  - amount
+  - quantity
+  n: 370
+  s: 13506037355936810086
+  s_exact: 4816289060682487270
+  x: 14534921202183668830
+  x_exact: 7646429571506805050

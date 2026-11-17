@@ -1,0 +1,48 @@
+# S4v: every view's row count and canonical fingerprint (count, BIT_XOR, SUM mod
+# 2^64) over the row digest of megasamples/canon.py, pinned from MySQL. x_exact and
+# s_exact leave out the `inexact` columns: decimals the view computes, which an engine
+# without decimal arithmetic (SQLite) cannot reproduce to the digit.
+v_article:
+  columns:
+  - page_id
+  - title
+  - page_len
+  - rev_timestamp
+  - last_editor
+  - wikitext
+  excluded: []
+  n: 284737
+  s: 4226138877574833027
+  x: 4022663579013440965
+v_category_member:
+  columns:
+  - page_id
+  - page_title
+  - category
+  excluded: []
+  n: 1777942
+  s: 11290325188313096882
+  x: 7909051500214392740
+v_page:
+  columns:
+  - page_id
+  - page_namespace
+  - page_title
+  - page_is_redirect
+  - page_len
+  - page_latest
+  - page_touched
+  excluded: []
+  n: 284737
+  s: 1147792537837469889
+  x: 9585524618650150535
+v_pagelink:
+  columns:
+  - from_page_id
+  - from_title
+  - to_namespace
+  - to_title
+  excluded: []
+  n: 18899074
+  s: 6089782611329904644
+  x: 1981763061756640700

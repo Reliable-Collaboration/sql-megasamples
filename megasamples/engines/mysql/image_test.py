@@ -13,6 +13,8 @@ import json, os, subprocess, sys, time
 import yaml
 
 from megasamples.paths import ROOT
+from megasamples.engines import unique_databases
+from megasamples.registry import image_counts
 IMAGE = os.environ.get("MEGASAMPLES_MYSQL_IMAGE", "sql-megasamples-mysql:dev")
 NAME = "megasamples-test-mysql"
 BUDGET_SECONDS = 30
@@ -35,6 +37,41 @@ class Checks:
     def ok(self, label): print(f"  . {label}")
     def fail(self, label): print(f"  x {label}"); self.failures.append(label)
     def expect(self, cond, label): (self.ok if cond else self.fail)(label)
+
+
+def account_checks(checks, schema, read_table, expected_count):
+    """Exercise valid statements against fixtures in a database this image actually carries."""
+    reader, writer = "demo", "admin"
+    table = f"`{schema}`.`_megasamples_access_probe`"
+    created = f"`{schema}`.`_megasamples_create_probe`"
+    routine = f"`{schema}`.`_megasamples_write_probe`"
+    try:
+        setup = q(f"CREATE TABLE {table} (id integer PRIMARY KEY, n integer); "
+                  f"INSERT INTO {table} VALUES (1, 1)")
+        checks.expect(setup.returncode == 0, "account probe table exists in a shipped database")
+        if setup.returncode:
+            return
+        setup = q(f"CREATE PROCEDURE {routine}() INSERT INTO {table} VALUES (3, 3)")
+        checks.expect(setup.returncode == 0, "account probe routine exists")
+        if setup.returncode:
+            return
+        checks.expect(q("SELECT 1", user=reader, pw=reader).returncode == 0, "demo can connect")
+        result = q(f"SELECT COUNT(*) FROM `{schema}`.`{read_table}`", user=reader, pw=reader)
+        checks.expect(result.returncode == 0 and result.stdout.strip() == str(expected_count), "demo can read")
+        for statement, label in [
+                (f"CREATE TABLE {created} (id integer)", "CREATE"),
+                (f"INSERT INTO {table} VALUES (2, 2)", "INSERT"),
+                (f"UPDATE {table} SET n=2 WHERE id=1", "UPDATE"),
+                (f"DELETE FROM {table} WHERE id=1", "DELETE"),
+                (f"DROP TABLE {table}", "DROP")]:
+            checks.expect(q(statement, user=reader, pw=reader).returncode != 0, f"demo cannot {label}")
+        checks.expect(q(f"CALL {routine}()", user=reader, pw=reader).returncode != 0,
+                      "demo cannot write through a routine")
+        checks.expect(q(f"INSERT INTO {table} VALUES (2, 2)", user=writer, pw=writer).returncode == 0,
+                      "admin can write")
+    finally:
+        q(f"DROP PROCEDURE IF EXISTS {routine}")
+        q(f"DROP TABLE IF EXISTS {table}, {created}")
 
 
 def main(argv=None):
@@ -65,20 +102,19 @@ def main(argv=None):
         c.expect("Initializing database" not in logs, "entrypoint did not re-initialise the datadir")
 
         registry = q("SELECT name FROM megasamples.datasets ORDER BY name").stdout.split()
-        c.expect(sorted(registry) == sorted(datasets),
-                 f"registry lists exactly the built datasets ({len(registry)})")
+        c.expect(sorted(registry) == sorted(unique_databases(datasets)),
+                 f"registry lists exactly the built databases ({len(registry)})")
 
         for name in datasets:
             cfg = yaml.safe_load(open(os.path.join(ROOT, "datasets", name, "dataset.yaml"), encoding="utf-8"))
             schema = cfg["database"]
-            counts = yaml.safe_load(open(os.path.join(ROOT, "datasets", name, "tests",
-                                                     "expected_counts.yaml"), encoding="utf-8"))
+            counts = image_counts(name)
             bad = []
             for table, want in counts.items():
                 got = q(f"SELECT COUNT(*) FROM `{table}`", database=schema).stdout.strip()
                 if got != str(want):
                     bad.append(f"{table}={got} want {want}")
-            c.expect(not bad, f"{schema}: {len(counts)} tables match their pinned counts"
+            c.expect(not bad, f"{schema}: {len(counts)} tables match their expected snapshot counts"
                               + (f" -- {bad[:3]}" if bad else ""))
             check = q(f"SELECT CONCAT(table_name) FROM information_schema.tables "
                       f"WHERE table_schema='{schema}' AND table_type='BASE TABLE'").stdout.split()
@@ -109,18 +145,9 @@ def main(argv=None):
                 c.expect(not orphaned, f"{schema}: {len(external)} cross-database foreign key(s) "
                                        f"present with no orphans" + (f" -- {orphaned}" if orphaned else ""))
 
-        c.expect(q("SELECT 1", user="demo", pw="demo").returncode == 0, "demo can connect")
-        c.expect(q("SELECT COUNT(*) FROM sakila.actor", user="demo", pw="demo").returncode == 0,
-                 "demo can read")
-        for statement, label in [
-                ("CREATE TABLE sakila.nope (i INT)", "CREATE"),
-                ("INSERT INTO sakila.actor (first_name,last_name) VALUES ('a','b')", "INSERT"),
-                ("UPDATE sakila.actor SET first_name='x' WHERE actor_id=1", "UPDATE"),
-                ("DELETE FROM sakila.actor WHERE actor_id=1", "DELETE"),
-                ("DROP DATABASE sakila", "DROP")]:
-            c.expect(q(statement, user="demo", pw="demo").returncode != 0, f"demo cannot {label}")
-        c.expect(q("CALL sakila.rewards_report(1,1,'2005-01-01')", user="demo", pw="demo").returncode != 0,
-                 "demo cannot write through a routine")
+        first_counts = image_counts(datasets[0])
+        read_table = sorted(first_counts)[0]
+        account_checks(c, unique_databases(datasets)[0], read_table, first_counts[read_table])
 
         empty = q("SELECT COUNT(*) FROM mysql.user WHERE authentication_string='' "
                   "AND user NOT LIKE 'mysql.%'").stdout.strip()

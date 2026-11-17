@@ -1,16 +1,17 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1.29.0@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183
 # sql-megasamples-postgres: PostgreSQL with sample databases baked into its cluster.
 # The builder initialises a cluster at the image's own PGDATA, creates the accounts and the
 # provenance registry, loads each configured database from the port files (schema, data, indexes,
 # constraints), and stops cleanly; the final stage carries only that cluster. The context is the
 # repository root filtered by .dockerignore; build/postgres/image/ holds exactly the databases being
 # baked. See ARCHITECTURE.md section 4.
-ARG POSTGRES_IMAGE=postgres:18.6-bookworm
+ARG POSTGRES_IMAGE=docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
 
 FROM ${POSTGRES_IMAGE} AS builder
-COPY engines/postgres/init/ /build/init/
+COPY engines/postgres/init/00-users.sql engines/postgres/init/20-grants.sql /build/init/
 COPY build/postgres/image/ /build/databases/
 COPY NOTICE.md LICENSES.md CATALOGUE.md README.md /docs/
+COPY engines/images.lock.yaml /docs/images.lock.yaml
 COPY datasets/ /build/datasets/
 RUN set -eu; \
     mkdir -p /docs/datasets; \
@@ -54,6 +55,19 @@ for d in /build/databases/*/; do
   psql -v ON_ERROR_STOP=1 -q -f /build/init/20-grants.sql "$name"
 done
 psql -v ON_ERROR_STOP=1 -q -f /build/databases/registry.sql megasamples
+pg_ctl -w -m fast stop >/dev/null
+SH
+# Keep the packaging pass separate so changing it does not invalidate the bulk-load cache.
+COPY engines/postgres/init/99-trim-wal.sql /build/init/99-trim-wal.sql
+RUN <<'SH'
+#!/bin/bash
+set -euo pipefail
+export PGDATA
+# Reclaim the bulk loader's recycled WAL through PostgreSQL itself before packaging. A short,
+# private restart with a small WAL budget lets CHECKPOINT remove unneeded segments; no WAL files
+# are deleted by hand, and command-line settings leave the shipped configuration unchanged.
+pg_ctl -w -o "-c listen_addresses='' -c max_wal_size=64MB -c min_wal_size=32MB -c wal_level=minimal -c max_wal_senders=0" start >/dev/null
+psql -v ON_ERROR_STOP=1 -q -f /build/init/99-trim-wal.sql postgres
 pg_ctl -w -m fast stop >/dev/null
 SH
 USER root

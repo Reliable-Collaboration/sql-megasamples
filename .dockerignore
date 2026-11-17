@@ -2,6 +2,7 @@
 # copies: the engine's configuration, what `megasamples image` staged under build/<engine>/image/, and
 # the licence files that must travel with the data. Everything else is repository weight.
 *
+!engines/images.lock.yaml
 !engines/mysql/my.cnf
 !engines/mysql/init/
 !engines/mysql/entrypoint-wrapper.sh

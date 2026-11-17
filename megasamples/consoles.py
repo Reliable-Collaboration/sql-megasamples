@@ -28,11 +28,11 @@ class Console:
 
 CONSOLES = [
     Console("landing", "Console index", (),
-            "nginx@sha256:3bcf852aed06467cf075c6105892e4d5a6ebbbafa0ce22d35062db9e90ddef4c", 80, "32m",
+            "nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703", 80, "32m",
             "Start here: every database with its size, licence and provenance, and how to connect your own tool.",
             volumes=["./consoles/landing:/usr/share/nginx/html:ro"]),
     Console("cloudbeaver", "CloudBeaver", ("mysql", "postgres", "sqlite"),
-            "dbeaver/cloudbeaver@sha256:3b4bf82287cf4febe0d335873f1346a01100f3951d266cd6a78c27fe30429cbc", 8978, "640m",
+            "dbeaver/cloudbeaver:26.2.5@sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f", 8978, "640m",
             "Opens as a guest with every connection in the sidebar: both accounts on each server engine, one connection per SQLite file.",
             volumes=["./consoles/cloudbeaver/.cloudbeaver.auto.conf:/opt/cloudbeaver/conf/.cloudbeaver.auto.conf:ro",
                      "./consoles/cloudbeaver/generated/cloudbeaver.conf:/opt/cloudbeaver/conf/cloudbeaver.conf:ro",
@@ -47,14 +47,14 @@ CONSOLES = [
     # is built against glibc and fails to load on musl ("fcntl64: symbol not found"), measured on
     # 6.6.1-alpine on 2026-09-10; on this image it opens a file and answers a query
     Console("dbgate", "DbGate", ("mysql", "postgres", "sqlite"),
-            "dbgate/dbgate@sha256:7f8c7a155673e910270563054be27868421da961d4e909f568eafd61e6541fe2", 3000, "320m",
+            "dbgate/dbgate:7.3.6@sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953", 3000, "320m",
             "Every connection preconfigured in the sidebar: both accounts on each server engine, one per SQLite file."),
     Console("adminer", "Adminer", ("mysql", "postgres"),
-            "adminer@sha256:f1e2ba27b10a565ac77b2d8555d803be4ddb3232f4216dcf0ea85bcd8f2f1343", 8080, "160m",
+            "adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c", 8080, "160m",
             "Its login form remains: the page behind this card says what to type for each engine, and opens it filled in.",
             "http://127.0.0.1:{port}/?server=mysql&username=demo&db={db}", "A"),
     Console("phpmyadmin", "phpMyAdmin", ("mysql",),
-            "phpmyadmin@sha256:20fa6f724ba77d41abc25b1aeb4d97692ce344c7ace305594e57c5893f60f0f7", 80, "256m",
+            "phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40", 80, "256m",
             "MySQL only. Signed in already; the server menu switches account.",
             "http://127.0.0.1:{port}/index.php?route=/database/structure&db={db}&server=1", "P",
             volumes=["./consoles/phpmyadmin/config.user.inc.php:/etc/phpmyadmin/config.user.inc.php:ro"]),

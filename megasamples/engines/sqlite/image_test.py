@@ -11,9 +11,12 @@ import os, subprocess, sys, time
 import yaml
 
 from megasamples.paths import ROOT
+from megasamples.engines import unique_databases
+from megasamples.registry import image_counts
 
 IMAGE = os.environ.get("MEGASAMPLES_SQLITE_IMAGE", "sql-megasamples-sqlite:dev")
 NAME = "megasamples-test-sqlite"
+BUDGET_SECONDS = 30
 
 
 def sh(*args, **kw):
@@ -42,24 +45,26 @@ def main(argv=None):
         sys.exit(f"could not start {IMAGE}: {run.stderr}")
     try:
         ready = None
-        while time.time() - started < 30:
+        while time.time() - started < BUDGET_SECONDS * 2:
             if q("SELECT 1").returncode == 0:
                 ready = time.time() - started
                 break
             time.sleep(0.2)
-        c.expect(ready is not None, f"container answers a query{f' in {ready:.1f}s' if ready else ''}")
+        c.expect(ready is not None, "container answers a query")
+        c.expect(ready is not None and ready <= BUDGET_SECONDS,
+                 f"ready in {ready:.1f}s (budget {BUDGET_SECONDS}s)" if ready else "never became ready")
         if ready is None:
             return 1
         registry = q("SELECT name FROM datasets ORDER BY name").stdout.split()
-        c.expect(sorted(registry) == sorted(datasets), f"registry lists exactly the built datasets ({len(registry)})")
+        c.expect(sorted(registry) == sorted(unique_databases(datasets)), f"registry lists exactly the built databases ({len(registry)})")
         total_mb = 0.0
         for name in datasets:
             cfg = yaml.safe_load(open(os.path.join(ROOT, "datasets", name, "dataset.yaml"), encoding="utf-8"))
             db = cfg["database"]
-            counts = yaml.safe_load(open(os.path.join(ROOT, "datasets", name, "tests", "expected_counts.yaml"), encoding="utf-8"))
+            counts = image_counts(name)
             bad = [f"{t}={q(f'SELECT count(*) FROM \"{t}\"', db).stdout.strip()} want {w}" for t, w in counts.items()
                    if q(f'SELECT count(*) FROM "{t}"', db).stdout.strip() != str(w)]
-            c.expect(not bad, f"{db}: {len(counts)} tables match their pinned counts" + (f" -- {bad[:3]}" if bad else ""))
+            c.expect(not bad, f"{db}: {len(counts)} tables match their expected snapshot counts" + (f" -- {bad[:3]}" if bad else ""))
             c.expect(q("PRAGMA integrity_check", db).stdout.strip() == "ok", f"{db}: integrity_check ok")
             c.expect(q("PRAGMA foreign_keys=ON; PRAGMA foreign_key_check", db).stdout.strip() == "",
                      f"{db}: foreign_key_check finds nothing")

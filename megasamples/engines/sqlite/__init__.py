@@ -21,7 +21,7 @@ from megasamples import container_engine
 class SQLite(Engine):
     name = "sqlite"
     title = "SQLite"
-    version = sqlite3.sqlite_version
+    version = "3.54.1"
     image = os.environ.get("MEGASAMPLES_SQLITE_IMAGE", "sql-megasamples-sqlite:dev")
     container = "megasamples-sqlite"
     port = 0

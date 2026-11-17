@@ -9,9 +9,9 @@ choice and one command builds it.
 
 | engine | what ships | size |
 |---|---|---|
-| **MySQL 9.7.2** | `sql-megasamples-mysql`: an image with the databases baked into its data directory | 3.5 GB image |
-| **PostgreSQL 18.6** | `sql-megasamples-postgres`: an image with the databases in its cluster, ported from the verified MySQL corpus | 4.1 GB image (2.6 GB data directory) |
-| **SQLite 3.49** | `sql-megasamples-sqlite`: one `.sqlite` file per database with the `sqlite3` shell beside them; the files are also under `build/sqlite/` to copy anywhere | 1.3 GB image (899 MB of files) |
+| **MySQL 26.10.0** | `sql-megasamples-mysql`: an image with the databases baked into its data directory | depends on the selected datasets; see [upgrade evidence](docs/engine-upgrade-evidence.md) |
+| **PostgreSQL 18.7** | `sql-megasamples-postgres`: an image with the databases in its cluster, ported from the verified MySQL corpus | depends on the selected datasets; see [upgrade evidence](docs/engine-upgrade-evidence.md) |
+| **SQLite 3.54.1** | `sql-megasamples-sqlite`: one `.sqlite` file per database with the `sqlite3` shell beside them; the files are also under `build/sqlite/` to copy anywhere | depends on the selected datasets; see [upgrade evidence](docs/engine-upgrade-evidence.md) |
 
 Every dataset is built and verified on all three engines. PostgreSQL and SQLite are **ports of the
 MySQL corpus**: the same rows, proved by the same per-table content digests, foreign-key checks and
@@ -105,7 +105,7 @@ the same rows, the same views and the same behaviour as in MySQL.
 
 ### MySQL
 
-`sql-megasamples-mysql:dev` is `mysql:9.7.2` (`utf8mb4`, InnoDB) with the chosen databases already
+`sql-megasamples-mysql:dev` is `mysql:26.10.0` (`utf8mb4`, InnoDB) with the chosen databases already
 in its data directory: first start answers a real query in about two seconds, and nothing is loaded
 at startup. Two accounts are offered from every console, and both are usable from any client:
 
@@ -130,7 +130,7 @@ catalogue, the landing page and the image tests all read it, so none can drift f
 
 ### PostgreSQL
 
-`sql-megasamples-postgres:dev` is `postgres:18.6-bookworm` with one database per dataset already in
+`sql-megasamples-postgres:dev` is `postgres:18.7-trixie` with one database per dataset already in
 its cluster, the same `demo` (read-only) and `admin` accounts, the superuser `postgres` with
 password `root`, and a `megasamples` database holding the registry. `POSTGRES_PASSWORD`,
 `DEMO_PASSWORD` and `ADMIN_PASSWORD` override the passwords at start. Tables, data, primary and

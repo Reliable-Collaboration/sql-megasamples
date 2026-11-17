@@ -216,10 +216,23 @@ def stage_indexes(ad, cfg, schema, d, pin, res):
     expected = load_yaml(path)
     if expected is None:
         res.fail(f"no indexes.yaml for {cfg['database']}; run with --pin"); return
+    absent = ad.indexes_not_ported(schema) if hasattr(ad, "indexes_not_ported") else {}
+    for table, indexes in absent.items():
+        for index, reason in indexes.items():
+            if expected.get(table, {}).get(index, {}).get("type") != "FULLTEXT" or not reason:
+                res.fail(f"{table}.{index}: invalid native FULLTEXT limit record")
     skipped = 0
     for table, want in sorted(expected.items()):
         got = observed.get(table, {})
         for index, spec in sorted(want.items()):
+            reason = absent.get(table, {}).get(index)
+            if reason and spec.get("type") == "FULLTEXT":
+                if index in got:
+                    res.fail(f"{table}.{index}: native limit record contradicts the carried index")
+                else:
+                    res.note(f"Unsupported: {table}.{index}: {reason}")
+                skipped += 1
+                continue
             if not ad.carries_index(spec):
                 skipped += 1
                 continue
@@ -282,6 +295,9 @@ def stage_views(ad, cfg, schema, d, pin, res):
     """Every view's row count and canonical digest, pinned from MySQL: a ported view is right when
     it returns the same rows, not merely when it exists."""
     from megasamples import canon
+    if ad.name == "mysql" and cfg.get("mysql_view_clock"):
+        ad = ad.with_clock(cfg["mysql_view_clock"])
+        res.note(f"view verification clock: {cfg['mysql_view_clock']} (session only)")
     path = os.path.join(d, "tests", "views.yaml")
     expected = None if pin else load_yaml(path)
     observed = {}

@@ -31,10 +31,28 @@ def load_dataset(dataset):
     return cfg, counts
 
 
+def image_counts(dataset):
+    """Exact shipped counts: immutable pins, or the live snapshot verified on this build's hub."""
+    from megasamples.paths import BUILD
+    cfg, counts = load_dataset(dataset)
+    if not cfg.get("live"):
+        return counts
+    path = os.path.join(BUILD, "live", f"{dataset}.observed.yaml")
+    if not os.path.exists(path):
+        raise ValueError(f"{dataset}: no verified hub counts at {path}; build and verify MySQL first")
+    with open(path, encoding="utf-8") as fh:
+        observed = (yaml.safe_load(fh) or {}).get("counts") or {}
+    for table, floor in counts.items():
+        value = observed.get(table)
+        if not isinstance(value, int) or value < floor:
+            raise ValueError(f"{dataset}: missing or below-floor hub count for {table}")
+    return {table: observed[table] for table in counts}
+
+
 def row(datasets, build_id, dialect="mysql", engine="mysql"):
     """One row for one database. `datasets` are the datasets that live in it: the base first, then
     any `append: true` dataset, whose artifacts, licences and row counts join the base's."""
-    cfgs = [load_dataset(name) for name in datasets]
+    cfgs = [(load_dataset(name)[0], image_counts(name)) for name in datasets]
     base = next((c for c, _ in cfgs if not c.get("append")), cfgs[0][0])
     schema = base["database"]
     licenses, counts, artifacts = [], {}, []

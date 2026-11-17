@@ -1,0 +1,79 @@
+# Image/release provenance for the engine upgrade. Runtime references remain in their consumers.
+images:
+  mysql:
+    image: docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999
+    version: 26.10.0
+    release_source: https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html
+    read_at: '2026-11-16T18:58:36.215868+00:00'
+  mysql-shell:
+    image: docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999
+    version: 26.10.0
+    release_source: https://dev.mysql.com/downloads/shell/
+    read_at: '2026-11-16T18:58:36.217605+00:00'
+  postgres:
+    image: docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
+    version: '18.7'
+    release_source: https://www.postgresql.org/docs/release/18.7/
+    read_at: '2026-11-16T18:58:36.214843+00:00'
+  sqlite-base:
+    image: alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+    version: 3.24.4
+    release_source: https://www.alpinelinux.org/releases/
+    read_at: '2026-11-16T18:58:36.942611+00:00'
+  loader-base:
+    image: debian:13.7-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2
+    version: '13.7'
+    release_source: https://www.debian.org/releases/
+    read_at: '2026-11-16T18:58:36.997618+00:00'
+  playwright:
+    image: mcr.microsoft.com/playwright/python:v1.65.0-noble@sha256:f9294526294a7bdfb8ca8aa7d815c049125a10e73b65d47fb9a80f5d74f284a6
+    version: 1.65.0
+    release_source: https://pypi.org/pypi/playwright/json
+    read_at: '2026-11-16T18:58:36.838819+00:00'
+  sqlserver-export:
+    image: mcr.microsoft.com/mssql/server:2025-CU11-ubuntu-24.04@sha256:05644dad1266ca3d445d1e8f6d2ebb9a6a03df9a39376e0f7b48917356dca9d9
+    version: 2025 CU11 (17.0.5065.9)
+    release_source: https://support.microsoft.com/en-au/servicing/sql/sql-server-2025/kb5005684-build-versions
+    read_at: '2026-11-16T18:58:37.116706+00:00'
+  oracle-verifier:
+    image: gvenzl/oracle-free:23@sha256:7ed34d0ade89c91a553c9cbe9d42457c758fa29a762aaaa3137541ff30a2d1cb
+    version: 26ai Free 23.26.3.0.0
+    release_source: https://www.oracle.com/database/free/get-started/
+    read_at: '2026-11-16T19:41:23.043634+00:00'
+  landing:
+    image: nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703
+    version: 1.30.6
+    release_source: https://nginx.org/en/download.html
+    read_at: '2026-11-16T18:58:36.520324+00:00'
+  cloudbeaver:
+    image: dbeaver/cloudbeaver:26.2.5@sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f
+    version: 26.2.5
+    release_source: https://hub.docker.com/v2/repositories/dbeaver/cloudbeaver/tags?page_size=20
+    read_at: '2026-11-16T18:58:36.671862+00:00'
+  dbgate:
+    image: dbgate/dbgate:7.3.6@sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953
+    version: 7.3.6
+    release_source: https://hub.docker.com/v2/repositories/dbgate/dbgate/tags?page_size=20
+    read_at: '2026-11-16T18:58:36.830920+00:00'
+  adminer:
+    image: adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c
+    version: 6.3.0
+    release_source: https://www.adminer.org/
+    read_at: '2026-11-16T18:58:36.571475+00:00'
+  phpmyadmin:
+    image: phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40
+    version: 5.2.3
+    release_source: https://www.phpmyadmin.net/downloads/
+    read_at: '2026-11-16T18:58:36.655862+00:00'
+  dockerfile-frontend:
+    image: docker/dockerfile:1.29.0@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183
+    version: 1.29.0
+    release_source: https://registry-1.docker.io/v2/docker/dockerfile/manifests/1.29.0
+    read_at: '2026-11-16T19:02:44.308731+00:00'
+    registry_source: https://registry-1.docker.io/v2/docker/dockerfile/manifests/1.29.0
+sqlite_source:
+  version: 3.54.1
+  url: https://sqlite.org/2026/sqlite-autoconf-3540100.tar.gz
+  sha3_256: b6ced585c750916b1052667239a12c25a7ff34e7f06e1e6e01ecb0427657d9c4
+  release_source: https://sqlite.org/download.html
+  read_at: '2026-11-16T18:58:36.461111+00:00'

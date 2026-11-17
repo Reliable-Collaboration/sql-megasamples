@@ -15,16 +15,16 @@ import json, os, shlex, subprocess, sys, time
 
 from megasamples.paths import ROOT
 # pinned by digest: the tag floats, and an export has to be attributable to one build of one image.
-# Refresh with `python3 -m megasamples pull-image mcr.microsoft.com/mssql/server:2022-latest`.
-IMAGE = os.environ.get("MSSQL_IMAGE", "mcr.microsoft.com/mssql/server@sha256:"
-                       "ba4c8329f48fb8f02e1416be6a930ebfd71268caee78aa985f3af4315e457c89")
+# Refresh with `python3 -m megasamples pull-image mcr.microsoft.com/mssql/server:2025-CU11-ubuntu-24.04`.
+IMAGE = os.environ.get("MSSQL_IMAGE", "mcr.microsoft.com/mssql/server:2025-CU11-ubuntu-24.04@sha256:"
+                       "05644dad1266ca3d445d1e8f6d2ebb9a6a03df9a39376e0f7b48917356dca9d9")
 NAME = os.environ.get("MSSQL_CONTAINER", "megasamples-build-mssql")
 SA_PASSWORD = os.environ.get("MSSQL_SA_PASSWORD", "Megasamples!X02build")
 TOOLS = "/opt/mssql-tools18/bin"
 ENV_FLAG = "MEGASAMPLES_ACCEPT_MSSQL_EULA"
 
 NOTICE = f"""\
-This step runs Microsoft SQL Server 2022 Developer Edition in a container, which requires you to
+This step runs Microsoft SQL Server 2025 Developer Edition in a container, which requires you to
 accept Microsoft's End-User Licence Agreement:
 
     {IMAGE}

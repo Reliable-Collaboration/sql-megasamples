@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Pull an OCI image over IPv4 and hand it to Docker, for registries the daemon cannot reach.
+"""Pull an OCI image with native Podman, or an IPv4 archive import for Docker.
 
   python3 -m megasamples pull-image mcr.microsoft.com/mssql/server:2022-latest
 
@@ -8,6 +8,9 @@ manifest request while `curl -4` to the same URL answers in 0.15 s, which is the
 runbook puts first (knowledge/runbooks/ipv6-and-privileges.md section 1d). The daemon-level fix needs
 a Docker Desktop change, so section 2's no-privilege workaround applies instead: do the transfer with
 `curl -4` and load the result.
+
+Podman uses its native importer to preserve image-index digest references and platform selection.
+Docker uses the IPv4 archive path below.
 
 This is not a looser fetch than `docker pull`. Every blob is verified against the digest the registry
 named, the manifest digest is printed so the caller can pin `image@sha256:...`, and nothing is
@@ -61,6 +64,8 @@ def split_ref(ref):
     host, rest = ref.split("/", 1)
     if "@" in rest:
         repo, tag = rest.split("@", 1)
+        if ":" in repo.rsplit("/", 1)[-1]:
+            repo = repo.rsplit(":", 1)[0]
     elif ":" in rest.rsplit("/", 1)[-1]:
         repo, tag = rest.rsplit(":", 1)
     else:
@@ -127,6 +132,11 @@ def main(argv=None):
     ap.add_argument("--dest", default=os.path.join(ROOT, "downloads", "_images"))
     ap.add_argument("--platform", default="linux/amd64")
     a = ap.parse_args(argv)
+    from megasamples import container_engine
+    if container_engine.podman():
+        # Podman's importer preserves index/digest references. Its OCI-archive loader rejects an
+        # index-pinned name on the single-platform archive used for Docker's IPv4 workaround.
+        return subprocess.run(["docker", "pull", "--platform", a.platform, a.ref]).returncode
     host, repo, tag = split_ref(a.ref)
     dest = os.path.join(a.dest, repo.replace("/", "_") + "_" + tag.replace(":", "_"))
     os.makedirs(dest, exist_ok=True)
@@ -174,4 +184,4 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
