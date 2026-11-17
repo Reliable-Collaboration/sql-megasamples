@@ -12,6 +12,11 @@ and the required client head `a83255d4ddaf26265c26fd1a18c04c2555e8b433`. This br
 Oracle native verification remains **Not run, pending the owner's decision on Oracle's Free Use Terms**.
 No Oracle database was started or terms accepted. The merged PR description records this disposition.
 
+The dataset follow-up is draft [PR #11](https://github.com/Reliable-Collaboration/sql-megasamples/pull/11).
+It remains **open and unmerged** because the unchanged MySQL and SQLite full-image cold-readiness
+gates Failed. There is no dataset merge commit. Resolve and rerun those gates before marking
+it ready or merging with a merge commit. The supported data remains loaded in isolation.
+
 ## BTS source and pin
 
 The original [upstream lookup](https://www.transtats.bts.gov/Download_Lookup.asp?Y11x72=Y_NVecbeg)

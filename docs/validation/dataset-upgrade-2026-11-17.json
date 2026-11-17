@@ -1917,6 +1917,18 @@
     "note": "Per-database MySQL allocated blocks, PostgreSQL pg_database_size, SQLite both file copies. Excludes shared WAL, engine overhead, retained rollback images/volumes and old layers.",
     "read_at": "2026-11-17T10:10:25.279967+00:00"
   },
+  "dataset_pr": {
+    "baseRefName": "main",
+    "headRefName": "upgrade/bts-wwi-owner-approved",
+    "headRefOid": "2493f283ea51ca036232eecad250d0b66ea9a9ed",
+    "isDraft": true,
+    "mergeCommit": null,
+    "number": 11,
+    "read_at": "2026-11-17T11:01:59.861345+00:00",
+    "state": "OPEN",
+    "statusCheckRollup": [],
+    "url": "https://github.com/Reliable-Collaboration/sql-megasamples/pull/11"
+  },
   "final_tracked_assets": {
     "command": [
       ".venv/bin/python",
@@ -2573,6 +2585,10 @@
       "bytes": 458,
       "sha256": "684887b016ac4ebb55629555d09b1dc50d78cb318495994ec8992860133643ec"
     },
+    "commit.log": {
+      "bytes": 944,
+      "sha256": "c7fc0f0116abbc9e3e9fb24d2647d40f15f9a1bc8426b7432e2edcca7d569f7a"
+    },
     "console-deep.log": {
       "bytes": 70,
       "sha256": "f5aa010f866d3b84855ce5659ac3a7c09f8561386dc84c2cff7f9594c3a54f14"
@@ -2810,7 +2826,7 @@
       "sha256": "149e983c325e1215d8fe411fd58fb9c0fa38bc5dfa119c4a6a92d44ee61e3e10"
     }
   },
-  "recorded_at": "2026-11-17T10:59:35.807846+00:00",
+  "recorded_at": "2026-11-17T11:02:24.744241+00:00",
   "repository_gate": {
     "command": [
       "make",
@@ -6578,6 +6594,16 @@
     "observed_readiness_seconds": 38.2,
     "read_at": "2026-11-17T10:48:40.939570+00:00",
     "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/d97445d2c9d9d4b0c81697f5acb7408b7ae6364e/megasamples/engines/sqlite/image_test.py#L19"
+  },
+  "staged_credentials_scan": {
+    "files_scanned": 34,
+    "generated_passwords_absent": true,
+    "initial_attempt": "Failed: an unchanged short public test fixture value also matched ordinary source identifiers/prose; classification now requires the exact password default already in the base commit",
+    "public_fixture_exception": [
+      "MYSQL_ROOT_PASSWORD"
+    ],
+    "read_at": "2026-11-17T11:00:38.197081+00:00",
+    "status": "Passed"
   },
   "test_first": {
     "bts_actual_load_before_expectation_refresh": {

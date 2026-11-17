@@ -1759,7 +1759,7 @@
     "oracle": "Not run, pending the owner's decision on Oracle's Free Use Terms",
     "overall_validation": "Failed",
     "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
-    "recorded_at": "2026-11-17T10:58:42.308486+00:00",
+    "recorded_at": "2026-11-17T11:01:59.984454+00:00",
     "summary": "Five Passed, four Unsupported by repository generated-expression guard"
   },
   "duckdb_extensions": {
@@ -3646,6 +3646,11 @@
       "status": "Passed"
     },
     "mysql:bts_ontime": {
+      "previous_observation": {
+        "reason": "Follow-up build, runtime, reset and console validation Passed",
+        "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+        "status": "Passed"
+      },
       "reason": "Follow-up build, runtime, reset and console validation Passed",
       "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
       "status": "Passed"
@@ -3776,11 +3781,21 @@
       "status": "Passed"
     },
     "mysql:wideworldimporters": {
+      "previous_observation": {
+        "reason": "Follow-up build, runtime, reset and console validation Passed",
+        "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+        "status": "Passed"
+      },
       "reason": "Follow-up build, runtime, reset and console validation Passed",
       "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
       "status": "Passed"
     },
     "mysql:wideworldimporters_dw": {
+      "previous_observation": {
+        "reason": "Follow-up build, runtime, reset and console validation Passed",
+        "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+        "status": "Passed"
+      },
       "reason": "Follow-up build, runtime, reset and console validation Passed",
       "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
       "status": "Passed"
@@ -3811,6 +3826,11 @@
       "status": "Passed"
     },
     "postgres:bts_ontime": {
+      "previous_observation": {
+        "reason": "Repository generated-clock expression guard: CAST/LEFT/MAKETIME/RIGHT are not translated.",
+        "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+        "status": "Unsupported"
+      },
       "reason": "Repository generated-clock expression guard: CAST/LEFT/MAKETIME/RIGHT are not translated.",
       "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
       "status": "Unsupported"
@@ -3941,11 +3961,21 @@
       "status": "Passed"
     },
     "postgres:wideworldimporters": {
+      "previous_observation": {
+        "reason": "Repository generated-column guard rejects application_people.searchname (CONCAT).",
+        "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+        "status": "Unsupported"
+      },
       "reason": "Repository generated-column guard rejects application_people.searchname (CONCAT).",
       "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
       "status": "Unsupported"
     },
     "postgres:wideworldimporters_dw": {
+      "previous_observation": {
+        "reason": "Follow-up build, runtime, reset and console validation Passed",
+        "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+        "status": "Passed"
+      },
       "reason": "Follow-up build, runtime, reset and console validation Passed",
       "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
       "status": "Passed"
@@ -3976,6 +4006,11 @@
       "status": "Passed"
     },
     "sqlite:bts_ontime": {
+      "previous_observation": {
+        "reason": "Repository generated-clock expression guard: CAST/LEFT/MAKETIME/RIGHT are not translated.",
+        "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+        "status": "Unsupported"
+      },
       "reason": "Repository generated-clock expression guard: CAST/LEFT/MAKETIME/RIGHT are not translated.",
       "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
       "status": "Unsupported"
@@ -4106,11 +4141,21 @@
       "status": "Passed"
     },
     "sqlite:wideworldimporters": {
+      "previous_observation": {
+        "reason": "Repository generated-column guard rejects application_people.searchname (CONCAT).",
+        "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+        "status": "Unsupported"
+      },
       "reason": "Repository generated-column guard rejects application_people.searchname (CONCAT).",
       "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
       "status": "Unsupported"
     },
     "sqlite:wideworldimporters_dw": {
+      "previous_observation": {
+        "reason": "Follow-up build, runtime, reset and console validation Passed",
+        "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
+        "status": "Passed"
+      },
       "reason": "Follow-up build, runtime, reset and console validation Passed",
       "receipt": "docs/validation/dataset-upgrade-2026-11-17.json",
       "status": "Passed"

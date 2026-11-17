@@ -105,8 +105,8 @@ CLIENTS_PR=${CLIENTS_PR:-10}
 APPROVED_CLIENTS_MERGE=$(gh pr view "$CLIENTS_PR" --repo Reliable-Collaboration/sql-megasamples \
   --json mergeCommit --jq '.mergeCommit.oid // empty')
 test -n "$APPROVED_CLIENTS_MERGE"
-# Set DATASETS_PR to the merged PR linked in docs/dataset-upgrade-evidence.md.
-: "${DATASETS_PR:?set the reviewed owner-approved dataset PR number}"
+# PR 11 is currently draft: this check must refuse it until the failed image gates are resolved.
+DATASETS_PR=${DATASETS_PR:-11}
 APPROVED_UPGRADE_MERGE=$(gh pr view "$DATASETS_PR" --repo Reliable-Collaboration/sql-megasamples \
   --json mergeCommit --jq '.mergeCommit.oid // empty')
 test -n "$APPROVED_UPGRADE_MERGE"
