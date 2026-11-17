@@ -1,0 +1,1718 @@
+{
+  "append_selector_reset": {
+    "added_table_removed": true,
+    "core_row_restored": true,
+    "seconds": 317.97,
+    "selectors": [
+      "mysql:dvdstore_reviews",
+      "postgres:dvdstore_reviews",
+      "sqlite:dvdstore_reviews"
+    ],
+    "sqlite_bytes_restored": true,
+    "status": "Passed"
+  },
+  "branch_ancestry": {
+    "fix/fetch-start-time": {
+      "branch_retained": true,
+      "contained_in_main": true,
+      "tip": "1d49c5691061446e4f39295118681a61e9acc07d"
+    },
+    "live-artifacts": {
+      "branch_retained": true,
+      "contained_in_main": true,
+      "tip": "6eab6dbc75f70d7b5e803eed317937e463e13440"
+    },
+    "release-2": {
+      "branch_retained": true,
+      "contained_in_main": true,
+      "tip": "5aedb80635f94a424156afcf9be4b57544378111"
+    },
+    "reset-command": {
+      "branch_retained": true,
+      "contained_in_main": true,
+      "tip": "86b000c7d4989fbf3e3c8fa84a341d2822f1e84c"
+    },
+    "rootless-podman": {
+      "branch_retained": true,
+      "contained_in_main": true,
+      "tip": "b7bf7fae685888b0fee9ff03d1e4301a4ea6fae4"
+    }
+  },
+  "build_port_results": {
+    "mysql:adventureworks": {
+      "log": "build/upgrade-evidence/final-mysql-adventureworks.log",
+      "returncode": 0,
+      "seconds": 129.0,
+      "status": "Passed"
+    },
+    "mysql:adventureworks_dw": {
+      "log": "build/upgrade-evidence/final-mysql-adventureworks_dw.log",
+      "returncode": 0,
+      "seconds": 54.81,
+      "status": "Passed"
+    },
+    "mysql:adventureworks_lt": {
+      "log": "build/upgrade-evidence/final-mysql-adventureworks_lt.log",
+      "returncode": 0,
+      "seconds": 13.86,
+      "status": "Passed"
+    },
+    "mysql:bts_ontime": {
+      "missing": [
+        "bts_ontime/L_AIRPORT.csv"
+      ],
+      "status": "Not run"
+    },
+    "mysql:chicago_crimes": {
+      "log": "build/upgrade-evidence/final-mysql-chicago_crimes.log",
+      "returncode": 0,
+      "seconds": 12.87,
+      "status": "Passed"
+    },
+    "mysql:chicago_crimes_full": {
+      "log": "build/upgrade-evidence/final-mysql-chicago_crimes_full.log",
+      "returncode": 0,
+      "seconds": 82.55,
+      "status": "Passed"
+    },
+    "mysql:chinook": {
+      "log": "build/upgrade-evidence/final-mysql-chinook.log",
+      "returncode": 0,
+      "seconds": 7.23,
+      "status": "Passed"
+    },
+    "mysql:contoso": {
+      "log": "build/upgrade-evidence/final-mysql-contoso.log",
+      "returncode": 0,
+      "seconds": 15.29,
+      "status": "Passed"
+    },
+    "mysql:contoso_10m": {
+      "log": "build/upgrade-evidence/final-mysql-contoso_10m.log",
+      "returncode": 0,
+      "seconds": 1014.33,
+      "status": "Passed"
+    },
+    "mysql:contoso_1m": {
+      "log": "build/upgrade-evidence/final-mysql-contoso_1m.log",
+      "returncode": 0,
+      "seconds": 40.04,
+      "status": "Passed"
+    },
+    "mysql:dvdstore": {
+      "log": "build/upgrade-evidence/final-mysql-dvdstore.log",
+      "returncode": 0,
+      "seconds": 6.97,
+      "status": "Passed"
+    },
+    "mysql:dvdstore_reviews": {
+      "returncode": 0,
+      "seconds": 38.59,
+      "status": "Passed"
+    },
+    "mysql:employees": {
+      "log": "build/upgrade-evidence/final-mysql-employees.log",
+      "returncode": 0,
+      "seconds": 951.23,
+      "status": "Passed"
+    },
+    "mysql:enron": {
+      "returncode": 0,
+      "seconds": 46.25,
+      "status": "Passed"
+    },
+    "mysql:enron_full": {
+      "returncode": 0,
+      "seconds": 533.93,
+      "status": "Passed"
+    },
+    "mysql:jaffle_shop": {
+      "log": "build/upgrade-evidence/final-mysql-jaffle_shop.log",
+      "returncode": 0,
+      "seconds": 2.07,
+      "status": "Passed"
+    },
+    "mysql:lahman": {
+      "log": "build/upgrade-evidence/final-mysql-lahman.log",
+      "returncode": 0,
+      "seconds": 21.47,
+      "status": "Passed"
+    },
+    "mysql:northwind": {
+      "log": "build/upgrade-evidence/final-mysql-northwind.log",
+      "returncode": 0,
+      "seconds": 36.4,
+      "status": "Passed"
+    },
+    "mysql:nyc_taxi": {
+      "log": "build/upgrade-evidence/final-mysql-nyc_taxi.log",
+      "returncode": 0,
+      "seconds": 8.35,
+      "status": "Passed"
+    },
+    "mysql:nyc_taxi_yellow": {
+      "returncode": 0,
+      "seconds": 70.29,
+      "status": "Passed"
+    },
+    "mysql:oracle_co": {
+      "log": "build/upgrade-evidence/final-mysql-oracle_co.log",
+      "returncode": 0,
+      "seconds": 11.69,
+      "status": "Passed"
+    },
+    "mysql:oracle_hr": {
+      "log": "build/upgrade-evidence/final-mysql-oracle_hr.log",
+      "returncode": 0,
+      "seconds": 4.99,
+      "status": "Passed"
+    },
+    "mysql:oracle_oe": {
+      "log": "build/upgrade-evidence/final-mysql-oracle_oe.log",
+      "returncode": 0,
+      "seconds": 22.43,
+      "status": "Passed"
+    },
+    "mysql:oracle_sh": {
+      "returncode": 0,
+      "seconds": 250.55,
+      "status": "Passed"
+    },
+    "mysql:pubs": {
+      "log": "build/upgrade-evidence/final-mysql-pubs.log",
+      "returncode": 0,
+      "seconds": 10.8,
+      "status": "Passed"
+    },
+    "mysql:sakila": {
+      "log": "build/upgrade-evidence/final-mysql-sakila.log",
+      "returncode": 0,
+      "seconds": 26.6,
+      "status": "Passed"
+    },
+    "mysql:smallsets": {
+      "log": "build/upgrade-evidence/final-mysql-smallsets.log",
+      "returncode": 0,
+      "seconds": 3.46,
+      "status": "Passed"
+    },
+    "mysql:stackexchange_beer": {
+      "log": "build/upgrade-evidence/final-mysql-stackexchange_beer.log",
+      "returncode": 0,
+      "seconds": 13.27,
+      "status": "Passed"
+    },
+    "mysql:stackexchange_dba": {
+      "returncode": 0,
+      "seconds": 33.27,
+      "status": "Passed"
+    },
+    "mysql:wideworldimporters": {
+      "reason": "explicit SQL Server EULA acceptance/export pending",
+      "status": "Not run"
+    },
+    "mysql:wideworldimporters_dw": {
+      "reason": "explicit SQL Server EULA acceptance/export pending",
+      "status": "Not run"
+    },
+    "mysql:wikipedia_simple": {
+      "log": "build/upgrade-evidence/final-mysql-wikipedia_simple.log",
+      "returncode": 0,
+      "seconds": 13.96,
+      "status": "Passed"
+    },
+    "mysql:wikipedia_simple_full": {
+      "log": "build/upgrade-evidence/final-mysql-wikipedia_simple_full.log",
+      "returncode": 0,
+      "seconds": 200.65,
+      "status": "Passed"
+    },
+    "postgres:adventureworks": {
+      "log": "build/upgrade-evidence/final-postgres-adventureworks.log",
+      "returncode": 0,
+      "seconds": 77.37,
+      "status": "Passed"
+    },
+    "postgres:adventureworks_dw": {
+      "log": "build/upgrade-evidence/final-postgres-adventureworks_dw.log",
+      "returncode": 0,
+      "seconds": 42.0,
+      "status": "Passed"
+    },
+    "postgres:adventureworks_lt": {
+      "log": "build/upgrade-evidence/final-postgres-adventureworks_lt.log",
+      "returncode": 0,
+      "seconds": 13.63,
+      "status": "Passed"
+    },
+    "postgres:bts_ontime": {
+      "reason": "hub Not run",
+      "status": "Not run"
+    },
+    "postgres:chicago_crimes": {
+      "log": "build/upgrade-evidence/final-postgres-chicago_crimes.log",
+      "returncode": 0,
+      "seconds": 9.52,
+      "status": "Passed"
+    },
+    "postgres:chicago_crimes_full": {
+      "log": "build/upgrade-evidence/final-postgres-chicago_crimes_full.log",
+      "returncode": 0,
+      "seconds": 191.97,
+      "status": "Passed"
+    },
+    "postgres:chinook": {
+      "log": "build/upgrade-evidence/final-postgres-chinook.log",
+      "returncode": 0,
+      "seconds": 9.01,
+      "status": "Passed"
+    },
+    "postgres:contoso": {
+      "log": "build/upgrade-evidence/final-postgres-contoso.log",
+      "returncode": 0,
+      "seconds": 21.85,
+      "status": "Passed"
+    },
+    "postgres:contoso_10m": {
+      "log": "build/upgrade-evidence/final-postgres-contoso_10m.log",
+      "returncode": 0,
+      "seconds": 706.34,
+      "status": "Passed"
+    },
+    "postgres:contoso_1m": {
+      "log": "build/upgrade-evidence/final-postgres-contoso_1m.log",
+      "returncode": 0,
+      "seconds": 72.33,
+      "status": "Passed"
+    },
+    "postgres:dvdstore": {
+      "log": "build/upgrade-evidence/final-postgres-dvdstore.log",
+      "returncode": 0,
+      "seconds": 8.55,
+      "status": "Passed"
+    },
+    "postgres:dvdstore_reviews": {
+      "returncode": 0,
+      "seconds": 36.62,
+      "status": "Passed"
+    },
+    "postgres:employees": {
+      "log": "build/upgrade-evidence/final-postgres-employees.log",
+      "returncode": 0,
+      "seconds": 83.95,
+      "status": "Passed"
+    },
+    "postgres:enron": {
+      "returncode": 0,
+      "seconds": 15.9,
+      "status": "Passed"
+    },
+    "postgres:enron_full": {
+      "log": "build/upgrade-evidence/recovered-postgres-enron-full-native-limit.log",
+      "returncode": 0,
+      "seconds": 489.63,
+      "status": "Passed",
+      "unsupported": [
+        "message.ft_message: native PostgreSQL tsvector size limit; all message bytes retained"
+      ]
+    },
+    "postgres:jaffle_shop": {
+      "log": "build/upgrade-evidence/final-postgres-jaffle_shop.log",
+      "returncode": 0,
+      "seconds": 3.97,
+      "status": "Passed"
+    },
+    "postgres:lahman": {
+      "log": "build/upgrade-evidence/final-postgres-lahman.log",
+      "returncode": 0,
+      "seconds": 44.07,
+      "status": "Passed"
+    },
+    "postgres:northwind": {
+      "log": "build/upgrade-evidence/final-postgres-northwind.log",
+      "returncode": 0,
+      "seconds": 28.57,
+      "status": "Passed"
+    },
+    "postgres:nyc_taxi": {
+      "log": "build/upgrade-evidence/final-postgres-nyc_taxi.log",
+      "returncode": 0,
+      "seconds": 10.87,
+      "status": "Passed"
+    },
+    "postgres:nyc_taxi_yellow": {
+      "returncode": 0,
+      "seconds": 115.4,
+      "status": "Passed"
+    },
+    "postgres:oracle_co": {
+      "log": "build/upgrade-evidence/final-postgres-oracle_co.log",
+      "returncode": 0,
+      "seconds": 12.86,
+      "status": "Passed"
+    },
+    "postgres:oracle_hr": {
+      "log": "build/upgrade-evidence/final-postgres-oracle_hr.log",
+      "returncode": 0,
+      "seconds": 6.68,
+      "status": "Passed"
+    },
+    "postgres:oracle_oe": {
+      "log": "build/upgrade-evidence/final-postgres-oracle_oe.log",
+      "returncode": 0,
+      "seconds": 17.4,
+      "status": "Passed"
+    },
+    "postgres:oracle_sh": {
+      "returncode": 0,
+      "seconds": 33.47,
+      "status": "Passed"
+    },
+    "postgres:pubs": {
+      "log": "build/upgrade-evidence/final-postgres-pubs.log",
+      "returncode": 0,
+      "seconds": 10.33,
+      "status": "Passed"
+    },
+    "postgres:sakila": {
+      "log": "build/upgrade-evidence/final-postgres-sakila.log",
+      "returncode": 0,
+      "seconds": 29.53,
+      "status": "Passed"
+    },
+    "postgres:smallsets": {
+      "log": "build/upgrade-evidence/final-postgres-smallsets.log",
+      "returncode": 0,
+      "seconds": 4.96,
+      "status": "Passed"
+    },
+    "postgres:stackexchange_beer": {
+      "log": "build/upgrade-evidence/final-postgres-stackexchange_beer.log",
+      "returncode": 0,
+      "seconds": 18.18,
+      "status": "Passed"
+    },
+    "postgres:stackexchange_dba": {
+      "returncode": 0,
+      "seconds": 482.79,
+      "status": "Passed"
+    },
+    "postgres:wideworldimporters": {
+      "reason": "hub Not run",
+      "status": "Not run"
+    },
+    "postgres:wideworldimporters_dw": {
+      "reason": "hub Not run",
+      "status": "Not run"
+    },
+    "postgres:wikipedia_simple": {
+      "log": "build/upgrade-evidence/final-postgres-wikipedia_simple.log",
+      "returncode": 0,
+      "seconds": 59.61,
+      "status": "Passed"
+    },
+    "postgres:wikipedia_simple_full": {
+      "log": "build/upgrade-evidence/final-postgres-wikipedia_simple_full.log",
+      "returncode": 0,
+      "seconds": 986.21,
+      "status": "Passed"
+    },
+    "sqlite:adventureworks": {
+      "log": "build/upgrade-evidence/final-sqlite-adventureworks.log",
+      "returncode": 0,
+      "seconds": 26.38,
+      "status": "Passed"
+    },
+    "sqlite:adventureworks_dw": {
+      "log": "build/upgrade-evidence/final-sqlite-adventureworks_dw.log",
+      "returncode": 0,
+      "seconds": 70.6,
+      "status": "Passed"
+    },
+    "sqlite:adventureworks_lt": {
+      "log": "build/upgrade-evidence/final-sqlite-adventureworks_lt.log",
+      "returncode": 0,
+      "seconds": 3.06,
+      "status": "Passed"
+    },
+    "sqlite:bts_ontime": {
+      "reason": "hub Not run",
+      "status": "Not run"
+    },
+    "sqlite:chicago_crimes": {
+      "log": "build/upgrade-evidence/final-sqlite-chicago_crimes.log",
+      "returncode": 0,
+      "seconds": 10.67,
+      "status": "Passed"
+    },
+    "sqlite:chicago_crimes_full": {
+      "log": "build/upgrade-evidence/final-sqlite-chicago_crimes_full.log",
+      "returncode": 0,
+      "seconds": 299.56,
+      "status": "Passed"
+    },
+    "sqlite:chinook": {
+      "log": "build/upgrade-evidence/final-sqlite-chinook.log",
+      "returncode": 0,
+      "seconds": 1.7,
+      "status": "Passed"
+    },
+    "sqlite:contoso": {
+      "log": "build/upgrade-evidence/final-sqlite-contoso.log",
+      "returncode": 0,
+      "seconds": 17.52,
+      "status": "Passed"
+    },
+    "sqlite:contoso_10m": {
+      "log": "build/upgrade-evidence/final-sqlite-contoso_10m.log",
+      "returncode": 0,
+      "seconds": 1335.38,
+      "status": "Passed"
+    },
+    "sqlite:contoso_1m": {
+      "log": "build/upgrade-evidence/final-sqlite-contoso_1m.log",
+      "returncode": 0,
+      "seconds": 122.16,
+      "status": "Passed"
+    },
+    "sqlite:dvdstore": {
+      "log": "build/upgrade-evidence/final-sqlite-dvdstore.log",
+      "returncode": 0,
+      "seconds": 3.56,
+      "status": "Passed"
+    },
+    "sqlite:dvdstore_reviews": {
+      "returncode": 0,
+      "seconds": 48.29,
+      "status": "Passed"
+    },
+    "sqlite:employees": {
+      "log": "build/upgrade-evidence/final-sqlite-employees.log",
+      "returncode": 0,
+      "seconds": 43.25,
+      "status": "Passed"
+    },
+    "sqlite:enron": {
+      "returncode": 0,
+      "seconds": 5.65,
+      "status": "Passed"
+    },
+    "sqlite:enron_full": {
+      "returncode": 0,
+      "seconds": 288.28,
+      "status": "Passed"
+    },
+    "sqlite:jaffle_shop": {
+      "log": "build/upgrade-evidence/final-sqlite-jaffle_shop.log",
+      "returncode": 0,
+      "seconds": 1.25,
+      "status": "Passed"
+    },
+    "sqlite:lahman": {
+      "log": "build/upgrade-evidence/final-sqlite-lahman.log",
+      "returncode": 0,
+      "seconds": 20.56,
+      "status": "Passed"
+    },
+    "sqlite:northwind": {
+      "log": "build/upgrade-evidence/final-sqlite-northwind.log",
+      "returncode": 0,
+      "seconds": 10.04,
+      "status": "Passed"
+    },
+    "sqlite:nyc_taxi": {
+      "log": "build/upgrade-evidence/final-sqlite-nyc_taxi.log",
+      "returncode": 0,
+      "seconds": 6.16,
+      "status": "Passed"
+    },
+    "sqlite:nyc_taxi_yellow": {
+      "returncode": 0,
+      "seconds": 187.02,
+      "status": "Passed"
+    },
+    "sqlite:oracle_co": {
+      "log": "build/upgrade-evidence/final-sqlite-oracle_co.log",
+      "returncode": 0,
+      "seconds": 5.1,
+      "status": "Passed"
+    },
+    "sqlite:oracle_hr": {
+      "log": "build/upgrade-evidence/final-sqlite-oracle_hr.log",
+      "returncode": 0,
+      "seconds": 1.61,
+      "status": "Passed"
+    },
+    "sqlite:oracle_oe": {
+      "log": "build/upgrade-evidence/final-sqlite-oracle_oe.log",
+      "returncode": 0,
+      "seconds": 5.64,
+      "status": "Passed"
+    },
+    "sqlite:oracle_sh": {
+      "returncode": 0,
+      "seconds": 58.73,
+      "status": "Passed"
+    },
+    "sqlite:pubs": {
+      "log": "build/upgrade-evidence/final-sqlite-pubs.log",
+      "returncode": 0,
+      "seconds": 2.18,
+      "status": "Passed"
+    },
+    "sqlite:sakila": {
+      "log": "build/upgrade-evidence/final-sqlite-sakila.log",
+      "returncode": 0,
+      "seconds": 5.57,
+      "status": "Passed"
+    },
+    "sqlite:smallsets": {
+      "log": "build/upgrade-evidence/final-sqlite-smallsets.log",
+      "returncode": 0,
+      "seconds": 1.51,
+      "status": "Passed"
+    },
+    "sqlite:stackexchange_beer": {
+      "log": "build/upgrade-evidence/final-sqlite-stackexchange_beer.log",
+      "returncode": 0,
+      "seconds": 6.33,
+      "status": "Passed"
+    },
+    "sqlite:stackexchange_dba": {
+      "returncode": 0,
+      "seconds": 235.49,
+      "status": "Passed"
+    },
+    "sqlite:wideworldimporters": {
+      "reason": "hub Not run",
+      "status": "Not run"
+    },
+    "sqlite:wideworldimporters_dw": {
+      "reason": "hub Not run",
+      "status": "Not run"
+    },
+    "sqlite:wikipedia_simple": {
+      "log": "build/upgrade-evidence/final-sqlite-wikipedia_simple.log",
+      "returncode": 0,
+      "seconds": 25.78,
+      "status": "Passed"
+    },
+    "sqlite:wikipedia_simple_full": {
+      "log": "build/upgrade-evidence/final-sqlite-wikipedia_simple_full.log",
+      "returncode": 0,
+      "seconds": 568.2,
+      "status": "Passed"
+    }
+  },
+  "build_tool_versions": {
+    "mysql-shell": "mysqlsh   Ver 26.10.0 for Linux on x86_64 - for MySQL 26.10.0 (MySQL Community Server (GPL))"
+  },
+  "candidate_branch": "upgrade/latest-stable-engines",
+  "captured_at": "2026-11-17T02:22:56.601882+00:00",
+  "containers": {
+    "megasamples-adminer": {
+      "Id": "5c8d4d6a17ca52833f774f234b5a02b3eb54c5557298dfe1daab9f64eb9fe03b",
+      "Image": "sha256:0961d539fc2d6ec91ccfa98feee7901ab17f6898a41e326f160c601db8b7812c",
+      "ports": {
+        "8080/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18082"
+          }
+        ]
+      },
+      "running": true,
+      "started_at": "2026-11-17T00:55:45.542285534Z"
+    },
+    "megasamples-cloudbeaver": {
+      "Id": "f0dd48b9e4db83b36d2a1e86edf62968aa54b6329486c1614bf379759f00a321",
+      "Image": "sha256:180959c2a6f3d13b85eba6138dabb1e62e0be064f75eb0c49f0e260ede0fb6b9",
+      "ports": {
+        "8978/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18084"
+          }
+        ]
+      },
+      "running": true,
+      "started_at": "2026-11-17T01:02:16.397340295Z"
+    },
+    "megasamples-dbgate": {
+      "Id": "2e4314332e46ad2aeecd55b8f1069764d52c0a0627757fe9f45f42593f8b80aa",
+      "Image": "sha256:ff6904c40dabf70d64e5d5c3e2713ec71266256828467ad75e7a93710c9766f6",
+      "ports": {
+        "3000/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18083"
+          }
+        ]
+      },
+      "running": true,
+      "started_at": "2026-11-17T01:02:16.44720487Z"
+    },
+    "megasamples-landing": {
+      "Id": "869bf2829cbb82d3f61aeeea05914959113186a4173962844eb668fe098a4971",
+      "Image": "sha256:53d8f012a1a7659f355c0930b4c8c8768a17a9f44a1d38d4fd7276a5096fcccd",
+      "ports": {
+        "80/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18080"
+          }
+        ]
+      },
+      "running": true,
+      "started_at": "2026-11-17T00:56:09.138941358Z"
+    },
+    "megasamples-mysql": {
+      "Id": "a51707159f66e10ca6f0dc9df1d9b01eb6471a868819768383e46f48c24b2019",
+      "Image": "sha256:77813c185ab5c5a07f0606e5f7291796a1d962d65f80d597b33d3994da696662",
+      "ports": {
+        "3306/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "13306"
+          }
+        ],
+        "33060/tcp": null
+      },
+      "running": true,
+      "started_at": "2026-11-17T00:55:43.339794598Z"
+    },
+    "megasamples-phpmyadmin": {
+      "Id": "2e2a2246c4a1df9614b89979934502e3c9afc3f1dd3545d658e224e00f32a20e",
+      "Image": "sha256:44538f24a868e530d65da12aa2bdf5a4daf210b5fc70e7453f0a6c575c30282f",
+      "ports": {
+        "80/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "18081"
+          }
+        ]
+      },
+      "running": true,
+      "started_at": "2026-11-17T00:55:45.466176142Z"
+    },
+    "megasamples-postgres": {
+      "Id": "2f4f7d562bb0fedff48215bec0fad7dab2dd5afd9aeacf35b61b56ca868f2506",
+      "Image": "sha256:6fbdfbdf91577dab053028f28352c3cc09d734e3ab9989d868315f172d8bd0b6",
+      "ports": {
+        "5432/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "15432"
+          }
+        ]
+      },
+      "running": true,
+      "started_at": "2026-11-17T00:55:43.409329899Z"
+    },
+    "megasamples-sqlite": {
+      "Id": "4859953e41aeafd53c8f5d17c24e8158ed0f6aaefa66aded36f587b962eedc81",
+      "Image": "sha256:d314f2d8343fe43f48f6c9ed556b9087d96715cb2f5f741e2085541e4f22b67a",
+      "ports": {},
+      "running": true,
+      "started_at": "2026-11-17T00:55:43.289173304Z"
+    }
+  },
+  "dataset_snapshot_build_id": "41773f72f36ada673c87fa71b3a4ed3e84e90d17",
+  "evidence_sha256": {
+    "before-build-tool-capture-stack-rehearse-resets.log": "d508cc74cbc50945aa179080092bb4183971315d753858a8ea53fd3f7c1de795",
+    "before-compose-start-compatibility-persistence-stop-start.log": "b9ba4b84eacece3a4d85bb9c73cd44079fef9f1b1f266fab7d5aaaebb7c371f2",
+    "before-compose-start-compatibility-stack-rehearse-persistence.log": "cbfd4f55c789a4ca044ebebf776daa68fe77b146383695a98b56683397822d68",
+    "before-current-source-rerun-final-mysql-runtime-results.json": "120384e0ffca9de64ef01638498c01714ef93f36adfaf9a44fcc674a175df9bf",
+    "before-pythonpath-stack-check-published-endpoints.log": "59cd6937ac09299245e7de591517bb2b8c8bbdb80289eb04bcaefbf40e72f717",
+    "before-wal-stack-image-tests.log": "c2526640e9b17d0d216f26b87f4517c01b7261796772332e7d0bafb03f472dcd",
+    "committed-generated-credential-check.json": "f347623065018e2c3bc12204286782d83e7db7a308e166c8c38b8c4057a273c8",
+    "console-release-tags.json": "56f2e8b8e96cab35122283fdf27d8cc1a2adbfca192b55a9628f5e65221d3896",
+    "dataset-results.json": "44f338a95f28a1659e623432edb331cdadd647e4079e713cb2ed271c65adb49e",
+    "final-branch-ancestry.json": "605c4f6240d138a06ff4e7b62f438a623697476f386fc2df42cca646fd219c1b",
+    "final-console-tests.log": "b14365e89f57c5ff61bd860f486d58bbeb42ec24da785b09c85c490f38b3988d",
+    "final-full-manifest-fetch-all.log": "1d9b15b813f56a88f322c256dad1fb09fac3c288f5109fdb0ed200d3f4cf7332",
+    "final-live-isolation-comparison.log": "c33959dc95380a6211199d11db204fc78a1904a4817f02d9b64cb342ca2b0c9f",
+    "final-mysql-runtime-mysql-adventureworks.log": "8fef20217cb7e6692ff976a8a7b918bb101106fa6be49fa1fd1263fc60d62294",
+    "final-mysql-runtime-mysql-adventureworks_dw.log": "d7da16d811e3c37bc002eb1dc724a24103d20f1e6d7344b2ebb3e9fb7572e87e",
+    "final-mysql-runtime-mysql-adventureworks_lt.log": "52edeee0fa291889df289c890dc75f9fb35577ec21b2d4e45def166026c61b45",
+    "final-mysql-runtime-mysql-chicago_crimes.log": "09ce55a319a844e001291b723d7e83702ce6e668d8342c911403060fdcc80c1d",
+    "final-mysql-runtime-mysql-chicago_crimes_full.log": "ae6d2f0a250084ddecc60e087f380693f550120a2824b54ed9e09898fed6f051",
+    "final-mysql-runtime-mysql-chinook.log": "c4e3d928202a083b243555571c269824e1d3c10d80d3f95b3957e76a7d0194d4",
+    "final-mysql-runtime-mysql-contoso.log": "b0d7b2c4d55f148c711eba378ed9cd8d235166ed7f1170d988751ffdd5cd8411",
+    "final-mysql-runtime-mysql-contoso_10m.log": "d648d6a405581b87e2f5cd7925ebadfbac20c8559e67afcdd81cf136521fb722",
+    "final-mysql-runtime-mysql-contoso_1m.log": "f1770e2c8f70c96c8f20db140544d66bec8bfa151d12e8ff872a34744bf198fe",
+    "final-mysql-runtime-mysql-dvdstore.log": "dfa85766bfb57b0095cbaf60ca8477e921c119cd87f917828c4570cff5189d49",
+    "final-mysql-runtime-mysql-dvdstore_reviews.log": "c3a3fee2d6642d25611804c985c261bd9761892a5f06aa0f3fc1b0fd7ff2a145",
+    "final-mysql-runtime-mysql-employees.log": "e7e2f2ac4da5c3af833cc31ed3e175459b86fed624174d7baad698f200905d81",
+    "final-mysql-runtime-mysql-enron.log": "26514d6617bd0ae1840c0d7fbfbea2d550ac7ffe0c065eec5caafc579772a167",
+    "final-mysql-runtime-mysql-enron_full.log": "54992d423b913fde82ae9617acbf933cebdc93c8417bacb20e81cb1ea19c5db3",
+    "final-mysql-runtime-mysql-jaffle_shop.log": "df1283a148c7ae542808dc988d6c4193947aaf846f52e94c80961f702050769a",
+    "final-mysql-runtime-mysql-lahman.log": "ad542e6ffaab36f5e385a498d0f13ef8dd0dcb211030ddbb052c8ca66f93bd09",
+    "final-mysql-runtime-mysql-northwind.log": "ed49b4f51e194b3675186f2263a5d0015ce951e50a3cc054b7b186eb3bc535d2",
+    "final-mysql-runtime-mysql-nyc_taxi.log": "6ef23a9cf7a055ea3b441923fe216a7f3d2dc6316eca4e5dbc0ca67a6348efff",
+    "final-mysql-runtime-mysql-nyc_taxi_yellow.log": "cea9cdb63a1f2fabe5791199e3679d3f45e9f5938d4c9b597371d6047f5f42b5",
+    "final-mysql-runtime-mysql-oracle_co.log": "0dcbe5fdad4db5062deda8bde074a15268b348286c3e7d05fae769b3d53ee06f",
+    "final-mysql-runtime-mysql-oracle_hr.log": "db9e7c6f3d3c65c4317dba3d5b5160c928151ba1af49ca8f5e0cd5f4ee459177",
+    "final-mysql-runtime-mysql-oracle_oe.log": "04e5376f6a065073fa8582107b068ebab55f406a999ba104f4b14e1e19f3c164",
+    "final-mysql-runtime-mysql-oracle_sh.log": "1fdfd36c002defdf5e58ee3c9e4c8ae31ca4a890b7af99ddc8301ee25af879f8",
+    "final-mysql-runtime-mysql-pubs.log": "8424ef7e2c166f81225cd8efe710cf0e8b826e03321e1e4be593ff0ca580cbb6",
+    "final-mysql-runtime-mysql-sakila.log": "20082067b04863f48be4dd613ab95c69d17d63233f890b5dfbb15650b63c6d72",
+    "final-mysql-runtime-mysql-smallsets.log": "d7597da416592176fc2db256ee1295c24ad3f9497a8d853fd9b6326962145093",
+    "final-mysql-runtime-mysql-stackexchange_beer.log": "8c93f6853744ada254d587fab72a6fe67fe6fc5119fc77f847e79e1686b67ab6",
+    "final-mysql-runtime-mysql-stackexchange_dba.log": "ce5d0d1d5bed59e1b2282c120c0549b5a09d2ddf7003a3b0b75db5546733f6a5",
+    "final-mysql-runtime-mysql-wikipedia_simple.log": "672cc88443d493b13afe98a5da782983ca65741ba822d98ccbee4e6aff3691eb",
+    "final-mysql-runtime-mysql-wikipedia_simple_full.log": "8000d352da57fb0938d079e2b6e6ff99d0370935ed0b3864a7f9ec1993470896",
+    "final-mysql-runtime-results.json": "2e80a51767a2882f29666502b6dbd315d8f00a4191bd1c3df8d503a6c743cd11",
+    "final-postgres-runtime-postgres-adventureworks.log": "9912ff253f47bdf82b334d154ee3212a02f458728c2e82452949523f144ed778",
+    "final-postgres-runtime-postgres-adventureworks_dw.log": "80101e3b8d9961b9e55bdc26c48f0ca8a995b83e37b633b4ffb8fc335904c6a7",
+    "final-postgres-runtime-postgres-adventureworks_lt.log": "448d20cdbdf121c5b7ae760e232289eb729c8ba1add7b42d019c52997ffb9b4b",
+    "final-postgres-runtime-postgres-chicago_crimes.log": "7e8aa46b56bb518f5a6727f2a6c6b0d118cc195938664f7aa41edd8a48ba9af3",
+    "final-postgres-runtime-postgres-chicago_crimes_full.log": "63f91030294f3abcdc7a4038f746b3bf9616aa2f9692314d39266f1215dc2ac8",
+    "final-postgres-runtime-postgres-chinook.log": "7a391389192c007d7287da87ca3704b17996c58393fb913f23a30b8089f9ae10",
+    "final-postgres-runtime-postgres-contoso.log": "4864536d6b71b399777cdbd77195014e553fddeb4ff693913b1fd348a93358df",
+    "final-postgres-runtime-postgres-contoso_10m.log": "d50276ac2b9517e7fd63a42a191894a583ce80da02154d0375a8a262a8f46fb6",
+    "final-postgres-runtime-postgres-contoso_1m.log": "384edbf24491fb4362d62caeac850e21c662a5dd4374ab9b1e5c494f8494a5af",
+    "final-postgres-runtime-postgres-dvdstore.log": "83b599f17f472c8695f2cb911909e04e1b9444b00cf7a4230d4a7720f514b897",
+    "final-postgres-runtime-postgres-dvdstore_reviews.log": "48f6e5992a898cc48f9e8c7d9c23e3785aeb6cdd89f023c3f423d9f405484289",
+    "final-postgres-runtime-postgres-employees.log": "812397bc41fd756c22e3cf9629663d63cc8ff201f2551afc0b1d9ebca82ed265",
+    "final-postgres-runtime-postgres-enron.log": "429aeee36ebc0b09dd36248fb4308b8e8f48ddc1043f31db3fad4e38bb4b2960",
+    "final-postgres-runtime-postgres-enron_full.log": "9091df2f36107c13b61109f8ba1a5bf8201d4905da5a6c00876e1d2c5aae445e",
+    "final-postgres-runtime-postgres-jaffle_shop.log": "db394ab750a366489548bdd8a286bab32362d7ec79b3ae8cc852b4bb528223a3",
+    "final-postgres-runtime-postgres-lahman.log": "ba255604b30015ff8c898b9bfe6faa226bd3d678e7be99b968de2ac1466b8a0d",
+    "final-postgres-runtime-postgres-northwind.log": "956e43c534ed8380978ff964438cfb71558f17aed886dae6a2a57cd26f0b3427",
+    "final-postgres-runtime-postgres-nyc_taxi.log": "24fe38db3c5df867525a6277ae898ca33ecd17a12aea5eed96e93c55388cc89b",
+    "final-postgres-runtime-postgres-nyc_taxi_yellow.log": "ebf4d05e211641a74a3321a275db451c69cd084a5a2ce4409ae3adf469de7784",
+    "final-postgres-runtime-postgres-oracle_co.log": "cd35a1500291313dfc4c447cc0dd1560e3cc05c42d38621864d7c4933d7db5de",
+    "final-postgres-runtime-postgres-oracle_hr.log": "61dbdb3848a804979a504b68746a7e9a86264487325bbe6475436d9b662cc6b2",
+    "final-postgres-runtime-postgres-oracle_oe.log": "5f4051496ca633bd225370c55cef8b0b32cf5ffaf688c0c83af466eb68c926a3",
+    "final-postgres-runtime-postgres-oracle_sh.log": "40cf7bba66d0117688cb9edb7d4c7d809315c645da12c5d341909bff84d0aa7f",
+    "final-postgres-runtime-postgres-pubs.log": "80110193e02f36fa2a8411620cf17cf83160bd1cb0eca5445a928e1f357d11e0",
+    "final-postgres-runtime-postgres-sakila.log": "ef6a55ee9a5344085a38cd63d49955ba7c49321839435b9dd429aa4e35d91b41",
+    "final-postgres-runtime-postgres-smallsets.log": "fa5dafc8159872c78f890104d1418551033d441cae65079ebe40f8f42bdb4301",
+    "final-postgres-runtime-postgres-stackexchange_beer.log": "63d0e18fc734954ea3c7c3b0efda8124b25ed4e3ed9edc49c9345de168ba4d4d",
+    "final-postgres-runtime-postgres-stackexchange_dba.log": "27ac98aa68769bfda5d53fb928990cdd932e1892f80bfc88138805e4975f67a2",
+    "final-postgres-runtime-postgres-wikipedia_simple.log": "cfc09d1d72a61f82df0fcee2fe0035cf319a5f37293aab2be0b670ffde710ef9",
+    "final-postgres-runtime-postgres-wikipedia_simple_full.log": "e4782431a58999af913b83a4597c115b3fe5bd6ab30925385f96bea8041a79c1",
+    "final-postgres-runtime-results.json": "8c691175225944ee84c3b629540fa54448fed50c2fef5ba1511cf0ffa1204e5f",
+    "final-pull-requests.json": "a7584e608a04e2981bd4cb5c195098e2d6f4e9f9abb4fd62f486826459a0b037",
+    "final-remote-heads.txt": "0eb97f42348d4b523e47b9069e698f44b94ff3e215cfe4ba5a277ec0882a99f4",
+    "final-source-check-160.log": "49570dda541ebc843374493d70ecf757b18e2d4fc033083144394f61b49650c8",
+    "final-sqlite-runtime-results.json": "43755fa16ae76edda3b9fc1af0b42ffca1099d8d9f2799a12664ae4f9ffe06b9",
+    "final-sqlite-runtime-sqlite-adventureworks.log": "2144a1d1d623968fe52f7813a64d7ca07f36e82effd49560ba7e1f2e9c1f86f4",
+    "final-sqlite-runtime-sqlite-adventureworks_dw.log": "06e1f567f0d1e0a10c58a41ce4aaab5511d65bd43804b8382bbf1e3b2605eaf6",
+    "final-sqlite-runtime-sqlite-adventureworks_lt.log": "fa63c844393e8a8fcd307a9d304d5d0209f5c6e80b336342e375b9dd3486d013",
+    "final-sqlite-runtime-sqlite-chicago_crimes.log": "d8e78c6e7be0c52401da0112e7e18eb0b60c84e4effae45d1e5ac3ab9edd385f",
+    "final-sqlite-runtime-sqlite-chicago_crimes_full.log": "a3db635d9e9a6b3619705eb1329f62ac1358157b9a6e422d75e3c32f90f4b98d",
+    "final-sqlite-runtime-sqlite-chinook.log": "b76b0d92ca80acc9fe965e2a2fe3527c31fc136233bb2d91001430fbe4fa8122",
+    "final-sqlite-runtime-sqlite-contoso.log": "c5b887c9d290e1a4ee0e0078040848c77303c2ad77ba4510f8b2b2ccc5d21e1d",
+    "final-sqlite-runtime-sqlite-contoso_10m.log": "b85255e0a34bd6e57655540e9061231fc66d1f0783ef37bfc7e55f07528df6ce",
+    "final-sqlite-runtime-sqlite-contoso_1m.log": "7c6ba450bde63b2b21fbdcbae6d0ed78508962b96daf77a3e4d214fcf6241b98",
+    "final-sqlite-runtime-sqlite-dvdstore.log": "eedbb85763d3001645a6d3e4b5e9a613d983bfe54718ef45efea6c12a59aa5d2",
+    "final-sqlite-runtime-sqlite-dvdstore_reviews.log": "e7f59464fcf29512b38f71d7b84dd2982df046f15eb7fa41689726dc7b372d8a",
+    "final-sqlite-runtime-sqlite-employees.log": "495adb34fe7b8443af5ef5ef4bfbed04150c4a9d03e9e2544d134c935fac01bc",
+    "final-sqlite-runtime-sqlite-enron.log": "dfc15b5fa543556d7e6eb20b14d8c524db4e3c89fd4990aaaa086936ff87a173",
+    "final-sqlite-runtime-sqlite-enron_full.log": "2a0a4509e09ea26b96ab56c34d3924e66fd5a8e55e95070855b04e336b348bf2",
+    "final-sqlite-runtime-sqlite-jaffle_shop.log": "9b826d6a55c3e25ca83535951bda200694390deeea70f8887df49b1262a3b9a0",
+    "final-sqlite-runtime-sqlite-lahman.log": "da7d6aa80ec2fb0a916807ed66b681bdc38c11fae6a5b54181c483fb5339f7df",
+    "final-sqlite-runtime-sqlite-northwind.log": "26c509a01b25824b2258bfe1d70b41f87099b7f90a7316dbc67bdf6acb8c26ec",
+    "final-sqlite-runtime-sqlite-nyc_taxi.log": "2d76a5ba53ff82663922cf8f13e46071b5970ee63f93b057113e17242fe59bbb",
+    "final-sqlite-runtime-sqlite-nyc_taxi_yellow.log": "b374df25f61c7aea22e5eb17284ce62b82a610eaa3b86f35ee8438b314ad3954",
+    "final-sqlite-runtime-sqlite-oracle_co.log": "6539fe6b64a5f5b6757f802da378844654a8c57ae4b1f72d738528bfa6cdc2fd",
+    "final-sqlite-runtime-sqlite-oracle_hr.log": "326d433121d1759941147be53d2992af7ff9e04c535217316dbd042fe45df751",
+    "final-sqlite-runtime-sqlite-oracle_oe.log": "080c98b26fb8759684c1f1bf4ec9237a56d68978a1582c614a0224adb7fa52c4",
+    "final-sqlite-runtime-sqlite-oracle_sh.log": "52d66749a775b6ab20d3dd58422899cce08f7f816d6939a71927046466fc2ecf",
+    "final-sqlite-runtime-sqlite-pubs.log": "a03d730b5bb61894e41bdeb002cc87cae757dc9e71cf7e5534eea21f4b829f81",
+    "final-sqlite-runtime-sqlite-sakila.log": "5612da551cddee559744036f272a714367fcdee4f35aef3f08059213a34dc21f",
+    "final-sqlite-runtime-sqlite-smallsets.log": "e01611a58d33fbc174c18e044e67ab56d51132e75c7eede5ca4a8ebfa8c76ade",
+    "final-sqlite-runtime-sqlite-stackexchange_beer.log": "c4f0bf3a5631a6aaf1334e6e672650eac94d4698d5d78d5996ff02e416058f2f",
+    "final-sqlite-runtime-sqlite-stackexchange_dba.log": "58f43d4edeae4859ac9333d3baa680b296bcec1d6a8450485fbe2cd81d6fa88f",
+    "final-sqlite-runtime-sqlite-wikipedia_simple.log": "1e6c3eef2fdfd512771cc841308a2828df09ca1febde69afe8ff39f810806359",
+    "final-sqlite-runtime-sqlite-wikipedia_simple_full.log": "aded5d666dd468edff0583318444915450c6a1b89badd0063db2b33d3f018683",
+    "final-validation-summary.json": "dadbbba3fb94dffa03eab04137ac2a3feaf4eb1a99cd2ce76f3a7900fe8d86c3",
+    "frontend-stable-tag-proof.json": "01bd9f87844bf488ec9937d762fd721a2e8bdf57e2f4c95b0642daf5c34ec1a1",
+    "generated-adminer-ignore-after.json": "f93aaa97fe03b576a7c10633aaabd7ebfb69ed7015311846b0665fecc2a4a3e4",
+    "generated-adminer-ignore-before.json": "e2d2a9a7df0eebccc2d772febf066be6fb53ed071b48fbd290c0ba1a3f0399e2",
+    "healthcheck-runner-receipt.json": "cfd8a6809457bdb80cf488530247f56ee0aa499828284672e1638bd995bd741c",
+    "isolated-api-stop.json": "2d435d99acd039b7d6cae3001cf2c1fca22a2973fc1813060ab1d78a55962ec8",
+    "isolated-store-final.txt": "61f05c768f71e94ebd4899a77b2d5c396e52b9ca52b6dabe810e9adb4074d615",
+    "live-isolation.json": "9bc8e36bf1ad91c56c3e9b269ac40f23f49ad3e7d8bd0cc8efaff3fa1ac04f20",
+    "mysql-shell-build-tool-version.txt": "1eb4ce4a2a9855e4a183fc01f9dc5b37447b683d2bdc6ddcfabb457205471a8e",
+    "mysql-verification-clock-source.json": "40f5ddd9daa026414b2dd5d8878187edd5904c8b50bcec0e40971faf199f58b1",
+    "persistence-before-snapshot.json": "e6cd24d6da0af85a2a5258fca4f3d2c12856df0c7faecd53a7d53570717b369b",
+    "persistence-results.json": "f28ec2d0c0c062a1ce43643b25ebe449b62aeafc4e1546a480fdefee152cf4f9",
+    "pg-seed-copy-probe.json": "d913415adb533e44d9fbc7f78274da3568f1adf42d0f7ae5afeeee14b49c9f07",
+    "postgres-final-cluster-footprint.txt": "da3b79e82a45d40a3bb17114218e0e61ef899a555c95722b18c70405a12f572c",
+    "postgres-image-test-quiescent.log": "4aca274516f60b86eb108755799f68e0f211356e67b8f48ffce27673fb50bf8c",
+    "postgres-wal-packaging-source.json": "2ba510357f7aa8c01b88c1aef3f3df6f628c119dea8453b20993f7223c7e3a96",
+    "postgres-wal-rotation-source.json": "f6ed308d66572a60ae2d1edc60de2aa701c667f9521e41c0eb66a6164949fe3b",
+    "published-endpoint-results.json": "8dbab0115a4ad58d07f6a6743453dd02d43125c8c46d95347559a0b43b861bda",
+    "published-endpoints-after-api-stop.log": "0abb65e5ba69e84e21519d484af85a37ccbc5340d0c4d3e322b1c53e29d5b396",
+    "rehearsal-coverage.json": "f132d8def9597753aaa08924fb7c72681c64bb25f2ebcf57e85590ebe2da6df7",
+    "reset-append-results.json": "2d8de93a61cef0d264e9684db3975894b005a7235e96c705be647d90cea840f8",
+    "reset-results.json": "d29c354cd8dc73530f7cecb1cd2e256f84d1b31d9bebb55d8fa06767e83a025b",
+    "runbook-final-shell-syntax.json": "1caf3db9eee14f7dd2299bcfe4cacba289bea572bc2d7bb5a9aaecb3690d1bfa",
+    "running-port-records.log": "2077829b0be9834e85d202e0da729bb9b815d8d7a5ae1abf5e26c186311d191a",
+    "running-ports-result.json": "5c5af31904e01d3df0bb00fc8c54028ecdc0d4001e5623b8d63409733614cb6b",
+    "running-stack-state.json": "ed65fd51c05b289f6a75e37f8b1c96e8f87dbeb1278d3ca6be94353db9856cff",
+    "runtime-results.json": "fe6d5fe11aa36d99a620ed1da8e2c63c443d9cc819c8af7b615f6ba7040d16eb",
+    "slow-contoso-query-full-plan.json": "59b7b79745d501d3e6c526db3b04936673206e6c2df7c0d9db2c8c01637757a0",
+    "slow-contoso-query-plan.json": "bd7beec1aa8d055a395e259ec2d40a258d696da41709b64f8a9f1160326afb3a",
+    "stack-build-results.json": "08fce86b4bf11803a85f455a871e8cc14d92d3874c973df2dc9c04b1297d8a6c",
+    "stack-postgres-image-test-rotation.log": "3fd7707e3926008f0dcf82a51211d52c90ef14b0272735a3e2943c9352459824",
+    "stack-sqlite-image-test-after-late-check.log": "e31185b85916fb54c03c3150366e596e9eb9d148c885bf788d7a20d5be37d9ad",
+    "stack-sqlite-image-test-final.log": "aaaf60a75637251ba6c3136327c50d4653fbcacf58f80e0bda883d361610333a",
+    "unit-tests-after-wal-packaging.log": "9b15a9f429721c0e5795668f30a49bb38874e5bf59eedf7c3b4a692124494b50",
+    "version-sources.json": "d1da354f2a6066b7a9b67da54df8a0c122cc907f7ae070b6fd01eac3b59a6497",
+    "view-clock-after.log": "45abebc3866c7aaabc61d13e6cb2a483a865d3aaa6de60480622f0f782e9cac2",
+    "view-clock-before.log": "073796e80347641d493970fcef506fa08c884954783a481efbbf17ae8c90c514",
+    "view-clock-dw-current-source.log": "f97fdbba5624ce8d6f95023e6ca51b72823c41e78281c66ea36e6dc95099ddbe",
+    "view-clock-dw-final-views-result.json": "0b6014c6234d8daab1acf0074070fe2ea0a710cc49806095a7de931c83213b59",
+    "view-clock-dw-final-views.log": "f5936d9f15647d5857f4677898e1c5ffa24c1525b233cdcedfa932a9ed53c737",
+    "view-clock-dw-runtime-result.json": "3194aad3b4f1b409b10b724d4a6fa9839a2a12b2c2454ca7be4ace823fed8c1a",
+    "view-clock-dw-runtime.log": "f97fdbba5624ce8d6f95023e6ca51b72823c41e78281c66ea36e6dc95099ddbe",
+    "view-clock-timezone-after.log": "06cdf8bcb89efbe1e002f486792f1f4e5041790a94a9ede6adf87e5214f877f9",
+    "view-clock-timezone-before.log": "b62f92024b3365dccf79454b2d90f003f74aec8b58c03aaefbb6500b0a8995f6",
+    "wal-rotation-probe-results.json": "4c6d7572a3d41606ea5dae4a2e63da334d368736d267a77112eebd52957f9d66"
+  },
+  "failed_attempts": [
+    {
+      "budget_seconds": 30,
+      "seconds": 48.7,
+      "stage": "original PostgreSQL full-image readiness",
+      "status": "Failed"
+    },
+    {
+      "budget_seconds": 30,
+      "seconds": 32.9,
+      "stage": "checkpoint-only PostgreSQL full-image readiness",
+      "status": "Failed"
+    },
+    {
+      "budget_seconds": 30,
+      "seconds": 39.4,
+      "stage": "WAL-trimmed PostgreSQL full-image readiness",
+      "status": "Failed"
+    },
+    {
+      "budget_seconds": 30,
+      "command_seconds": 45.89,
+      "data_checks": "Not run: provisioning exhausted the deadline before a query was attempted.",
+      "stage": "original SQLite full-image startup",
+      "status": "Failed"
+    },
+    {
+      "budget_seconds": 30,
+      "seconds": 57.6,
+      "stage": "final quiescent PostgreSQL full-image readiness",
+      "status": "Failed"
+    }
+  ],
+  "full_manifest_validation": {
+    "reason": "Pinned BTS airport CSV unavailable; both WideWorldImporters exports await explicit operator EULA acceptance.",
+    "status": "Not run"
+  },
+  "harness_recoveries": [
+    {
+      "after": "Passed",
+      "before": "Failed: missing Python import path before the endpoint probe connected",
+      "evidence": "before-pythonpath-stack-check-published-endpoints.log"
+    },
+    {
+      "after": "Passed with build-tool and runtime probes separated",
+      "before": "Failed: capture requested an intentionally omitted runtime build tool",
+      "evidence": "before-build-tool-capture-stack-rehearse-resets.log"
+    },
+    {
+      "after": "Passed: start plus explicit actual health/running polling, full cycle rerun",
+      "before": "Failed: Compose start --wait unsupported; no persistence result claimed",
+      "evidence": "before-compose-start-compatibility-persistence-stop-start.log"
+    }
+  ],
+  "health_probe_runner": {
+    "captured_at": "2026-11-17T02:15:12.392404+00:00",
+    "engines": {
+      "megasamples-mysql": {
+        "id": "a51707159f66e10ca6f0dc9df1d9b01eb6471a868819768383e46f48c24b2019",
+        "probe_exit_code": 0
+      },
+      "megasamples-postgres": {
+        "id": "2f4f7d562bb0fedff48215bec0fad7dab2dd5afd9aeacf35b61b56ca868f2506",
+        "probe_exit_code": 0
+      },
+      "megasamples-sqlite": {
+        "id": "4859953e41aeafd53c8f5d17c24e8158ed0f6aaefa66aded36f587b962eedc81",
+        "probe_exit_code": 0
+      }
+    },
+    "pid": 1300462,
+    "project": "megasamples-upgrade",
+    "stop_file": "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/upgrade-evidence/healthcheck-runner.stop",
+    "store": "/home/rcc-vstudio/working/sql-megasamples-upgrade-env/graph"
+  },
+  "image_gate": {
+    "current_attempt": {
+      "returncode": 2,
+      "seconds": 386.35,
+      "status": "Failed"
+    },
+    "reason": "PostgreSQL readiness 57.6 seconds exceeds unchanged 30-second budget; all data/account checks passed.",
+    "sqlite_final_attempt": {
+      "returncode": 0,
+      "seconds": 781.31,
+      "status": "Passed"
+    },
+    "status": "Failed"
+  },
+  "limits": [
+    "Full 33-dataset validation incomplete.",
+    "DataIntent server-bound suites not run by this task.",
+    "Native Oracle database cross-checks not run.",
+    "SQL Server exporter not started without explicit EULA acceptance.",
+    "Live runbook written but not executed.",
+    "Docker/BuildKit execution and other architectures not tested; actual builds used isolated rootless Podman.",
+    "Exact CloudBeaver/DbGate patch announcement pages not verified; registry evidence and vendor policy recorded."
+  ],
+  "live_isolation": {
+    "comparison": "Read-only default-store inspection matched all three baseline IDs, image IDs, nanosecond start times and running states.",
+    "containers": [
+      {
+        "id": "e52be92036180efd39a7c9039849cc1f019fb933f9e86795bcf1ca623f5e1806",
+        "image": "sha256:dce852a4e859d1d497faa7bbd665969bf39c4a63f4e7ea6b794fd1c1308c826a",
+        "name": "megasamples-postgres",
+        "started": "2026-11-09T12:51:25.772296065-06:00",
+        "status": "running"
+      },
+      {
+        "id": "8e9cbe36ff7dd1ce125b49c323b1395921cd377ed29d1a921d6caeca94bc7205",
+        "image": "sha256:f182473f11eca0ce94f9f61c273ff02db850de37774a839275327325b9facf1b",
+        "name": "megasamples-mysql",
+        "started": "2026-11-09T12:51:25.876918269-06:00",
+        "status": "running"
+      },
+      {
+        "id": "29af9013ee9cf82eccf38b583126618d8f503107afc993235f20060a04cbc1f5",
+        "image": "sha256:5191da1a0ef00365539515123faedf2fa78407212f6fb51d7e7b94ec63e09950",
+        "name": "megasamples-sqlite",
+        "started": "2026-11-09T12:51:25.980050177-06:00",
+        "status": "running"
+      }
+    ],
+    "status": "Passed"
+  },
+  "native_feature_exceptions": [
+    {
+      "dataset": "enron_full",
+      "engine": "postgres",
+      "object": "message.ft_message",
+      "reason": "An observed message produces a 1491766-byte tsvector, above the native 1048575-byte maximum. Full message content and existing fingerprints retained.",
+      "status": "Unsupported"
+    }
+  ],
+  "packaging_source_commits": {
+    "mysql": "41773f72f36ada673c87fa71b3a4ed3e84e90d17",
+    "postgres": "56f63de673fba930c75775fa02b4942255b05bf5",
+    "sqlite": "41773f72f36ada673c87fa71b3a4ed3e84e90d17"
+  },
+  "persistence": {
+    "actual_counts_before_equal_after": true,
+    "container_ids": {
+      "megasamples-mysql": "a51707159f66e10ca6f0dc9df1d9b01eb6471a868819768383e46f48c24b2019",
+      "megasamples-postgres": "2f4f7d562bb0fedff48215bec0fad7dab2dd5afd9aeacf35b61b56ca868f2506",
+      "megasamples-sqlite": "4859953e41aeafd53c8f5d17c24e8158ed0f6aaefa66aded36f587b962eedc81"
+    },
+    "probe_retained": true,
+    "status": "Passed",
+    "stop_start_seconds": 38.66
+  },
+  "prior_runtime_view_failure": {
+    "failures": 4,
+    "seconds": 52.09,
+    "status": "Failed"
+  },
+  "published_endpoints": {
+    "read_at": "2026-11-17T02:17:13.968877+00:00",
+    "results": {
+      "mysql": {
+        "admin_writes": true,
+        "demo_read_only": true,
+        "endpoint": "127.0.0.1:13306",
+        "incorrect_password_rejected": true,
+        "pubs_jobs_count": 14,
+        "status": "Passed",
+        "version": "26.10.0"
+      },
+      "postgres": {
+        "admin_writes": true,
+        "demo_read_only": true,
+        "endpoint": "127.0.0.1:15432",
+        "incorrect_password_rejected": true,
+        "pubs_jobs_count": 14,
+        "status": "Passed",
+        "version": "PostgreSQL 18.7 (Debian 18.7-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit"
+      }
+    }
+  },
+  "pull_requests": [
+    {
+      "baseRefName": "main",
+      "headRefName": "release-2",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "8506a61e5b64e29a8eec680682eefb5015176f3e"
+      },
+      "number": 4,
+      "state": "MERGED"
+    },
+    {
+      "baseRefName": "rootless-podman",
+      "headRefName": "reset-command",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "af9899e68aad9dd02de8573fca86ffb728165524"
+      },
+      "number": 5,
+      "state": "MERGED"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "fix/fetch-start-time",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "6ed6d5fc378a48e879774a03d54802f2969732d4"
+      },
+      "number": 6,
+      "state": "MERGED"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "live-artifacts",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "e75ca8abc4f9c0f2228ffec53c70342bb3345708"
+      },
+      "number": 7,
+      "state": "MERGED"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "rootless-podman",
+      "isDraft": false,
+      "mergeCommit": {
+        "oid": "d581d93f845e79e23a7224d3a041342be0f1c782"
+      },
+      "number": 8,
+      "state": "MERGED"
+    },
+    {
+      "baseRefName": "main",
+      "headRefName": "upgrade/latest-stable-engines",
+      "isDraft": true,
+      "mergeCommit": null,
+      "number": 9,
+      "state": "OPEN"
+    }
+  ],
+  "release_provenance": {
+    "images": {
+      "adminer": {
+        "image": "adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c",
+        "read_at": "2026-11-16T18:58:36.571475+00:00",
+        "release_source": "https://www.adminer.org/",
+        "version": "6.3.0"
+      },
+      "cloudbeaver": {
+        "image": "dbeaver/cloudbeaver:26.2.5@sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f",
+        "read_at": "2026-11-16T18:58:36.671862+00:00",
+        "release_source": "https://hub.docker.com/v2/repositories/dbeaver/cloudbeaver/tags?page_size=20",
+        "version": "26.2.5"
+      },
+      "dbgate": {
+        "image": "dbgate/dbgate:7.3.6@sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953",
+        "read_at": "2026-11-16T18:58:36.830920+00:00",
+        "release_source": "https://hub.docker.com/v2/repositories/dbgate/dbgate/tags?page_size=20",
+        "version": "7.3.6"
+      },
+      "dockerfile-frontend": {
+        "image": "docker/dockerfile:1.29.0@sha256:572cebbc2b15e6f84c077742952674889cb63cd5e9b80abdffcbe587b6f19183",
+        "read_at": "2026-11-16T19:02:44.308731+00:00",
+        "registry_source": "https://registry-1.docker.io/v2/docker/dockerfile/manifests/1.29.0",
+        "release_source": "https://registry-1.docker.io/v2/docker/dockerfile/manifests/1.29.0",
+        "version": "1.29.0"
+      },
+      "landing": {
+        "image": "nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703",
+        "read_at": "2026-11-16T18:58:36.520324+00:00",
+        "release_source": "https://nginx.org/en/download.html",
+        "version": "1.30.6"
+      },
+      "loader-base": {
+        "image": "debian:13.7-slim@sha256:a72b4433de1cf7d6bae0c4cee74d0547f58601a643b3375f070c51600d63b6b2",
+        "read_at": "2026-11-16T18:58:36.997618+00:00",
+        "release_source": "https://www.debian.org/releases/",
+        "version": "13.7"
+      },
+      "mysql": {
+        "image": "docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999",
+        "read_at": "2026-11-16T18:58:36.215868+00:00",
+        "release_source": "https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html",
+        "version": "26.10.0"
+      },
+      "mysql-shell": {
+        "image": "docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999",
+        "read_at": "2026-11-16T18:58:36.217605+00:00",
+        "release_source": "https://dev.mysql.com/downloads/shell/",
+        "version": "26.10.0"
+      },
+      "oracle-verifier": {
+        "image": "gvenzl/oracle-free:23@sha256:7ed34d0ade89c91a553c9cbe9d42457c758fa29a762aaaa3137541ff30a2d1cb",
+        "read_at": "2026-11-16T19:41:23.043634+00:00",
+        "release_source": "https://www.oracle.com/database/free/get-started/",
+        "version": "26ai Free 23.26.3.0.0"
+      },
+      "phpmyadmin": {
+        "image": "phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40",
+        "read_at": "2026-11-16T18:58:36.655862+00:00",
+        "release_source": "https://www.phpmyadmin.net/downloads/",
+        "version": "5.2.3"
+      },
+      "playwright": {
+        "image": "mcr.microsoft.com/playwright/python:v1.65.0-noble@sha256:f9294526294a7bdfb8ca8aa7d815c049125a10e73b65d47fb9a80f5d74f284a6",
+        "read_at": "2026-11-16T18:58:36.838819+00:00",
+        "release_source": "https://pypi.org/pypi/playwright/json",
+        "version": "1.65.0"
+      },
+      "postgres": {
+        "image": "docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc",
+        "read_at": "2026-11-16T18:58:36.214843+00:00",
+        "release_source": "https://www.postgresql.org/docs/release/18.7/",
+        "version": "18.7"
+      },
+      "sqlite-base": {
+        "image": "alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf",
+        "read_at": "2026-11-16T18:58:36.942611+00:00",
+        "release_source": "https://www.alpinelinux.org/releases/",
+        "version": "3.24.4"
+      },
+      "sqlserver-export": {
+        "image": "mcr.microsoft.com/mssql/server:2025-CU11-ubuntu-24.04@sha256:05644dad1266ca3d445d1e8f6d2ebb9a6a03df9a39376e0f7b48917356dca9d9",
+        "read_at": "2026-11-16T18:58:37.116706+00:00",
+        "release_source": "https://support.microsoft.com/en-au/servicing/sql/sql-server-2025/kb5005684-build-versions",
+        "version": "2025 CU11 (17.0.5065.9)"
+      }
+    },
+    "sqlite_source": {
+      "read_at": "2026-11-16T18:58:36.461111+00:00",
+      "release_source": "https://sqlite.org/download.html",
+      "sha3_256": "b6ced585c750916b1052667239a12c25a7ff34e7f06e1e6e01ecb0427657d9c4",
+      "url": "https://sqlite.org/2026/sqlite-autoconf-3540100.tar.gz",
+      "version": "3.54.1"
+    }
+  },
+  "repository_snapshot_note": "Repository/branch source records were captured before the documentation-only receipt commit; tested code and image data remain identified separately.",
+  "reset_results": {
+    "all": {
+      "returncode": 0,
+      "same_count_row_and_binary_values_restored": true,
+      "seconds": 121.65,
+      "status": "Passed"
+    },
+    "mysql": {
+      "returncode": 0,
+      "same_count_row_and_binary_values_restored": true,
+      "seconds": 23.07,
+      "status": "Passed"
+    },
+    "pairs": {
+      "returncode": 0,
+      "same_count_row_and_binary_values_restored": true,
+      "seconds": 89.98,
+      "status": "Passed"
+    },
+    "postgres": {
+      "returncode": 0,
+      "same_count_row_and_binary_values_restored": true,
+      "seconds": 26.4,
+      "status": "Passed"
+    },
+    "sqlite": {
+      "returncode": 0,
+      "same_count_row_and_binary_values_restored": true,
+      "seconds": 92.4,
+      "status": "Passed"
+    }
+  },
+  "running_port_reproduction": {
+    "returncode": 0,
+    "scope": "Reproduce committed records from the running isolated MySQL image; absent datasets remain explicitly not checked.",
+    "status": "Passed"
+  },
+  "runtime_results": {
+    "mysql:adventureworks": {
+      "failures": 0,
+      "seconds": 198.73,
+      "status": "Passed"
+    },
+    "mysql:adventureworks_dw": {
+      "clock": "2026-11-16T00:00:00Z",
+      "existing_view_expectations_unchanged": true,
+      "failures": 0,
+      "prior_failure_log": "final-mysql-runtime-mysql-adventureworks_dw.log",
+      "rerun_log": "view-clock-dw-current-source.log",
+      "seconds": 33.65,
+      "status": "Passed",
+      "verification": "all repository stages against the running MySQL image"
+    },
+    "mysql:adventureworks_lt": {
+      "failures": 0,
+      "seconds": 13.47,
+      "status": "Passed"
+    },
+    "mysql:chicago_crimes": {
+      "failures": 0,
+      "seconds": 68.92,
+      "status": "Passed"
+    },
+    "mysql:chicago_crimes_full": {
+      "failures": 0,
+      "seconds": 102.83,
+      "status": "Passed"
+    },
+    "mysql:chinook": {
+      "failures": 0,
+      "seconds": 7.65,
+      "status": "Passed"
+    },
+    "mysql:contoso": {
+      "failures": 0,
+      "seconds": 15.1,
+      "status": "Passed"
+    },
+    "mysql:contoso_10m": {
+      "failures": 0,
+      "seconds": 1736.02,
+      "status": "Passed"
+    },
+    "mysql:contoso_1m": {
+      "failures": 0,
+      "seconds": 52.76,
+      "status": "Passed"
+    },
+    "mysql:dvdstore": {
+      "failures": 0,
+      "seconds": 21.45,
+      "status": "Passed"
+    },
+    "mysql:dvdstore_reviews": {
+      "failures": 0,
+      "seconds": 15.66,
+      "status": "Passed"
+    },
+    "mysql:employees": {
+      "failures": 0,
+      "seconds": 215.75,
+      "status": "Passed"
+    },
+    "mysql:enron": {
+      "failures": 0,
+      "seconds": 5.13,
+      "status": "Passed"
+    },
+    "mysql:enron_full": {
+      "failures": 0,
+      "seconds": 333.36,
+      "status": "Passed"
+    },
+    "mysql:jaffle_shop": {
+      "failures": 0,
+      "seconds": 2.3,
+      "status": "Passed"
+    },
+    "mysql:lahman": {
+      "failures": 0,
+      "seconds": 35.88,
+      "status": "Passed"
+    },
+    "mysql:northwind": {
+      "failures": 0,
+      "seconds": 27.89,
+      "status": "Passed"
+    },
+    "mysql:nyc_taxi": {
+      "failures": 0,
+      "seconds": 67.08,
+      "status": "Passed"
+    },
+    "mysql:nyc_taxi_yellow": {
+      "failures": 0,
+      "seconds": 84.85,
+      "status": "Passed"
+    },
+    "mysql:oracle_co": {
+      "failures": 0,
+      "seconds": 10.99,
+      "status": "Passed"
+    },
+    "mysql:oracle_hr": {
+      "failures": 0,
+      "seconds": 6.68,
+      "status": "Passed"
+    },
+    "mysql:oracle_oe": {
+      "failures": 0,
+      "seconds": 19.32,
+      "status": "Passed"
+    },
+    "mysql:oracle_sh": {
+      "failures": 0,
+      "seconds": 274.91,
+      "status": "Passed"
+    },
+    "mysql:pubs": {
+      "failures": 0,
+      "seconds": 18.69,
+      "status": "Passed"
+    },
+    "mysql:sakila": {
+      "failures": 0,
+      "seconds": 30.45,
+      "status": "Passed"
+    },
+    "mysql:smallsets": {
+      "failures": 0,
+      "seconds": 4.76,
+      "status": "Passed"
+    },
+    "mysql:stackexchange_beer": {
+      "failures": 0,
+      "seconds": 13.64,
+      "status": "Passed"
+    },
+    "mysql:stackexchange_dba": {
+      "failures": 0,
+      "seconds": 40.26,
+      "status": "Passed"
+    },
+    "mysql:wikipedia_simple": {
+      "failures": 0,
+      "seconds": 14.63,
+      "status": "Passed"
+    },
+    "mysql:wikipedia_simple_full": {
+      "failures": 0,
+      "seconds": 303.53,
+      "status": "Passed"
+    },
+    "postgres:adventureworks": {
+      "failures": 0,
+      "seconds": 66.82,
+      "status": "Passed"
+    },
+    "postgres:adventureworks_dw": {
+      "failures": 0,
+      "seconds": 30.44,
+      "status": "Passed"
+    },
+    "postgres:adventureworks_lt": {
+      "failures": 0,
+      "seconds": 8.16,
+      "status": "Passed"
+    },
+    "postgres:chicago_crimes": {
+      "failures": 0,
+      "seconds": 147.34,
+      "status": "Passed"
+    },
+    "postgres:chicago_crimes_full": {
+      "failures": 0,
+      "seconds": 132.82,
+      "status": "Passed"
+    },
+    "postgres:chinook": {
+      "failures": 0,
+      "seconds": 7.42,
+      "status": "Passed"
+    },
+    "postgres:contoso": {
+      "failures": 0,
+      "seconds": 11.91,
+      "status": "Passed"
+    },
+    "postgres:contoso_10m": {
+      "failures": 0,
+      "seconds": 454.02,
+      "status": "Passed"
+    },
+    "postgres:contoso_1m": {
+      "failures": 0,
+      "seconds": 52.62,
+      "status": "Passed"
+    },
+    "postgres:dvdstore": {
+      "failures": 0,
+      "seconds": 27.28,
+      "status": "Passed"
+    },
+    "postgres:dvdstore_reviews": {
+      "failures": 0,
+      "seconds": 22.95,
+      "status": "Passed"
+    },
+    "postgres:employees": {
+      "failures": 0,
+      "seconds": 76.93,
+      "status": "Passed"
+    },
+    "postgres:enron": {
+      "failures": 0,
+      "seconds": 6.38,
+      "status": "Passed"
+    },
+    "postgres:enron_full": {
+      "failures": 0,
+      "seconds": 215.8,
+      "status": "Passed"
+    },
+    "postgres:jaffle_shop": {
+      "failures": 0,
+      "seconds": 1.87,
+      "status": "Passed"
+    },
+    "postgres:lahman": {
+      "failures": 0,
+      "seconds": 27.73,
+      "status": "Passed"
+    },
+    "postgres:northwind": {
+      "failures": 0,
+      "seconds": 12.19,
+      "status": "Passed"
+    },
+    "postgres:nyc_taxi": {
+      "failures": 0,
+      "seconds": 87.56,
+      "status": "Passed"
+    },
+    "postgres:nyc_taxi_yellow": {
+      "failures": 0,
+      "seconds": 90.79,
+      "status": "Passed"
+    },
+    "postgres:oracle_co": {
+      "failures": 0,
+      "seconds": 7.18,
+      "status": "Passed"
+    },
+    "postgres:oracle_hr": {
+      "failures": 0,
+      "seconds": 6.17,
+      "status": "Passed"
+    },
+    "postgres:oracle_oe": {
+      "failures": 0,
+      "seconds": 8.87,
+      "status": "Passed"
+    },
+    "postgres:oracle_sh": {
+      "failures": 0,
+      "seconds": 27.55,
+      "status": "Passed"
+    },
+    "postgres:pubs": {
+      "failures": 0,
+      "seconds": 7.63,
+      "status": "Passed"
+    },
+    "postgres:sakila": {
+      "failures": 0,
+      "seconds": 14.45,
+      "status": "Passed"
+    },
+    "postgres:smallsets": {
+      "failures": 0,
+      "seconds": 3.22,
+      "status": "Passed"
+    },
+    "postgres:stackexchange_beer": {
+      "failures": 0,
+      "seconds": 7.68,
+      "status": "Passed"
+    },
+    "postgres:stackexchange_dba": {
+      "failures": 0,
+      "seconds": 204.45,
+      "status": "Passed"
+    },
+    "postgres:wikipedia_simple": {
+      "failures": 0,
+      "seconds": 26.22,
+      "status": "Passed"
+    },
+    "postgres:wikipedia_simple_full": {
+      "failures": 0,
+      "seconds": 611.63,
+      "status": "Passed"
+    },
+    "sqlite:adventureworks": {
+      "failures": 0,
+      "seconds": 9.51,
+      "status": "Passed"
+    },
+    "sqlite:adventureworks_dw": {
+      "failures": 0,
+      "seconds": 57.74,
+      "status": "Passed"
+    },
+    "sqlite:adventureworks_lt": {
+      "failures": 0,
+      "seconds": 0.13,
+      "status": "Passed"
+    },
+    "sqlite:chicago_crimes": {
+      "failures": 0,
+      "seconds": 171.0,
+      "status": "Passed"
+    },
+    "sqlite:chicago_crimes_full": {
+      "failures": 0,
+      "seconds": 170.72,
+      "status": "Passed"
+    },
+    "sqlite:chinook": {
+      "failures": 0,
+      "seconds": 0.14,
+      "status": "Passed"
+    },
+    "sqlite:contoso": {
+      "failures": 0,
+      "seconds": 8.19,
+      "status": "Passed"
+    },
+    "sqlite:contoso_10m": {
+      "failures": 0,
+      "seconds": 689.72,
+      "status": "Passed"
+    },
+    "sqlite:contoso_1m": {
+      "failures": 0,
+      "seconds": 64.04,
+      "status": "Passed"
+    },
+    "sqlite:dvdstore": {
+      "failures": 0,
+      "seconds": 22.11,
+      "status": "Passed"
+    },
+    "sqlite:dvdstore_reviews": {
+      "failures": 0,
+      "seconds": 20.91,
+      "status": "Passed"
+    },
+    "sqlite:employees": {
+      "failures": 0,
+      "seconds": 23.53,
+      "status": "Passed"
+    },
+    "sqlite:enron": {
+      "failures": 0,
+      "seconds": 0.55,
+      "status": "Passed"
+    },
+    "sqlite:enron_full": {
+      "failures": 0,
+      "seconds": 39.51,
+      "status": "Passed"
+    },
+    "sqlite:jaffle_shop": {
+      "failures": 0,
+      "seconds": 0.04,
+      "status": "Passed"
+    },
+    "sqlite:lahman": {
+      "failures": 0,
+      "seconds": 9.49,
+      "status": "Passed"
+    },
+    "sqlite:northwind": {
+      "failures": 0,
+      "seconds": 0.3,
+      "status": "Passed"
+    },
+    "sqlite:nyc_taxi": {
+      "failures": 0,
+      "seconds": 141.1,
+      "status": "Passed"
+    },
+    "sqlite:nyc_taxi_yellow": {
+      "failures": 0,
+      "seconds": 142.97,
+      "status": "Passed"
+    },
+    "sqlite:oracle_co": {
+      "failures": 0,
+      "seconds": 0.16,
+      "status": "Passed"
+    },
+    "sqlite:oracle_hr": {
+      "failures": 0,
+      "seconds": 0.06,
+      "status": "Passed"
+    },
+    "sqlite:oracle_oe": {
+      "failures": 0,
+      "seconds": 0.14,
+      "status": "Passed"
+    },
+    "sqlite:oracle_sh": {
+      "failures": 0,
+      "seconds": 51.77,
+      "status": "Passed"
+    },
+    "sqlite:pubs": {
+      "failures": 0,
+      "seconds": 0.05,
+      "status": "Passed"
+    },
+    "sqlite:sakila": {
+      "failures": 0,
+      "seconds": 0.56,
+      "status": "Passed"
+    },
+    "sqlite:smallsets": {
+      "failures": 0,
+      "seconds": 0.07,
+      "status": "Passed"
+    },
+    "sqlite:stackexchange_beer": {
+      "failures": 0,
+      "seconds": 0.58,
+      "status": "Passed"
+    },
+    "sqlite:stackexchange_dba": {
+      "failures": 0,
+      "seconds": 28.14,
+      "status": "Passed"
+    },
+    "sqlite:wikipedia_simple": {
+      "failures": 0,
+      "seconds": 9.27,
+      "status": "Passed"
+    },
+    "sqlite:wikipedia_simple_full": {
+      "failures": 0,
+      "seconds": 228.27,
+      "status": "Passed"
+    }
+  },
+  "source_checks": {
+    "log": "final-source-check-160.log",
+    "status": "Passed",
+    "unit_test_seconds": 22.69,
+    "unit_tests_passed": 160
+  },
+  "verifier_source_commit": "6f0b1274152403fcb66be07aba0d8ae66715e99a",
+  "versions": {
+    "mysql": "/usr/sbin/mysqld  Ver 26.10.0 for Linux on x86_64 (MySQL Community Server - GPL)",
+    "postgres": "18.7 (Debian 18.7-1.pgdg13+2)",
+    "sqlite": "3.54.1"
+  }
+}

@@ -18,8 +18,13 @@ UPGRADE_ID=$(date -u +%Y%m%dT%H%M%SZ)
 BACKUP_DIR="$PWD/build/live-upgrade-backups/$UPGRADE_ID"
 mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
-git status --porcelain > "$BACKUP_DIR/git-status.txt"
-test ! -s "$BACKUP_DIR/git-status.txt"  # resolve local edits before proceeding
+# Older branches tracked this generated credential page. Back it up privately, never commit it.
+if test -f consoles/landing/adminer.html; then
+  cp consoles/landing/adminer.html "$BACKUP_DIR/adminer.generated.html"
+  chmod 600 "$BACKUP_DIR/adminer.generated.html"
+fi
+git status --porcelain -- . ':(exclude)consoles/landing/adminer.html' > "$BACKUP_DIR/git-status.txt"
+test ! -s "$BACKUP_DIR/git-status.txt"  # resolve other local edits before proceeding
 # Preserve both the original branch and the exact commit; never reset or delete the branch.
 git branch --show-current > "$BACKUP_DIR/original-branch.txt"
 git rev-parse HEAD > "$BACKUP_DIR/original-commit.txt"
@@ -54,9 +59,17 @@ APPROVED_UPGRADE_MERGE=$(gh pr view 9 --repo Reliable-Collaboration/sql-megasamp
   --json mergeCommit --jq '.mergeCommit.oid // empty')
 test -n "$APPROVED_UPGRADE_MERGE"
 git fetch origin
+if git ls-files --error-unmatch consoles/landing/adminer.html >/dev/null 2>&1; then
+  git restore -- consoles/landing/adminer.html
+fi
 git switch main
 git merge --ff-only origin/main
 test "$(git rev-parse HEAD)" = "$APPROVED_UPGRADE_MERGE"
+# Keep the existing console page available until make up regenerates it from the same credentials.
+if test -f "$BACKUP_DIR/adminer.generated.html"; then
+  cp "$BACKUP_DIR/adminer.generated.html" consoles/landing/adminer.html
+  chmod 644 consoles/landing/adminer.html  # readable by the local web-server worker
+fi
 git rev-parse HEAD > "$BACKUP_DIR/upgrade-commit.txt"
 # Verify this is the reviewed upgrade, not just an arbitrary newer main.
 MEGASAMPLES_PY=python3
@@ -89,14 +102,20 @@ chmod 600 "$BACKUP_DIR/"*.sql
 # Downtime starts here. SQLite consumers must be stopped before copying its files.
 # Stop every configured console as well as all engines; keep the proxy services running.
 docker compose -p sql-megasamples -f compose.yaml stop
-for engine in postgres mysql sqlite; do
-  mkdir -p "$BACKUP_DIR/$engine"
-done
-podman cp megasamples-postgres:/var/lib/postgresql/. "$BACKUP_DIR/postgres/"
-podman cp megasamples-mysql:/var/lib/mysql/. "$BACKUP_DIR/mysql/"
-podman cp megasamples-sqlite:/data/. "$BACKUP_DIR/sqlite/"
-# Preserve the SQLite console volume separately, including any changed files.
-podman cp megasamples-sqlite:/shared/. "$BACKUP_DIR/sqlite-shared/"
+# Copy each stopped data mount inside Podman's user namespace, retaining its real UID/GID.
+# This includes the separate SQLite console volume and does not modify the source mounts.
+while read -r label container destination; do
+  source=$(podman inspect -f "{{range .Mounts}}{{if eq .Destination \"$destination\"}}{{.Source}}{{end}}{{end}}" "$container")
+  test -n "$source"
+  podman unshare test -d "$source"
+  mkdir -p "$BACKUP_DIR/$label"
+  podman unshare cp -a "$source/." "$BACKUP_DIR/$label/"
+done <<'DATA_MOUNTS'
+postgres megasamples-postgres /var/lib/postgresql
+mysql megasamples-mysql /var/lib/mysql
+sqlite megasamples-sqlite /data
+sqlite-shared megasamples-sqlite /shared
+DATA_MOUNTS
 # Record and retain old anonymous volumes. Do not run down -v, reset, prune or clean-all.
 podman volume ls --format json > "$BACKUP_DIR/volumes.json"
 
@@ -106,7 +125,23 @@ make up
 make test-console
 ```
 
+If `make up` waits with no health-log entries, the isolated rehearsal observed the same scheduling issue. In a second **coordinator maintenance shell**, run the real configured probes once for this project's engines; do not edit health status or change proxy services:
+
+```sh
+unset CONTAINERS_STORAGE_CONF CONTAINERS_CONF CONTAINERS_CONF_OVERRIDE DOCKER_HOST COMPOSE_PROJECT_NAME
+export COMPOSE_PROJECT_NAME=sql-megasamples
+cd /home/rcc-vstudio/working/sql-megasamples
+for engine in mysql postgres sqlite; do
+  test "$(podman inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "megasamples-$engine")" = sql-megasamples
+  podman healthcheck run "megasamples-$engine"
+done
+```
+
+This is a conditional manual-probe fallback; automatic scheduling in the live store has not been verified by this task. If a configured probe fails, inspect that engine and roll back if the failure cannot be resolved within the maintenance window.
+
 The Compose stop above includes every configured console, so SQLite consumers are closed before either copy. `make up` restarts configured consoles. The new containers receive the existing `.env` credentials. Do not print that file.
+
+In the isolated 30-dataset rehearsal, replacing all three engine containers and restoring SQLite's shared files took 121.65 seconds. Individual whole-engine resets took 23.07 seconds (MySQL), 26.4 seconds (PostgreSQL) and 92.4 seconds (SQLite). A stop/start of the existing eight-service stack, without replacing data volumes, took 38.66 seconds and preserved every recorded count, SQLite hash and inserted probe row. These measurements exclude cold-backup time and the coordinator's DataIntent checks and do not cover the three blocked manifest datasets. Initial stack startup took 328.32 seconds while this custom store waited for health scheduling; real probes then completed successfully through the isolated-only runner. These are observed preparation/outage components, not a full-manifest downtime guarantee. The complete full-Contoso repository check against the shipped MySQL configuration took 1,736.02 seconds in this rehearsal, dominated by an indexed nested-loop constraint query. If the maintenance window includes that full integrity audit, budget its verification time as well as startup, cold copies and DataIntent tests.
 
 The outage lasts from the first stop through readiness and verification, plus any rollback. Reserve a maintenance window; measured isolated timings belong in the evidence report, not an assumed SLA. Rebuilding before cutover avoids putting download/conversion time in the outage.
 
@@ -148,13 +183,18 @@ Keep clients paused. Do not remove any backup, original image tag, original bran
 make down                         # no -v: retained volumes remain available
 ORIGINAL_BRANCH=$(cat "$BACKUP_DIR/original-branch.txt")
 git switch "$ORIGINAL_BRANCH"
+test "$(git rev-parse HEAD)" = "$(cat "$BACKUP_DIR/original-commit.txt")"
+if test -f "$BACKUP_DIR/adminer.generated.html"; then
+  cp "$BACKUP_DIR/adminer.generated.html" consoles/landing/adminer.html
+  chmod 644 consoles/landing/adminer.html  # readable by the local web-server worker
+fi
 cp "$BACKUP_DIR/megasamples.yaml" ./megasamples.yaml
 cp "$BACKUP_DIR/compose.yaml" ./compose.yaml
 if test -f "$BACKUP_DIR/.env"; then cp "$BACKUP_DIR/.env" ./.env; fi
 podman load -i "$BACKUP_DIR/rollback-images.tar"
 ```
 
-For exact preservation of application writes, create four **new** named rollback volumes (the three engine data directories and SQLite shared files), populate them from the cold copies while no database has them open, and attach them to the original image IDs. Podman supports copying directory contents from stopped containers with `/.` ([copy reference](https://docs.podman.io/en/latest/markdown/podman-cp.1.html), read 2026-11-16 21:05 UTC). Run the ownership-preserving `cp -a` inside the native rootless user namespace ([unshare reference](https://docs.podman.io/en/latest/markdown/podman-unshare.1.html), read 2026-11-16 21:05 UTC); this command is unavailable through a remote Podman client. Use a Compose override, leaving original volumes untouched:
+For exact preservation of application writes, create four **new** named rollback volumes (the three engine data directories and SQLite shared files), populate them from the cold copies while no database has them open, and attach them to the original image IDs. The backup loop resolves the actual source of each stopped data mount and copies it without changing ownership. Both backup and restore run `cp -a` inside the native rootless user namespace ([unshare reference](https://docs.podman.io/en/latest/markdown/podman-unshare.1.html), read 2026-11-16 21:05 UTC); this command is unavailable through a remote Podman client. The cold files may require `podman unshare` to inspect because their subordinate UID/GID ownership is retained. Use a Compose override, leaving original volumes untouched:
 
 ```sh
 for engine in postgres mysql sqlite sqlite-shared; do
@@ -203,7 +243,7 @@ If that default socket is absent, start a Podman API service for the **default**
 
 ## Isolation used for rehearsal
 
-The rehearsal's settings and generated credentials are in the upgrade clone's `megasamples.yaml` and `.env` (mode 0600). Its socket is `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/podman.sock`, project `megasamples-upgrade`; ports are PostgreSQL `127.0.0.1:15432`, MySQL `127.0.0.1:13306`, and consoles `127.0.0.1:18080` through `:18084`. It uses the isolated `slirp4netns` override under `build/upgrade-evidence/containers-slirp.conf` because Pasta failed to access the custom runroot's network namespace. Source `env.sh` and set `CONTAINERS_CONF_OVERRIDE` to that absolute file before starting its socket. The isolated API process can be stopped without stopping its running containers; start it again to use Docker Compose or the repository's commands. None of these settings belongs in the live checkout.
+The rehearsal's settings and generated credentials are in the upgrade clone's `megasamples.yaml` and `.env` (mode 0600). Its socket is `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/podman.sock`, project `megasamples-upgrade`; ports are PostgreSQL `127.0.0.1:15432`, MySQL `127.0.0.1:13306`, and consoles `127.0.0.1:18080` through `:18084`. It uses the isolated `slirp4netns` override under `build/upgrade-evidence/containers-slirp.conf` because Pasta failed to access the custom runroot's network namespace. Source `env.sh` and set `CONTAINERS_CONF_OVERRIDE` to that absolute file before starting its socket. The isolated API process can be stopped without stopping its running containers; start it again to use Docker Compose or the repository's commands. None of these settings belongs in the live checkout. Automatic health probes were not observed in this custom store. The temporary native runner `build/upgrade-evidence/run-isolated-healthchecks.py` drives the actual configured checks only for the three isolated engine IDs, validating their Compose labels. Its PID and last results are in `healthcheck-runner-state.json`; it does not require the API socket. Keep it while exercising the rehearsal. After the coordinator is finished with that stack, `touch build/upgrade-evidence/healthcheck-runner.stop` stops only this helper. Do not copy that workaround into the live service configuration.
 
 After successful cutover or rollback, if this maintenance shell started an API process, stop only that process (the stack keeps running):
 
