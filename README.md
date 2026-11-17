@@ -106,8 +106,9 @@ the same rows, the same views and the same behaviour as in MySQL.
 ### MySQL
 
 `sql-megasamples-mysql:dev` is `mysql:9.7.4` (`utf8mb4`, InnoDB) with the chosen databases already
-in its data directory: first start answers a real query in about two seconds, and nothing is loaded
-at startup. Two accounts are offered from every console, and both are usable from any client:
+in its data directory. First start copies that directory into a fresh volume, then starts the
+server; [LTS validation](docs/lts-upgrade-evidence.md) records these separate readiness costs.
+Two accounts are offered from every console, and both are usable from any client:
 
 | account | password | privileges |
 |---|---|---|
