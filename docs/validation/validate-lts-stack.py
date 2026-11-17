@@ -15,6 +15,7 @@ import sys
 import time
 
 import yaml
+from docs.validation.lts_registry import sqlite_registry_rows
 from megasamples import config, datasets, registry, verify
 from megasamples.engines import unique_databases
 from megasamples.engines.mysql import server as mysql
@@ -92,7 +93,7 @@ elif engine == 'postgres':
     rows = pg.rows('SELECT name,row_counts::text FROM datasets ORDER BY name', 'megasamples')
 else:
     text = command('exec', 'megasamples-sqlite', 'sqlite3', '-tabs', '/data/megasamples.sqlite', 'SELECT name,row_counts FROM datasets ORDER BY name')
-    rows = [line.split('\t', 1) for line in text.splitlines()]
+    rows = sqlite_registry_rows(text)
 registry_rows = {name: json.loads(counts) for name, counts in rows}
 expected = {}
 for name in cfg.datasets(engine):
