@@ -1,15 +1,15 @@
-# Image/release provenance for the engine upgrade. Runtime references remain in their consumers.
+# Reviewed image pins; historical receipts retain their original versions.
 images:
   mysql:
-    image: docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999
-    version: 26.10.0
-    release_source: https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html
-    read_at: '2026-11-16T18:58:36.215868+00:00'
+    image: docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8
+    version: 9.7.4
+    release_source: https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html
+    read_at: '2026-11-17T15:10:43.360607+00:00'
   mysql-shell:
-    image: docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999
-    version: 26.10.0
-    release_source: https://dev.mysql.com/downloads/shell/
-    read_at: '2026-11-16T18:58:36.217605+00:00'
+    image: docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8
+    version: 9.7.1
+    release_source: https://repo.mysql.com/apt/debian/dists/trixie/mysql-9.7-lts/binary-amd64/Packages.gz
+    read_at: '2026-11-17T15:11:53.345079+00:00'
   postgres:
     image: docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
     version: '18.7'
@@ -41,10 +41,10 @@ images:
     release_source: https://www.oracle.com/database/free/get-started/
     read_at: '2026-11-16T19:41:23.043634+00:00'
   landing:
-    image: nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703
-    version: 1.30.6
+    image: nginx:1.31.8@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82
+    version: 1.31.8
     release_source: https://nginx.org/en/download.html
-    read_at: '2026-11-16T18:58:36.520324+00:00'
+    read_at: '2026-11-17T15:22:39.042627+00:00'
   cloudbeaver:
     image: dbeaver/cloudbeaver:26.2.5@sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f
     version: 26.2.5
@@ -71,6 +71,11 @@ images:
     release_source: https://registry-1.docker.io/v2/docker/dockerfile/manifests/1.29.0
     read_at: '2026-11-16T19:02:44.308731+00:00'
     registry_source: https://registry-1.docker.io/v2/docker/dockerfile/manifests/1.29.0
+  node:
+    image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    version: 24.22.3
+    release_source: https://nodejs.org/dist/index.json
+    read_at: '2026-11-17T15:10:43.916765+00:00'
 sqlite_source:
   version: 3.54.1
   url: https://sqlite.org/2026/sqlite-autoconf-3540100.tar.gz

@@ -13,7 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PIN = re.compile(r".+@sha256:[0-9a-f]{64}$")
 
 
-@pytest.mark.parametrize("engine, version", [("mysql", "26.10.0"), ("postgres", "18.7"), ("sqlite", "3.54.1")])
+@pytest.mark.parametrize("engine, version", [("mysql", "9.7.4"), ("postgres", "18.7"), ("sqlite", "3.54.1")])
 def test_advertised_engine_release(engine, version):
     assert get(engine).version == version
 
@@ -32,7 +32,7 @@ def test_every_console_is_pinned():
     assert all(PIN.fullmatch(c.image) for c in consoles.CONSOLES)
 
 
-@pytest.mark.parametrize("name, version", [("landing", "1.30.6"), ("cloudbeaver", "26.2.5"), ("dbgate", "7.3.6"), ("adminer", "6.3.0"), ("phpmyadmin", "5.2.3")])
+@pytest.mark.parametrize("name, version", [("landing", "1.31.8"), ("cloudbeaver", "26.2.5"), ("dbgate", "7.3.6"), ("adminer", "6.3.0"), ("phpmyadmin", "5.2.3")])
 def test_console_release(name, version):
     assert f":{version}@sha256:" in consoles.get(name).image
 

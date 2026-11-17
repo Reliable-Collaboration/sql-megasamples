@@ -11,6 +11,14 @@ the same independent 30-second server-query limit. The original 49.0-second MySQ
 38.2-second SQLite failures remain in the dataset receipt as historical results. The timing
 and maintenance-window section below records the fresh measurements and their limits.
 
+## Corrected target and upgrade path (DL-074)
+
+The live MySQL change is **9.7.2 → 9.7.4**, a patch upgrade within 9.7 LTS. PostgreSQL remains **18.6 → 18.7** within major 18. SQLite remains the verified **3.54.1** target. Do not deploy the superseded 26.10 Innovation candidate, reuse its data directory, or bypass MySQL Shell dump-version checks. Prepare a fresh 9.7.4 build server and rebuild the sample corpus from verified inputs. The [DL-074 audit and receipt](lts-upgrade-evidence.md) identify the matching native clients, Oracle C API, Shell and JDBC versions and all retained pins. Client patch numbers differ by product.
+
+The corrected client changes include the loader CLI/C API at 9.7.4 (source-built sysbench), Shell 9.7.1, Connector/J 9.7.0, DbGate on the newest tested compatible Node 24 LTS patch, NGINX 1.31.8 under the no-LTS current-major rule, and SQLGlot 30.33.0. DuckDB 2.0.0 and Java 25.0.5+8 are already on their newest eligible LTS lines. Preserve the unchanged memory limits until the corrected full-corpus workload proves them; this task does not infer a smaller MySQL allocation from the version number.
+
+The DL-074 PR must be merged with a merge commit and all corrected validation must pass before live execution. Historical timing numbers below remain useful context, not measurements of the corrected candidate. A final DL-074 timing/disk subsection will identify measured preparation, startup, reset, verification and rollback costs separately. No live outage or rollback duration is verified.
+
 ## Prepare while the live servers are still running
 
 Quiesce DataIntent writers before the final backups and cutover. Keep its clients paused through verification. Building from upstream can take much longer than the outage; finish it before stopping the live servers. The previous core build documented in README took approximately twenty minutes; the full manifest includes much larger datasets. No full-manifest outage duration has been established.
@@ -107,10 +115,14 @@ CLIENTS_PR=${CLIENTS_PR:-10}
 APPROVED_CLIENTS_MERGE=$(gh pr view "$CLIENTS_PR" --repo Reliable-Collaboration/sql-megasamples \
   --json mergeCommit --jq '.mergeCommit.oid // empty')
 test -n "$APPROVED_CLIENTS_MERGE"
-# PR 11 is currently draft: this check must refuse it until the failed image gates are resolved.
+# The dataset/readiness PR is already merged; DL-074 supersedes its version selection.
 DATASETS_PR=${DATASETS_PR:-11}
-APPROVED_UPGRADE_MERGE=$(gh pr view "$DATASETS_PR" --repo Reliable-Collaboration/sql-megasamples \
+APPROVED_DATASET_MERGE=$(gh pr view "$DATASETS_PR" --repo Reliable-Collaboration/sql-megasamples \
   --json mergeCommit --jq '.mergeCommit.oid // empty')
+test -n "$APPROVED_DATASET_MERGE"
+APPROVED_UPGRADE_MERGE=$(gh pr list --repo Reliable-Collaboration/sql-megasamples \
+  --state merged --head upgrade/dl074-lts-correction --limit 1 \
+  --json mergeCommit --jq '.[0].mergeCommit.oid // empty')
 test -n "$APPROVED_UPGRADE_MERGE"
 git fetch origin
 if git ls-files --error-unmatch consoles/landing/adminer.html >/dev/null 2>&1; then
@@ -121,6 +133,7 @@ git merge --ff-only origin/main
 test "$(git rev-parse HEAD)" = "$APPROVED_UPGRADE_MERGE"
 git merge-base --is-ancestor "$APPROVED_ENGINE_MERGE" HEAD
 git merge-base --is-ancestor "$APPROVED_CLIENTS_MERGE" HEAD
+git merge-base --is-ancestor "$APPROVED_DATASET_MERGE" HEAD
 # Keep the existing console page available until make up regenerates it from the same credentials.
 if test -f "$BACKUP_DIR/adminer.generated.html"; then
   cp "$BACKUP_DIR/adminer.generated.html" consoles/landing/adminer.html
@@ -178,6 +191,9 @@ for engine, entry in cfg["engines"].items():
         if status == "Unsupported" and name in names: names.remove(name)
 p.write_text(yaml.safe_dump(cfg, sort_keys=False))
 '
+# Replace only the disposable build server; its old data directory is not a downgrade source.
+ms_tool "$MEGASAMPLES_PY" -m megasamples build-server fresh
+ms_tool "$MEGASAMPLES_PY" -c 'from megasamples.engines.mysql import server; assert server.rows("SELECT VERSION()")[0][0].startswith("9.7.4")'
 ms_tool make run PY="$MEGASAMPLES_PY"
 ms_tool make test-image PY="$MEGASAMPLES_PY"
 ```
@@ -513,6 +529,8 @@ that backup (it can contain credentials and saved queries), and restore it into 
 console container for rollback as above. No engine data volume is renewed by this console step.
 
 After cutover, run `ms_tool make test-console PY="$MEGASAMPLES_PY"`. In addition, open the landing page and every configured console through their actual live localhost ports. In phpMyAdmin, list the MySQL datasets for both configured accounts. In Adminer, sign in for MySQL and PostgreSQL and list their databases. In DbGate, open each engine, including a SQLite file; in CloudBeaver, open both server accounts and every SQLite connection and list the databases. Confirm each shows the complete configured registry, test read-only denial and admin writes on a disposable table, then remove the probe. The isolated receipt records the automated HTTP/GraphQL/installed-driver probes; repeat those checks against live ports without substituting HTTP 200 for a database connection.
+
+Rollback never starts the 9.7.2 image against the candidate data directory. Restore the retained pre-upgrade cold copy and exact saved image/configuration; keep failed candidate volumes separately. The fact that this is a same-LTS patch upgrade does not replace that tested rollback discipline.
 
 Rollback keeps all original engine/console images in the archive, the original complete console/configuration tree, credentials, original Python environment and an immutable rollback branch. The new tools container and new environments are separate resources. Keep them stopped or retained for diagnosis after rollback; never replace the original tooling with the new dependency set. The original live deployment may have no running consoles: the saved running-service list ensures rollback does not start additional ones. Newly built console images are never substituted for their saved rollback image IDs.
 

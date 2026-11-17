@@ -1,4 +1,4 @@
-# Reviewed client releases, reproducible inputs and primary-source read times.
+# Reviewed client release inventory. See docs/lts-upgrade-evidence.md for policy audit.
 baseline:
   commit: 7b3d5a35966d82abd69598ed795b9610ddf27c35
   source: https://github.com/Reliable-Collaboration/sql-megasamples/tree/7b3d5a35966d82abd69598ed795b9610ddf27c35
@@ -150,9 +150,9 @@ python:
     pin: uv.lock (exact version and distribution hashes)
   sqlglot:
     before: 30.18.0
-    version: 30.32.0
+    version: 30.33.0
     release_source: https://pypi.org/pypi/sqlglot/json
-    read_at: '2026-11-17T02:39:57.837512+00:00'
+    read_at: '2026-11-17T15:18:19.590573+00:00'
     pin: uv.lock (exact version and distribution hashes)
   texttable:
     before: 1.7.0
@@ -174,12 +174,12 @@ python:
     pin: uv.lock (exact version and distribution hashes)
 consoles:
   landing:
-    image: nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703
-    version: 1.30.6
+    image: nginx:1.31.8@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82
+    version: 1.31.8
     release_source: https://nginx.org/en/download.html
-    read_at: '2026-11-16T18:58:36.520324+00:00'
+    read_at: '2026-11-17T15:22:39.042627+00:00'
     before_client_followup: 1.30.6
-    runtime_image: nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703
+    runtime_image: nginx:1.31.8@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82
     dockerfile: null
   cloudbeaver:
     image: dbeaver/cloudbeaver:26.2.5@sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f
@@ -196,7 +196,7 @@ consoles:
         source: https://hub.docker.com/v2/repositories/dbeaver/cloudbeaver/tags/26.2.5
         digest: sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f
         read_at: '2026-11-17T02:54:22.625447+00:00'
-    runtime_image: sql-megasamples-cloudbeaver:26.2.5-mysql-26.10.0-sqlite-3.54.1.0
+    runtime_image: sql-megasamples-cloudbeaver:26.2.5-mysql-9.7.0-sqlite-3.54.1.0
     dockerfile: consoles/cloudbeaver/Dockerfile
   dbgate:
     image: dbgate/dbgate:7.3.6@sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953
@@ -213,7 +213,7 @@ consoles:
         source: https://hub.docker.com/v2/repositories/dbgate/dbgate/tags/7.3.6
         digest: sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953
         read_at: '2026-11-17T02:54:22.932047+00:00'
-    runtime_image: sql-megasamples-dbgate:7.3.6-sqlite-13.2.0
+    runtime_image: sql-megasamples-dbgate:7.3.6-node-24.22.3-sqlite-13.2.0
     dockerfile: consoles/dbgate/Dockerfile
   adminer:
     image: adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c
@@ -234,10 +234,10 @@ consoles:
 drivers:
   cloudbeaver-mysql-connector-j:
     before: 8.2.0
-    version: 26.10.0
-    url: https://repo.maven.apache.org/maven2/com/mysql/mysql-connector-j/26.10.0/mysql-connector-j-26.10.0.jar
-    sha256: cef70caf532833c9ab8f41f74773ce22c08bf503fad215c9c2ee1e9db87e759e
-    read_at: '2026-11-17T02:47:32.251990+00:00'
+    version: 9.7.0
+    url: https://repo.maven.apache.org/maven2/com/mysql/mysql-connector-j/9.7.0/mysql-connector-j-9.7.0.jar
+    sha256: 0353648eaa1c91e0f4020c959abf756bc866ffd583df22ae6b6f6e0cbd43eb44
+    read_at: '2026-11-17T15:11:52.984733+00:00'
     release_source: https://repo.maven.apache.org/maven2/com/mysql/mysql-connector-j/maven-metadata.xml
     release_read_at: '2026-11-17T02:42:57.279826+00:00'
     pin: SHA-256 in consoles/cloudbeaver/Dockerfile
@@ -275,18 +275,52 @@ drivers:
     read_at: '2026-11-17T02:42:58.043635+00:00'
     pin: consoles/dbgate/driver/package-lock.json (integrity hashes)
   sysbench-connector-c:
-    before: 3.4.9
-    baseline_package: libmariadb3 1:11.8.6-0+deb13u1
-    baseline_image_id: ef3fcadcb52e
-    version: 3.4.11
-    source: https://archive.mariadb.org/connector-c-3.4.11/mariadb-connector-c-3.4.11-src.tar.gz
-    sha256: 521c0712e9291fa96558df9e2ff431376a3a79329f13751896b694cae12765b4
-    vendor_checksum_source: https://archive.mariadb.org/connector-c-3.4.11/sha256sums.txt
-    read_at: '2026-11-17T02:46:35.436041+00:00'
-    release_source: https://mariadb.org/connector-c/all-releases/
-    release_read_at: '2026-11-17T02:43:45.108646+00:00'
-    pin: vendor source SHA-256 in engines/mysql/loader.Dockerfile
-    transport: build-server network namespace, loopback; remote TLS defaults retained
+    before: 3.4.11 (MariaDB Connector/C)
+    version: 9.7.4
+    vendor: Oracle MySQL C API / libmysqlclient
+    packages:
+    - Package: libmysqlclient-dev
+      Source: mysql-community
+      Version: 9.7.4-1debian13
+      Architecture: amd64
+      Maintainer: MySQL Release Engineering <mysql-build@oss.oracle.com>
+      Installed-Size: '41457'
+      Depends: libmysqlclient24 (= 9.7.4-1debian13)
+      Breaks: libmysqld-dev
+      Replaces: libmysqld-dev, mysql-client-5.6, mysql-client-5.7, mysql-client-8.0,
+        mysql-client-core-5.6, mysql-client-core-5.7, mysql-client-core-8.0
+      Homepage: https://www.mysql.com/
+      Priority: optional
+      Section: libdevel
+      Filename: pool/mysql-9.7-lts/m/mysql-community/libmysqlclient-dev_9.7.4-1debian13_amd64.deb
+      Size: '22301008'
+      SHA256: 1f012077e30d0bb3b883beb0d3bf243237f066071fd96ed545eb65644ef64ea1
+      SHA1: f5f58b44cffde920125f025a3fbf56b2385b7602
+      MD5sum: 06887ad05586aa93c2011c074deeea56
+      Description: MySQL development headers
+    - Package: libmysqlclient24
+      Source: mysql-community
+      Version: 9.7.4-1debian13
+      Architecture: amd64
+      Maintainer: MySQL Release Engineering <mysql-build@oss.oracle.com>
+      Installed-Size: '7392'
+      Depends: mysql-common (>= 9.7.4-1debian13), mysql-community-client-plugins (=
+        9.7.4-1debian13), libc6 (>= 2.38), libgcc-s1 (>= 3.3.1), libssl3t64 (>= 3.0.0),
+        libstdc++6 (>= 13.1), zlib1g (>= 1:1.1.4)
+      Multi-Arch: same
+      Homepage: https://www.mysql.com/
+      Priority: optional
+      Section: libs
+      Filename: pool/mysql-9.7-lts/m/mysql-community/libmysqlclient24_9.7.4-1debian13_amd64.deb
+      Size: '1351176'
+      SHA256: 90388cd01e273002d345a39e79a18da165b28249e639672e482858fa262fe6b7
+      SHA1: 63e460259ce62606080fd19ec4621a58448eb793
+      MD5sum: d2365bcb7fc428cc92d4c3a81ec84771
+      Description: MySQL shared client libraries
+    release_source: https://repo.mysql.com/apt/debian/dists/trixie/mysql-9.7-lts/binary-amd64/Packages.gz
+    read_at: '2026-11-17T15:11:53.345079+00:00'
+    pin: SHA-256 checked Oracle packages in loader.Dockerfile; sysbench rebuilt against
+      libmysqlclient
   adminer-libpq:
     before: '18.6'
     version: 18.7-r0
@@ -298,7 +332,8 @@ drivers:
   psycopg-libpq:
     before: 18.6 (initial binary-wheel probe)
     version: '18.7'
-    pin: verified exact PGDG package in the isolated tools runtime; Psycopg uses its pure Python binding
+    pin: verified exact PGDG package in the isolated tools runtime; Psycopg uses its
+      pure Python binding
     source: https://apt.postgresql.org/pub/repos/apt/dists/trixie-pgdg/main/binary-amd64/Packages.gz
     read_at: '2026-11-17T04:09:43.044818+00:00'
     package:
@@ -314,8 +349,8 @@ drivers:
     read_at: '2026-11-17T05:07:04.152534+00:00'
     runtime_version_evidence: build/client-evidence/adminer-mysql-driver-version.txt
     pin: adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c
-    scope: Observed PHP-bundled mysqlnd API from this exact vendor image; follows the selected application runtime, not an
-      independently versioned driver dependency
+    scope: Observed PHP-bundled mysqlnd API from this exact vendor image; follows
+      the selected application runtime, not an independently versioned driver dependency
   phpmyadmin-mysqlnd:
     before: 8.3.36
     version: 8.3.36
@@ -323,8 +358,8 @@ drivers:
     read_at: '2026-11-17T05:07:04.157874+00:00'
     runtime_version_evidence: build/client-evidence/phpmyadmin-driver-version.txt
     pin: phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40
-    scope: Observed PHP-bundled mysqlnd API from this exact vendor image; follows the selected application runtime, not an
-      independently versioned driver dependency
+    scope: Observed PHP-bundled mysqlnd API from this exact vendor image; follows
+      the selected application runtime, not an independently versioned driver dependency
 native_clients:
   postgres:
     programs:
@@ -345,20 +380,18 @@ native_clients:
       read_at: '2026-11-17T07:16:14+00:00'
       latest_stable: '18.7'
       next_major_published: 19 RC 2
-      selection: Release candidate is not selected; latest stable clients remain 18.7, matching the target server.
+      selection: Release candidate is not selected; latest stable clients remain 18.7,
+        matching the target server.
   mysql:
     programs:
     - mysql
     - mysqladmin
     - mysqldump
-    - mysqlsh
     before_client_followup: 26.10.0
-    version: 26.10.0
-    image: docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999
-    release_source: https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html
-    read_at: '2026-11-16T18:58:36.215868+00:00'
-    current_release_source: https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html
-    current_read_at: '2026-11-17T02:40:51.624426+00:00'
+    version: 9.7.4
+    image: docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8
+    release_source: https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html
+    read_at: '2026-11-17T15:10:43.360607+00:00'
   sqlite3:
     version: 3.54.1
     url: https://sqlite.org/2026/sqlite-autoconf-3540100.tar.gz
@@ -373,10 +406,10 @@ native_clients:
     - mysqladmin
     - mysqldump
     before: MariaDB 11.8.6 (unversioned Debian default-mysql-client)
-    version: 26.10.0
-    image: docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999
-    release_source: https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html
-    read_at: '2026-11-17T02:40:51.624426+00:00'
+    version: 9.7.4
+    image: docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8
+    release_source: https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html
+    read_at: '2026-11-17T15:10:43.360607+00:00'
     pin: COPY exact binaries from digest-pinned vendor image
   sysbench:
     before: 1.0.20+ds-7
@@ -388,8 +421,18 @@ native_clients:
       version: 1.0.20
       source: https://github.com/akopytov/sysbench/releases
       read_at: '2026-11-17T03:32:12.781355+00:00'
-      evidence: Vendor release list returned in a software-only web search labels Release 1.0.20 as Latest; no authenticated
-        GitHub tool or git operation used outside the permitted repository.
+      evidence: Vendor release list returned in a software-only web search labels
+        Release 1.0.20 as Latest; no authenticated GitHub tool or git operation used
+        outside the permitted repository.
+  mysql-shell:
+    programs:
+    - mysqlsh
+    version: 9.7.1
+    image: docker.io/library/mysql:9.7.4@sha256:df90258da46f6e7ff8574ff84f17618aba0765cac749928299c69fd4e7cb8ad8
+    release_source: https://repo.mysql.com/apt/debian/dists/trixie/mysql-9.7-lts/binary-amd64/Packages.gz
+    read_at: '2026-11-17T15:11:53.345079+00:00'
+    policy: Matching 9.7 line explicitly requested by owner; Shell has a single upstream
+      release track.
 optional_export_clients:
   mssql:
     before: 18.7.1.1
@@ -468,25 +511,47 @@ optional_export_clients:
       tools_sha256: 95e60dedcaf64a4ebc4dded73f5614c494a8c17fa272cd3c0485e0d13e825000
     pin: vendor SHA-256 values in engines/oracle-client/Dockerfile
     binary_probe: Passed; no Oracle database started
-    native_connection_load_check: Not run, pending explicit Oracle Free Use Terms acceptance
+    native_connection_load_check: Not run, pending explicit Oracle Free Use Terms
+      acceptance
     platform: Linux x86-64; other architectures Unsupported by this optional recipe
 scope_notes:
-- Console image pins already upgraded in engine PR 9 are retained; configured older embedded drivers are upgraded independently.
-- Python sqlite3 uses the validated tools runtime library 3.54.1; it is part of that runtime rather than a PyPI dependency.
-- psycopg is a new exact dev dependency for the published-endpoint probe, previously an undeclared helper dependency.
-- No psycopg2, SQLAlchemy, python-oracledb, mysql-connector-python, pgloader or SQLcl import/execution exists in the current
-  repository; knowledge-only references are not installed clients.
-- CloudBeaver MariaDB driver is present in the vendor image but no MariaDB connection is configured. Other unused vendor drivers
-  are not independently selected clients.
-- PHP mysqlnd follows the selected current vendor PHP runtime. Adminer libpq is independently upgraded to 18.7. The endpoint
-  driver uses pure Psycopg with a separately pinned 18.7 libpq package; it does not use the older library bundled in the binary
-  wheel.
-- Transport/build utilities such as curl, git, compilers, Docker/Compose and Python itself are tooling runtimes, not independent
-  database clients. Their observed versions/identities are captured where used; no claim is made that the host tooling was
-  upgraded.
+- Console image pins already upgraded in engine PR 9 are retained; configured older
+  embedded drivers are upgraded independently.
+- Python sqlite3 uses the validated tools runtime library 3.54.1; it is part of that
+  runtime rather than a PyPI dependency.
+- psycopg is a new exact dev dependency for the published-endpoint probe, previously
+  an undeclared helper dependency.
+- No psycopg2, SQLAlchemy, python-oracledb, mysql-connector-python, pgloader or SQLcl
+  import/execution exists in the current repository; knowledge-only references are
+  not installed clients.
+- CloudBeaver MariaDB driver is present in the vendor image but no MariaDB connection
+  is configured. Other unused vendor drivers are not independently selected clients.
+- PHP mysqlnd follows the selected current vendor PHP runtime. Adminer libpq is independently
+  upgraded to 18.7. The endpoint driver uses pure Psycopg with a separately pinned
+  18.7 libpq package; it does not use the older library bundled in the binary wheel.
+- Transport/build utilities such as curl, git, compilers, Docker/Compose and Python
+  itself are tooling runtimes, not independent database clients. Their observed versions/identities
+  are captured where used; no claim is made that the host tooling was upgraded.
+- 'DL-074 supersedes the former latest-stable selection: Oracle MySQL CLI/C API 9.7.4,
+  Shell 9.7.1 and Connector/J 9.7.0. Connector versions follow their own available
+  9.7 patch numbers; none is fabricated to equal the server patch.'
 screenshot_client:
   image: mcr.microsoft.com/playwright/python:v1.65.0-noble@sha256:f9294526294a7bdfb8ca8aa7d815c049125a10e73b65d47fb9a80f5d74f284a6
   version: 1.65.0
   release_source: https://playwright.dev/python/docs/release-notes
   read_at: '2026-11-17T02:40:57.779038+00:00'
   pip_pin: playwright==1.65.0 in Makefile
+runtimes:
+  dbgate-node:
+    version: 24.22.3
+    image: node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
+    release_source: https://nodejs.org/dist/index.json
+    read_at: '2026-11-17T15:10:43.916765+00:00'
+    policy: https://nodejs.org/en/about/previous-releases
+    compatibility: Node 26.13.1 failed to build bundled ssh2 native binding; Node
+      24 is the newest tested compatible LTS.
+  cloudbeaver-java:
+    version: 25.0.5+8
+    release_source: https://adoptium.net/support/
+    read_at: '2026-11-17T15:10:44.043513+00:00'
+    pin: vendor CloudBeaver image digest

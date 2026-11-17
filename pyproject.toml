@@ -8,7 +8,7 @@ dependencies = [
     "PyMySQL[rsa]==1.2.4",
     "duckdb==2.0.0",
     "lxml==6.1.3",
-    "sqlglot==30.32.0",
+    "sqlglot==30.33.0",
     "py7zr==1.1.4",
     "backports.zstd==1.8.0; python_version < '3.14'",
 ]
