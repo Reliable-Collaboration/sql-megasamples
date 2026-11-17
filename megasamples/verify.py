@@ -295,6 +295,9 @@ def stage_views(ad, cfg, schema, d, pin, res):
     """Every view's row count and canonical digest, pinned from MySQL: a ported view is right when
     it returns the same rows, not merely when it exists."""
     from megasamples import canon
+    if ad.name == "mysql" and cfg.get("mysql_view_clock"):
+        ad = ad.with_clock(cfg["mysql_view_clock"])
+        res.note(f"view verification clock: {cfg['mysql_view_clock']} (session only)")
     path = os.path.join(d, "tests", "views.yaml")
     expected = None if pin else load_yaml(path)
     observed = {}

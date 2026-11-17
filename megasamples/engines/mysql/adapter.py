@@ -1,5 +1,8 @@
 """The verification adapter for MySQL: every stage's questions, answered with information_schema
 and the canonical digest in SQL (megasamples/canon.py)."""
+import copy
+from datetime import datetime, timezone
+
 from megasamples import canon
 from megasamples.engines.mysql import server as db
 
@@ -72,6 +75,27 @@ class MySQLAdapter:
     name = "mysql"
     exact_decimals = True
 
+    def with_clock(self, value):
+        """A verification-only adapter for view baselines made at a recorded UTC second.
+
+        Each fingerprint uses a fresh client, so SET timestamp must share that query's session.
+        The ordinary adapter and server-wide clock are never changed.
+        """
+        if not isinstance(value, str):
+            raise ValueError("MySQL view clock must be an explicit UTC timestamp")
+        try:
+            instant = datetime.fromisoformat(value)
+        except ValueError as exc:
+            raise ValueError("invalid MySQL view clock") from exc
+        if instant.tzinfo is None or instant.utcoffset() != timezone.utc.utcoffset(instant) or instant.microsecond:
+            raise ValueError("MySQL view clock must specify a whole UTC second")
+        epoch = int(instant.timestamp())
+        if not 1 <= epoch <= 2147483647:
+            raise ValueError("MySQL view clock is outside the server timestamp range")
+        frozen = copy.copy(self)
+        frozen._clock_epoch = epoch
+        return frozen
+
     def supports(self, stage):
         return True
 
@@ -89,7 +113,10 @@ class MySQLAdapter:
         return int(db.rows(f"SELECT COUNT(*) FROM `{schema}`.`{table}`")[0][0])
 
     def fingerprint(self, schema, table, cols):
-        row = db.rows(canon.fingerprint_sql(schema, table, cols))[0]
+        sql = canon.fingerprint_sql(schema, table, cols)
+        if getattr(self, "_clock_epoch", None) is not None:
+            sql = f"SET timestamp={self._clock_epoch}; " + sql
+        row = db.rows(sql)[0]
         return int(row[0]), int(row[1]), int(row[2])
 
     def foreign_keys(self, schema):

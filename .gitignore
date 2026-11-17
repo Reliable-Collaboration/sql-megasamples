@@ -17,5 +17,6 @@ __pycache__/
 megasamples.yaml
 compose.yaml
 consoles/landing/index.html
+consoles/landing/adminer.html
 consoles/cloudbeaver/generated/
 
