@@ -16,7 +16,7 @@ RUN apt-get update -qq && apt-get install -y --no-install-recommends libbz2-1.0 
  && rm -rf /var/lib/apt/lists/*
 COPY --from=app /etc/apache2/ /etc/apache2/
 COPY --from=app /etc/phpmyadmin/ /etc/phpmyadmin/
-COPY --from=app /sessions/ /sessions/
+COPY --from=app --chown=www-data:www-data /sessions/ /sessions/
 COPY --from=app /var/www/html/ /var/www/html/
 COPY --from=app /docker-entrypoint.sh /docker-entrypoint.sh
 COPY --from=app /usr/local/etc/php/conf.d/ /usr/local/etc/php/conf.d/
@@ -36,7 +36,8 @@ ENV SESSION_SAVE_PATH="/sessions"
 ENV VERSION="5.2.3"
 ENV SHA256="57881348297c4412f86c410547cf76b4d8a236574dd2c6b7d6a2beebe7fc44e3"
 ENV URL="https://files.phpmyadmin.net/phpMyAdmin/5.2.3/phpMyAdmin-5.2.3-all-languages.tar.xz"
-RUN php -m >/tmp/php-modules 2>/tmp/php-startup-errors && test ! -s /tmp/php-startup-errors \
+RUN install -d -o www-data -g www-data -m 1777 /sessions \
+ && php -m >/tmp/php-modules 2>/tmp/php-startup-errors && test ! -s /tmp/php-startup-errors \
  && php -r 'if (PHP_VERSION !== "8.5.12") exit(1); foreach (["bcmath","bz2","gd","mysqli","zip","uploadprogress"] as $e) { if (!extension_loaded($e)) exit(1); } if (phpversion("uploadprogress") !== "2.0.2") exit(1); echo PHP_VERSION," ",mysqli_get_client_info(),"\n";'
 WORKDIR /var/www/html
 ENTRYPOINT ["/docker-entrypoint.sh"]

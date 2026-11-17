@@ -518,10 +518,10 @@ If a `docker pull` or a download hangs with no error, suspect IPv6 first — see
 covers the `make pull-image` workaround this project uses to fetch images over IPv4.
 
 The reviewed client inputs and vendor-source read times are in `clients.lock.yaml`.
-`make up` builds CloudBeaver, DbGate and Adminer extensions from pinned vendor images,
-with current JDBC jars, a locked native SQLite module and a current PostgreSQL library. The loader
-uses Oracle's matching MySQL command-line clients and an independently pinned
-Connector/C. `make oracle-client-image` builds the optional current SQL*Plus and
+`make up` builds CloudBeaver, DbGate, Adminer and phpMyAdmin extensions from pinned vendor images,
+with the selected JDBC jars, native SQLite module, PostgreSQL library and PHP/Node runtimes. The loader
+uses Oracle's matching MySQL command-line clients and C API, with sysbench built against that library.
+The complete [LTS audit](docs/lts-upgrade-evidence.md) records policies, source read times and compatible targets. `make oracle-client-image` builds the optional current SQL*Plus and
 SQL*Loader binaries; `make verify-oracle` retains its explicit database license gate.
 
 For a deliberate Python refresh, update the exact requirements in `pyproject.toml`,

@@ -33,6 +33,19 @@ def get(url, timeout=20):
         return r.status, r.read().decode("utf-8", "replace")
 
 
+def phpmyadmin_ready(port, wanted, timeout=20):
+    """A session-start error also returns HTTP 200; require both database lists."""
+    problems = []
+    for server in (1, 2):
+        status, body = get(f"http://127.0.0.1:{port}/index.php?route=/server/databases&server={server}",
+                           timeout=timeout)
+        missing = [name for name in wanted if name not in body]
+        if status != 200 or missing:
+            problems.append(f"phpMyAdmin: server {server} did not list its databases "
+                            f"(HTTP {status}; missing: {', '.join(missing[:6])})")
+    return problems
+
+
 def cloudbeaver_ready(port, wanted, timeout=20):
     """CloudBeaver answers even while it shows its setup wizard, so HTTP 200 proves nothing. Ask
     whether it is still in configuration mode and whether an anonymous visitor can open each
@@ -135,6 +148,14 @@ def main(argv=None):
             else:
                 print(f"  . the landing page names all {len(names)} {engine.title} databases in the registry")
         engine_checks(engine, cfg, demo_pw, admin_pw, failures)
+        if name == "mysql" and "phpmyadmin" in cfg.consoles:
+            try:
+                problems = phpmyadmin_ready(cfg.ports["phpmyadmin"], names)
+                failures += problems
+                if not problems:
+                    print("  . phpMyAdmin lists every MySQL database for both configured accounts")
+            except (urllib.error.URLError, OSError) as exc:
+                failures.append(f"phpMyAdmin: could not check its database lists: {exc}")
 
     if "cloudbeaver" in cfg.consoles:
         wanted = [f"{e}-{a}" for e in cfg.engines if e in ("mysql", "postgres") for a in ("demo", "admin")]
