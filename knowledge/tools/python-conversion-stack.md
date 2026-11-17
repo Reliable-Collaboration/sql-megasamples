@@ -34,6 +34,9 @@ sources:
 ---
 
 # Facts
+
+This dated package table is historical. The current project pins are in repository-root `pyproject.toml`, `uv.lock` and `clients.lock.yaml`; current validation is in `docs/client-upgrade-evidence.md`. `pyarrow` and `mwxml` are knowledge-only references, not current project dependencies. Architecture claims below are historical; current execution coverage is recorded in that receipt.
+
 | Package | Version (2026-09-02) | License | Role |
 |---|---|---|---|
 | Python | 3.14.4 on the build host; container image `python:3.13-slim` (**Inferred** availability; 3.13 chosen because pyarrow supports 3.10–3.14 and 3.13 is the most widely packaged) | PSF | runtime |

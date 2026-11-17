@@ -20,6 +20,12 @@ class Console:
     letter: str = ""               # the one-letter badge the landing page uses for the deep link
     volumes: list = field(default_factory=list)
     environment: dict = field(default_factory=dict)   # settings the console needs whatever the engines
+    build_image: str = ""          # local image built from the pinned vendor image and driver lock
+    dockerfile: str = ""
+
+    @property
+    def runtime_image(self):
+        return self.build_image or self.image
 
     @property
     def container(self):
@@ -42,17 +48,23 @@ CONSOLES = [
             environment={"CLOUDBEAVER_APP_GRANT_CONNECTIONS_ACCESS_TO_ANONYMOUS_TEAM": "true",
                          "CLOUDBEAVER_APP_READ_ONLY_CONNECTION_INFO": "true",
                          "CLOUDBEAVER_SYSTEM_VARIABLES_RESOLVING_ENABLED": "true",
-                         "DEMO_PASSWORD": "${DEMO_PASSWORD:-demo}", "ADMIN_PASSWORD": "${ADMIN_PASSWORD:-admin}"}),
+                         "DEMO_PASSWORD": "${DEMO_PASSWORD:-demo}", "ADMIN_PASSWORD": "${ADMIN_PASSWORD:-admin}"},
+            build_image="sql-megasamples-cloudbeaver:26.2.5-mysql-26.10.0-sqlite-3.54.1.0",
+            dockerfile="consoles/cloudbeaver/Dockerfile"),
     # the Debian-based image, not the Alpine one: the SQLite driver's native module (better-sqlite3)
     # is built against glibc and fails to load on musl ("fcntl64: symbol not found"), measured on
     # 6.6.1-alpine on 2026-09-10; on this image it opens a file and answers a query
     Console("dbgate", "DbGate", ("mysql", "postgres", "sqlite"),
             "dbgate/dbgate:7.3.6@sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953", 3000, "320m",
-            "Every connection preconfigured in the sidebar: both accounts on each server engine, one per SQLite file."),
+            "Every connection preconfigured in the sidebar: both accounts on each server engine, one per SQLite file.",
+            build_image="sql-megasamples-dbgate:7.3.6-sqlite-13.2.0",
+            dockerfile="consoles/dbgate/Dockerfile"),
     Console("adminer", "Adminer", ("mysql", "postgres"),
             "adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c", 8080, "160m",
             "Its login form remains: the page behind this card says what to type for each engine, and opens it filled in.",
-            "http://127.0.0.1:{port}/?server=mysql&username=demo&db={db}", "A"),
+            "http://127.0.0.1:{port}/?server=mysql&username=demo&db={db}", "A",
+            build_image="sql-megasamples-adminer:6.3.0-libpq-18.7-r0",
+            dockerfile="consoles/adminer/Dockerfile"),
     Console("phpmyadmin", "phpMyAdmin", ("mysql",),
             "phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40", 80, "256m",
             "MySQL only. Signed in already; the server menu switches account.",

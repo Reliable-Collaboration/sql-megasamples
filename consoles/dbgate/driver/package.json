@@ -1,0 +1,6 @@
+{
+  "name": "sql-megasamples-dbgate-sqlite-driver",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {"better-sqlite3": "13.2.0"}
+}

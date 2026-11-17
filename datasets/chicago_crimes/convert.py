@@ -45,8 +45,10 @@ CRIME_COLUMNS = [
     ("primary_type", "VARCHAR(40)", "primary_type"),
     ("description", "VARCHAR(80)", "description"),
     ("location_description", "VARCHAR(80)", "location_description"),
-    ("arrest", "TINYINT(1)", "CAST(arrest AS TINYINT)"),
-    ("domestic", "TINYINT(1)", "CAST(domestic AS TINYINT)"),
+    # CASE preserves NULL and prevents DuckDB 2's CSV cast pushdown from asking
+    # the CSV reader to parse the literal true/false as an integer.
+    ("arrest", "TINYINT(1)", "CASE arrest WHEN true THEN 1 WHEN false THEN 0 END"),
+    ("domestic", "TINYINT(1)", "CASE domestic WHEN true THEN 1 WHEN false THEN 0 END"),
     ("beat", "SMALLINT", "CAST(beat AS SMALLINT)"),
     ("district", "TINYINT", "CAST(district AS TINYINT)"),
     ("ward", "TINYINT", "CAST(ward AS TINYINT)"),
@@ -74,7 +76,10 @@ def full(downloads, dest):
     if missing:
         sys.exit(f"missing year file(s): {', '.join(missing)}; run megasamples/fetch.py chicago_crimes_full")
     glob = os.path.join(downloads, "full", "crimes_2[0-9][0-9][0-9].csv").replace("'", "''")
-    source = f"read_csv('{glob}', header=true, union_by_name=true)"
+    # DuckDB 2 can push the projected TINYINT cast into the CSV reader. Keep the
+    # source booleans explicit so literal true/false is parsed before projection.
+    source = (f"read_csv('{glob}', header=true, union_by_name=true, "
+              "types={'arrest': 'BOOLEAN', 'domestic': 'BOOLEAN'})")
 
     per_year = con.execute(
         f'SELECT "year", COUNT(*) FROM {source} GROUP BY "year" ORDER BY "year"').fetchall()
@@ -158,7 +163,8 @@ def main():
     crimes = os.path.join(downloads, CRIMES).replace("'", "''")
     iucr = os.path.join(downloads, IUCR).replace("'", "''")
     con = duckdb.connect()
-    source = f"read_csv('{crimes}', header=true)"
+    source = (f"read_csv('{crimes}', header=true, "
+              "types={'arrest': 'BOOLEAN', 'domestic': 'BOOLEAN'})")
 
     rows = con.execute(f"SELECT COUNT(*) FROM {source}").fetchone()[0]
     distinct_ids = con.execute(f"SELECT COUNT(DISTINCT id) FROM {source}").fetchone()[0]
@@ -171,12 +177,12 @@ def main():
     con.execute(f"COPY (SELECT {projection} FROM {source} ORDER BY id) "
                 f"TO '{os.path.join(context, 'crimes.tsv')}' {COPY_OPTIONS}")
 
-    codes = f"read_csv('{iucr}', header=true)"
+    codes = f"read_csv('{iucr}', header=true, types={{'ACTIVE': 'BOOLEAN'}})"
     code_rows = con.execute(f"SELECT COUNT(*) FROM {codes}").fetchone()[0]
     con.execute(f"""COPY (SELECT "IUCR" AS iucr, "PRIMARY DESCRIPTION" AS primary_description,
                                  "SECONDARY DESCRIPTION" AS secondary_description,
                                  "INDEX CODE" AS index_code,
-                                 CAST("ACTIVE" AS TINYINT) AS active
+                                 CASE "ACTIVE" WHEN true THEN 1 WHEN false THEN 0 END AS active
                           FROM {codes} ORDER BY "IUCR")
                     TO '{os.path.join(context, 'iucr.tsv')}' {COPY_OPTIONS}""")
 

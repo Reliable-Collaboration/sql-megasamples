@@ -1,0 +1,4323 @@
+{
+  "all_pair_reset": {
+    "all_markers_removed": true,
+    "every_sqlite_file_byte_identical": true,
+    "physical_databases": {
+      "mysql": [
+        "jaffle_shop",
+        "dvdstore",
+        "oracle_hr",
+        "pubs",
+        "smallsets",
+        "chinook",
+        "sakila",
+        "adventureworks_lt",
+        "northwind",
+        "nyc_taxi",
+        "oracle_co",
+        "oracle_oe",
+        "stackexchange_beer",
+        "contoso",
+        "adventureworks_dw",
+        "adventureworks",
+        "lahman",
+        "contoso_1m",
+        "chicago_crimes",
+        "oracle_sh",
+        "employees",
+        "stackexchange_dba",
+        "enron",
+        "enron_full",
+        "contoso_10m",
+        "wikipedia_simple",
+        "wikipedia_simple_full"
+      ],
+      "postgres": [
+        "jaffle_shop",
+        "dvdstore",
+        "oracle_hr",
+        "pubs",
+        "smallsets",
+        "chinook",
+        "sakila",
+        "adventureworks_lt",
+        "northwind",
+        "nyc_taxi",
+        "oracle_co",
+        "oracle_oe",
+        "stackexchange_beer",
+        "contoso",
+        "adventureworks_dw",
+        "adventureworks",
+        "lahman",
+        "contoso_1m",
+        "chicago_crimes",
+        "oracle_sh",
+        "employees",
+        "stackexchange_dba",
+        "enron",
+        "enron_full",
+        "contoso_10m",
+        "wikipedia_simple",
+        "wikipedia_simple_full"
+      ],
+      "sqlite": [
+        "jaffle_shop",
+        "dvdstore",
+        "oracle_hr",
+        "pubs",
+        "smallsets",
+        "chinook",
+        "sakila",
+        "adventureworks_lt",
+        "northwind",
+        "nyc_taxi",
+        "oracle_co",
+        "oracle_oe",
+        "stackexchange_beer",
+        "contoso",
+        "adventureworks_dw",
+        "adventureworks",
+        "lahman",
+        "contoso_1m",
+        "chicago_crimes",
+        "oracle_sh",
+        "employees",
+        "stackexchange_dba",
+        "enron",
+        "enron_full",
+        "contoso_10m",
+        "wikipedia_simple",
+        "wikipedia_simple_full"
+      ]
+    },
+    "returncode": 0,
+    "same_count_pubs_text_and_binary_restored": true,
+    "seconds": 6321.23,
+    "selectors": [
+      "mysql:jaffle_shop",
+      "mysql:dvdstore",
+      "mysql:oracle_hr",
+      "mysql:pubs",
+      "mysql:smallsets",
+      "mysql:chinook",
+      "mysql:sakila",
+      "mysql:adventureworks_lt",
+      "mysql:northwind",
+      "mysql:nyc_taxi",
+      "mysql:oracle_co",
+      "mysql:oracle_oe",
+      "mysql:stackexchange_beer",
+      "mysql:contoso",
+      "mysql:adventureworks_dw",
+      "mysql:adventureworks",
+      "mysql:lahman",
+      "mysql:contoso_1m",
+      "mysql:nyc_taxi_yellow",
+      "mysql:chicago_crimes",
+      "mysql:oracle_sh",
+      "mysql:employees",
+      "mysql:dvdstore_reviews",
+      "mysql:stackexchange_dba",
+      "mysql:enron",
+      "mysql:enron_full",
+      "mysql:contoso_10m",
+      "mysql:wikipedia_simple",
+      "mysql:wikipedia_simple_full",
+      "mysql:chicago_crimes_full",
+      "postgres:jaffle_shop",
+      "postgres:dvdstore",
+      "postgres:oracle_hr",
+      "postgres:pubs",
+      "postgres:smallsets",
+      "postgres:chinook",
+      "postgres:sakila",
+      "postgres:adventureworks_lt",
+      "postgres:northwind",
+      "postgres:nyc_taxi",
+      "postgres:oracle_co",
+      "postgres:oracle_oe",
+      "postgres:stackexchange_beer",
+      "postgres:contoso",
+      "postgres:adventureworks_dw",
+      "postgres:adventureworks",
+      "postgres:lahman",
+      "postgres:contoso_1m",
+      "postgres:nyc_taxi_yellow",
+      "postgres:chicago_crimes",
+      "postgres:oracle_sh",
+      "postgres:employees",
+      "postgres:dvdstore_reviews",
+      "postgres:stackexchange_dba",
+      "postgres:enron",
+      "postgres:enron_full",
+      "postgres:contoso_10m",
+      "postgres:wikipedia_simple",
+      "postgres:wikipedia_simple_full",
+      "postgres:chicago_crimes_full",
+      "sqlite:jaffle_shop",
+      "sqlite:dvdstore",
+      "sqlite:oracle_hr",
+      "sqlite:pubs",
+      "sqlite:smallsets",
+      "sqlite:chinook",
+      "sqlite:sakila",
+      "sqlite:adventureworks_lt",
+      "sqlite:northwind",
+      "sqlite:nyc_taxi",
+      "sqlite:oracle_co",
+      "sqlite:oracle_oe",
+      "sqlite:stackexchange_beer",
+      "sqlite:contoso",
+      "sqlite:adventureworks_dw",
+      "sqlite:adventureworks",
+      "sqlite:lahman",
+      "sqlite:contoso_1m",
+      "sqlite:nyc_taxi_yellow",
+      "sqlite:chicago_crimes",
+      "sqlite:oracle_sh",
+      "sqlite:employees",
+      "sqlite:dvdstore_reviews",
+      "sqlite:stackexchange_dba",
+      "sqlite:enron",
+      "sqlite:enron_full",
+      "sqlite:contoso_10m",
+      "sqlite:wikipedia_simple",
+      "sqlite:wikipedia_simple_full",
+      "sqlite:chicago_crimes_full"
+    ],
+    "status": "Passed"
+  },
+  "append_reset": {
+    "added_table_removed": true,
+    "core_row_restored": true,
+    "seconds": 378.77,
+    "selectors": [
+      "mysql:dvdstore_reviews",
+      "postgres:dvdstore_reviews",
+      "sqlite:dvdstore_reviews"
+    ],
+    "sqlite_bytes_restored": true,
+    "status": "Passed"
+  },
+  "base_commit": "7b3d5a35966d82abd69598ed795b9610ddf27c35",
+  "branch": "upgrade/latest-stable-clients",
+  "captured_at": "2026-11-17T07:48:21.245982+00:00",
+  "client_pr": {
+    "draft": true,
+    "merge_commit": null,
+    "merge_disposition": "Not run: remains draft pending explicit Oracle Free Use Terms decision and optional native connection/load verification; binaries built/probed, database not started.",
+    "number": 10,
+    "state": "OPEN",
+    "url": "https://github.com/Reliable-Collaboration/sql-megasamples/pull/10"
+  },
+  "compatibility_sources": {
+    "phpmyadmin_requirements": {
+      "method": "fresh web-tool read",
+      "read_at": "2026-11-17T03:57:28+00:00",
+      "source": "https://docs.phpmyadmin.net/en/release_5_2_3/require.html",
+      "support_floor": "MySQL 5.5 or newer"
+    },
+    "postgres_jdbc": {
+      "method": "fresh web-tool read",
+      "read_at": "2026-11-17T03:57:28+00:00",
+      "source": "https://jdbc.postgresql.org/download/",
+      "support_floor": "PostgreSQL 8.4 or newer; Java 8 or newer; vendor testing from PostgreSQL 9.1",
+      "version": "42.7.14"
+    }
+  },
+  "console_probes": {
+    "adminer": {
+      "authenticated_http_ui_database_lists": {
+        "mysql": [
+          "adventureworks",
+          "adventureworks_dw",
+          "adventureworks_lt",
+          "chicago_crimes",
+          "chinook",
+          "contoso",
+          "contoso_10m",
+          "contoso_1m",
+          "dvdstore",
+          "employees",
+          "enron",
+          "enron_full",
+          "jaffle_shop",
+          "lahman",
+          "northwind",
+          "nyc_taxi",
+          "oracle_co",
+          "oracle_hr",
+          "oracle_oe",
+          "oracle_sh",
+          "pubs",
+          "sakila",
+          "smallsets",
+          "stackexchange_beer",
+          "stackexchange_dba",
+          "wikipedia_simple",
+          "wikipedia_simple_full"
+        ],
+        "postgres": [
+          "adventureworks",
+          "adventureworks_dw",
+          "adventureworks_lt",
+          "chicago_crimes",
+          "chinook",
+          "contoso",
+          "contoso_10m",
+          "contoso_1m",
+          "dvdstore",
+          "employees",
+          "enron",
+          "enron_full",
+          "jaffle_shop",
+          "lahman",
+          "northwind",
+          "nyc_taxi",
+          "oracle_co",
+          "oracle_hr",
+          "oracle_oe",
+          "oracle_sh",
+          "pubs",
+          "sakila",
+          "smallsets",
+          "stackexchange_beer",
+          "stackexchange_dba",
+          "wikipedia_simple",
+          "wikipedia_simple_full"
+        ]
+      },
+      "status": "Passed"
+    },
+    "cloudbeaver": {
+      "connections": {
+        "mysql-admin": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Databases",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/mysql-admin/database"
+            },
+            {
+              "hasChildren": true,
+              "name": "Users",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/mysql-admin/users"
+            },
+            {
+              "hasChildren": true,
+              "name": "System Info",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/mysql-admin/folderInfo"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "mysql-demo": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Databases",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/mysql-demo/database"
+            },
+            {
+              "hasChildren": true,
+              "name": "Users",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/mysql-demo/users"
+            },
+            {
+              "hasChildren": true,
+              "name": "System Info",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/mysql-demo/folderInfo"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "postgres-admin": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Databases",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/postgres-admin/database"
+            },
+            {
+              "hasChildren": true,
+              "name": "Administer",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/postgres-admin/folderAdmin"
+            },
+            {
+              "hasChildren": true,
+              "name": "System Info",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/postgres-admin/folder_info"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "postgres-demo": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Databases",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/postgres-demo/database"
+            },
+            {
+              "hasChildren": true,
+              "name": "Administer",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/postgres-demo/folderAdmin"
+            },
+            {
+              "hasChildren": true,
+              "name": "System Info",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/postgres-demo/folder_info"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-adventureworks": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-adventureworks_dw": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks_dw/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks_dw/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks_dw/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks_dw/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks_dw/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks_dw/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-adventureworks_lt": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks_lt/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks_lt/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks_lt/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks_lt/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks_lt/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-adventureworks_lt/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-chicago_crimes": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-chicago_crimes/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-chicago_crimes/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-chicago_crimes/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-chicago_crimes/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-chicago_crimes/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-chicago_crimes/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-chinook": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-chinook/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-chinook/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-chinook/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-chinook/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-chinook/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-chinook/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-contoso": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-contoso_10m": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso_10m/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso_10m/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso_10m/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso_10m/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso_10m/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso_10m/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-contoso_1m": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso_1m/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso_1m/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso_1m/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso_1m/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso_1m/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-contoso_1m/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-dvdstore": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-dvdstore/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-dvdstore/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-dvdstore/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-dvdstore/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-dvdstore/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-dvdstore/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-employees": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-employees/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-employees/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-employees/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-employees/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-employees/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-employees/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-enron": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-enron/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-enron/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-enron/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-enron/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-enron/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-enron/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-enron_full": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-enron_full/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-enron_full/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-enron_full/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-enron_full/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-enron_full/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-enron_full/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-jaffle_shop": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-jaffle_shop/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-jaffle_shop/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-jaffle_shop/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-jaffle_shop/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-jaffle_shop/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-jaffle_shop/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-lahman": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-lahman/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-lahman/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-lahman/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-lahman/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-lahman/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-lahman/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-northwind": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-northwind/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-northwind/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-northwind/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-northwind/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-northwind/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-northwind/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-nyc_taxi": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-nyc_taxi/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-nyc_taxi/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-nyc_taxi/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-nyc_taxi/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-nyc_taxi/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-nyc_taxi/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-oracle_co": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_co/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_co/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_co/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_co/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_co/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_co/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-oracle_hr": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_hr/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_hr/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_hr/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_hr/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_hr/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_hr/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-oracle_oe": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_oe/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_oe/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_oe/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_oe/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_oe/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_oe/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-oracle_sh": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_sh/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_sh/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_sh/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_sh/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_sh/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-oracle_sh/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-pubs": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-pubs/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-pubs/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-pubs/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-pubs/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-pubs/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-pubs/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-sakila": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-sakila/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-sakila/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-sakila/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-sakila/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-sakila/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-sakila/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-smallsets": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-smallsets/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-smallsets/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-smallsets/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-smallsets/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-smallsets/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-smallsets/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-stackexchange_beer": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-stackexchange_beer/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-stackexchange_beer/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-stackexchange_beer/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-stackexchange_beer/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-stackexchange_beer/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-stackexchange_beer/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-stackexchange_dba": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-stackexchange_dba/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-stackexchange_dba/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-stackexchange_dba/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-stackexchange_dba/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-stackexchange_dba/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-stackexchange_dba/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-wikipedia_simple": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-wikipedia_simple/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-wikipedia_simple/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-wikipedia_simple/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-wikipedia_simple/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-wikipedia_simple/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-wikipedia_simple/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        },
+        "sqlite-wikipedia_simple_full": {
+          "children": [
+            {
+              "hasChildren": true,
+              "name": "Tables",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-wikipedia_simple_full/table"
+            },
+            {
+              "hasChildren": true,
+              "name": "Views",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-wikipedia_simple_full/view"
+            },
+            {
+              "hasChildren": true,
+              "name": "Indexes",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-wikipedia_simple_full/index"
+            },
+            {
+              "hasChildren": true,
+              "name": "Sequences",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-wikipedia_simple_full/sequence"
+            },
+            {
+              "hasChildren": true,
+              "name": "Table Triggers",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-wikipedia_simple_full/tableTrigger"
+            },
+            {
+              "hasChildren": true,
+              "name": "Data Types",
+              "plainName": null,
+              "uri": "node://g_GlobalConfiguration/datasources/sqlite-wikipedia_simple_full/dataType"
+            }
+          ],
+          "client_version": null,
+          "server_version": null
+        }
+      },
+      "opened_connections": 31,
+      "status": "Passed"
+    },
+    "dbgate": {
+      "mysql": [
+        "adventureworks",
+        "adventureworks_dw",
+        "adventureworks_lt",
+        "chicago_crimes",
+        "chinook",
+        "contoso",
+        "contoso_10m",
+        "contoso_1m",
+        "dvdstore",
+        "employees",
+        "enron",
+        "enron_full",
+        "jaffle_shop",
+        "lahman",
+        "northwind",
+        "nyc_taxi",
+        "oracle_co",
+        "oracle_hr",
+        "oracle_oe",
+        "oracle_sh",
+        "pubs",
+        "sakila",
+        "smallsets",
+        "stackexchange_beer",
+        "stackexchange_dba",
+        "wikipedia_simple",
+        "wikipedia_simple_full"
+      ],
+      "postgres": [
+        "adventureworks",
+        "adventureworks_dw",
+        "adventureworks_lt",
+        "chicago_crimes",
+        "chinook",
+        "contoso",
+        "contoso_10m",
+        "contoso_1m",
+        "dvdstore",
+        "employees",
+        "enron",
+        "enron_full",
+        "jaffle_shop",
+        "lahman",
+        "northwind",
+        "nyc_taxi",
+        "oracle_co",
+        "oracle_hr",
+        "oracle_oe",
+        "oracle_sh",
+        "pubs",
+        "sakila",
+        "smallsets",
+        "stackexchange_beer",
+        "stackexchange_dba",
+        "wikipedia_simple",
+        "wikipedia_simple_full"
+      ],
+      "sqlite": [
+        "adventureworks",
+        "adventureworks_dw",
+        "adventureworks_lt",
+        "chicago_crimes",
+        "chinook",
+        "contoso",
+        "contoso_10m",
+        "contoso_1m",
+        "dvdstore",
+        "employees",
+        "enron",
+        "enron_full",
+        "jaffle_shop",
+        "lahman",
+        "northwind",
+        "nyc_taxi",
+        "oracle_co",
+        "oracle_hr",
+        "oracle_oe",
+        "oracle_sh",
+        "pubs",
+        "sakila",
+        "smallsets",
+        "stackexchange_beer",
+        "stackexchange_dba",
+        "wikipedia_simple",
+        "wikipedia_simple_full"
+      ],
+      "status": "Passed",
+      "versions": {
+        "better_sqlite3": "13.2.0",
+        "mysql2": "3.24.6",
+        "pg": "8.23.1",
+        "sqlite_runtime": "3.54.1"
+      }
+    },
+    "phpmyadmin": {
+      "http_ui_database_lists": {
+        "1": [
+          "adventureworks",
+          "adventureworks_dw",
+          "adventureworks_lt",
+          "chicago_crimes",
+          "chinook",
+          "contoso",
+          "contoso_10m",
+          "contoso_1m",
+          "dvdstore",
+          "employees",
+          "enron",
+          "enron_full",
+          "jaffle_shop",
+          "lahman",
+          "northwind",
+          "nyc_taxi",
+          "oracle_co",
+          "oracle_hr",
+          "oracle_oe",
+          "oracle_sh",
+          "pubs",
+          "sakila",
+          "smallsets",
+          "stackexchange_beer",
+          "stackexchange_dba",
+          "wikipedia_simple",
+          "wikipedia_simple_full"
+        ],
+        "2": [
+          "adventureworks",
+          "adventureworks_dw",
+          "adventureworks_lt",
+          "chicago_crimes",
+          "chinook",
+          "contoso",
+          "contoso_10m",
+          "contoso_1m",
+          "dvdstore",
+          "employees",
+          "enron",
+          "enron_full",
+          "jaffle_shop",
+          "lahman",
+          "northwind",
+          "nyc_taxi",
+          "oracle_co",
+          "oracle_hr",
+          "oracle_oe",
+          "oracle_sh",
+          "pubs",
+          "sakila",
+          "smallsets",
+          "stackexchange_beer",
+          "stackexchange_dba",
+          "wikipedia_simple",
+          "wikipedia_simple_full"
+        ]
+      },
+      "status": "Passed"
+    }
+  },
+  "csv_staging": {
+    "chicago_crimes": {
+      "after": {
+        "crimes.tsv": "726f97be94b77c4dbb34f5a03e3b2e3e0f428ae793996d3988bdbf04bbd40233",
+        "iucr.tsv": "9e424e541432ce1bad6088403b598c56d902cd47be66361a0f2cc456038169d6"
+      },
+      "all_tsv_bytes_identical": true,
+      "before": {
+        "crimes.tsv": "726f97be94b77c4dbb34f5a03e3b2e3e0f428ae793996d3988bdbf04bbd40233",
+        "iucr.tsv": "9e424e541432ce1bad6088403b598c56d902cd47be66361a0f2cc456038169d6"
+      },
+      "returncode": 0,
+      "seconds": 2.11,
+      "status": "Passed"
+    },
+    "chicago_crimes_full": {
+      "after": {
+        "crimes_all.tsv": "284423c012d9b2f22fdba1c467349b7b529f9c9ce091f4d47bfcc26c5f5616ec"
+      },
+      "all_tsv_bytes_identical": true,
+      "before": {
+        "crimes_all.tsv": "284423c012d9b2f22fdba1c467349b7b529f9c9ce091f4d47bfcc26c5f5616ec"
+      },
+      "returncode": 0,
+      "seconds": 38.42,
+      "status": "Passed"
+    },
+    "nyc_taxi": {
+      "after": {
+        "green_trips.tsv": "a0e2b6cf4d3a24e88dace55ecb971aa0803df4ed7d49992f73059998452366af",
+        "taxi_zone.tsv": "85d25dd778e737de5829d844a5ff25bdcad93fb8a4958f3b2dd4a78a1f0ef790"
+      },
+      "all_tsv_bytes_identical": true,
+      "before": {
+        "green_trips.tsv": "a0e2b6cf4d3a24e88dace55ecb971aa0803df4ed7d49992f73059998452366af",
+        "taxi_zone.tsv": "85d25dd778e737de5829d844a5ff25bdcad93fb8a4958f3b2dd4a78a1f0ef790"
+      },
+      "returncode": 0,
+      "seconds": 0.82,
+      "status": "Passed"
+    },
+    "nyc_taxi_yellow": {
+      "after": {
+        "yellow_trips.tsv": "c9643bc6c63210c8439157a88900f646ccec6241f88b7131f5ef95c87280df3e"
+      },
+      "all_tsv_bytes_identical": true,
+      "before": {
+        "yellow_trips.tsv": "c9643bc6c63210c8439157a88900f646ccec6241f88b7131f5ef95c87280df3e"
+      },
+      "returncode": 0,
+      "seconds": 8.82,
+      "status": "Passed"
+    }
+  },
+  "duckdb_extensions": {
+    "tpcds": {
+      "answers": {
+        "reason": "Not implemented Error: Don't have TPC-DS answers for SF 10.000000!",
+        "status": "Unsupported"
+      },
+      "queries": 99,
+      "sha256": "eb370b4558a20454608ed800de0891fcb30f7b3eeed2989a54ca19f447977f60",
+      "status": "Passed"
+    },
+    "tpch": {
+      "answers": 66,
+      "queries": 22,
+      "sha256": "2e6bdf1a41b907a59b886fdd048c885512410ed717e2474bd7a52a2bde32d42f",
+      "status": "Passed"
+    }
+  },
+  "engine_pr": {
+    "merge_commit": "b80583cd28b02f144c1f19ddad68076c636fef4f",
+    "number": 9,
+    "status": "Passed",
+    "url": "https://github.com/Reliable-Collaboration/sql-megasamples/pull/9"
+  },
+  "evidence_sha256": {
+    "build/client-evidence/adminer-base-user.txt": "e1a3248025e3d9ee4ea8c7ca11d828bcaea679a1f02668e9bd254d3ac82efab4",
+    "build/client-evidence/adminer-current-driver-build.log": "78f45b980c6ac5fc21154c367e90d77b96d966850a9e3491aa330464a9cd4497",
+    "build/client-evidence/adminer-driver-after.log": "32b61693cd5ecf53b8ace4ba2454e4a9214c50926399bbc268715c05146f66b9",
+    "build/client-evidence/adminer-driver-before.log": "4d6e2231424e7cff8d8c811584dce60f2d8a7a47c99e4da84694829505e3e9db",
+    "build/client-evidence/adminer-libpq-package-policy.txt": "eeff8e87a533534c2e431df28d9453b9e61fb8772e10f56fdb9f352132e85175",
+    "build/client-evidence/adminer-login-diagnosis.log": "9055926a403cc582eed4368753da7f2a0755a29e6af4116176b176eb46a2e174",
+    "build/client-evidence/adminer-mysql-driver-version.txt": "b4524386e5c91e61a69abe346c35f3e4d4aba0cda34d10fcf6afdbc491dd96d1",
+    "build/client-evidence/adminer-pg-driver-version.txt": "ae4a00ffc35feb9fbcb66f452abbeb8ee367b25c14f1a5d3905b8a00f598b32d",
+    "build/client-evidence/alpine-libpq-release.json": "b1f2f9ad339bd49da7d6cb930f8d220bfc1db4a381713e8cabd2d9a5a3e9c2a7",
+    "build/client-evidence/api-version-retry.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/client-evidence/api-version.json": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/client-evidence/before-adminer-csrf-console-deep-probe.log": "5750f7045fb96928a24891ce15d8326927d233b962338fd5fa3fcbd81092ad0a",
+    "build/client-evidence/before-adminer-csrf-console-deep-results.json": "211e55a0cf5ea3e2efca36f9b43b5543a1bee8b2e086a6a4c78f477eb21509d2",
+    "build/client-evidence/before-current-libpq-tools-artifact.json": "ebcc0810c11714d7e440cef7c021d4f81b53eedd08eaf831cc18df4bb085b485",
+    "build/client-evidence/before-local-transport-loader-probe-driver.log": "fdcc17e7e30ade34ae3f020c39d167cfe588a2cc24352d2f35c8a4bf159ae9ea",
+    "build/client-evidence/before-local-transport-loader-probe-results.json": "366fbe5ddf38798f2cff9958211cf8058d8031da8b23115024ab355177f101ee",
+    "build/client-evidence/chicago-2.0-before.log": "17c0840de301135107baa9bfd662963c968f09c602adb7e26999926912790c11",
+    "build/client-evidence/client-final-mysql-frozen-live-records.json": "f6b3bccb4e5522e94268bf6f77ae3abef1badd589670c1d49d12ccfd660d9dfd",
+    "build/client-evidence/client-final-mysql-runtime-mysql-adventureworks.log": "8fef20217cb7e6692ff976a8a7b918bb101106fa6be49fa1fd1263fc60d62294",
+    "build/client-evidence/client-final-mysql-runtime-mysql-adventureworks_dw.log": "f97fdbba5624ce8d6f95023e6ca51b72823c41e78281c66ea36e6dc95099ddbe",
+    "build/client-evidence/client-final-mysql-runtime-mysql-adventureworks_lt.log": "52edeee0fa291889df289c890dc75f9fb35577ec21b2d4e45def166026c61b45",
+    "build/client-evidence/client-final-mysql-runtime-mysql-chicago_crimes.log": "09ce55a319a844e001291b723d7e83702ce6e668d8342c911403060fdcc80c1d",
+    "build/client-evidence/client-final-mysql-runtime-mysql-chicago_crimes_full.log": "98d4457823cfa629a2672a0e916096393946a04d9e5a00872a5e33c33bd891cb",
+    "build/client-evidence/client-final-mysql-runtime-mysql-chinook.log": "c4e3d928202a083b243555571c269824e1d3c10d80d3f95b3957e76a7d0194d4",
+    "build/client-evidence/client-final-mysql-runtime-mysql-contoso.log": "b0d7b2c4d55f148c711eba378ed9cd8d235166ed7f1170d988751ffdd5cd8411",
+    "build/client-evidence/client-final-mysql-runtime-mysql-contoso_10m.log": "ce3ac8d94d6a7a736b10a4bf9c26bd29e902f3db6c9d343d939e71d872ee485d",
+    "build/client-evidence/client-final-mysql-runtime-mysql-contoso_1m.log": "f1770e2c8f70c96c8f20db140544d66bec8bfa151d12e8ff872a34744bf198fe",
+    "build/client-evidence/client-final-mysql-runtime-mysql-dvdstore.log": "dfa85766bfb57b0095cbaf60ca8477e921c119cd87f917828c4570cff5189d49",
+    "build/client-evidence/client-final-mysql-runtime-mysql-dvdstore_reviews.log": "c3a3fee2d6642d25611804c985c261bd9761892a5f06aa0f3fc1b0fd7ff2a145",
+    "build/client-evidence/client-final-mysql-runtime-mysql-employees.log": "e7e2f2ac4da5c3af833cc31ed3e175459b86fed624174d7baad698f200905d81",
+    "build/client-evidence/client-final-mysql-runtime-mysql-enron.log": "26514d6617bd0ae1840c0d7fbfbea2d550ac7ffe0c065eec5caafc579772a167",
+    "build/client-evidence/client-final-mysql-runtime-mysql-enron_full.log": "54992d423b913fde82ae9617acbf933cebdc93c8417bacb20e81cb1ea19c5db3",
+    "build/client-evidence/client-final-mysql-runtime-mysql-jaffle_shop.log": "df1283a148c7ae542808dc988d6c4193947aaf846f52e94c80961f702050769a",
+    "build/client-evidence/client-final-mysql-runtime-mysql-lahman.log": "ad542e6ffaab36f5e385a498d0f13ef8dd0dcb211030ddbb052c8ca66f93bd09",
+    "build/client-evidence/client-final-mysql-runtime-mysql-northwind.log": "ed49b4f51e194b3675186f2263a5d0015ce951e50a3cc054b7b186eb3bc535d2",
+    "build/client-evidence/client-final-mysql-runtime-mysql-nyc_taxi.log": "6ef23a9cf7a055ea3b441923fe216a7f3d2dc6316eca4e5dbc0ca67a6348efff",
+    "build/client-evidence/client-final-mysql-runtime-mysql-nyc_taxi_yellow.log": "cea9cdb63a1f2fabe5791199e3679d3f45e9f5938d4c9b597371d6047f5f42b5",
+    "build/client-evidence/client-final-mysql-runtime-mysql-oracle_co.log": "0dcbe5fdad4db5062deda8bde074a15268b348286c3e7d05fae769b3d53ee06f",
+    "build/client-evidence/client-final-mysql-runtime-mysql-oracle_hr.log": "db9e7c6f3d3c65c4317dba3d5b5160c928151ba1af49ca8f5e0cd5f4ee459177",
+    "build/client-evidence/client-final-mysql-runtime-mysql-oracle_oe.log": "04e5376f6a065073fa8582107b068ebab55f406a999ba104f4b14e1e19f3c164",
+    "build/client-evidence/client-final-mysql-runtime-mysql-oracle_sh.log": "1fdfd36c002defdf5e58ee3c9e4c8ae31ca4a890b7af99ddc8301ee25af879f8",
+    "build/client-evidence/client-final-mysql-runtime-mysql-pubs.log": "8424ef7e2c166f81225cd8efe710cf0e8b826e03321e1e4be593ff0ca580cbb6",
+    "build/client-evidence/client-final-mysql-runtime-mysql-sakila.log": "20082067b04863f48be4dd613ab95c69d17d63233f890b5dfbb15650b63c6d72",
+    "build/client-evidence/client-final-mysql-runtime-mysql-smallsets.log": "d7597da416592176fc2db256ee1295c24ad3f9497a8d853fd9b6326962145093",
+    "build/client-evidence/client-final-mysql-runtime-mysql-stackexchange_beer.log": "8c93f6853744ada254d587fab72a6fe67fe6fc5119fc77f847e79e1686b67ab6",
+    "build/client-evidence/client-final-mysql-runtime-mysql-stackexchange_dba.log": "ce5d0d1d5bed59e1b2282c120c0549b5a09d2ddf7003a3b0b75db5546733f6a5",
+    "build/client-evidence/client-final-mysql-runtime-mysql-wikipedia_simple.log": "5da33ee91ece3df1775c5ab14a75489b65d89278f9fe13456b8849cf17a31311",
+    "build/client-evidence/client-final-mysql-runtime-mysql-wikipedia_simple_full.log": "f1cfb41c4cb817dc2b4bea7c5f7cb6c9b78c0fbdcba6796c3388fe1b6990b069",
+    "build/client-evidence/client-final-mysql-runtime-results.json": "19cd09b394a2c5f5edc7b1c1acdd2ba926030d4e9f1e5b65448318f4c4efc8b6",
+    "build/client-evidence/client-final-postgres-frozen-live-records.json": "f6b3bccb4e5522e94268bf6f77ae3abef1badd589670c1d49d12ccfd660d9dfd",
+    "build/client-evidence/client-final-postgres-runtime-postgres-adventureworks.log": "9912ff253f47bdf82b334d154ee3212a02f458728c2e82452949523f144ed778",
+    "build/client-evidence/client-final-postgres-runtime-postgres-adventureworks_dw.log": "80101e3b8d9961b9e55bdc26c48f0ca8a995b83e37b633b4ffb8fc335904c6a7",
+    "build/client-evidence/client-final-postgres-runtime-postgres-adventureworks_lt.log": "448d20cdbdf121c5b7ae760e232289eb729c8ba1add7b42d019c52997ffb9b4b",
+    "build/client-evidence/client-final-postgres-runtime-postgres-chicago_crimes.log": "7e8aa46b56bb518f5a6727f2a6c6b0d118cc195938664f7aa41edd8a48ba9af3",
+    "build/client-evidence/client-final-postgres-runtime-postgres-chicago_crimes_full.log": "63f91030294f3abcdc7a4038f746b3bf9616aa2f9692314d39266f1215dc2ac8",
+    "build/client-evidence/client-final-postgres-runtime-postgres-chinook.log": "7a391389192c007d7287da87ca3704b17996c58393fb913f23a30b8089f9ae10",
+    "build/client-evidence/client-final-postgres-runtime-postgres-contoso.log": "4864536d6b71b399777cdbd77195014e553fddeb4ff693913b1fd348a93358df",
+    "build/client-evidence/client-final-postgres-runtime-postgres-contoso_10m.log": "d50276ac2b9517e7fd63a42a191894a583ce80da02154d0375a8a262a8f46fb6",
+    "build/client-evidence/client-final-postgres-runtime-postgres-contoso_1m.log": "384edbf24491fb4362d62caeac850e21c662a5dd4374ab9b1e5c494f8494a5af",
+    "build/client-evidence/client-final-postgres-runtime-postgres-dvdstore.log": "83b599f17f472c8695f2cb911909e04e1b9444b00cf7a4230d4a7720f514b897",
+    "build/client-evidence/client-final-postgres-runtime-postgres-dvdstore_reviews.log": "48f6e5992a898cc48f9e8c7d9c23e3785aeb6cdd89f023c3f423d9f405484289",
+    "build/client-evidence/client-final-postgres-runtime-postgres-employees.log": "812397bc41fd756c22e3cf9629663d63cc8ff201f2551afc0b1d9ebca82ed265",
+    "build/client-evidence/client-final-postgres-runtime-postgres-enron.log": "429aeee36ebc0b09dd36248fb4308b8e8f48ddc1043f31db3fad4e38bb4b2960",
+    "build/client-evidence/client-final-postgres-runtime-postgres-enron_full.log": "9091df2f36107c13b61109f8ba1a5bf8201d4905da5a6c00876e1d2c5aae445e",
+    "build/client-evidence/client-final-postgres-runtime-postgres-jaffle_shop.log": "db394ab750a366489548bdd8a286bab32362d7ec79b3ae8cc852b4bb528223a3",
+    "build/client-evidence/client-final-postgres-runtime-postgres-lahman.log": "ba255604b30015ff8c898b9bfe6faa226bd3d678e7be99b968de2ac1466b8a0d",
+    "build/client-evidence/client-final-postgres-runtime-postgres-northwind.log": "956e43c534ed8380978ff964438cfb71558f17aed886dae6a2a57cd26f0b3427",
+    "build/client-evidence/client-final-postgres-runtime-postgres-nyc_taxi.log": "24fe38db3c5df867525a6277ae898ca33ecd17a12aea5eed96e93c55388cc89b",
+    "build/client-evidence/client-final-postgres-runtime-postgres-nyc_taxi_yellow.log": "ebf4d05e211641a74a3321a275db451c69cd084a5a2ce4409ae3adf469de7784",
+    "build/client-evidence/client-final-postgres-runtime-postgres-oracle_co.log": "cd35a1500291313dfc4c447cc0dd1560e3cc05c42d38621864d7c4933d7db5de",
+    "build/client-evidence/client-final-postgres-runtime-postgres-oracle_hr.log": "61dbdb3848a804979a504b68746a7e9a86264487325bbe6475436d9b662cc6b2",
+    "build/client-evidence/client-final-postgres-runtime-postgres-oracle_oe.log": "5f4051496ca633bd225370c55cef8b0b32cf5ffaf688c0c83af466eb68c926a3",
+    "build/client-evidence/client-final-postgres-runtime-postgres-oracle_sh.log": "40cf7bba66d0117688cb9edb7d4c7d809315c645da12c5d341909bff84d0aa7f",
+    "build/client-evidence/client-final-postgres-runtime-postgres-pubs.log": "80110193e02f36fa2a8411620cf17cf83160bd1cb0eca5445a928e1f357d11e0",
+    "build/client-evidence/client-final-postgres-runtime-postgres-sakila.log": "ef6a55ee9a5344085a38cd63d49955ba7c49321839435b9dd429aa4e35d91b41",
+    "build/client-evidence/client-final-postgres-runtime-postgres-smallsets.log": "fa5dafc8159872c78f890104d1418551033d441cae65079ebe40f8f42bdb4301",
+    "build/client-evidence/client-final-postgres-runtime-postgres-stackexchange_beer.log": "63d0e18fc734954ea3c7c3b0efda8124b25ed4e3ed9edc49c9345de168ba4d4d",
+    "build/client-evidence/client-final-postgres-runtime-postgres-stackexchange_dba.log": "27ac98aa68769bfda5d53fb928990cdd932e1892f80bfc88138805e4975f67a2",
+    "build/client-evidence/client-final-postgres-runtime-postgres-wikipedia_simple.log": "cfc09d1d72a61f82df0fcee2fe0035cf319a5f37293aab2be0b670ffde710ef9",
+    "build/client-evidence/client-final-postgres-runtime-postgres-wikipedia_simple_full.log": "e4782431a58999af913b83a4597c115b3fe5bd6ab30925385f96bea8041a79c1",
+    "build/client-evidence/client-final-postgres-runtime-results.json": "886fd9545d4f745bb422784f601c17da176553b31f09d81a3045155ed7668dfe",
+    "build/client-evidence/client-final-sqlite-frozen-live-records.json": "f6b3bccb4e5522e94268bf6f77ae3abef1badd589670c1d49d12ccfd660d9dfd",
+    "build/client-evidence/client-final-sqlite-runtime-results.json": "7f5af762540ec2d33b4653f622a5449d6718a9a16b6b7ad79db3090ad6df8472",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-adventureworks.log": "2144a1d1d623968fe52f7813a64d7ca07f36e82effd49560ba7e1f2e9c1f86f4",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-adventureworks_dw.log": "06e1f567f0d1e0a10c58a41ce4aaab5511d65bd43804b8382bbf1e3b2605eaf6",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-adventureworks_lt.log": "fa63c844393e8a8fcd307a9d304d5d0209f5c6e80b336342e375b9dd3486d013",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-chicago_crimes.log": "d8e78c6e7be0c52401da0112e7e18eb0b60c84e4effae45d1e5ac3ab9edd385f",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-chicago_crimes_full.log": "a3db635d9e9a6b3619705eb1329f62ac1358157b9a6e422d75e3c32f90f4b98d",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-chinook.log": "b76b0d92ca80acc9fe965e2a2fe3527c31fc136233bb2d91001430fbe4fa8122",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-contoso.log": "c5b887c9d290e1a4ee0e0078040848c77303c2ad77ba4510f8b2b2ccc5d21e1d",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-contoso_10m.log": "b85255e0a34bd6e57655540e9061231fc66d1f0783ef37bfc7e55f07528df6ce",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-contoso_1m.log": "7c6ba450bde63b2b21fbdcbae6d0ed78508962b96daf77a3e4d214fcf6241b98",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-dvdstore.log": "eedbb85763d3001645a6d3e4b5e9a613d983bfe54718ef45efea6c12a59aa5d2",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-dvdstore_reviews.log": "e7f59464fcf29512b38f71d7b84dd2982df046f15eb7fa41689726dc7b372d8a",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-employees.log": "495adb34fe7b8443af5ef5ef4bfbed04150c4a9d03e9e2544d134c935fac01bc",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-enron.log": "dfc15b5fa543556d7e6eb20b14d8c524db4e3c89fd4990aaaa086936ff87a173",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-enron_full.log": "2a0a4509e09ea26b96ab56c34d3924e66fd5a8e55e95070855b04e336b348bf2",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-jaffle_shop.log": "9b826d6a55c3e25ca83535951bda200694390deeea70f8887df49b1262a3b9a0",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-lahman.log": "da7d6aa80ec2fb0a916807ed66b681bdc38c11fae6a5b54181c483fb5339f7df",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-northwind.log": "26c509a01b25824b2258bfe1d70b41f87099b7f90a7316dbc67bdf6acb8c26ec",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-nyc_taxi.log": "2d76a5ba53ff82663922cf8f13e46071b5970ee63f93b057113e17242fe59bbb",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-nyc_taxi_yellow.log": "b374df25f61c7aea22e5eb17284ce62b82a610eaa3b86f35ee8438b314ad3954",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-oracle_co.log": "6539fe6b64a5f5b6757f802da378844654a8c57ae4b1f72d738528bfa6cdc2fd",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-oracle_hr.log": "326d433121d1759941147be53d2992af7ff9e04c535217316dbd042fe45df751",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-oracle_oe.log": "080c98b26fb8759684c1f1bf4ec9237a56d68978a1582c614a0224adb7fa52c4",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-oracle_sh.log": "52d66749a775b6ab20d3dd58422899cce08f7f816d6939a71927046466fc2ecf",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-pubs.log": "a03d730b5bb61894e41bdeb002cc87cae757dc9e71cf7e5534eea21f4b829f81",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-sakila.log": "5612da551cddee559744036f272a714367fcdee4f35aef3f08059213a34dc21f",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-smallsets.log": "e01611a58d33fbc174c18e044e67ab56d51132e75c7eede5ca4a8ebfa8c76ade",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-stackexchange_beer.log": "c4f0bf3a5631a6aaf1334e6e672650eac94d4698d5d78d5996ff02e416058f2f",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-stackexchange_dba.log": "58f43d4edeae4859ac9333d3baa680b296bcec1d6a8450485fbe2cd81d6fa88f",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-wikipedia_simple.log": "1e6c3eef2fdfd512771cc841308a2828df09ca1febde69afe8ff39f810806359",
+    "build/client-evidence/client-final-sqlite-runtime-sqlite-wikipedia_simple_full.log": "aded5d666dd468edff0583318444915450c6a1b89badd0063db2b33d3f018683",
+    "build/client-evidence/client-focused-after-case.log": "13be79c7b0a9e9a065aca5e150d65fa89826c66210ed5818454938b921f2af20",
+    "build/client-evidence/client-focused-after.log": "9e00093f6521fd0cdcb21d1dfeaafdc5c9bd99bf047a0fc2eb6fd7bf5e3a5f8e",
+    "build/client-evidence/client-memory-mysql-frozen-live-records.json": "f6b3bccb4e5522e94268bf6f77ae3abef1badd589670c1d49d12ccfd660d9dfd",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-adventureworks.log": "8fef20217cb7e6692ff976a8a7b918bb101106fa6be49fa1fd1263fc60d62294",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-adventureworks_dw.log": "f97fdbba5624ce8d6f95023e6ca51b72823c41e78281c66ea36e6dc95099ddbe",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-adventureworks_lt.log": "52edeee0fa291889df289c890dc75f9fb35577ec21b2d4e45def166026c61b45",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-chicago_crimes.log": "09ce55a319a844e001291b723d7e83702ce6e668d8342c911403060fdcc80c1d",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-chicago_crimes_full.log": "ae6d2f0a250084ddecc60e087f380693f550120a2824b54ed9e09898fed6f051",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-chinook.log": "c4e3d928202a083b243555571c269824e1d3c10d80d3f95b3957e76a7d0194d4",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-contoso.log": "b0d7b2c4d55f148c711eba378ed9cd8d235166ed7f1170d988751ffdd5cd8411",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-contoso_10m.log": "d648d6a405581b87e2f5cd7925ebadfbac20c8559e67afcdd81cf136521fb722",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-contoso_1m.log": "f1770e2c8f70c96c8f20db140544d66bec8bfa151d12e8ff872a34744bf198fe",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-dvdstore.log": "dfa85766bfb57b0095cbaf60ca8477e921c119cd87f917828c4570cff5189d49",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-dvdstore_reviews.log": "c3a3fee2d6642d25611804c985c261bd9761892a5f06aa0f3fc1b0fd7ff2a145",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-employees.log": "e7e2f2ac4da5c3af833cc31ed3e175459b86fed624174d7baad698f200905d81",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-enron.log": "26514d6617bd0ae1840c0d7fbfbea2d550ac7ffe0c065eec5caafc579772a167",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-enron_full.log": "54992d423b913fde82ae9617acbf933cebdc93c8417bacb20e81cb1ea19c5db3",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-jaffle_shop.log": "df1283a148c7ae542808dc988d6c4193947aaf846f52e94c80961f702050769a",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-lahman.log": "ad542e6ffaab36f5e385a498d0f13ef8dd0dcb211030ddbb052c8ca66f93bd09",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-northwind.log": "ed49b4f51e194b3675186f2263a5d0015ce951e50a3cc054b7b186eb3bc535d2",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-nyc_taxi.log": "6ef23a9cf7a055ea3b441923fe216a7f3d2dc6316eca4e5dbc0ca67a6348efff",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-nyc_taxi_yellow.log": "cea9cdb63a1f2fabe5791199e3679d3f45e9f5938d4c9b597371d6047f5f42b5",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-oracle_co.log": "0dcbe5fdad4db5062deda8bde074a15268b348286c3e7d05fae769b3d53ee06f",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-oracle_hr.log": "db9e7c6f3d3c65c4317dba3d5b5160c928151ba1af49ca8f5e0cd5f4ee459177",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-oracle_oe.log": "04e5376f6a065073fa8582107b068ebab55f406a999ba104f4b14e1e19f3c164",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-oracle_sh.log": "1fdfd36c002defdf5e58ee3c9e4c8ae31ca4a890b7af99ddc8301ee25af879f8",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-pubs.log": "8424ef7e2c166f81225cd8efe710cf0e8b826e03321e1e4be593ff0ca580cbb6",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-sakila.log": "20082067b04863f48be4dd613ab95c69d17d63233f890b5dfbb15650b63c6d72",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-smallsets.log": "d7597da416592176fc2db256ee1295c24ad3f9497a8d853fd9b6326962145093",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-stackexchange_beer.log": "8c93f6853744ada254d587fab72a6fe67fe6fc5119fc77f847e79e1686b67ab6",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-stackexchange_dba.log": "ce5d0d1d5bed59e1b2282c120c0549b5a09d2ddf7003a3b0b75db5546733f6a5",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-wikipedia_simple.log": "672cc88443d493b13afe98a5da782983ca65741ba822d98ccbee4e6aff3691eb",
+    "build/client-evidence/client-memory-mysql-runtime-mysql-wikipedia_simple_full.log": "8000d352da57fb0938d079e2b6e6ff99d0370935ed0b3864a7f9ec1993470896",
+    "build/client-evidence/client-memory-mysql-runtime-results.json": "68e3b3066e5ceab4f496eb4b2c5040870a4299c890a13fcc7d809a1149f39651",
+    "build/client-evidence/client-pins-current-libraries.log": "d5943a9aaa948b3f3e93f328500c1913034f75d2c4c784d5076771172a62e62e",
+    "build/client-evidence/client-pins-final.log": "5cbb93b14df607d25e57e30f8d2ba7b9f19a71201b91b2ede351f8eabd17a17b",
+    "build/client-evidence/client-pr-final-state.json": "a61e6bc6bbc7044fde06e4af983807a23308c1ec21ab5ce56a3e3ee9a18350b9",
+    "build/client-evidence/client-releases-before-corrected-harness.log": "c6941bbbf5c3b6f43a4ad8161aec31f7fe61b97772713ad1690a6a833ad2de39",
+    "build/client-evidence/client-releases-before.log": "34efe30eac4c75f62fc9f2ea48b6e81b855ffbbf96a6615cdf641832857ff04d",
+    "build/client-evidence/clients-console-shallow.log": "b14365e89f57c5ff61bd860f486d58bbeb42ec24da785b09c85c490f38b3988d",
+    "build/client-evidence/clients-current-source-check.log": "b39b59a9fa70fb6350d55039da366f4c0a10a710435f4e103147cc208fbdcd20",
+    "build/client-evidence/clients-final-source-check.log": "e2dbab2ae62d9ff9ec90c737fbd0e2cf3d09a466a68438ef8739267b642c6925",
+    "build/client-evidence/clients-first-upgraded-suite.log": "670a62a13a3c91eab6beef2e3b384387f6d765627495f2c5d8fda7e7c7648f18",
+    "build/client-evidence/clients-focused-final.log": "618c358f1c1b30f19456feeaa6e7bf1d3a92d3654539b95923f677d14b9259c0",
+    "build/client-evidence/clients-repository-check.log": "31d5553387dbb2532a194215c376a63f2446865c03c4eadfc34647082ed3d7a9",
+    "build/client-evidence/clients-source-check-before-memory-fix.log": "732856e27284b9147aa0c10bbfbb62fac906e451bf5a0420cb682552bfe130c3",
+    "build/client-evidence/clients-source-check-before-screenshot-fix.log": "eae9be7408bad86a36bd45d5e30cf955073ab4a469c19f42492a4662c07f0056",
+    "build/client-evidence/clients-source-check-with-active-reset-locks.log": "13986dc3f8bfb14a7c5ba4182f53c93a06c325539b9f8f1c7d5eec36770993e6",
+    "build/client-evidence/clients-stack-up.log": "b786a16426ea81cc8e3d7b3b3698e7a4e05fc6b19bb28732f38f46e1489b5bb6",
+    "build/client-evidence/cloudbeaver-mutationType.json": "3f061dd77f82b84e54ee0d71c5b736ba962f0e71e73d2af64d037afb96b5e3d1",
+    "build/client-evidence/cloudbeaver-navigator-probe.log": "ce1c6b7191c201d0c504b9aedca971b11c0557f9d68c293b2ce6fe1bb9a31420",
+    "build/client-evidence/cloudbeaver-queryType.json": "eebcc52b7cb346308855148814d8961ca1f56c6a0e035125df39176fde949a5e",
+    "build/client-evidence/cloudbeaver-schema-summary.log": "af96bad5592bd68b4be91211c8c082567b0fb240ea2ac8c4e16c12eb26f425e5",
+    "build/client-evidence/cloudbeaver-schema.json": "aa9028199b949895f1ad0f63776c78b11b383282e4706380653777d01ee7e2f9",
+    "build/client-evidence/cloudbeaver-type-AsyncTaskInfo.json": "449faf2267cb5d7aad88452dfe4ea34ab0131a16ad1c8511f83d716a85b43bdf",
+    "build/client-evidence/cloudbeaver-type-ConnectionInfo.json": "faafed4c22e681ea47e5c7b0200ff16519e92bfe87c375212713d4577e3ca414",
+    "build/client-evidence/cloudbeaver-type-NavigatorNodeInfo.json": "bb93dfca0eefc7140342595e2e979ec8b445663cc4af2f52e029bcf9dcb7d358",
+    "build/client-evidence/cloudbeaver-type-SQLContextInfo.json": "a77a7c7ad86ffce2a6ea19d8448a17f8b7566471170b148a39b5ada59296a36c",
+    "build/client-evidence/cloudbeaver-type-SQLExecuteInfo.json": "de6ed543a0b50b1ad39b2e86398b86b7b8127ace554a3a012a773b82f224ea5d",
+    "build/client-evidence/compatibility-sources.json": "c05c1f97215a6652c623f29a6690b44b7b0c5f961f702b81e84f0a352887a047",
+    "build/client-evidence/console-after-memory-fix.log": "f5aa010f866d3b84855ce5659ac3a7c09f8561386dc84c2cff7f9594c3a54f14",
+    "build/client-evidence/console-context-before.log": "9dc0cf77e7d8b7733a8dd2e7f79b9c65010a1542fe3e51b1ed50d3e5643bb0e8",
+    "build/client-evidence/console-deep-before-memory-fix.json": "9adcf4728258870b37c36c8149ddf877f67ea88aa08e41346b60c0c6a9cc9aab",
+    "build/client-evidence/console-deep-probe.log": "132d417ed0abcaae888d8ab347e2c3cbdebc7cc3de2d8398a0f0b4254cfd9424",
+    "build/client-evidence/console-deep-results.json": "9adcf4728258870b37c36c8149ddf877f67ea88aa08e41346b60c0c6a9cc9aab",
+    "build/client-evidence/console-minimal-context-images-build.log": "a6a53123d3fc55a1480c48cd3e27186fcc04370738d6240a762610e2321e0192",
+    "build/client-evidence/console-shallow-after-memory-fix.log": "ea098f47659e9ce6f02cf006fb3470f8f91e98b5973c8bf213f15601efa92bab",
+    "build/client-evidence/console-stable-tags.json": "19333ae872f8eebc8cdabb972ec7d3f0216590aa02d9d1dc662990ab59839225",
+    "build/client-evidence/csv-staging-driver.log": "537c7121cf44c3704f912e16489b6067eedd80a985a423da6a80f0d6746485bc",
+    "build/client-evidence/csv-staging-harness-before-pythonpath.log": "b2407b4c4a283c2dd292801c38c838e29bc5461714fec35741d8ddb017521e0a",
+    "build/client-evidence/csv-staging-results.json": "9606839f865842ae43dfd13f276ba71240d8cf8d4b1ae7817d6ceeecafaa600e",
+    "build/client-evidence/current-libpq-endpoint-probe.log": "c8acee2354ff84bf072a64767bae8fd48dc6dad527b4b496f9ce567392822d27",
+    "build/client-evidence/current-tools-image-id.txt": "05f5d12dba8010f0f1547542969b2b35586a58e12a899ee479740dbc27a547d3",
+    "build/client-evidence/current-tools-image-smoke.txt": "f4130149c62cc75ee94e49383cc4fa25b91db9158fd7177c84f6da1ecc1efe34",
+    "build/client-evidence/dbgate-driver-lock.log": "5088708775f1bdf0855047b2e12dbbdea86cff84d9bbb657393e881ccc07f53f",
+    "build/client-evidence/dbgate-modal-html.log": "b49f983283b421bea9e13969529c52b0e19abecea58d271817e5af98f38c13cc",
+    "build/client-evidence/dbgate-modal-inspection.log": "5c709aa261068dae6b00b1a6651109724da4a689307abca2624ee0d115fa9b31",
+    "build/client-evidence/driver-releases.json": "0df8c77396f8296f2b6226639875c95caab916c7a7489fd22f59b6028a6d59fe",
+    "build/client-evidence/duckdb-extension-probe.log": "41817fa77b6bc18f0d2c1092db424fefc8aa56c70f31b6c6b844c7da1f76d9b5",
+    "build/client-evidence/duckdb-extension-results.json": "41817fa77b6bc18f0d2c1092db424fefc8aa56c70f31b6c6b844c7da1f76d9b5",
+    "build/client-evidence/endpoint-results.json": "6063b29cf00406d208c2b2c92f45228258bbfc50f5341158cc633b00ef8cbb49",
+    "build/client-evidence/endpoints-after-memory-fix.log": "c8acee2354ff84bf072a64767bae8fd48dc6dad527b4b496f9ce567392822d27",
+    "build/client-evidence/endpoints-before-memory-fix.json": "29a8d6008875508fe02c23252370443e1d820f938ff5239452ce7b4bdb432aaa",
+    "build/client-evidence/engine-followup-check.log": "c5698846115f6f470d81d1b60914efd6df3c4cc6ca4ef29172c6aa1e82389cfa",
+    "build/client-evidence/engine-pr-final-state.json": "3e6a82f117bc0142d56af2843de6a43e02eae051914a5f1bd843ccbcd0ddcaa8",
+    "build/client-evidence/engine-pr-merge.json": "8fdd8493bc8fb0582674f2b1e294c9d41ad8100ad3424487439e8df01fbf5050",
+    "build/client-evidence/final-console-close.log": "f5aa010f866d3b84855ce5659ac3a7c09f8561386dc84c2cff7f9594c3a54f14",
+    "build/client-evidence/final-console-deep-driver.log": "f5aa010f866d3b84855ce5659ac3a7c09f8561386dc84c2cff7f9594c3a54f14",
+    "build/client-evidence/final-console-shallow-close.log": "ea098f47659e9ce6f02cf006fb3470f8f91e98b5973c8bf213f15601efa92bab",
+    "build/client-evidence/final-console-shallow-driver.log": "ea098f47659e9ce6f02cf006fb3470f8f91e98b5973c8bf213f15601efa92bab",
+    "build/client-evidence/final-endpoints-close.log": "c8acee2354ff84bf072a64767bae8fd48dc6dad527b4b496f9ce567392822d27",
+    "build/client-evidence/final-endpoints-driver.log": "c8acee2354ff84bf072a64767bae8fd48dc6dad527b4b496f9ce567392822d27",
+    "build/client-evidence/final-native-clients-close.log": "dab55535f2c67d2aad748af6806324ccc67c6c9367ee9cc83b6897aaa0312f90",
+    "build/client-evidence/final-native-clients-driver.log": "dab55535f2c67d2aad748af6806324ccc67c6c9367ee9cc83b6897aaa0312f90",
+    "build/client-evidence/final-pipeline-before-mysqlsh-defaults.json": "63a1a30a9e3bc7996d22ed650ac89f3278169ecfcc8417d8baaa24ed6f39446f",
+    "build/client-evidence/final-pipeline-before-mysqlsh-defaults.log": "7611b02a3c69379adda65149b62d18ddb710ef7bacf898d74dbd3d73ac4f0d28",
+    "build/client-evidence/final-pipeline-before-sqlglot-refresh.json": "c9cbed18fadff9916b465e61d7a8e56da1c5e0724e4f7298e3d1988ab6c5e51a",
+    "build/client-evidence/final-pipeline-before-sqlglot-refresh.log": "9d04985ad3eb76e9452e90606292e910faf7321915525c7d30b10de6837dbe2c",
+    "build/client-evidence/final-pipeline-continuation.log": "d73feadb15b51e55d71b3d0c51a8d332bda87dcdaaf27a3d606d5b706a6635d5",
+    "build/client-evidence/final-pipeline-results.json": "56a5680b31311e238d29797f2ff2dc9aa50f8fc2c83a61f950dd4f1b25234ec9",
+    "build/client-evidence/final-pipeline.log": "7611b02a3c69379adda65149b62d18ddb710ef7bacf898d74dbd3d73ac4f0d28",
+    "build/client-evidence/final-running-ports-driver.log": "2077829b0be9834e85d202e0da729bb9b815d8d7a5ae1abf5e26c186311d191a",
+    "build/client-evidence/final-up-driver.log": "e3592b931495b5e0457b5b9c79f4a95bab13a519026f44f0c6eaf9aac8330887",
+    "build/client-evidence/foreign-key-comparison-driver.log": "a1f5ba0a761dd0edbcf1c1e0db95e85cc65442ab1d9e3ad848d1a9a3ac76a005",
+    "build/client-evidence/frozen-expectations-unchanged.json": "5118046751984aa2f947d3c3d2875f976a9b62b5769b19ee04401f4deac6b3c4",
+    "build/client-evidence/health-probe-runner.log": "389f86383c5fb8279da6e7f0c909bd36ab15d8a7433d09de63b35ee02e5bceb3",
+    "build/client-evidence/isolated-containers.txt": "540873ead3d11b96320197dad8219ca3f67c608e168721b82f461f4f752fb67e",
+    "build/client-evidence/jar-pins.json": "43fc382c5067e55580051272f5294fc8a3ccc89781b0556f270b1c06c7a91ec0",
+    "build/client-evidence/live-isolation.json": "9bc8e36bf1ad91c56c3e9b269ac40f23f49ad3e7d8bd0cc8efaff3fa1ac04f20",
+    "build/client-evidence/loader-baseline-connector-version.txt": "a1674da0721b13df2deac3e1d8d63a28873f4212c08ed19a588d92114d1331ad",
+    "build/client-evidence/loader-context-before.log": "2d30bf3ce85e3fab63ee8a904380fc14cb5a3e5e5faad6ac551bc74b5b2ba70c",
+    "build/client-evidence/loader-final-build.log": "c27123caeadce136192be93ecd62be26220fdcb18fa473fe1e71b8a898b93d4c",
+    "build/client-evidence/loader-minimal-context-build.log": "3658c5b4ee3d1407f2696ce08efb913304e7fc132fa48acc31925570ce7136d6",
+    "build/client-evidence/loader-probe-driver.log": "9971da7161ffd341be557e3d35997dc5a12bd02936d034bf91767814a0041af6",
+    "build/client-evidence/loader-probe-results.json": "60de63b3e0a08bb341a05e85802fc33ad8b923b4ff4a6b1f2205e9685f6ff3f6",
+    "build/client-evidence/loader-proposed-build.log": "ecb7071de8bad7b2c5c21e71f55ac4ffa898e4cbeda2e7786fa274352fbba199",
+    "build/client-evidence/loader-tpcc.log": "c96519be951c074929da740367c9aff2345c23ec35314776715472d5f5a53a91",
+    "build/client-evidence/mariadb-c-source.json": "cb44c97df2b92152e71f3b03747a98a29b857297f6612acbc112ac543b3de451",
+    "build/client-evidence/microsoft-tools-packages.json": "8457d873fe3e3e9c81b6f767de6b93311118bae19468718fab2d385d680f96c7",
+    "build/client-evidence/mssql-tools-image-pull.log": "11b9381b95225e28cc2d2e4ffa511df830e1b394ef6a037dc6c6f5b59d8c4fa0",
+    "build/client-evidence/mssql-tools-versions.txt": "cf4e12ec4c910ebac7cd1a1d42287d97350211c5b6daaab44ade98b647e0e4ab",
+    "build/client-evidence/mysql-allocator-observer.log": "1809c18b367ec95b533541f744d694f415d10622fe3a67b46bbeba690257aa5a",
+    "build/client-evidence/mysql-allocator-samples.json": "e769fa496248d18ac4ee326a0bb367ade269f20c0d00ad3071bcfff5c11e873b",
+    "build/client-evidence/mysql-budget-up.log": "7e88601a7664ff8757a94d910bc0db9b6f63a55f99955825f1dc6af8ffd091f1",
+    "build/client-evidence/mysql-client-libraries.txt": "ea03228dc258d836ea8f03fcb4b3d704b19bad9621f5505ab098f734d02f1eb7",
+    "build/client-evidence/mysql-client-versions.txt": "2b667d5a45b10ed7e476ab3f7b9a2f66ec06101bece842b466e696cf6dda6e56",
+    "build/client-evidence/mysql-exit-observer.log": "f909baf8be5815426e466dd727412de1835033b279b5f7581e735ca0e2b02d74",
+    "build/client-evidence/mysql-kernel-container-events.log": "d2772ffb00c491f1cff8a8b76e5040c2b432d2b2f947622ebe2186cd4f89b52f",
+    "build/client-evidence/mysql-memory-budget-after.log": "89d3ec78cb0fbd89b7737bfe3078876ad657c2c3b955758b5a26267a44a5d86b",
+    "build/client-evidence/mysql-memory-budget-before-final-cases.log": "2026f2c0547c373ff2faf8a56f9dae361afc8cdaf223b95c1ee6c7071930af1d",
+    "build/client-evidence/mysql-memory-budget-before.log": "bbe30c09b2b1ad3bbfb1536118763a159af747f9ea42f232345a1a6e52fb76f0",
+    "build/client-evidence/mysql-memory-profile-samples.json": "80ce54841deb697b508f572d580c55fe070acdaefb3b01bdf0f8a1d33176e57b",
+    "build/client-evidence/mysql-memory-rerun.log": "5060caffb03926aa3a58079fd73c1c1c68f3107ecb6b47c9511dc2baf0cf5bba",
+    "build/client-evidence/mysql-oom-query-plan.json": "82c3d68d8382dfc29d456f257a1f4d37783c58eae1fd5eed0542c83b2f50edee",
+    "build/client-evidence/mysql-runtime-before-memory-fix-results.json": "19cd09b394a2c5f5edc7b1c1acdd2ba926030d4e9f1e5b65448318f4c4efc8b6",
+    "build/client-evidence/mysql-runtime-exec-observation.json": "114ac88cc83a92513a46079a9db24685cce183d1850400b921cf5c15a6cfe422",
+    "build/client-evidence/mysql-runtime-exit-result.json": "dbee9386a3e24d1aaecc2cee6d5b621120340ed99ce26ac48bbb7082a610867d",
+    "build/client-evidence/mysql-runtime-failure-server.log": "b5d0cd8fd92a0d49aafcf342ba5f2b79d6a8aa2b891dafbb31a5e2be07dda6cc",
+    "build/client-evidence/mysql-runtime-failure-state.json": "81854f0be774dc79cfc40aa5c498b71c93fb3faa3548bb6b5bd53e3fb41ab359",
+    "build/client-evidence/mysql-runtime-memory-after-config.json": "bcfe96380e2f9ea00d43ed8f737b376824b7cd691f97b782bc6a320947156456",
+    "build/client-evidence/mysql-runtime-memory-baseline.json": "924ca7f537a88fa9a5653bdb4aa28c5dfab3712fb11ab205fdaed8a76b6fe9eb",
+    "build/client-evidence/mysql-runtime-memory-rerun-process.json": "5809a879bd669c7608c4b6ba348a2021547d1a33b48386e0e00c297460c2b7c0",
+    "build/client-evidence/mysqlsh-version-with-defaults-before.log": "83a19b5a3e6b84483e7d640e3ebaf90c2aec7dc49029c956e17df70026d30a7f",
+    "build/client-evidence/native-client-capture-before-mysqlsh-defaults.log": "b83ef2d5911d278f9bb68d3963cceccd3372a8a54101284d63416f38efe1bb8b",
+    "build/client-evidence/native-client-versions.json": "7fc064022f6b3c159da901cb5dc34d992e0f637434ddd870583e10c9b706f5dc",
+    "build/client-evidence/oracle-base-override-before.log": "21614690a4c684a39b891e00af2ffc36ac6b873ad43daa5a6392076d0111f943",
+    "build/client-evidence/oracle-baseline-client-binaries.log": "cbebbdc2908a2b04b8cf9da31fe1f2e5fca665f58911e33a5f236e2a03947d11",
+    "build/client-evidence/oracle-binary-results.json": "c0b49569037d1b88ab1b467742d3a4e2708f1cdefdcb8e2186ac5638729b628c",
+    "build/client-evidence/oracle-client-after.log": "c2cba0e5b1275bde99432021fd22a26635493fa35d0886fcd5cd38708b0f7cca",
+    "build/client-evidence/oracle-client-before.log": "9c9defa08d4e7fe7dbd456b35735d7f987a65e7781413e5c3d8a6e9963be8222",
+    "build/client-evidence/oracle-client-build.log": "a9a1b029d9765da6763842895bd498ce30de8a5469fe34d30b4c93e7bd32db2d",
+    "build/client-evidence/oracle-client-current-recipe-build.log": "56c8b4fbed6b48a17e911cb0e0195ecccb97e0e771c06e3919dd2ba860afb4e2",
+    "build/client-evidence/oracle-final-focused.log": "988344a7589dd35ded61b8e784dcd5bc43cb64ba0f19a2bda1a7ec44b380abcb",
+    "build/client-evidence/oracle-instantclient-release.json": "7f0ce51a0952bc51f1671b324970c5f9c5c98dce366cef31438e028e2a532cef",
+    "build/client-evidence/oracle-new-client-binaries.log": "4942753731e905a6dfad60a03bc8067ef4a56f1f024afec38208845b51441472",
+    "build/client-evidence/package-releases.json": "6137bbac2afb2b141cc958ca7ae8d7e219c65fd759c2c80973fac60689360f82",
+    "build/client-evidence/pg-18.6-0.log": "28745c03714e0d211bc9725f4f3fbd1fe086cd2efafb5c78769052d1879c51e8",
+    "build/client-evidence/pg-18.6-1.log": "aa07d8ab4a0e2c97f56a12cdae02fba0c575d68bb4e7c6e2f26f5135d7967111",
+    "build/client-evidence/pg-18.6-2.log": "e5b3e2d381dbc9a185e7131dfee077fb56a73f6e307829413920fdf6b2df18f7",
+    "build/client-evidence/pg-18.7-0.log": "3fbb8fff74a01e95ec1e91f8b840bce726d27ef6fece8707a136648ac2cd84d3",
+    "build/client-evidence/pg-18.7-1.log": "5a3223d2cf9e2b550aebaa9a37bcd09b55b738496bbfd3fe8aef1d86a1a2ae7d",
+    "build/client-evidence/pg-18.7-2.log": "8ccf98706167bf27d1196f7d90942750ece28cd484419e10d474117bfff95ccf",
+    "build/client-evidence/pg-matched-content.log": "5d5e87e0f1104ce8ccf53b56dfef2799c4e643c872e6e66c1bc07577ba6b0ecd",
+    "build/client-evidence/pg-startup-harness-before-build.log": "add2716c7e82d216cf52ffe0660db93ffca75f87dc9e5c79749fe50c2c05943a",
+    "build/client-evidence/pg-startup-measurements.json": "7baac7f1e28e0836d0f6f22010fa06c57ff28f54b50cf193b5c4756715c007c4",
+    "build/client-evidence/pg-startup-measurements.log": "76e5bca60e0aec1767c97445970e95c395514b533b2a7441ee16c47183690e27",
+    "build/client-evidence/php-vendor-image-sources.json": "879f3442c07ace839d1c18d1aa14031dba8e5ad9eb98b4d9994b34601c0e8f38",
+    "build/client-evidence/phpmyadmin-driver-version.txt": "2eb813e63d7b33deb4539078f89912f2c96161dba644ff63e1d80a1201945723",
+    "build/client-evidence/playwright-screenshot-before-modal-fix.log": "22a88240cfc7bccd4f5e1cab9fdf92b23156be5a9c3f8645b05f00986b098780",
+    "build/client-evidence/playwright-screenshot-current.log": "abd6f7249a473f07f501069dde0fe2436ada294e0816606ef6d35309752ff944",
+    "build/client-evidence/playwright-screenshot-results.json": "326399cb3ed2d52ef1f6da3ccc2aa54a12d3a4f60fdacea149cb38b20bf97df3",
+    "build/client-evidence/postgres-18.6-build.log": "53cb6265e24a83d30fee46dcc2021abb06e037f3fdeebde8b2d88f44216f151b",
+    "build/client-evidence/postgres-client-versions.txt": "a1f53ac2ff8b28d19cf65dbfe75350706ef8dbadcd72757a248179710fead5ff",
+    "build/client-evidence/postgres-full-image-after.log": "481c09b49836640959ca72c83aa143bee242410a64bce60638d32b191b5d6912",
+    "build/client-evidence/postgres-stable-source.json": "731c01c8f9f038eede486fe67f9abfa08bac7cbbc144ce05a29b6538b8425ab1",
+    "build/client-evidence/postgres-startup-after.log": "ebd938888ffaa2af3581cec946b9b58fbc84d3d34af429b416dd4a0ad79f1a12",
+    "build/client-evidence/postgres-startup-before-final-cases.log": "61f7ec4d596be7016ebeb6f8612abd1c1fefd61b23c0b3432eaae55b8db5cd14",
+    "build/client-evidence/postgres-startup-before.log": "cdff1cd2855e4b385e17524b5824de2751b53aad1ab66aa9cdda4de19196962b",
+    "build/client-evidence/pristine-foreign-key-capture-resumed.log": "a2172e0ef662c805e6c281f20a481b4315c5956704768edebe739a0fa39731e9",
+    "build/client-evidence/pristine-foreign-key-capture.log": "bc7eccbd75ce5b3bb227f61be9613281eba55fca4d3703e65ac133dcb852670c",
+    "build/client-evidence/pristine-foreign-key-definitions.json": "8f35e92407373bf2ed91bef39f7048baea59490c9f68dd75cde7e13e2bedd553",
+    "build/client-evidence/probe-driver-releases.json": "c212ed58ac24e33b499bafba8c81c5e108906bfcc6736a3a0df07f9e438e5b78",
+    "build/client-evidence/psycopg-current-native-version.txt": "d13291fd04e52ac63f4bb15640e1ad4844a7cf4ad9c5f2526589c470cb0a7b20",
+    "build/client-evidence/psycopg-native-client-version.txt": "8876ae1648ffc17c5c90f81f543ee668a3f6db852ee263e58236a80026ff9a9d",
+    "build/client-evidence/psycopg-packaging-before.log": "344498d1e05a8ff1ed76748590ea20852233a562c7072d7405416a91c31abb0e",
+    "build/client-evidence/psycopg-pin-before.log": "2da0c0999ce6c792bbc0cccff26befad655b65e727d8e3dbeaa52f255f249345",
+    "build/client-evidence/reset-all.log": "86ced73307cedb60f06ebe9d5832154edf8ce90c48fc5864a448b0ffe7118cec",
+    "build/client-evidence/reset-append-pairs.log": "2f36e9084e706f634535dae7a66da6c40ecb10043ebb0428849bdb987caf7c4f",
+    "build/client-evidence/reset-append-results.json": "70417af9f2b066a64b3598b3fae8d87d762b0af11b71ff19f5c127a519b1a76b",
+    "build/client-evidence/reset-every-pair-results.json": "76744cbd6d749bf394d06178eccaa711ca5ad61546a50b4e0fde28b2bce76f5c",
+    "build/client-evidence/reset-every-pair.log": "d6b3693c9708d2428ae9fff807b0d4ac7578eb081791a5c7a96982e65e17ca04",
+    "build/client-evidence/reset-foreign-key-results.json": "ba89e6285bd4f3ab4a828d8e39327dd843d04bd1e236c5664d93497065bbc7be",
+    "build/client-evidence/reset-mysql.log": "f057d25a5a24dcfc6d3ab0fe924ec58c650299c753ad99e8f982f5022a3ce4bd",
+    "build/client-evidence/reset-pairs.log": "ea1406bd79471a04bd597b8165f60c0960605a131d6552ea844c39f8f1cc2931",
+    "build/client-evidence/reset-postgres.log": "0a78adf3e3b528975caa61bacd5f98e0a7e8ef36045ab84971c224a7b83df780",
+    "build/client-evidence/reset-rehearsal-driver.log": "72528c4d546400affbc327a78eff28aa597acdd0d902843ba5ade95a97c44d35",
+    "build/client-evidence/reset-results.json": "7dd5601521fd486e1eb7b79c6d9588636347811754381413c9d4beb9ba159a8f",
+    "build/client-evidence/reset-sqlite.log": "578c013d83e5dc6809a2973b04bda925bd8caf80170dfe092bff39e52697f38d",
+    "build/client-evidence/runbook-syntax.json": "8014a49f6955e391e5e494976005e19ddae3938d80c035507186e64507939457",
+    "build/client-evidence/running-ports-before-sqlglot-refresh.json": "dfa52cc2d16235e2c040bceecc6c74da44099c33d497568fd84c8aa102490466",
+    "build/client-evidence/running-ports-before-sqlglot-refresh.log": "ac9d8d0b35581bca8ee61424dc9c44c22f43923bbf28da924ad1ca04e3c60eae",
+    "build/client-evidence/running-ports-result.json": "5c5af31904e01d3df0bb00fc8c54028ecdc0d4001e5623b8d63409733614cb6b",
+    "build/client-evidence/runtime-mysql-driver.log": "0a2f2da8f22f14d5584935e3e9a0a986aaf4fac05e1a47d0c14b45fb11aa97e8",
+    "build/client-evidence/runtime-mysql-memory-driver.log": "505a232546d023a3d1fcab170a0662d94968aa9a161c3bbf861c75f7f6574394",
+    "build/client-evidence/runtime-postgres-driver.log": "9153e50b577012850f9d95d82482c185047f96502029d749767a714b0cde169b",
+    "build/client-evidence/runtime-sqlite-driver.log": "93912fda1db1292eb1dd2e8bab42747d38957693596532f2552cdb463e9d9aa7",
+    "build/client-evidence/runtime-state.json": "bba1697474212b36fd9a71e08ee2d3476f5060115a8ba4c91a71e473256e6b7b",
+    "build/client-evidence/source-docker_shared_network.txt": "e41da393126a7c1767612e11429bd0c2b9cd34e25ed72dd7ac81698d20175be9",
+    "build/client-evidence/source-mariadb_tls.txt": "71e36a07f93581f8a990c089ff752f715eb0b61a73f10d7527a6fca47a886e36",
+    "build/client-evidence/source-oracle_free.txt": "9b5a96c7c860eca7f61ed562abee2c2362ac0061b10875dd8f8621ec20370f53",
+    "build/client-evidence/source-postgres-18.6.json": "3e870babe0b776748e1c0111df8b77a9b56bee146bca34b0440145e8ff44880c",
+    "build/client-evidence/source-python_runtime.txt": "43fe8ba24d9e1331135b6418c26573cde97974232bbfef20e94cd9786d146dde",
+    "build/client-evidence/source-uv_tool.txt": "b738bcbc8daed638b0e7eab5b2b24383f90ace2144a0eb750ef75aa7392ce96a",
+    "build/client-evidence/sqlglot-trigger-equivalence.json": "2ae0d07795531727bbd8b77ec23dd70e2fcfe2982bcb9001bc35d96e779a0bd6",
+    "build/client-evidence/sqlite-client-version.txt": "323466a0d8e93d63956474185f9f19d1836c64be652875f50d57afeb1abbc2d0",
+    "build/client-evidence/sqlplus-version.txt": "d0c1e12aab98c1bfe0402106e8231abbb1b5d45ae373da3bb621a4e01526a559",
+    "build/client-evidence/stage-chicago_crimes.log": "c6c7ccaa42672c90b9c37842b945b92754b84bca831dff88d3f763bfe3818d42",
+    "build/client-evidence/stage-chicago_crimes_full.log": "6d0c4c006357b8d8eb9837b707d409521aca67812cdaddf4d736b2c158d9e177",
+    "build/client-evidence/stage-nyc_taxi.log": "ae21917af7851d82b42fd21ce78a7a2cc0bfec909f7cffd0eba2ab8e8db6e7a9",
+    "build/client-evidence/stage-nyc_taxi_yellow.log": "eda70a1a7f8644d5cff70f27840e8d5e5de7886d296a6e9e79a7b3ad8273b2c9",
+    "build/client-evidence/sysbench-upstream-release.json": "7499eee7769e456aa01f345b3d4102101759217f245c51f2732919313648a0fc",
+    "build/client-evidence/tools-artifact.json": "784fc0ab57b72a979516b11a9c520631bb2e8c0b4c1f888711443dd4e43a4ab1",
+    "build/client-evidence/tools-libpq-install.log": "8c3e5bf29a61e5ce42e934310737940317556505305cb4049f952fc0168ef7c1",
+    "build/client-evidence/tools-libpq-package.json": "8567b689cf0f658faeb292bfab6c6468446e78ae171c7a7566a955d393d2f111",
+    "build/client-evidence/tools-process-summary.txt": "98f2f9d137206fa22c7c0eb93116315b1637bdc2669eca3fd5c9a6dfbed4d0c8",
+    "build/client-evidence/tpcc-loopback-after.log": "35d86279d96ed65491ba8ff0748e1c8e7891711531404dc5d4b9cd6ae33de3ec",
+    "build/client-evidence/tpcc-loopback-before.log": "44e4c4ac020449cfeed1481f9c7183fb6ab7f5125829e7c977809b88c562b064",
+    "build/client-evidence/uv-final-lock-check.log": "4c83ac65451edb39844e17cc9879cee83140d0984271520dbe7191430bc1990c",
+    "build/client-evidence/uv-lock-check.log": "a699ca3450443c6910bba94d8e959616501a92e26a6fdcd4a9bf92cbb702c031",
+    "build/client-evidence/uv-lock-upgrade.log": "87e71db7ca7b358c006335a129a1fd2aeb4241d7b8f8bc32980791dec47f1aeb",
+    "build/client-evidence/uv-lock-with-probe-driver.log": "a49a49a8260f0c55fc5bd51c79a62a4fc883c08965e49f07573ee21f09c1b74e",
+    "build/client-evidence/uv-pure-psycopg-lock.log": "7ffbc1724d8cb9a6245902b19650c64d8dff8a6fbd54483d452a5f33a18582bc",
+    "build/client-evidence/uv-pure-psycopg-sync.log": "d189417a6eda86f2823938fc92e6e84498947de8b274e8b67110da88117e3d7e",
+    "build/client-evidence/uv-sync-locked.log": "b84fa0e351a061f75f8396abd48d9381f9c0e8d74f140899cd34bc98e10b4f19",
+    "build/client-evidence/uv-sync-with-probe-driver.log": "21173a589f64891d27be1c0b0cd19b44a950fcef6d3b0f9afe03196077e5ddf4",
+    "build/client-evidence/validated-tools-image-id.txt": "a49f04df6a23f04fe431aa99a6d752bef42a9150bd2104bac120cdfa8d2ca3a0",
+    "build/client-evidence/validated-tools-image-smoke.txt": "33934e2197449ab8c08cf471565a74187f799ef53e69bf2c521a28f99f2938d8",
+    "build/client-evidence/vendor-sources.json": "28472b98626bce75338121c8decb1797272e33a96f0e94719081fe07f31c27c1",
+    "build/client-evidence/vendor-sources.log": "058fa13e74004a116ee29ee097ed0408488f681245b359c6d4b5f8b30cf66287"
+  },
+  "final_pipeline": {
+    "final-console-deep": {
+      "returncode": 0,
+      "seconds": 2.28,
+      "status": "Passed"
+    },
+    "final-console-shallow": {
+      "returncode": 0,
+      "seconds": 2.06,
+      "status": "Passed"
+    },
+    "final-endpoints": {
+      "returncode": 0,
+      "seconds": 0.65,
+      "status": "Passed"
+    },
+    "final-native-clients": {
+      "correction": "Version observation uses mysqlsh --no-defaults, as the existing dump/restore helpers already do.",
+      "returncode": 0,
+      "status": "Passed"
+    },
+    "final-running-ports": {
+      "returncode": 0,
+      "seconds": 86.88,
+      "status": "Passed"
+    },
+    "final-up": {
+      "returncode": 0,
+      "seconds": 26.75,
+      "status": "Passed"
+    },
+    "foreign-key-comparison": {
+      "returncode": 0,
+      "seconds": 3.94,
+      "status": "Passed"
+    },
+    "runtime-mysql": {
+      "returncode": 0,
+      "scope": "Complete repeated 30-dataset matrix under corrected memory bounds; original failed attempt retained separately.",
+      "seconds": 4231.59,
+      "source": "mysql-runtime-memory-rerun-process.json",
+      "status": "Passed"
+    },
+    "runtime-postgres": {
+      "returncode": 0,
+      "seconds": 2365.07,
+      "status": "Passed"
+    },
+    "runtime-sqlite": {
+      "returncode": 0,
+      "seconds": 1955.05,
+      "status": "Passed"
+    }
+  },
+  "frozen_expectations_unchanged": {
+    "scope": "The MySQL rerun used the same frozen live-feed expectations as the original matrix; no repinning.",
+    "sha256": {
+      "client-final-mysql-frozen-live-records.json": "f6b3bccb4e5522e94268bf6f77ae3abef1badd589670c1d49d12ccfd660d9dfd",
+      "client-memory-mysql-frozen-live-records.json": "f6b3bccb4e5522e94268bf6f77ae3abef1badd589670c1d49d12ccfd660d9dfd"
+    },
+    "status": "Passed"
+  },
+  "limitations": [
+    "Native Oracle connection/load checks await explicit Free Use Terms acceptance; binary probes pass and the gate is retained.",
+    "BTS and both WideWorldImporters exports remain owner-deferred. Their nine engine combinations are Not run, pending the owner's decision; BTS pins unchanged, no SQL Server EULA accepted.",
+    "Full Enron PostgreSQL FTS index Unsupported for its native vector-size limit; no rows/checksum expectations weakened.",
+    "DataIntent suites and live cutover/rollback Not run.",
+    "Docker/BuildKit and non-amd64 execution Not run; isolated rootless Podman used. Optional new Oracle client recipe is Linux x86-64 only; other architectures Unsupported.",
+    "Full generated benchmark suites Not run (not part of the configured 30-dataset image corpus); actual TPC-C one-warehouse loader and DuckDB extension query registries tested.",
+    "DbGate exact patch announcement not independently verified; publisher stable image tag/digest matches latest. PHP extensions follow the selected vendor console runtime rather than a separate PHP-major migration."
+  ],
+  "live_isolation": [
+    {
+      "id": "e52be92036180efd39a7c9039849cc1f019fb933f9e86795bcf1ca623f5e1806",
+      "image": "sha256:dce852a4e859d1d497faa7bbd665969bf39c4a63f4e7ea6b794fd1c1308c826a",
+      "name": "megasamples-postgres",
+      "started": "2026-11-09T12:51:25.772296065-06:00",
+      "status": "running"
+    },
+    {
+      "id": "8e9cbe36ff7dd1ce125b49c323b1395921cd377ed29d1a921d6caeca94bc7205",
+      "image": "sha256:f182473f11eca0ce94f9f61c273ff02db850de37774a839275327325b9facf1b",
+      "name": "megasamples-mysql",
+      "started": "2026-11-09T12:51:25.876918269-06:00",
+      "status": "running"
+    },
+    {
+      "id": "29af9013ee9cf82eccf38b583126618d8f503107afc993235f20060a04cbc1f5",
+      "image": "sha256:5191da1a0ef00365539515123faedf2fa78407212f6fb51d7e7b94ec63e09950",
+      "name": "megasamples-sqlite",
+      "started": "2026-11-09T12:51:25.980050177-06:00",
+      "status": "running"
+    }
+  ],
+  "loader": {
+    "connector_c_first_auth_and_prepared_queries": {
+      "authentication_plugin": "caching_sha2_password",
+      "rows": "32",
+      "status": "Passed"
+    },
+    "oracle_cli_dump_restore": {
+      "dump_sha256": "c30bb1aa997af43c1b1e6dce9dd64dda1347f662edc035bb03581a4dce39578a",
+      "output": "mysql  Ver 26.10.0 for Linux on x86_64 (MySQL Community Server - GPL)\nmysqldump  Ver 26.10.0 for Linux on x86_64 (MySQL Community Server - GPL)\n26.10.0\n1\tCEB10A74616209\t000102FEFF",
+      "status": "Passed"
+    },
+    "repository_tpcc_loader": {
+      "scope": "one warehouse, repository cardinalities and order-line bounds; content is intentionally nondeterministic",
+      "status": "Passed"
+    }
+  },
+  "mysql_memory_correction": {
+    "allocation_reason": "1 GiB TempTable + 256 MiB pool + 512 MiB non-pool server/thread headroom = 1.75 GiB, rounded to a 2 GiB container; TempTable explicitly bounded at its observed 1 GiB allowance.",
+    "configuration": {
+      "captured_at": "2026-11-17T06:22:44.051828+00:00",
+      "command": [
+        "mysqld",
+        "--innodb-buffer-pool-size=256M",
+        "--temptable-max-ram=1G"
+      ],
+      "data_mounts": [
+        {
+          "Destination": "/var/lib/mysql",
+          "Name": "3dad455bd97ee16c729ca3345521d8665d58bfa42c68f2a2ebb1a11df5e49735",
+          "Source": "/home/rcc-vstudio/working/sql-megasamples-upgrade-env/graph/volumes/3dad455bd97ee16c729ca3345521d8665d58bfa42c68f2a2ebb1a11df5e49735/_data",
+          "Type": "volume"
+        }
+      ],
+      "id": "94d26816493e0a92805837c2fcad0fb9c2a6f34f6c69f8e3498ed742163ed990",
+      "memory_limit": 2147483648,
+      "restart_count": 0,
+      "started": "2026-11-17T00:20:48.38334716-06:00"
+    },
+    "unit_tests_after": "Passed: same two cases",
+    "unit_tests_before": "Failed: both allocation-budget and host-independent-allowance cases"
+  },
+  "mysql_memory_failure": {
+    "container_state_after_automatic_restart": {
+      "host_config": {
+        "Memory": 1073741824,
+        "MemorySwap": 2147483648,
+        "OomKillDisable": false,
+        "RestartPolicy": {
+          "MaximumRetryCount": 0,
+          "Name": "unless-stopped"
+        }
+      },
+      "restart_count": 1,
+      "state": {
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-11-17T00:04:16.494803319-06:00",
+        "OOMKilled": false,
+        "Running": true,
+        "StartedAt": "2026-11-17T00:04:16.751494345-06:00",
+        "Status": "running"
+      }
+    },
+    "kernel_evidence": "Memory cgroup stats for /user.slice/user-1000.slice/user@1000.service/user.slice/libpod-294abd0cf1de11ee9989a409ff548733f52419b0c165dd2426d558fd38b10b2e.scope/container:\noom-kill:constraint=CONSTRAINT_MEMCG,nodemask=(null),cpuset=/,mems_allowed=0,oom_memcg=/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-294abd0cf1de11ee9989a409ff548733f52419b0c165dd2426d558fd38b10b2e.scope/container,task_memcg=/user.slice/user-1000.slice/user@1000.service/user.slice/libpod-294abd0cf1de11ee9989a409ff548733f52419b0c165dd2426d558fd38b10b2e.scope/container,task=mysqld,pid=4096328,uid=100998\n",
+    "observed_budget": {
+      "buffer_pool_bytes": 268435456,
+      "captured_at": "2026-11-17T06:19:14.895123+00:00",
+      "instrumented_current_bytes": 667285128,
+      "old_container_limit_bytes": 1073741824,
+      "source": "https://dev.mysql.com/doc/refman/26.10/en/internal-temporary-tables.html",
+      "source_read_at": "2026-11-17T06:12:42+00:00",
+      "temptable_max_ram_bytes": 1073741824
+    },
+    "reason": "Kernel CONSTRAINT_MEMCG OOM-killed the isolated mysqld process under the old 1 GiB limit; following three checks lost the socket.",
+    "results": {
+      "mysql:adventureworks": {
+        "failures": 0,
+        "seconds": 173.61,
+        "status": "Passed"
+      },
+      "mysql:adventureworks_dw": {
+        "failures": 0,
+        "seconds": 48.11,
+        "status": "Passed"
+      },
+      "mysql:adventureworks_lt": {
+        "failures": 0,
+        "seconds": 18.3,
+        "status": "Passed"
+      },
+      "mysql:chicago_crimes": {
+        "failures": 0,
+        "seconds": 70.43,
+        "status": "Passed"
+      },
+      "mysql:chicago_crimes_full": {
+        "failures": 1,
+        "seconds": 0.08,
+        "status": "Failed"
+      },
+      "mysql:chinook": {
+        "failures": 0,
+        "seconds": 12.84,
+        "status": "Passed"
+      },
+      "mysql:contoso": {
+        "failures": 0,
+        "seconds": 14.45,
+        "status": "Passed"
+      },
+      "mysql:contoso_10m": {
+        "failures": 1,
+        "seconds": 1806.86,
+        "status": "Failed"
+      },
+      "mysql:contoso_1m": {
+        "failures": 0,
+        "seconds": 54.65,
+        "status": "Passed"
+      },
+      "mysql:dvdstore": {
+        "failures": 0,
+        "seconds": 31.29,
+        "status": "Passed"
+      },
+      "mysql:dvdstore_reviews": {
+        "failures": 0,
+        "seconds": 15.02,
+        "status": "Passed"
+      },
+      "mysql:employees": {
+        "failures": 0,
+        "seconds": 206.63,
+        "status": "Passed"
+      },
+      "mysql:enron": {
+        "failures": 0,
+        "seconds": 4.42,
+        "status": "Passed"
+      },
+      "mysql:enron_full": {
+        "failures": 0,
+        "seconds": 300.26,
+        "status": "Passed"
+      },
+      "mysql:jaffle_shop": {
+        "failures": 0,
+        "seconds": 3.98,
+        "status": "Passed"
+      },
+      "mysql:lahman": {
+        "failures": 0,
+        "seconds": 28.69,
+        "status": "Passed"
+      },
+      "mysql:northwind": {
+        "failures": 0,
+        "seconds": 39.74,
+        "status": "Passed"
+      },
+      "mysql:nyc_taxi": {
+        "failures": 0,
+        "seconds": 64.75,
+        "status": "Passed"
+      },
+      "mysql:nyc_taxi_yellow": {
+        "failures": 0,
+        "seconds": 82.09,
+        "status": "Passed"
+      },
+      "mysql:oracle_co": {
+        "failures": 0,
+        "seconds": 14.26,
+        "status": "Passed"
+      },
+      "mysql:oracle_hr": {
+        "failures": 0,
+        "seconds": 13.62,
+        "status": "Passed"
+      },
+      "mysql:oracle_oe": {
+        "failures": 0,
+        "seconds": 30.51,
+        "status": "Passed"
+      },
+      "mysql:oracle_sh": {
+        "failures": 0,
+        "seconds": 226.51,
+        "status": "Passed"
+      },
+      "mysql:pubs": {
+        "failures": 0,
+        "seconds": 23.11,
+        "status": "Passed"
+      },
+      "mysql:sakila": {
+        "failures": 0,
+        "seconds": 38.41,
+        "status": "Passed"
+      },
+      "mysql:smallsets": {
+        "failures": 0,
+        "seconds": 7.32,
+        "status": "Passed"
+      },
+      "mysql:stackexchange_beer": {
+        "failures": 0,
+        "seconds": 16.03,
+        "status": "Passed"
+      },
+      "mysql:stackexchange_dba": {
+        "failures": 0,
+        "seconds": 38.68,
+        "status": "Passed"
+      },
+      "mysql:wikipedia_simple": {
+        "failures": 1,
+        "seconds": 0.27,
+        "status": "Failed"
+      },
+      "mysql:wikipedia_simple_full": {
+        "failures": 1,
+        "seconds": 0.07,
+        "status": "Failed"
+      }
+    },
+    "status": "Failed"
+  },
+  "mysql_memory_rerun": {
+    "final_cgroup_sample": {
+      "memory.current": "568721408",
+      "memory.events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\noom_group_kill 0\nsock_throttled 0",
+      "memory.max": "2147483648",
+      "memory.peak": "1177419776",
+      "seconds": 4226.54
+    },
+    "peak_instrumented_bytes": 789974981,
+    "process": {
+      "captured_at": "2026-11-17T07:38:14.145204+00:00",
+      "container_id_after": "94d26816493e0a92805837c2fcad0fb9c2a6f34f6c69f8e3498ed742163ed990",
+      "container_id_before": "94d26816493e0a92805837c2fcad0fb9c2a6f34f6c69f8e3498ed742163ed990",
+      "memory_limit": 2147483648,
+      "peak_cgroup_bytes": 1177419776,
+      "restart_count": 0,
+      "returncode": 0,
+      "scope": "All 30 MySQL datasets, every repository stage; frozen row/checksum expectations retained; 2 GiB container, explicit 1 GiB TempTable, unchanged 256 MiB pool.",
+      "seconds": 4231.59,
+      "status": "Passed"
+    },
+    "results": {
+      "mysql:adventureworks": {
+        "failures": 0,
+        "seconds": 200.04,
+        "status": "Passed"
+      },
+      "mysql:adventureworks_dw": {
+        "failures": 0,
+        "seconds": 50.51,
+        "status": "Passed"
+      },
+      "mysql:adventureworks_lt": {
+        "failures": 0,
+        "seconds": 13.9,
+        "status": "Passed"
+      },
+      "mysql:chicago_crimes": {
+        "failures": 0,
+        "seconds": 78.06,
+        "status": "Passed"
+      },
+      "mysql:chicago_crimes_full": {
+        "failures": 0,
+        "seconds": 114.13,
+        "status": "Passed"
+      },
+      "mysql:chinook": {
+        "failures": 0,
+        "seconds": 7.81,
+        "status": "Passed"
+      },
+      "mysql:contoso": {
+        "failures": 0,
+        "seconds": 15.77,
+        "status": "Passed"
+      },
+      "mysql:contoso_10m": {
+        "failures": 0,
+        "seconds": 2021.21,
+        "status": "Passed"
+      },
+      "mysql:contoso_1m": {
+        "failures": 0,
+        "seconds": 58.03,
+        "status": "Passed"
+      },
+      "mysql:dvdstore": {
+        "failures": 0,
+        "seconds": 21.14,
+        "status": "Passed"
+      },
+      "mysql:dvdstore_reviews": {
+        "failures": 0,
+        "seconds": 17.24,
+        "status": "Passed"
+      },
+      "mysql:employees": {
+        "failures": 0,
+        "seconds": 234.76,
+        "status": "Passed"
+      },
+      "mysql:enron": {
+        "failures": 0,
+        "seconds": 6.0,
+        "status": "Passed"
+      },
+      "mysql:enron_full": {
+        "failures": 0,
+        "seconds": 392.07,
+        "status": "Passed"
+      },
+      "mysql:jaffle_shop": {
+        "failures": 0,
+        "seconds": 2.27,
+        "status": "Passed"
+      },
+      "mysql:lahman": {
+        "failures": 0,
+        "seconds": 35.65,
+        "status": "Passed"
+      },
+      "mysql:northwind": {
+        "failures": 0,
+        "seconds": 32.09,
+        "status": "Passed"
+      },
+      "mysql:nyc_taxi": {
+        "failures": 0,
+        "seconds": 66.59,
+        "status": "Passed"
+      },
+      "mysql:nyc_taxi_yellow": {
+        "failures": 0,
+        "seconds": 96.14,
+        "status": "Passed"
+      },
+      "mysql:oracle_co": {
+        "failures": 0,
+        "seconds": 11.18,
+        "status": "Passed"
+      },
+      "mysql:oracle_hr": {
+        "failures": 0,
+        "seconds": 6.18,
+        "status": "Passed"
+      },
+      "mysql:oracle_oe": {
+        "failures": 0,
+        "seconds": 19.04,
+        "status": "Passed"
+      },
+      "mysql:oracle_sh": {
+        "failures": 0,
+        "seconds": 257.48,
+        "status": "Passed"
+      },
+      "mysql:pubs": {
+        "failures": 0,
+        "seconds": 12.04,
+        "status": "Passed"
+      },
+      "mysql:sakila": {
+        "failures": 0,
+        "seconds": 28.41,
+        "status": "Passed"
+      },
+      "mysql:smallsets": {
+        "failures": 0,
+        "seconds": 4.77,
+        "status": "Passed"
+      },
+      "mysql:stackexchange_beer": {
+        "failures": 0,
+        "seconds": 12.4,
+        "status": "Passed"
+      },
+      "mysql:stackexchange_dba": {
+        "failures": 0,
+        "seconds": 49.29,
+        "status": "Passed"
+      },
+      "mysql:wikipedia_simple": {
+        "failures": 0,
+        "seconds": 18.45,
+        "status": "Passed"
+      },
+      "mysql:wikipedia_simple_full": {
+        "failures": 0,
+        "seconds": 345.08,
+        "status": "Passed"
+      }
+    }
+  },
+  "native_client_versions": {
+    "built_image_ids": {
+      "sql-megasamples-adminer:6.3.0-libpq-18.7-r0": "sha256:d36791795e622a641e8212a7877bf5fe7115d5c705f4bba9e885220fd11b9318",
+      "sql-megasamples-cloudbeaver:26.2.5-mysql-26.10.0-sqlite-3.54.1.0": "sha256:5488538d1829f3b4fb8f7e2ba47a9611e581557069fb3b9e6032fae0c46730f0",
+      "sql-megasamples-dbgate:7.3.6-sqlite-13.2.0": "sha256:0a29ed7998ec37c8952d453585d9316ac74eaebc9751f33fa1f85e6ffc37ce43",
+      "sql-megasamples-loader:dev": "sha256:7d6d42e09d5502dbcfea4fb40adcb2b1897fd9e7f20c74cfcd5c676e9520b26a",
+      "sql-megasamples-oracle-verifier:23.26.3-clients-23.26.4": "sha256:55bb975cb67f8dab02442bf57db164704e5fdf8b6e1bde86a262183f32002370"
+    },
+    "captured_at": "2026-11-17T07:40:19.319869+00:00",
+    "programs": {
+      "adminer:php:mysqlnd": {
+        "output": "mysqlnd\n\nmysqlnd => enabled\nVersion => mysqlnd 8.4.27\nCompression => supported\ncore SSL => supported\nextended SSL => supported\nCommand buffer size => 4096\nRead buffer size => 32768\nRead timeout => 86400\nCollecting statistics => Yes\nCollecting memory statistics => No\nTracing => n/a\nLoaded plugins => mysqlnd,debug_trace,auth_plugin_mysql_native_password,auth_plugin_mysql_clear_password,auth_plugin_caching_sha2_password,auth_plugin_sha256_password\nAPI Extensions => mysqli",
+        "returncode": 0
+      },
+      "adminer:php:pdo_pgsql": {
+        "output": "pdo_pgsql\n\nPDO Driver for PostgreSQL => enabled\nPostgreSQL(libpq) Version => 18.7",
+        "returncode": 0
+      },
+      "mysql:mysql": {
+        "output": "mysql  Ver 26.10.0 for Linux on x86_64 (MySQL Community Server - GPL)",
+        "returncode": 0
+      },
+      "mysql:mysqladmin": {
+        "output": "mysqladmin  Ver 26.10.0 for Linux on x86_64 (MySQL Community Server - GPL)",
+        "returncode": 0
+      },
+      "mysql:mysqldump": {
+        "output": "mysqldump  Ver 26.10.0 for Linux on x86_64 (MySQL Community Server - GPL)",
+        "returncode": 0
+      },
+      "mysql:mysqlsh": {
+        "output": "mysqlsh   Ver 26.10.0 for Linux on x86_64 - for MySQL 26.10.0 (MySQL Community Server (GPL))",
+        "returncode": 0
+      },
+      "phpmyadmin:php:mysqlnd": {
+        "output": "mysqlnd\n\nmysqlnd => enabled\nVersion => mysqlnd 8.3.36\nCompression => supported\ncore SSL => supported\nextended SSL => supported\nCommand buffer size => 4096\nRead buffer size => 32768\nRead timeout => 86400\nCollecting statistics => Yes\nCollecting memory statistics => No\nTracing => n/a\nLoaded plugins => mysqlnd,debug_trace,auth_plugin_mysql_native_password,auth_plugin_mysql_clear_password,auth_plugin_caching_sha2_password,auth_plugin_sha256_password\nAPI Extensions => mysqli",
+        "returncode": 0
+      },
+      "postgres:pg_dump": {
+        "output": "pg_dump (PostgreSQL) 18.7 (Debian 18.7-1.pgdg13+2)",
+        "returncode": 0
+      },
+      "postgres:pg_dumpall": {
+        "output": "pg_dumpall (PostgreSQL) 18.7 (Debian 18.7-1.pgdg13+2)",
+        "returncode": 0
+      },
+      "postgres:pg_isready": {
+        "output": "pg_isready (PostgreSQL) 18.7 (Debian 18.7-1.pgdg13+2)",
+        "returncode": 0
+      },
+      "postgres:pg_restore": {
+        "output": "pg_restore (PostgreSQL) 18.7 (Debian 18.7-1.pgdg13+2)",
+        "returncode": 0
+      },
+      "postgres:psql": {
+        "output": "psql (PostgreSQL) 18.7 (Debian 18.7-1.pgdg13+2)",
+        "returncode": 0
+      },
+      "sqlite:sqlite3": {
+        "output": "3.54.1 2026-10-16 14:45:20 555e07ef33f69a0957d24d8e555b702464a131d6f1607f4c3c1e4551e8e6ca76 (64-bit)",
+        "returncode": 0
+      }
+    },
+    "python": {
+      "duckdb": "2.0.0",
+      "libpq": 180007,
+      "psycopg": "3.3.9",
+      "psycopg_binding": "python",
+      "pymysql": "1.2.4",
+      "sqlite": "3.54.1"
+    },
+    "status": "Passed"
+  },
+  "native_feature_exceptions": [
+    {
+      "dataset": "enron_full",
+      "engine": "postgres",
+      "object": "message.ft_message",
+      "reason": "An observed message produces a 1491766-byte tsvector, above the native 1048575-byte maximum. Full message content and existing fingerprints retained.",
+      "status": "Unsupported"
+    }
+  ],
+  "oracle_binaries": {
+    "captured_at": "2026-11-17T05:18:00.962055+00:00",
+    "database_started": false,
+    "image": "sql-megasamples-oracle-verifier:23.26.3-clients-23.26.4",
+    "image_id": "55bb975cb67f8dab02442bf57db164704e5fdf8b6e1bde86a262183f32002370",
+    "programs": {
+      "sqlldr": {
+        "returncode": 0,
+        "status": "Passed",
+        "version": "23.26.4.0.0"
+      },
+      "sqlplus": {
+        "returncode": 0,
+        "status": "Passed",
+        "version": "23.26.4.0.0"
+      }
+    },
+    "source": "https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html",
+    "source_read_at": "2026-11-17T03:33:50.395350+00:00",
+    "status": "Passed"
+  },
+  "owner_deferred_combinations": [
+    {
+      "dataset": "bts_ontime",
+      "disposition": "pending the owner's decision",
+      "engine": "mysql",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters",
+      "disposition": "pending the owner's decision",
+      "engine": "mysql",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters_dw",
+      "disposition": "pending the owner's decision",
+      "engine": "mysql",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "bts_ontime",
+      "disposition": "pending the owner's decision",
+      "engine": "postgres",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters",
+      "disposition": "pending the owner's decision",
+      "engine": "postgres",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters_dw",
+      "disposition": "pending the owner's decision",
+      "engine": "postgres",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "bts_ontime",
+      "disposition": "pending the owner's decision",
+      "engine": "sqlite",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). Owner must decide whether BTS receives a refreshed airport lookup; existing pins are unchanged.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters",
+      "disposition": "pending the owner's decision",
+      "engine": "sqlite",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    },
+    {
+      "dataset": "wideworldimporters_dw",
+      "disposition": "pending the owner's decision",
+      "engine": "sqlite",
+      "reason": "Not loaded in the live deployment (catalogue shows \u2014). SQL Server Developer EULA acceptance remains the owner's decision; no EULA accepted and no export attempted.",
+      "status": "Not run"
+    }
+  ],
+  "playwright_screenshot": {
+    "analytics": "Declined optional first-use analytics in fresh browser profile; existing navigation assertions/selectors retained.",
+    "captured_at": "2026-11-17T05:42:25.250890+00:00",
+    "directory_mode": "0o700",
+    "image": "mcr.microsoft.com/playwright/python:v1.65.0-noble@sha256:f9294526294a7bdfb8ca8aa7d815c049125a10e73b65d47fb9a80f5d74f284a6",
+    "output_sha256": {
+      "cloudbeaver.png": "7015fef626505c22363fd42783db096c35c546d1c88640a6d917d1d6c726a760",
+      "dbgate.png": "607e11edce717bfd3a96a095878b553947b74cf1ff06beebcaf6c47e1068f030",
+      "landing.png": "4af40a8f14f1dfbabc90985f84fd4617e36903a09bc7fabfdc9e07a387b341ed"
+    },
+    "package": "playwright==1.65.0",
+    "private_outputs": true,
+    "returncode": 0,
+    "scope": "Actual repository capture.py against isolated landing, CloudBeaver and DbGate; three expected PNGs written.",
+    "script_sha256": "360db40c67ecb2c950698cc889a17151afe6e8d89bbcf85ca97e5b0cf9ef6de9",
+    "source": "https://playwright.dev/python/docs/release-notes",
+    "source_read_at": "2026-11-17T02:40:57.779038+00:00",
+    "status": "Passed"
+  },
+  "published_endpoints": {
+    "drivers": {
+      "libpq_version": 180007,
+      "psycopg": "3.3.9",
+      "psycopg_implementation": "python",
+      "pymysql": "1.2.4"
+    },
+    "fresh_authentication": {
+      "mysql": {
+        "new_account_authentication": true,
+        "status": "Passed",
+        "temporary_account_removed": true
+      },
+      "postgres": {
+        "new_account_authentication": true,
+        "status": "Passed",
+        "temporary_account_removed": true
+      }
+    },
+    "read_at": "2026-11-17T07:40:17.830391+00:00",
+    "results": {
+      "mysql": {
+        "admin_writes": true,
+        "demo_read_only": true,
+        "endpoint": "127.0.0.1:13306",
+        "incorrect_password_rejected": true,
+        "pubs_jobs_count": 14,
+        "status": "Passed",
+        "version": "26.10.0"
+      },
+      "postgres": {
+        "admin_writes": true,
+        "demo_read_only": true,
+        "endpoint": "127.0.0.1:15432",
+        "incorrect_password_rejected": true,
+        "pubs_jobs_count": 14,
+        "status": "Passed",
+        "version": "PostgreSQL 18.7 (Debian 18.7-1.pgdg13+2) on x86_64-pc-linux-gnu, compiled by gcc (Debian 14.2.0-19) 14.2.0, 64-bit"
+      }
+    },
+    "status": "Passed"
+  },
+  "recovered_failures": [
+    "DuckDB 2.0 CSV boolean cast pushdown: full/core regression tests fail first, then pass after explicit BOOLEAN source types and CASE projection; real CSV outputs byte-identical.",
+    "Latest source-built Connector/C rejects the throwaway server's remote self-signed certificate. First real loader probe failed; loopback/network-namespace regression failed first, then passed, and actual first caching_sha2 auth/prepared queries and TPC-C cardinalities passed. No global verification bypass.",
+    "Adminer HTTP probe initially omitted its CSRF field; corrected the harness and both engine UI listings passed.",
+    "A source gate run during the real reset hit four valid global reset locks. A separate TMPDIR for mocked unit fixtures retained all assertions and the complete source gate passed.",
+    "The real Playwright screenshot path failed on DbGate's first-use analytics modal. Inspected that modal, changed the helper to decline optional analytics, retained its normal connection/table navigation, and reran it successfully for all three expected PNGs. Images remain private (directory 0700, PNGs 0600), not committed or displayed.",
+    "The final version-capture observer initially omitted mysqlsh --no-defaults and encountered the existing my.cnf default-character-set incompatibility. Corrected the observer to follow the repository dump/restore convention. The original MySQL verifier continued; a continuation observer completed PostgreSQL/SQLite and the remaining console checks. Its later MySQL OOM failures are preserved, and a separate full MySQL rerun records its actual process exit after the memory correction.",
+    "The first MySQL runtime matrix passed 26 datasets, then the 1 GiB cgroup OOM-killed mysqld during the full Contoso aggregation and the following three checks lost their socket. Kernel evidence identifies the isolated container. Two memory-budget tests failed before the 2 GiB/explicit-1-GiB-TempTable correction and pass after it; source gate 186 passes. All 30 MySQL datasets are repeated with unchanged query and checksum expectations; the receipt retains both attempts and native cgroup measurements.",
+    "The previous session's health helper was stopped. The project-checked isolated helper was restarted; the first MySQL engine reset includes this wait and is not a startup-performance measurement.",
+    "The 30-dataset port reproduction check failed after SQLGlot 30.32 changed SQLite null-safe equality from IS NOT DISTINCT FROM to IS. SQLite documents these as alternative spellings (https://sqlite.org/lang_expr.html, read 2026-11-17 05:05:26 UTC). Seven trigger scenarios passed for each form, including NULL and explicit revisions; regenerated the one-line record through ports-check --write, retaining translator and assertions.",
+    "An initial file search was scoped to the parent directory and was stopped; no sibling file contents were read or used. Subsequent repository searches stayed inside this clone.",
+    "An initial comparison harness preceded its image build; initial staging harness missed PYTHONPATH. Corrected before obtaining results. A broad loader build context was stopped and replaced with its small source directory; regression test passes.",
+    "The initial exported base tools image lacked the container's later SQLite/uv setup. It was discarded, replaced by an actual running-tools filesystem snapshot (bind mounts excluded), smoke-tested and hashed."
+  ],
+  "releases": {
+    "baseline": {
+      "commit": "7b3d5a35966d82abd69598ed795b9610ddf27c35",
+      "read_at": "2026-11-17T07:22:49.427810+00:00",
+      "source": "https://github.com/Reliable-Collaboration/sql-megasamples/tree/7b3d5a35966d82abd69598ed795b9610ddf27c35"
+    },
+    "consoles": {
+      "adminer": {
+        "before_client_followup": "6.3.0",
+        "dockerfile": "consoles/adminer/Dockerfile",
+        "image": "adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c",
+        "read_at": "2026-11-16T18:58:36.571475+00:00",
+        "release_source": "https://www.adminer.org/",
+        "runtime_image": "sql-megasamples-adminer:6.3.0-libpq-18.7-r0",
+        "version": "6.3.0"
+      },
+      "cloudbeaver": {
+        "before_client_followup": "26.2.5",
+        "dockerfile": "consoles/cloudbeaver/Dockerfile",
+        "image": "dbeaver/cloudbeaver:26.2.5@sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f",
+        "publisher_stable_tags": {
+          "26.2.5": {
+            "digest": "sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f",
+            "read_at": "2026-11-17T02:54:22.625447+00:00",
+            "source": "https://hub.docker.com/v2/repositories/dbeaver/cloudbeaver/tags/26.2.5"
+          },
+          "latest": {
+            "digest": "sha256:5de1c6aa18da9e369966f88a1b25fe017b70ce3fdac7d879616aa931e44b013f",
+            "read_at": "2026-11-17T02:54:22.501334+00:00",
+            "source": "https://hub.docker.com/v2/repositories/dbeaver/cloudbeaver/tags/latest"
+          }
+        },
+        "read_at": "2026-11-16T18:58:36.671862+00:00",
+        "release_source": "https://hub.docker.com/v2/repositories/dbeaver/cloudbeaver/tags?page_size=20",
+        "runtime_image": "sql-megasamples-cloudbeaver:26.2.5-mysql-26.10.0-sqlite-3.54.1.0",
+        "version": "26.2.5"
+      },
+      "dbgate": {
+        "before_client_followup": "7.3.6",
+        "dockerfile": "consoles/dbgate/Dockerfile",
+        "image": "dbgate/dbgate:7.3.6@sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953",
+        "publisher_stable_tags": {
+          "7.3.6": {
+            "digest": "sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953",
+            "read_at": "2026-11-17T02:54:22.932047+00:00",
+            "source": "https://hub.docker.com/v2/repositories/dbgate/dbgate/tags/7.3.6"
+          },
+          "latest": {
+            "digest": "sha256:adb32bb7e0de948d1ffccbc9639014741e1f6d750f7fddd800af651777922953",
+            "read_at": "2026-11-17T02:54:22.769151+00:00",
+            "source": "https://hub.docker.com/v2/repositories/dbgate/dbgate/tags/latest"
+          }
+        },
+        "read_at": "2026-11-16T18:58:36.830920+00:00",
+        "release_source": "https://hub.docker.com/v2/repositories/dbgate/dbgate/tags?page_size=20",
+        "runtime_image": "sql-megasamples-dbgate:7.3.6-sqlite-13.2.0",
+        "version": "7.3.6"
+      },
+      "landing": {
+        "before_client_followup": "1.30.6",
+        "dockerfile": null,
+        "image": "nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703",
+        "read_at": "2026-11-16T18:58:36.520324+00:00",
+        "release_source": "https://nginx.org/en/download.html",
+        "runtime_image": "nginx:1.30.6@sha256:42c68eab6f7e22611786a9fe1d1c019e275c50185bd54b8f75dc2b9184322703",
+        "version": "1.30.6"
+      },
+      "phpmyadmin": {
+        "before_client_followup": "5.2.3",
+        "dockerfile": null,
+        "image": "phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40",
+        "read_at": "2026-11-16T18:58:36.655862+00:00",
+        "release_source": "https://www.phpmyadmin.net/downloads/",
+        "runtime_image": "phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40",
+        "version": "5.2.3"
+      }
+    },
+    "drivers": {
+      "adminer-libpq": {
+        "before": "18.6",
+        "binary_version": "18.7",
+        "pin": "libpq=18.7-r0 in consoles/adminer/Dockerfile",
+        "read_at": "2026-11-17T04:06:09.391699+00:00",
+        "source": "https://pkgs.alpinelinux.org/package/v3.24/main/x86_64/libpq",
+        "status": 200,
+        "version": "18.7-r0"
+      },
+      "adminer-mysqlnd": {
+        "before": "8.4.27",
+        "pin": "adminer:6.3.0@sha256:7605e298e5a2ac74d806283362fa253a4e0a42cfd881e8fa2c155f0631899f6c",
+        "read_at": "2026-11-17T05:07:04.152534+00:00",
+        "release_source": "https://hub.docker.com/v2/repositories/library/adminer/tags/6.3.0",
+        "runtime_version_evidence": "build/client-evidence/adminer-mysql-driver-version.txt",
+        "scope": "Observed PHP-bundled mysqlnd API from this exact vendor image; follows the selected application runtime, not an independently versioned driver dependency",
+        "version": "8.4.27"
+      },
+      "better-sqlite3": {
+        "before": "13.0.3",
+        "pin": "consoles/dbgate/driver/package-lock.json (integrity hashes)",
+        "read_at": "2026-11-17T02:42:58.043635+00:00",
+        "release_source": "https://registry.npmjs.org/better-sqlite3/latest",
+        "version": "13.2.0"
+      },
+      "cloudbeaver-mysql-connector-j": {
+        "before": "8.2.0",
+        "pin": "SHA-256 in consoles/cloudbeaver/Dockerfile",
+        "read_at": "2026-11-17T02:47:32.251990+00:00",
+        "release_read_at": "2026-11-17T02:42:57.279826+00:00",
+        "release_source": "https://repo.maven.apache.org/maven2/com/mysql/mysql-connector-j/maven-metadata.xml",
+        "sha256": "cef70caf532833c9ab8f41f74773ce22c08bf503fad215c9c2ee1e9db87e759e",
+        "url": "https://repo.maven.apache.org/maven2/com/mysql/mysql-connector-j/26.10.0/mysql-connector-j-26.10.0.jar",
+        "version": "26.10.0"
+      },
+      "cloudbeaver-sqlite-jdbc": {
+        "before": "3.48.0.0",
+        "pin": "SHA-256 in consoles/cloudbeaver/Dockerfile",
+        "read_at": "2026-11-17T02:47:32.557960+00:00",
+        "release_read_at": "2026-11-17T02:42:57.355956+00:00",
+        "release_source": "https://repo.maven.apache.org/maven2/org/xerial/sqlite-jdbc/maven-metadata.xml",
+        "sha256": "f8dce420a6016278497f4f0560f65602b9db858de141b541cf91a4644ebe4639",
+        "url": "https://repo.maven.apache.org/maven2/org/xerial/sqlite-jdbc/3.54.1.0/sqlite-jdbc-3.54.1.0.jar",
+        "version": "3.54.1.0"
+      },
+      "mysql2": {
+        "before": "3.24.6",
+        "pin": "vendor console image digest",
+        "read_at": "2026-11-17T02:42:57.655541+00:00",
+        "release_source": "https://registry.npmjs.org/mysql2/latest",
+        "version": "3.24.6"
+      },
+      "pg": {
+        "before": "8.23.1",
+        "pin": "vendor console image digest",
+        "read_at": "2026-11-17T02:42:57.860116+00:00",
+        "release_source": "https://registry.npmjs.org/pg/latest",
+        "version": "8.23.1"
+      },
+      "phpmyadmin-mysqlnd": {
+        "before": "8.3.36",
+        "pin": "phpmyadmin:5.2.3@sha256:e4b3eb5305cd42d21512bb55def2bab52625d56df927ad4ee1864a9354c84d40",
+        "read_at": "2026-11-17T05:07:04.157874+00:00",
+        "release_source": "https://hub.docker.com/v2/repositories/library/phpmyadmin/tags/5.2.3",
+        "runtime_version_evidence": "build/client-evidence/phpmyadmin-driver-version.txt",
+        "scope": "Observed PHP-bundled mysqlnd API from this exact vendor image; follows the selected application runtime, not an independently versioned driver dependency",
+        "version": "8.3.36"
+      },
+      "postgresql": {
+        "before": "42.7.14",
+        "pin": "vendor console image digest",
+        "read_at": "2026-11-17T02:42:57.194811+00:00",
+        "release_source": "https://repo.maven.apache.org/maven2/org/postgresql/postgresql/maven-metadata.xml",
+        "version": "42.7.14"
+      },
+      "psycopg-libpq": {
+        "before": "18.6 (initial binary-wheel probe)",
+        "package": {
+          "Filename": "pool/main/p/postgresql-18/libpq5_18.7-1.pgdg13+2_amd64.deb",
+          "Package": "libpq5",
+          "SHA256": "bfd1d4e64e1a87c637a84e8a712a517ae8059ec969ba57fe402b259ede61e2b8",
+          "Version": "18.7-1.pgdg13+2"
+        },
+        "pin": "verified exact PGDG package in the isolated tools runtime; Psycopg uses its pure Python binding",
+        "read_at": "2026-11-17T04:09:43.044818+00:00",
+        "source": "https://apt.postgresql.org/pub/repos/apt/dists/trixie-pgdg/main/binary-amd64/Packages.gz",
+        "url": "https://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-18/libpq5_18.7-1.pgdg13+2_amd64.deb",
+        "version": "18.7"
+      },
+      "sysbench-connector-c": {
+        "baseline_image_id": "ef3fcadcb52e",
+        "baseline_package": "libmariadb3 1:11.8.6-0+deb13u1",
+        "before": "3.4.9",
+        "pin": "vendor source SHA-256 in engines/mysql/loader.Dockerfile",
+        "read_at": "2026-11-17T02:46:35.436041+00:00",
+        "release_read_at": "2026-11-17T02:43:45.108646+00:00",
+        "release_source": "https://mariadb.org/connector-c/all-releases/",
+        "sha256": "521c0712e9291fa96558df9e2ff431376a3a79329f13751896b694cae12765b4",
+        "source": "https://archive.mariadb.org/connector-c-3.4.11/mariadb-connector-c-3.4.11-src.tar.gz",
+        "transport": "build-server network namespace, loopback; remote TLS defaults retained",
+        "vendor_checksum_source": "https://archive.mariadb.org/connector-c-3.4.11/sha256sums.txt",
+        "version": "3.4.11"
+      }
+    },
+    "native_clients": {
+      "loader-oracle-cli": {
+        "before": "MariaDB 11.8.6 (unversioned Debian default-mysql-client)",
+        "image": "docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999",
+        "pin": "COPY exact binaries from digest-pinned vendor image",
+        "programs": [
+          "mysql",
+          "mysqladmin",
+          "mysqldump"
+        ],
+        "read_at": "2026-11-17T02:40:51.624426+00:00",
+        "release_source": "https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html",
+        "version": "26.10.0"
+      },
+      "mysql": {
+        "before_client_followup": "26.10.0",
+        "current_read_at": "2026-11-17T02:40:51.624426+00:00",
+        "current_release_source": "https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html",
+        "image": "docker.io/library/mysql:26.10.0@sha256:b401608b19ffafbc6aa3d84523acf783078c8cf01e0f7ee1dc3ca75a5701a999",
+        "programs": [
+          "mysql",
+          "mysqladmin",
+          "mysqldump",
+          "mysqlsh"
+        ],
+        "read_at": "2026-11-16T18:58:36.215868+00:00",
+        "release_source": "https://dev.mysql.com/doc/relnotes/mysql/26.10/en/news-26-10-0.html",
+        "version": "26.10.0"
+      },
+      "postgres": {
+        "before_client_followup": "18.7",
+        "current_read_at": "2026-11-17T07:16:14+00:00",
+        "current_release_source": "https://www.postgresql.org/support/versioning/",
+        "image": "docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc",
+        "latest_stable_verification": {
+          "latest_stable": "18.7",
+          "next_major_published": "19 RC 2",
+          "read_at": "2026-11-17T07:16:14+00:00",
+          "selection": "Release candidate is not selected; latest stable clients remain 18.7, matching the target server.",
+          "source": "https://www.postgresql.org/support/versioning/"
+        },
+        "programs": [
+          "psql",
+          "pg_dump",
+          "pg_dumpall",
+          "pg_restore",
+          "pg_isready"
+        ],
+        "read_at": "2026-11-16T18:58:36.214843+00:00",
+        "release_source": "https://www.postgresql.org/docs/release/18.7/",
+        "version": "18.7"
+      },
+      "sqlite3": {
+        "before_client_followup": "3.54.1",
+        "pin": "vendor archive SHA3-256 in engines/sqlite/Dockerfile",
+        "read_at": "2026-11-16T18:58:36.461111+00:00",
+        "release_source": "https://sqlite.org/download.html",
+        "sha3_256": "b6ced585c750916b1052667239a12c25a7ff34e7f06e1e6e01ecb0427657d9c4",
+        "url": "https://sqlite.org/2026/sqlite-autoconf-3540100.tar.gz",
+        "version": "3.54.1"
+      },
+      "sysbench": {
+        "before": "1.0.20+ds-7",
+        "pin": "exact Debian package version in loader.Dockerfile",
+        "read_at": "2026-11-17T02:43:47.330267+00:00",
+        "source": "https://packages.debian.org/trixie/sysbench",
+        "upstream_latest_release_verification": {
+          "evidence": "Vendor release list returned in a software-only web search labels Release 1.0.20 as Latest; no authenticated GitHub tool or git operation used outside the permitted repository.",
+          "read_at": "2026-11-17T03:32:12.781355+00:00",
+          "source": "https://github.com/akopytov/sysbench/releases",
+          "version": "1.0.20"
+        },
+        "version": "1.0.20+ds-7"
+      }
+    },
+    "optional_export_clients": {
+      "mssql": {
+        "before": "18.7.1.1",
+        "binary_probe": "Passed without starting SQL Server or accepting the EULA",
+        "export": "Not run, pending the owner's decision",
+        "image": "mcr.microsoft.com/mssql/server:2025-CU11-ubuntu-24.04@sha256:05644dad1266ca3d445d1e8f6d2ebb9a6a03df9a39376e0f7b48917356dca9d9",
+        "package_metadata": {
+          "packages": {
+            "msodbcsql18": [
+              {
+                "Filename": "pool/main/m/msodbcsql18/msodbcsql18_18.5.1.1-1_amd64.deb",
+                "Package": "msodbcsql18",
+                "SHA256": "f484d54869110529eb84ddb9261ed5a0aa6258ba15027b83da931a9821ed3664",
+                "Version": "18.5.1.1-1"
+              },
+              {
+                "Filename": "pool/main/m/msodbcsql18/msodbcsql18_18.6.2.1-1_amd64.deb",
+                "Package": "msodbcsql18",
+                "SHA256": "73438bb02bc26fb3d1c3d8cac36b3c26cb11629dbd0a3784990fc3235331b334",
+                "Version": "18.6.2.1-1"
+              },
+              {
+                "Filename": "pool/main/m/msodbcsql18/msodbcsql18_18.4.1.1-1_amd64.deb",
+                "Package": "msodbcsql18",
+                "SHA256": "4d1036224ed11259bea297158c5e40884f6d24b274997cff5fe0ec53aafbd70c",
+                "Version": "18.4.1.1-1"
+              },
+              {
+                "Filename": "pool/main/m/msodbcsql18/msodbcsql18_18.7.1.1-1_amd64.deb",
+                "Package": "msodbcsql18",
+                "SHA256": "f506cb3de8b34cd94e9014d247b39e9dfd7effad79edad3ab67096dc3c1b6b0e",
+                "Version": "18.7.1.1-1"
+              },
+              {
+                "Filename": "pool/main/m/msodbcsql18/msodbcsql18_18.6.1.1-1_amd64.deb",
+                "Package": "msodbcsql18",
+                "SHA256": "cd217d3bf471d521dac6886456e6c758c21d4f84f88f7adf48ef672c70e57cb0",
+                "Version": "18.6.1.1-1"
+              }
+            ],
+            "mssql-tools18": [
+              {
+                "Filename": "pool/main/m/mssql-tools18/mssql-tools18_18.4.1.1-1_amd64.deb",
+                "Package": "mssql-tools18",
+                "SHA256": "0700e0636b70f4473858dd4b1ebc1dc583787ba04dfd31369e92ce6fc5b8d98b",
+                "Version": "18.4.1.1-1"
+              },
+              {
+                "Filename": "pool/main/m/mssql-tools18/mssql-tools18_18.6.2.1-1_amd64.deb",
+                "Package": "mssql-tools18",
+                "SHA256": "8685523bc60cfafb70c7d354046d012edc82bbb20efd3e90dcb3b2bd98b6a770",
+                "Version": "18.6.2.1-1"
+              },
+              {
+                "Filename": "pool/main/m/mssql-tools18/mssql-tools18_18.7.1.1-1_amd64.deb",
+                "Package": "mssql-tools18",
+                "SHA256": "d7c3496c1ff3fd38a455c44ae966b2938acc91d082e12bed809b07960687cedb",
+                "Version": "18.7.1.1-1"
+              },
+              {
+                "Filename": "pool/main/m/mssql-tools18/mssql-tools18_18.6.1.1-1_amd64.deb",
+                "Package": "mssql-tools18",
+                "SHA256": "c90c16188a533576d0c3b0f4af82cb679edccd369e2626b928998918840c7787",
+                "Version": "18.6.1.1-1"
+              }
+            ]
+          },
+          "read_at": "2026-11-17T02:51:27.531389+00:00",
+          "source": "https://packages.microsoft.com/ubuntu/24.04/prod/dists/noble/main/binary-amd64/Packages.gz"
+        },
+        "programs": [
+          "sqlcmd (ODBC implementation)",
+          "bcp",
+          "msodbcsql18"
+        ],
+        "read_at": "2026-11-17T02:40:57.415308+00:00",
+        "release_source": "https://learn.microsoft.com/en-us/sql/connect/odbc/download-odbc-driver-for-sql-server?view=sql-server-ver17",
+        "version": "18.7.1.1"
+      },
+      "oracle-clients": {
+        "archive_pins": {
+          "basic_sha256": "cab59aa3b411b3b50898e456fa9aabfe48d67e25cbc1bb23303800390ce7de26",
+          "downloads": [
+            "https://download.oracle.com/otn_software/linux/instantclient/2326400/instantclient-basic-linux.x64-23.26.4.0.0.zip",
+            "https://download.oracle.com/otn_software/linux/instantclient/2326400/instantclient-sqlplus-linux.x64-23.26.4.0.0.zip",
+            "https://download.oracle.com/otn_software/linux/instantclient/2326400/instantclient-tools-linux.x64-23.26.4.0.0.zip"
+          ],
+          "read_at": "2026-11-17T03:33:50.395350+00:00",
+          "source": "https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html",
+          "sqlplus_sha256": "3cd43219cbaad59bb75cee18e7af074ada707446f13397b6f93ec7e4ca870490",
+          "tools_sha256": "95e60dedcaf64a4ebc4dded73f5614c494a8c17fa272cd3c0485e0d13e825000",
+          "version": "23.26.4.0.0"
+        },
+        "base_image": "gvenzl/oracle-free:23@sha256:7ed34d0ade89c91a553c9cbe9d42457c758fa29a762aaaa3137541ff30a2d1cb",
+        "before": "23.26.3.0.0",
+        "binary_probe": "Passed; no Oracle database started",
+        "image": "sql-megasamples-oracle-verifier:23.26.3-clients-23.26.4",
+        "native_connection_load_check": "Not run, pending explicit Oracle Free Use Terms acceptance",
+        "pin": "vendor SHA-256 values in engines/oracle-client/Dockerfile",
+        "platform": "Linux x86-64; other architectures Unsupported by this optional recipe",
+        "programs": [
+          "SQL*Plus",
+          "SQL*Loader"
+        ],
+        "read_at": "2026-11-17T03:33:50.395350+00:00",
+        "release_source": "https://www.oracle.com/database/technologies/instant-client/linux-x86-64-downloads.html",
+        "version": "23.26.4.0.0"
+      }
+    },
+    "python": {
+      "backports-zstd": {
+        "before": "1.7.0",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:53.263367+00:00",
+        "release_source": "https://pypi.org/pypi/backports-zstd/json",
+        "version": "1.8.0"
+      },
+      "brotli": {
+        "before": "1.2.0",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:53.470571+00:00",
+        "release_source": "https://pypi.org/pypi/brotli/json",
+        "version": "1.2.1"
+      },
+      "brotlicffi": {
+        "before": "1.2.0.2",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:53.565570+00:00",
+        "release_source": "https://pypi.org/pypi/brotlicffi/json",
+        "version": "1.2.1.0"
+      },
+      "cffi": {
+        "before": "2.1.1",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:53.825212+00:00",
+        "release_source": "https://pypi.org/pypi/cffi/json",
+        "version": "2.1.1"
+      },
+      "colorama": {
+        "before": "0.4.6",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:54.192197+00:00",
+        "release_source": "https://pypi.org/pypi/colorama/json",
+        "version": "0.4.6"
+      },
+      "cryptography": {
+        "before": "50.0.1",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:54.385937+00:00",
+        "release_source": "https://pypi.org/pypi/cryptography/json",
+        "version": "50.0.2"
+      },
+      "duckdb": {
+        "before": "1.5.5",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:54.569904+00:00",
+        "release_source": "https://pypi.org/pypi/duckdb/json",
+        "version": "2.0.0"
+      },
+      "inflate64": {
+        "before": "1.0.4",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:54.749548+00:00",
+        "release_source": "https://pypi.org/pypi/inflate64/json",
+        "version": "1.0.4"
+      },
+      "iniconfig": {
+        "before": "2.3.0",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:54.831508+00:00",
+        "release_source": "https://pypi.org/pypi/iniconfig/json",
+        "version": "2.3.1"
+      },
+      "lxml": {
+        "before": "6.1.3",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:55.142111+00:00",
+        "release_source": "https://pypi.org/pypi/lxml/json",
+        "version": "6.1.3"
+      },
+      "multivolumefile": {
+        "before": "0.2.3",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:55.250535+00:00",
+        "release_source": "https://pypi.org/pypi/multivolumefile/json",
+        "version": "0.2.3"
+      },
+      "packaging": {
+        "before": "26.3",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:55.339472+00:00",
+        "release_source": "https://pypi.org/pypi/packaging/json",
+        "version": "26.3"
+      },
+      "pluggy": {
+        "before": "1.6.0",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:55.629026+00:00",
+        "release_source": "https://pypi.org/pypi/pluggy/json",
+        "version": "1.7.0"
+      },
+      "psutil": {
+        "before": "7.2.2",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:55.785694+00:00",
+        "release_source": "https://pypi.org/pypi/psutil/json",
+        "version": "7.2.2"
+      },
+      "psycopg": {
+        "before": "not declared",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T03:08:19.577223+00:00",
+        "release_source": "https://pypi.org/pypi/psycopg/json",
+        "version": "3.3.9"
+      },
+      "py7zr": {
+        "before": "1.1.3",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:56.024069+00:00",
+        "release_source": "https://pypi.org/pypi/py7zr/json",
+        "version": "1.1.4"
+      },
+      "pybcj": {
+        "before": "1.0.8",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:56.176487+00:00",
+        "release_source": "https://pypi.org/pypi/pybcj/json",
+        "version": "1.0.8"
+      },
+      "pycparser": {
+        "before": "3.0",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:56.339181+00:00",
+        "release_source": "https://pypi.org/pypi/pycparser/json",
+        "version": "3.12"
+      },
+      "pycryptodomex": {
+        "before": "3.23.0",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:56.870877+00:00",
+        "release_source": "https://pypi.org/pypi/pycryptodomex/json",
+        "version": "3.24.2"
+      },
+      "pygments": {
+        "before": "2.21.0",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:56.982886+00:00",
+        "release_source": "https://pypi.org/pypi/pygments/json",
+        "version": "2.21.0"
+      },
+      "pymysql": {
+        "before": "1.2.0",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:57.145327+00:00",
+        "release_source": "https://pypi.org/pypi/pymysql/json",
+        "version": "1.2.4"
+      },
+      "pyppmd": {
+        "before": "1.3.1",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:57.423471+00:00",
+        "release_source": "https://pypi.org/pypi/pyppmd/json",
+        "version": "1.3.1"
+      },
+      "pytest": {
+        "before": "9.1.1",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:57.587685+00:00",
+        "release_source": "https://pypi.org/pypi/pytest/json",
+        "version": "9.2.0"
+      },
+      "pyyaml": {
+        "before": "6.0.3",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:57.705138+00:00",
+        "release_source": "https://pypi.org/pypi/pyyaml/json",
+        "version": "6.0.3"
+      },
+      "sqlglot": {
+        "before": "30.18.0",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:57.837512+00:00",
+        "release_source": "https://pypi.org/pypi/sqlglot/json",
+        "version": "30.32.0"
+      },
+      "texttable": {
+        "before": "1.7.0",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T02:39:58.055272+00:00",
+        "release_source": "https://pypi.org/pypi/texttable/json",
+        "version": "1.7.3"
+      },
+      "typing-extensions": {
+        "before": "not declared",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T03:47:39.637215+00:00",
+        "release_source": "https://pypi.org/pypi/typing-extensions/json",
+        "version": "4.16.0"
+      },
+      "tzdata": {
+        "before": "not declared",
+        "pin": "uv.lock (exact version and distribution hashes)",
+        "read_at": "2026-11-17T03:47:39.714806+00:00",
+        "release_source": "https://pypi.org/pypi/tzdata/json",
+        "version": "2026.6"
+      }
+    },
+    "scope_notes": [
+      "Console image pins already upgraded in engine PR 9 are retained; configured older embedded drivers are upgraded independently.",
+      "Python sqlite3 uses the validated tools runtime library 3.54.1; it is part of that runtime rather than a PyPI dependency.",
+      "psycopg is a new exact dev dependency for the published-endpoint probe, previously an undeclared helper dependency.",
+      "No psycopg2, SQLAlchemy, python-oracledb, mysql-connector-python, pgloader or SQLcl import/execution exists in the current repository; knowledge-only references are not installed clients.",
+      "CloudBeaver MariaDB driver is present in the vendor image but no MariaDB connection is configured. Other unused vendor drivers are not independently selected clients.",
+      "PHP mysqlnd follows the selected current vendor PHP runtime. Adminer libpq is independently upgraded to 18.7. The endpoint driver uses pure Psycopg with a separately pinned 18.7 libpq package; it does not use the older library bundled in the binary wheel.",
+      "Transport/build utilities such as curl, git, compilers, Docker/Compose and Python itself are tooling runtimes, not independent database clients. Their observed versions/identities are captured where used; no claim is made that the host tooling was upgraded."
+    ],
+    "screenshot_client": {
+      "image": "mcr.microsoft.com/playwright/python:v1.65.0-noble@sha256:f9294526294a7bdfb8ca8aa7d815c049125a10e73b65d47fb9a80f5d74f284a6",
+      "pip_pin": "playwright==1.65.0 in Makefile",
+      "read_at": "2026-11-17T02:40:57.779038+00:00",
+      "release_source": "https://playwright.dev/python/docs/release-notes",
+      "version": "1.65.0"
+    }
+  },
+  "reset_foreign_keys": {
+    "mysql": {
+      "exact_definitions_match_pristine_image": true,
+      "foreign_key_column_records": 288,
+      "status": "Passed"
+    },
+    "postgres": {
+      "exact_definitions_match_pristine_image": true,
+      "foreign_key_column_records": 283,
+      "status": "Passed"
+    }
+  },
+  "resets": {
+    "all": {
+      "returncode": 0,
+      "same_count_row_and_binary_values_restored": true,
+      "seconds": 217.32,
+      "status": "Passed"
+    },
+    "mysql": {
+      "returncode": 0,
+      "same_count_row_and_binary_values_restored": true,
+      "seconds": 454.41,
+      "status": "Passed"
+    },
+    "pairs": {
+      "returncode": 0,
+      "same_count_row_and_binary_values_restored": true,
+      "seconds": 187.7,
+      "status": "Passed"
+    },
+    "postgres": {
+      "returncode": 0,
+      "same_count_row_and_binary_values_restored": true,
+      "seconds": 72.23,
+      "status": "Passed"
+    },
+    "sqlite": {
+      "returncode": 0,
+      "same_count_row_and_binary_values_restored": true,
+      "seconds": 193.24,
+      "status": "Passed"
+    }
+  },
+  "runbook_syntax": {
+    "embedded_python": "Passed",
+    "embedded_python_blocks": 1,
+    "execution_against_live": "Not run",
+    "shell_blocks": [
+      {
+        "block": 1,
+        "status": "Passed",
+        "stderr": ""
+      },
+      {
+        "block": 2,
+        "status": "Passed",
+        "stderr": ""
+      },
+      {
+        "block": 3,
+        "status": "Passed",
+        "stderr": ""
+      },
+      {
+        "block": 4,
+        "status": "Passed",
+        "stderr": ""
+      },
+      {
+        "block": 5,
+        "status": "Passed",
+        "stderr": ""
+      },
+      {
+        "block": 6,
+        "status": "Passed",
+        "stderr": ""
+      },
+      {
+        "block": 7,
+        "status": "Passed",
+        "stderr": ""
+      },
+      {
+        "block": 8,
+        "status": "Passed",
+        "stderr": ""
+      }
+    ]
+  },
+  "running_port_reproduction": {
+    "returncode": 0,
+    "scope": "Reproduce committed records from the running isolated MySQL image; absent datasets remain explicitly not checked.",
+    "status": "Passed"
+  },
+  "runtime_results": {
+    "mysql:adventureworks": {
+      "failures": 0,
+      "seconds": 200.04,
+      "status": "Passed"
+    },
+    "mysql:adventureworks_dw": {
+      "failures": 0,
+      "seconds": 50.51,
+      "status": "Passed"
+    },
+    "mysql:adventureworks_lt": {
+      "failures": 0,
+      "seconds": 13.9,
+      "status": "Passed"
+    },
+    "mysql:chicago_crimes": {
+      "failures": 0,
+      "seconds": 78.06,
+      "status": "Passed"
+    },
+    "mysql:chicago_crimes_full": {
+      "failures": 0,
+      "seconds": 114.13,
+      "status": "Passed"
+    },
+    "mysql:chinook": {
+      "failures": 0,
+      "seconds": 7.81,
+      "status": "Passed"
+    },
+    "mysql:contoso": {
+      "failures": 0,
+      "seconds": 15.77,
+      "status": "Passed"
+    },
+    "mysql:contoso_10m": {
+      "failures": 0,
+      "seconds": 2021.21,
+      "status": "Passed"
+    },
+    "mysql:contoso_1m": {
+      "failures": 0,
+      "seconds": 58.03,
+      "status": "Passed"
+    },
+    "mysql:dvdstore": {
+      "failures": 0,
+      "seconds": 21.14,
+      "status": "Passed"
+    },
+    "mysql:dvdstore_reviews": {
+      "failures": 0,
+      "seconds": 17.24,
+      "status": "Passed"
+    },
+    "mysql:employees": {
+      "failures": 0,
+      "seconds": 234.76,
+      "status": "Passed"
+    },
+    "mysql:enron": {
+      "failures": 0,
+      "seconds": 6.0,
+      "status": "Passed"
+    },
+    "mysql:enron_full": {
+      "failures": 0,
+      "seconds": 392.07,
+      "status": "Passed"
+    },
+    "mysql:jaffle_shop": {
+      "failures": 0,
+      "seconds": 2.27,
+      "status": "Passed"
+    },
+    "mysql:lahman": {
+      "failures": 0,
+      "seconds": 35.65,
+      "status": "Passed"
+    },
+    "mysql:northwind": {
+      "failures": 0,
+      "seconds": 32.09,
+      "status": "Passed"
+    },
+    "mysql:nyc_taxi": {
+      "failures": 0,
+      "seconds": 66.59,
+      "status": "Passed"
+    },
+    "mysql:nyc_taxi_yellow": {
+      "failures": 0,
+      "seconds": 96.14,
+      "status": "Passed"
+    },
+    "mysql:oracle_co": {
+      "failures": 0,
+      "seconds": 11.18,
+      "status": "Passed"
+    },
+    "mysql:oracle_hr": {
+      "failures": 0,
+      "seconds": 6.18,
+      "status": "Passed"
+    },
+    "mysql:oracle_oe": {
+      "failures": 0,
+      "seconds": 19.04,
+      "status": "Passed"
+    },
+    "mysql:oracle_sh": {
+      "failures": 0,
+      "seconds": 257.48,
+      "status": "Passed"
+    },
+    "mysql:pubs": {
+      "failures": 0,
+      "seconds": 12.04,
+      "status": "Passed"
+    },
+    "mysql:sakila": {
+      "failures": 0,
+      "seconds": 28.41,
+      "status": "Passed"
+    },
+    "mysql:smallsets": {
+      "failures": 0,
+      "seconds": 4.77,
+      "status": "Passed"
+    },
+    "mysql:stackexchange_beer": {
+      "failures": 0,
+      "seconds": 12.4,
+      "status": "Passed"
+    },
+    "mysql:stackexchange_dba": {
+      "failures": 0,
+      "seconds": 49.29,
+      "status": "Passed"
+    },
+    "mysql:wikipedia_simple": {
+      "failures": 0,
+      "seconds": 18.45,
+      "status": "Passed"
+    },
+    "mysql:wikipedia_simple_full": {
+      "failures": 0,
+      "seconds": 345.08,
+      "status": "Passed"
+    },
+    "postgres:adventureworks": {
+      "failures": 0,
+      "seconds": 57.22,
+      "status": "Passed"
+    },
+    "postgres:adventureworks_dw": {
+      "failures": 0,
+      "seconds": 26.46,
+      "status": "Passed"
+    },
+    "postgres:adventureworks_lt": {
+      "failures": 0,
+      "seconds": 7.87,
+      "status": "Passed"
+    },
+    "postgres:chicago_crimes": {
+      "failures": 0,
+      "seconds": 140.23,
+      "status": "Passed"
+    },
+    "postgres:chicago_crimes_full": {
+      "failures": 0,
+      "seconds": 135.44,
+      "status": "Passed"
+    },
+    "postgres:chinook": {
+      "failures": 0,
+      "seconds": 6.18,
+      "status": "Passed"
+    },
+    "postgres:contoso": {
+      "failures": 0,
+      "seconds": 10.36,
+      "status": "Passed"
+    },
+    "postgres:contoso_10m": {
+      "failures": 0,
+      "seconds": 432.05,
+      "status": "Passed"
+    },
+    "postgres:contoso_1m": {
+      "failures": 0,
+      "seconds": 52.72,
+      "status": "Passed"
+    },
+    "postgres:dvdstore": {
+      "failures": 0,
+      "seconds": 26.29,
+      "status": "Passed"
+    },
+    "postgres:dvdstore_reviews": {
+      "failures": 0,
+      "seconds": 25.42,
+      "status": "Passed"
+    },
+    "postgres:employees": {
+      "failures": 0,
+      "seconds": 78.28,
+      "status": "Passed"
+    },
+    "postgres:enron": {
+      "failures": 0,
+      "seconds": 5.54,
+      "status": "Passed"
+    },
+    "postgres:enron_full": {
+      "failures": 0,
+      "seconds": 210.1,
+      "status": "Passed"
+    },
+    "postgres:jaffle_shop": {
+      "failures": 0,
+      "seconds": 1.65,
+      "status": "Passed"
+    },
+    "postgres:lahman": {
+      "failures": 0,
+      "seconds": 20.27,
+      "status": "Passed"
+    },
+    "postgres:northwind": {
+      "failures": 0,
+      "seconds": 11.85,
+      "status": "Passed"
+    },
+    "postgres:nyc_taxi": {
+      "failures": 0,
+      "seconds": 83.09,
+      "status": "Passed"
+    },
+    "postgres:nyc_taxi_yellow": {
+      "failures": 0,
+      "seconds": 111.66,
+      "status": "Passed"
+    },
+    "postgres:oracle_co": {
+      "failures": 0,
+      "seconds": 5.59,
+      "status": "Passed"
+    },
+    "postgres:oracle_hr": {
+      "failures": 0,
+      "seconds": 6.5,
+      "status": "Passed"
+    },
+    "postgres:oracle_oe": {
+      "failures": 0,
+      "seconds": 6.47,
+      "status": "Passed"
+    },
+    "postgres:oracle_sh": {
+      "failures": 0,
+      "seconds": 28.33,
+      "status": "Passed"
+    },
+    "postgres:pubs": {
+      "failures": 0,
+      "seconds": 6.54,
+      "status": "Passed"
+    },
+    "postgres:sakila": {
+      "failures": 0,
+      "seconds": 19.74,
+      "status": "Passed"
+    },
+    "postgres:smallsets": {
+      "failures": 0,
+      "seconds": 2.29,
+      "status": "Passed"
+    },
+    "postgres:stackexchange_beer": {
+      "failures": 0,
+      "seconds": 6.54,
+      "status": "Passed"
+    },
+    "postgres:stackexchange_dba": {
+      "failures": 0,
+      "seconds": 219.13,
+      "status": "Passed"
+    },
+    "postgres:wikipedia_simple": {
+      "failures": 0,
+      "seconds": 26.85,
+      "status": "Passed"
+    },
+    "postgres:wikipedia_simple_full": {
+      "failures": 0,
+      "seconds": 591.5,
+      "status": "Passed"
+    },
+    "sqlite:adventureworks": {
+      "failures": 0,
+      "seconds": 9.4,
+      "status": "Passed"
+    },
+    "sqlite:adventureworks_dw": {
+      "failures": 0,
+      "seconds": 57.07,
+      "status": "Passed"
+    },
+    "sqlite:adventureworks_lt": {
+      "failures": 0,
+      "seconds": 0.13,
+      "status": "Passed"
+    },
+    "sqlite:chicago_crimes": {
+      "failures": 0,
+      "seconds": 169.09,
+      "status": "Passed"
+    },
+    "sqlite:chicago_crimes_full": {
+      "failures": 0,
+      "seconds": 158.57,
+      "status": "Passed"
+    },
+    "sqlite:chinook": {
+      "failures": 0,
+      "seconds": 0.13,
+      "status": "Passed"
+    },
+    "sqlite:contoso": {
+      "failures": 0,
+      "seconds": 8.09,
+      "status": "Passed"
+    },
+    "sqlite:contoso_10m": {
+      "failures": 0,
+      "seconds": 669.23,
+      "status": "Passed"
+    },
+    "sqlite:contoso_1m": {
+      "failures": 0,
+      "seconds": 71.56,
+      "status": "Passed"
+    },
+    "sqlite:dvdstore": {
+      "failures": 0,
+      "seconds": 21.74,
+      "status": "Passed"
+    },
+    "sqlite:dvdstore_reviews": {
+      "failures": 0,
+      "seconds": 23.5,
+      "status": "Passed"
+    },
+    "sqlite:employees": {
+      "failures": 0,
+      "seconds": 26.08,
+      "status": "Passed"
+    },
+    "sqlite:enron": {
+      "failures": 0,
+      "seconds": 0.65,
+      "status": "Passed"
+    },
+    "sqlite:enron_full": {
+      "failures": 0,
+      "seconds": 44.33,
+      "status": "Passed"
+    },
+    "sqlite:jaffle_shop": {
+      "failures": 0,
+      "seconds": 0.04,
+      "status": "Passed"
+    },
+    "sqlite:lahman": {
+      "failures": 0,
+      "seconds": 9.08,
+      "status": "Passed"
+    },
+    "sqlite:northwind": {
+      "failures": 0,
+      "seconds": 0.3,
+      "status": "Passed"
+    },
+    "sqlite:nyc_taxi": {
+      "failures": 0,
+      "seconds": 131.44,
+      "status": "Passed"
+    },
+    "sqlite:nyc_taxi_yellow": {
+      "failures": 0,
+      "seconds": 158.44,
+      "status": "Passed"
+    },
+    "sqlite:oracle_co": {
+      "failures": 0,
+      "seconds": 0.16,
+      "status": "Passed"
+    },
+    "sqlite:oracle_hr": {
+      "failures": 0,
+      "seconds": 0.05,
+      "status": "Passed"
+    },
+    "sqlite:oracle_oe": {
+      "failures": 0,
+      "seconds": 0.14,
+      "status": "Passed"
+    },
+    "sqlite:oracle_sh": {
+      "failures": 0,
+      "seconds": 57.56,
+      "status": "Passed"
+    },
+    "sqlite:pubs": {
+      "failures": 0,
+      "seconds": 0.05,
+      "status": "Passed"
+    },
+    "sqlite:sakila": {
+      "failures": 0,
+      "seconds": 0.54,
+      "status": "Passed"
+    },
+    "sqlite:smallsets": {
+      "failures": 0,
+      "seconds": 0.07,
+      "status": "Passed"
+    },
+    "sqlite:stackexchange_beer": {
+      "failures": 0,
+      "seconds": 0.58,
+      "status": "Passed"
+    },
+    "sqlite:stackexchange_dba": {
+      "failures": 0,
+      "seconds": 32.09,
+      "status": "Passed"
+    },
+    "sqlite:wikipedia_simple": {
+      "failures": 0,
+      "seconds": 9.5,
+      "status": "Passed"
+    },
+    "sqlite:wikipedia_simple_full": {
+      "failures": 0,
+      "seconds": 229.14,
+      "status": "Passed"
+    }
+  },
+  "runtime_state": {
+    "all_eight_application_services_running": true,
+    "all_published_ports_loopback_only": true,
+    "captured_at": "2026-11-17T07:40:14.460428+00:00",
+    "compose_project": "megasamples-upgrade",
+    "containers": [
+      {
+        "compose_project": null,
+        "id": "ef64d26b142c7ecbe5b0ffa3b2e223a1501b8f0c7582e8ad7baf357db7183f14",
+        "image_id": "8ef0c198735c09bd0434807c462f61595e3b1b1fe4c7557d441a3e2c257b6740",
+        "name": "megasamples-upgrade-tools",
+        "published_ports": {},
+        "role": null,
+        "started_at": "2026-11-16T12:45:13.191511277-06:00",
+        "status": "running"
+      },
+      {
+        "compose_project": null,
+        "id": "2b6400e8f7a489061aabc0cf9e73df06d3754d38801f44590259dbf6b2bafaad",
+        "image_id": "88276261eddbb021ff76b1dfdc9c7ad37b9b053449e39f50f7d1aa594afe4db2",
+        "name": "megasamples-build-mysql",
+        "published_ports": {
+          "3306/tcp": null,
+          "33060/tcp": null
+        },
+        "role": "build",
+        "started_at": "2026-11-16T12:54:21.712178318-06:00",
+        "status": "exited"
+      },
+      {
+        "compose_project": null,
+        "id": "c1ebd848a39b3ec7a104c80185ba5ea4f8ccae1b22a53885ca0f2d611b1e53e3",
+        "image_id": "32cfab2f09595b0266babd6ef76ee175ef024617f4077797bcecf235fe88eb68",
+        "name": "megasamples-upgrade-browser",
+        "published_ports": {},
+        "role": null,
+        "started_at": "2026-11-16T12:58:52.851855644-06:00",
+        "status": "exited"
+      },
+      {
+        "compose_project": null,
+        "id": "bc379986f01b57cbaf50232e4c60f9d702b809f1444429eef368152d550cbf91",
+        "image_id": "3cccc725163a95947178f4da5e9bf16add75cb286170ac5a2cd2f6513534955d",
+        "name": "megasamples-build-postgres",
+        "published_ports": {
+          "5432/tcp": null
+        },
+        "role": "build",
+        "started_at": "2026-11-16T13:03:20.604753027-06:00",
+        "status": "exited"
+      },
+      {
+        "compose_project": "megasamples-upgrade",
+        "id": "869bf2829cbb82d3f61aeeea05914959113186a4173962844eb668fe098a4971",
+        "image_id": "53d8f012a1a7659f355c0930b4c8c8768a17a9f44a1d38d4fd7276a5096fcccd",
+        "name": "megasamples-landing",
+        "published_ports": {
+          "80/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "18080"
+            }
+          ]
+        },
+        "role": null,
+        "started_at": "2026-11-16T18:56:09.138941358-06:00",
+        "status": "running"
+      },
+      {
+        "compose_project": "megasamples-upgrade",
+        "id": "2e2a2246c4a1df9614b89979934502e3c9afc3f1dd3545d658e224e00f32a20e",
+        "image_id": "44538f24a868e530d65da12aa2bdf5a4daf210b5fc70e7453f0a6c575c30282f",
+        "name": "megasamples-phpmyadmin",
+        "published_ports": {
+          "80/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "18081"
+            }
+          ]
+        },
+        "role": null,
+        "started_at": "2026-11-16T18:55:45.466176142-06:00",
+        "status": "running"
+      },
+      {
+        "compose_project": "megasamples-upgrade",
+        "id": "10cc294f074d82197a5cf4488ef94c7009a727b1f2f2c79cb717aa520430055f",
+        "image_id": "0a29ed7998ec37c8952d453585d9316ac74eaebc9751f33fa1f85e6ffc37ce43",
+        "name": "megasamples-dbgate",
+        "published_ports": {
+          "3000/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "18083"
+            }
+          ]
+        },
+        "role": null,
+        "started_at": "2026-11-16T23:27:33.762601542-06:00",
+        "status": "running"
+      },
+      {
+        "compose_project": "megasamples-upgrade",
+        "id": "cb15fbf30bbfe18c12c8243c820c4a5c52870ca6f23019054420ae63fa54db85",
+        "image_id": "5488538d1829f3b4fb8f7e2ba47a9611e581557069fb3b9e6032fae0c46730f0",
+        "name": "megasamples-cloudbeaver",
+        "published_ports": {
+          "8978/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "18084"
+            }
+          ]
+        },
+        "role": null,
+        "started_at": "2026-11-16T23:27:33.774649369-06:00",
+        "status": "running"
+      },
+      {
+        "compose_project": "megasamples-upgrade",
+        "id": "7f66b2db376a789b09e9059fe3c10ce6a223e4a42c5dcae843f0c7483cdf4375",
+        "image_id": "d314f2d8343fe43f48f6c9ed556b9087d96715cb2f5f741e2085541e4f22b67a",
+        "name": "megasamples-sqlite",
+        "published_ports": {},
+        "role": null,
+        "started_at": "2026-11-16T21:30:22.440757247-06:00",
+        "status": "running"
+      },
+      {
+        "compose_project": "megasamples-upgrade",
+        "id": "9bfc9f6af5467cddd8dc71188f4234b099aa2b60cd68d69cacba860c65a44314",
+        "image_id": "6fbdfbdf91577dab053028f28352c3cc09d734e3ab9989d868315f172d8bd0b6",
+        "name": "megasamples-postgres",
+        "published_ports": {
+          "5432/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "15432"
+            }
+          ]
+        },
+        "role": null,
+        "started_at": "2026-11-16T21:30:40.714313517-06:00",
+        "status": "running"
+      },
+      {
+        "compose_project": "megasamples-upgrade",
+        "id": "3dd8280d5237835bb581b5b9ed0f76aaa8331450b825313527609761e891cb15",
+        "image_id": "d36791795e622a641e8212a7877bf5fe7115d5c705f4bba9e885220fd11b9318",
+        "name": "megasamples-adminer",
+        "published_ports": {
+          "8080/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "18082"
+            }
+          ]
+        },
+        "role": null,
+        "started_at": "2026-11-16T23:27:53.328563084-06:00",
+        "status": "running"
+      },
+      {
+        "compose_project": "megasamples-upgrade",
+        "id": "94d26816493e0a92805837c2fcad0fb9c2a6f34f6c69f8e3498ed742163ed990",
+        "image_id": "77813c185ab5c5a07f0606e5f7291796a1d962d65f80d597b33d3994da696662",
+        "name": "megasamples-mysql",
+        "published_ports": {
+          "3306/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "13306"
+            }
+          ],
+          "33060/tcp": null
+        },
+        "role": null,
+        "started_at": "2026-11-17T00:20:48.38334716-06:00",
+        "status": "running"
+      }
+    ],
+    "docker_host": "unix:///home/rcc-vstudio/working/sql-megasamples-upgrade-env/podman.sock",
+    "env_file_mode": "0600",
+    "graph_root": "/home/rcc-vstudio/working/sql-megasamples-upgrade-env/graph",
+    "isolated_ids_disjoint_from_live": true,
+    "only_expected_isolated_containers": true,
+    "status": "Passed"
+  },
+  "runtime_validation_sources": {
+    "mysql": "2fc89ee1d1ef1f8e54c015813f975775bf50e149",
+    "postgres": "86a1940529834ad9e7bb10877358a71416915fc9",
+    "sqlite": "86a1940529834ad9e7bb10877358a71416915fc9"
+  },
+  "source_gate": {
+    "command": "TMPDIR=/tmp/megasamples-client-unit-tests-20261117 make check PY=.venv/bin/python",
+    "port_reproduction_in_gate": "Not run: stopped build server; separate application-image reproduction recorded when complete.",
+    "seconds": 23.49,
+    "status": "Passed",
+    "tests": 186
+  },
+  "sqlglot_trigger_equivalence": {
+    "captured_at": "2026-11-17T05:06:05.384535+00:00",
+    "cases": {
+      "changed_status": {
+        "observed": {
+          "new": [
+            2,
+            5,
+            10
+          ],
+          "old": [
+            2,
+            5,
+            10
+          ]
+        },
+        "status": "Passed"
+      },
+      "explicit_revision": {
+        "observed": {
+          "new": [
+            1,
+            9,
+            10
+          ],
+          "old": [
+            1,
+            9,
+            10
+          ]
+        },
+        "status": "Passed"
+      },
+      "null_revision_unchanged": {
+        "observed": {
+          "new": [
+            1,
+            null,
+            11
+          ],
+          "old": [
+            1,
+            null,
+            11
+          ]
+        },
+        "status": "Passed"
+      },
+      "null_status_changes": {
+        "observed": {
+          "new": [
+            1,
+            5,
+            10
+          ],
+          "old": [
+            1,
+            5,
+            10
+          ]
+        },
+        "status": "Passed"
+      },
+      "null_status_unchanged": {
+        "observed": {
+          "new": [
+            null,
+            6,
+            11
+          ],
+          "old": [
+            null,
+            6,
+            11
+          ]
+        },
+        "status": "Passed"
+      },
+      "null_to_revision": {
+        "observed": {
+          "new": [
+            1,
+            1,
+            10
+          ],
+          "old": [
+            1,
+            1,
+            10
+          ]
+        },
+        "status": "Passed"
+      },
+      "same_status_and_revision": {
+        "observed": {
+          "new": [
+            1,
+            6,
+            11
+          ],
+          "old": [
+            1,
+            6,
+            11
+          ]
+        },
+        "status": "Passed"
+      }
+    },
+    "reason": "SQLGlot now emits SQLite IS for null-safe equality; SQLite documents IS NOT DISTINCT FROM as its alternative spelling.",
+    "source": "https://sqlite.org/lang_expr.html",
+    "source_read_at": "2026-11-17T05:05:26+00:00",
+    "sqlite_version": "3.54.1",
+    "status": "Passed"
+  },
+  "tested_source_commit": "2fc89ee1d1ef1f8e54c015813f975775bf50e149",
+  "tools_artifact": {
+    "archive": "build/client-evidence/current-validated-tools-image.tar",
+    "image": "localhost/megasamples-upgrade-tools:clients-20261117-libpq18.7",
+    "image_id": "9cfca77f5b88e23f25e76429d70f0c72959ff13a6d933610c58ae74da67cd710",
+    "libpq_package": {
+      "package": {
+        "Filename": "pool/main/p/postgresql-18/libpq5_18.7-1.pgdg13+2_amd64.deb",
+        "Package": "libpq5",
+        "SHA256": "bfd1d4e64e1a87c637a84e8a712a517ae8059ec969ba57fe402b259ede61e2b8",
+        "Version": "18.7-1.pgdg13+2"
+      },
+      "read_at": "2026-11-17T04:09:43.044818+00:00",
+      "source": "https://apt.postgresql.org/pub/repos/apt/dists/trixie-pgdg/main/binary-amd64/Packages.gz",
+      "url": "https://apt.postgresql.org/pub/repos/apt/pool/main/p/postgresql-18/libpq5_18.7-1.pgdg13+2_amd64.deb"
+    },
+    "sha256": "8e32e1e80ebf022ca9b882c6cac94f51477f01cc8dd5d96bb253c4bb62a6092c",
+    "smoke": "uv 0.13.8 (x86_64-unknown-linux-gnu)\nDocker version 29.8.2, build 7fc2dff\nDocker Compose version 2.40.3+ds1-0ubuntu1\nsqlite 3.54.1 libpq 180007\n"
+  }
+}

@@ -60,6 +60,12 @@ with sync_playwright() as p:
     page = ctx.new_page()
     page.goto("http://dbgate:3000/", wait_until="load")
     time.sleep(10)
+    # A fresh browser profile receives DbGate's optional analytics prompt.
+    # Keep screenshot capture private and wait until the connection list is usable.
+    decline = page.get_by_test_id("UsageAnalyticsConsentModal_declineButton")
+    if decline.is_visible():
+        decline.click()
+        decline.wait_for(state="hidden")
     page.locator('[data-testid="ConnectionList_container"] div.main', has_text="MySQL (read-only)").first.click()
     time.sleep(8)
     page.locator("div.main", has_text=re.compile(r"^\s*sakila\b")).first.click()

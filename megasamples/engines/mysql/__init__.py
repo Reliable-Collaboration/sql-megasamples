@@ -122,10 +122,12 @@ class MySQL(Engine):
     def compose_service(self, cfg):
         return {
             "image": f"${{MEGASAMPLES_MYSQL_IMAGE:-{self.image}}}",
-            # MySQL sizes its buffer pool from the host's memory rather than the container's, so a
-            # limit without an explicit pool size makes it plan for more than it may have
-            "mem_limit": "1g",
-            "command": ["mysqld", "--innodb-buffer-pool-size=256M"],
+            # Bound host-derived allocations and fund them inside the container: 1 GiB
+            # TempTable + 256 MiB pool + 512 MiB server/thread headroom rounds to 2 GiB.
+            # The full Contoso aggregation was OOM-killed under the former 1 GiB limit.
+            "mem_limit": "2g",
+            "command": ["mysqld", "--innodb-buffer-pool-size=256M",
+                        "--temptable-max-ram=1G"],
             "container_name": self.container,
             "ports": [f"127.0.0.1:{cfg.ports.get('mysql', self.port)}:3306"],
             "environment": {"DEMO_PASSWORD": "${DEMO_PASSWORD:-demo}",

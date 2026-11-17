@@ -156,6 +156,9 @@ def up(argv=None):
     console_config.main([])
     if compose.main([]):
         return 2
+    from megasamples import console_images
+    if console_images.build(cfg):
+        return 1
     # Compose does not recreate a service whose image was rebuilt under the same tag, and when it
     # does recreate one it keeps the anonymous volume the official images declare for their data
     # directory -- so the old data would shadow the new image. An engine whose running container is

@@ -38,7 +38,7 @@ is the evidence bundle behind every claim in both.
 ## Quick start
 
 ```sh
-uv sync            # the Python stack (PyYAML, PyMySQL, duckdb, lxml, sqlglot, py7zr)
+uv sync --locked   # exact Python client/converter versions and hashes from uv.lock
 make configure     # choose engines x databases and consoles; writes megasamples.yaml
 make run           # fetch (once), convert, load, verify, bake the images
 make up            # start the stack, then open http://127.0.0.1:8080/
@@ -507,7 +507,7 @@ dataset was converted the way it was, that is where the answer is.
 
 ```sh
 make check                       # the local gate: bundle, generated files, port records reproducible, unit tests
-uv run pytest -q                 # the unit tests alone: inventory, configuration, staging, the port toolkit
+uv run --locked pytest -q        # the unit tests alone: inventory, configuration, staging, the port toolkit
 make build D="$(make -s list-quick)"   # the quick subset end to end, before a push that touches the pipeline
 make screenshots                 # retake the README's pictures from the running stack (docs/screenshots/capture.py)
 ```
@@ -515,3 +515,20 @@ make screenshots                 # retake the README's pictures from the running
 If a `docker pull` or a download hangs with no error, suspect IPv6 first — see
 [`knowledge/runbooks/ipv6-and-privileges.md`](knowledge/runbooks/ipv6-and-privileges.md), which also
 covers the `make pull-image` workaround this project uses to fetch images over IPv4.
+
+The reviewed client inputs and vendor-source read times are in `clients.lock.yaml`.
+`make up` builds CloudBeaver, DbGate and Adminer extensions from pinned vendor images,
+with current JDBC jars, a locked native SQLite module and a current PostgreSQL library. The loader
+uses Oracle's matching MySQL command-line clients and an independently pinned
+Connector/C. `make oracle-client-image` builds the optional current SQL*Plus and
+SQL*Loader binaries; `make verify-oracle` retains its explicit database license gate.
+
+For a deliberate Python refresh, update the exact requirements in `pyproject.toml`,
+run `uv lock --upgrade`, then `uv sync --locked` and the repository gate. The client
+upgrade evidence and the live procedure are in `docs/client-upgrade-evidence.md` and
+`docs/live-upgrade-runbook.md`. The upgrade rehearsal installs and runs tooling only
+inside its isolated containers.
+
+The published-endpoint probe uses Psycopg with a current system libpq. The container-only
+setup recipe is `docs/validation/install-probe-libpq.py`; the validated rehearsal tools
+archive already includes that pinned library. No host installation is required for the rehearsal.
