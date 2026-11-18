@@ -157,10 +157,10 @@ The [follow-up receipt](validation/live-upgrade-review-r1-2026-11-18.json) recor
 regressions for retained service-named archives, actual restored ID/tag pairs, complete-set
 corruption refusal, host socket fixtures, executable preparation gates and recovery context.
 A disabled preparation command and an ID-based loader against the service-named layout each
-made the strengthened tests fail. The corrected scratch rehearsal also stopped two owned
-fixtures, removed one and required the retained exited receipt before accepting its absence.
-Exit 137 was refused until explicitly acknowledged for that fixture. A private scratch runtime
-and scoped migrate/reset cleaned up its recorded pause processes.
+made the strengthened tests fail. At that revision, the scratch rehearsal stopped two owned fixtures and used the
+then-required exited receipt and 137 acknowledgment. The state design below supersedes
+that gate. That rehearsal used migrate/reset; the revised cleanup removes scratch images
+and uses migrate with a final pause-PID check, avoiding reset’s machine deletion scope.
 
 The additional netns attempt ran three owned-fixture Compose up/stop/up/down cycles in the
 isolated store and did not reproduce the live error. The cause remains unknown. No live
@@ -174,3 +174,51 @@ by authentication. SQLite server authentication is Unsupported. A separate trans
 isolated PostgreSQL probe proved `demo` can create temporary tables and large objects and
 execute routines; its changes were rolled back. Host `.venv/bin/python` was absent, so this
 check does not claim the command ran natively on the host.
+
+
+## Teardown design correction on 2026-11-18
+
+The [states and gates design](live-upgrade-runbook.md#teardown-and-rollback-states-and-gates)
+is the authority for originals, failed candidates and restored originals. Synthetic
+fixtures retain only name/status/exit_code/running from the two first-run records.
+Every service/state/phase cell is executable in `tests/test_teardown_gates.py`.
+PostgreSQL/MySQL need a clean original stop; SQLite's observed 137 is expected;
+OOM independently refuses cold-copy eligibility. Candidate teardown records created,
+failed, OOM and missing containers and requires only not-running/PID 0.
+
+Rollback uses an exclusive attempt directory and digest-checked configuration
+extraction. Retained file digests and names remain unchanged in the synthetic
+read-only-input test. Fully read-only parent directories refuse allocation; only
+permission to add the new attempt directory is required. Bootstrap, early abort,
+strict fresh-shell checks and continuation are executed through command stubs.
+Python heredocs and `-c` bodies compile; every shell block passes `bash -n`.
+The populated-volume checkpoint survives a pre-start refusal without repeating restore.
+
+The owner-scoped scanner reports other owners separately and refuses ambiguous
+ownership, unreadable own processes, unresolvable mount roots and all remaining
+network helpers. It resolves every host mount alias and includes file mappings
+whose descriptors have closed. Its success-path gates also cover cold-copy,
+configuration restoration and the four newly populated rollback volume targets.
+There is no receipt-only helper exemption. On a shared host this strict gate may
+remain refused even for an unrelated, attributed store; that is a readiness limit,
+not evidence of a clean teardown.
+
+The [second correction receipt](validation/live-upgrade-review-r2-2026-11-18.json)
+records the actual host scan counts/classifications, red/green logs, commits,
+suite/image outcomes and isolation proof. The scanner was run read-only on this
+host against running isolated-stack mount records. Its execution Passed and its
+quiescence decision Failed; no live stop or signals were attempted. Process
+arguments, environments and private configuration were not collected in the receipt.
+
+The scanner's field interpretation follows Linux's
+[namespace owner interface](https://man7.org/linux/man-pages/man2/ioctl_nsfs.2.html),
+[mountinfo](https://man7.org/linux/man-pages/man5/proc_pid_mountinfo.5.html) and
+[file mappings](https://man7.org/linux/man-pages/man5/proc_pid_maps.5.html), all read
+**2026-11-18 18:58:17 UTC**. Inspection refusals remain refusals; these sources
+cannot prove that the host is quiescent.
+
+The revised procedure still has not run end to end on the live store or with
+engine-size archives. Full live restoration, forwarded authentication/TLS,
+kernel/AppArmor capture and the DataIntent acceptance suite remain Not run here.
+The netns root cause remains unknown. As of 2026-11-18, acceptance remained held;
+DataIntent owns its acceptance record.
