@@ -1528,7 +1528,12 @@ inspected as not running/PID 0 and searched by full ID across the cgroup tree.
 Absent groups after a completed search and present empty groups (threads included)
 are evidence; an error is HOLD, a live task REFUSE. Verification repeats these
 checks and refuses a container started since capture. Full/partial removal is
-supported. All-down `original-stop` still HOLDs; restart originals, then capture
+supported. A never-created/missing placeholder has no container ID: the complete
+project listing proves absence, and the record explicitly says no historical
+cgroup search by an unknown ID is claimed. Retained full IDs of removed containers
+are always searched. With an empty listing the store helper PID file is still
+checked; earlier applicable captures and readable holders remain required.
+All-down `original-stop` still HOLDs; restart originals, then capture
 across their next stop before any cold copy.
 
 For down containers, positively associated `conmon`/helpers refuse: full container

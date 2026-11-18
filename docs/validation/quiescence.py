@@ -228,10 +228,15 @@ def rollback_route(snapshot, project):
 def down_evidence(row, proc, cgroup_root):
     """Per-container fresh state and completed full-ID cgroup search, never empty on error."""
     identity = row.get('id')
-    evidence = dict(id=identity, cgroup_state='absent', cgroups=[], ports=[])
+    evidence = dict(id=identity, name=row.get('name'), cgroup_state='absent', cgroups=[], ports=[])
     refusals, holds = [], []
     if not identity:
-        holds.append(dict(reason='down missing container identifier evidence unavailable'))
+        # A never-created/missing placeholder is not a Podman object. The full
+        # listing proves its absence; do not invent an ID or claim to have searched
+        # historical cgroups for an unknown ID. Known removed IDs are still searched.
+        if row.get('state', 'missing') != 'missing' or row.get('running') or row.get('pid',0):
+            holds.append(dict(reason='down container state unreadable'))
+        evidence.update(state='missing', cgroup_state='no retained identifier; missing from completed project listing')
         return evidence, refusals, holds
     try:
         if identity and container_exists(identity):
@@ -337,11 +342,14 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
         if not saved['containers']:
             hold('container capture missing')
         listed = set(pod('ps', '-aq', '--no-trunc', '--filter', 'label=com.docker.compose.project='+saved['project']).split())
+        saved['project_listing'] = sorted(listed)
         recorded = {r['id'] for r in saved['containers'] if r.get('id') and r.get('state') != 'missing'}
         if listed != recorded:
             hold('container capture incomplete')
         groups, identities, networks = {}, {}, {}
-        bridge = False
+        # With an empty current listing the supported deployment's shared store
+        # helper is still inspected. Its independently verified consumers decide.
+        bridge = down_allowed and not listed
         for row in saved['containers']:
             if down_allowed and not row.get('running'):
                 evidence, refusals, holds = down_evidence(row, proc, cgroup_root)
@@ -677,9 +685,10 @@ def complete_capture(saved):
     if not required <= saved.keys() or saved['schema'] != 1 or not saved['complete'] or not saved['containers'] or not saved['sources']:
         return False
     if saved.get('kind') == 'down-state':
-        expected = [row.get('id') for row in saved['containers']]
-        recorded = [row.get('id') for row in saved.get('down_evidence', [])]
-        return None not in expected and len(expected) == len(set(expected)) and sorted(expected) == sorted(recorded)
+        expected = [(row.get('name'),row.get('id')) for row in saved['containers']]
+        by_id = {row.get('id'):row.get('name') for row in saved['containers'] if row.get('id')}
+        recorded = [(row.get('name') or by_id.get(row.get('id')),row.get('id')) for row in saved.get('down_evidence', [])]
+        return len(expected) == len(set(expected)) and set(expected) == set(recorded) and len(expected) == len(recorded)
     return bool(saved['processes'] and saved['cgroups'])
 
 

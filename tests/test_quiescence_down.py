@@ -121,12 +121,17 @@ def test_exact_original_restart_eligibility_and_route(down,monkeypatch,change):
         assert gate.rollback_route(snap,'project')['route']!= 'original-restart'
 
 
-def test_down_missing_identifier_is_not_empty_evidence(down):
+def test_missing_never_created_container_has_completed_listing_evidence(down,monkeypatch):
     snap,out,proc,cg,data=down
     saved=json.loads(snap.read_text());saved['containers'][0].update(id=None,state='missing');snap.write_text(json.dumps(saved))
+    original=gate.pod
+    monkeypatch.setattr(gate,'pod',lambda *a:'' if a[0]=='ps' else original(*a))
     report=gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)
-    assert report['outcome']=='HOLD'
-    assert any(r['reason']=='down missing container identifier evidence unavailable' for r in report['holds'])
+    assert report['outcome']=='PASS'
+    saved=json.loads(out.read_text())
+    assert saved['project_listing']==[]
+    assert saved['down_evidence'][0]['cgroup_state']=='no retained identifier; missing from completed project listing'
+    assert gate.verify(out,proc=proc,cgroup_root=cg)['outcome']=='PASS'
 
 
 def test_down_shared_helper_appearing_after_absent_pidfile_is_checked(down,monkeypatch):
