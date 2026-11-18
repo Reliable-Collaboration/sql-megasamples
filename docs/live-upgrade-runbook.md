@@ -903,6 +903,75 @@ flights. Check the complete console lists: three new MySQL databases and the sup
 ports, including the new SQLite connection in CloudBeaver and DbGate. Unsupported pairs must not
 be presented as available. Preserve the result logs with the maintenance receipt.
 
+### Recover the retained first-run backup context
+
+The 2026-11-18 backups predate `resume-context.bash` and `original-ports.json`. Before using
+“Roll back” with that backup, the coordinator must create these **new non-secret sidecars**.
+Do not rerun preparation against the upgraded HEAD. The original archives, checksum file,
+configuration files and receipt stay unchanged. This compatibility bootstrap has syntax/unit
+coverage for its archive layout; it has **not** been executed on the live store.
+
+In a fresh Bash coordinator maintenance shell, set `BACKUP_DIR` from the phase-A receipt,
+`REVIEWED_CHECKOUT` to the reviewed corrected source and `UPGRADE_TOOLS_CONTAINER` to the
+retained host-network tools container from that maintenance record. The tools container must
+still mount the deployment checkout and contain its `.venv` interpreter.
+
+```sh
+set -eu
+: "${BACKUP_DIR:?Set the retained first-run backup directory}"
+: "${REVIEWED_CHECKOUT:?Set the reviewed corrected checkout}"
+: "${UPGRADE_TOOLS_CONTAINER:?Set the retained maintenance tools container}"
+unset CONTAINERS_STORAGE_CONF CONTAINERS_CONF CONTAINERS_CONF_OVERRIDE
+unset DEMO_PASSWORD ADMIN_PASSWORD MYSQL_ROOT_PASSWORD POSTGRES_PASSWORD
+export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock" COMPOSE_PROJECT_NAME=sql-megasamples
+cd /home/rcc-vstudio/working/sql-megasamples
+UPGRADE_ID=$(basename "$BACKUP_DIR")
+UPGRADE_HELPER="$BACKUP_DIR/live-upgrade.py"
+test -f "$BACKUP_DIR/phase-a-resume-receipt.json"
+test ! -e "$BACKUP_DIR/resume-context.bash"
+test ! -e "$UPGRADE_HELPER"
+cp "$REVIEWED_CHECKOUT/docs/validation/live-upgrade.py" "$UPGRADE_HELPER"
+test ! -e "$BACKUP_DIR/quiescence.py"
+cp "$REVIEWED_CHECKOUT/docs/validation/quiescence.py" "$BACKUP_DIR/quiescence.py"
+chmod 600 "$UPGRADE_HELPER" "$BACKUP_DIR/quiescence.py"
+# This selects only the corrected per-service archives; never the malformed aggregate.
+python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
+# Extract ONLY the two reviewed shell definitions, never the preparation commands.
+python3 - "$REVIEWED_CHECKOUT/docs/live-upgrade-runbook.md" "$BACKUP_DIR/recovery-functions.bash" <<'PY_RECOVERY_FUNCTIONS'
+import pathlib, re, sys
+text = pathlib.Path(sys.argv[1]).read_text()
+functions = [re.search(r'^' + name + r'\(\) \{\n.*?^\}$(?=\n)', text, re.M | re.S)[0]
+             for name in ('ms_tool', 'save_context')]
+with pathlib.Path(sys.argv[2]).open('x') as output:
+    output.write('\n'.join(functions) + '\n')
+PY_RECOVERY_FUNCTIONS
+chmod 600 "$BACKUP_DIR/recovery-functions.bash"
+. "$BACKUP_DIR/recovery-functions.bash"
+MEGASAMPLES_PY="$PWD/.venv/bin/python"
+METADATA_BUNDLE= MEGASAMPLES_LIVE_API_PID= APPROVED_UPGRADE_MERGE= EXTRA_RESERVE_BYTES=0
+APPROVED_ENGINE_MERGE= APPROVED_CLIENTS_MERGE= APPROVED_DATASET_MERGE=
+APPROVED_LTS_MERGE= APPROVED_CREDENTIAL_MERGE=
+TOOLS_ARCHIVE= TOOLS_IMAGE= CANDIDATE_ARCHIVE= DOCKER_CLIENT=
+TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE=
+PREPARATION_STAGE=retained-first-run-rollback
+# Configured port selection only; no credential environment is read or emitted.
+ms_tool "$MEGASAMPLES_PY" - "$BACKUP_DIR" <<'PY_RECOVERY_PORTS'
+import json, pathlib, sys
+from megasamples import config
+backup = pathlib.Path(sys.argv[1])
+cfg = config.load(str(backup / 'megasamples.yaml'))
+with (backup / 'original-ports.json').open('x') as output:
+    json.dump(dict(engines=list(cfg.engines), consoles=cfg.consoles, ports=cfg.ports), output)
+PY_RECOVERY_PORTS
+save_context
+```
+
+An unavailable tools container/interpreter/socket is a refusal: reconstruct that tooling in
+isolation with its reviewed inputs before proceeding. Never improvise a data restore. If the
+bootstrap is interrupted, resume only its failed command; do not overwrite an existing sidecar.
+The normal rollback below takes fresh candidate snapshots before stop/down and keeps its newly
+written evidence separate from every original backup file.
+
 ## Roll back
 
 ```sh
