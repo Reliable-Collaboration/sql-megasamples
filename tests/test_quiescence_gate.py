@@ -181,3 +181,20 @@ def test_remaining_consumers_inspects_live_store_objects(fixture,monkeypatch,mod
         (proc/'12345/cgroup').write_text('0::/unattributed')
         with pytest.raises(ValueError,match='consumer association unresolved'):
             gate.remaining_consumers(saved,proc)
+
+
+@pytest.mark.parametrize('change',['incomplete','reboot','store','pid-reuse','cgroup-reuse','unrelated'])
+def test_history_applicability_is_mechanical_with_reversal(fixture,change):
+    saved,proc,cg,data,path,verify=fixture
+    current=copy.deepcopy(saved)
+    assert gate.historical_applicability(saved,current,proc,cg)
+    if change=='incomplete':saved['complete']=False
+    if change=='reboot':saved['boot_id']='old'
+    if change=='store':saved['store']['run']='different'
+    if change=='pid-reuse':
+        p=process(proc);saved['processes']=[dict(gate.process_identity(p),role='process')];saved['processes'][0]['start']='before'
+    if change=='cgroup-reuse':
+        group=cg/'scope';group.mkdir();saved['cgroups']=[dict(line='0::/scope',**gate.object_identity(group))];saved['cgroups'][0]['inode']+=1
+    if change=='unrelated':saved['containers']=[dict(id='other')];saved['sources'][0]['root']='/other-data'
+    assert not gate.historical_applicability(saved,current,proc,cg)
+    assert gate.historical_applicability(current,current,proc,cg)

@@ -230,3 +230,43 @@ def test_cgroup_members_reconciled_even_when_proc_listing_misses_member(capture_
     monkeypatch.setattr(Path,'iterdir',listing)
     assert gate.capture(snap,out,proc=proc,cgroup_root=cg)['outcome']=='PASS'
     assert 12349 in {r['pid'] for r in json.loads(out.read_text())['processes']}
+
+
+def test_clean_stop_verifies_first_capture_other_engine_survivor(capture_fixture,monkeypatch):
+    import shutil
+    snap,first,proc,cg,data=capture_fixture
+    helper=process(proc,12349,'rootlessport')
+    (cg/'libpod-test.scope/cgroup.procs').write_text('12345\n12349')
+    assert gate.capture(snap,first,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+    before=first.read_bytes()
+    # Only the recovered engine is running at capture two. The first engine's
+    # dedicated helper survives the first stop in its original cgroup.
+    for pid in ('12345','12346'): shutil.rmtree(proc/pid)
+    for group in ('libpod-test.scope','libpod-conmon-test.scope'):
+        (cg/group/'cgroup.procs').write_text('12349' if group=='libpod-test.scope' else '')
+        (cg/group/'cgroup.threads').write_text('12349' if group=='libpod-test.scope' else '')
+    for pid,comm,group in [(22345,'server','new'),(22346,'conmon','libpod-conmon-new.scope')]:
+        process(proc,pid,comm,'/'+group)
+        directory=cg/group;directory.mkdir()
+        for name in ('cgroup.procs','cgroup.threads'): (directory/name).write_text(str(pid))
+    saved=json.loads(snap.read_text());saved['containers'][0]['pid']=22345;snap.write_text(json.dumps(saved))
+    stopped=False
+    def pod(*args):
+        if args[0]=='ps': return '' if stopped and '-q' in args else 'test'
+        if args[2]==gate.CAPTURE_FORMAT: return 'test|22345|22346|none|false|'
+        return 'test|false|0'
+    monkeypatch.setattr(gate,'pod',pod)
+    current=data.parent/'second.json'
+    assert gate.capture(snap,current,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+    for pid in ('22345','22346'):shutil.rmtree(proc/pid)
+    for group in ('new','libpod-conmon-new.scope'):
+        for name in ('cgroup.procs','cgroup.threads'):(cg/group/name).write_text('')
+    stopped=True
+    assert gate.verify(current,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+    report=gate.verify_all(current,data.parent,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='REFUSE'
+    assert any(r['reason']=='dedicated helper survives' for r in report['refusals'])
+    assert first.read_bytes()==before
+    shutil.rmtree(helper)
+    for name in ('cgroup.procs','cgroup.threads'):(cg/'libpod-test.scope'/name).write_text('')
+    assert gate.verify_all(current,data.parent,proc=proc,cgroup_root=cg)['outcome']=='PASS'

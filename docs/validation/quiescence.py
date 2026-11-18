@@ -156,6 +156,13 @@ def private_write(path, data):
         stream.write('\n')
 
 
+def write_capture(path, saved):
+    private_write(path, saved)
+    # Exclusive non-secret index entries allow discovery without opening arbitrary
+    # backup JSON (which can contain credentials). Never replace an older record.
+    private_write(Path(str(path)+'.quiescence-reference'), dict(path=str(path.resolve())))
+
+
 def helper_names(comm):
     return comm.startswith(('pasta', 'slirp4netns', 'rootlessport'))
 
@@ -308,7 +315,7 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
     except (OSError, KeyError, ValueError, subprocess.SubprocessError) as error:
         hold('required capture incomplete', error=type(error).__name__)
     saved['complete'] = not saved['holds']
-    private_write(output, saved)
+    write_capture(output, saved)
     return dict(outcome='PASS' if saved['complete'] else 'HOLD', holds=saved['holds'])
 
 
@@ -330,7 +337,7 @@ def extend_capture(capture_path, output, snapshot=None, extra_sources=()):
                   for src, dest in row.get('mounts', []) if dest in DATA_DESTINATIONS}
     existing = {source['path'] for source in saved['sources']}
     saved['sources'] += [source_identity(path) for path in sorted(paths - existing)]
-    private_write(output, saved)
+    write_capture(output, saved)
 
 
 def original_override(capture_path, output, upgrade_id, candidate_capture):
@@ -621,6 +628,58 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
     return report
 
 
+def historical_applicability(saved, current, proc, cgroup_root):
+    """DL-089: history cannot replace the current record or recycle identities."""
+    if not saved.get('complete') or saved.get('boot_id') != boot_id() or saved.get('store') != store_identity():
+        return False
+    ids = {r['id'] for r in current['containers'] if r.get('id')}
+    generation = any(r.get('id') in ids for r in saved.get('containers', []))
+    data = any(a['device'] == b['device'] and
+               (under(a['root'], b['root']) or under(b['root'], a['root']))
+               for a in saved.get('sources', []) for b in current['sources'])
+    if not (generation or data):
+        return False
+    for row in saved.get('processes', []) + ([saved['shared_helper']] if saved.get('shared_helper') else []):
+        try:
+            if start_time(proc/str(row['pid'])) != row['start']:
+                return False
+        except FileNotFoundError:
+            pass
+        except OSError:
+            pass  # Applicable but unreadable live evidence must HOLD in verify.
+    for row in saved.get('cgroups', []):
+        try:
+            if object_identity(cgroup_root/cgroup_path(row['line']).lstrip('/')) != {k:row[k] for k in ('device','inode')}:
+                return False
+        except FileNotFoundError:
+            pass
+        except OSError:
+            pass
+    return True
+
+
+def verify_all(capture_path, history_dir, **kwargs):
+    report = verify(capture_path, **kwargs)
+    report['history'] = []
+    try:
+        current = json.loads(capture_path.read_text())
+        for reference in sorted(history_dir.rglob('*.quiescence-reference')):
+            path = Path(json.loads(reference.read_text())['path'])
+            if path.resolve() == capture_path.resolve():
+                continue
+            saved = json.loads(path.read_text())
+            applicable = historical_applicability(saved, current, kwargs.get('proc', Path('/proc')), kwargs.get('cgroup_root', Path('/sys/fs/cgroup')))
+            report['history'].append(dict(path=str(path), applicable=applicable))
+            if applicable:
+                prior = verify(path, **kwargs)
+                for key in ('refusals','holds','limitations'):
+                    report[key] += [dict(row, capture=str(path)) for row in prior[key]]
+    except (OSError, ValueError, KeyError) as error:
+        report['holds'].append(dict(reason='capture history inspection unreadable', error=type(error).__name__))
+    report['outcome'] = 'REFUSE' if report['refusals'] else 'HOLD' if report['holds'] else 'PASS'
+    return report
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
@@ -632,6 +691,7 @@ def main():
     original = sub.add_parser('original-override'); original.add_argument('capture',type=Path); original.add_argument('output',type=Path); original.add_argument('--upgrade-id',required=True); original.add_argument('--candidate-capture',type=Path,required=True)
     source = sub.add_parser('check-source'); source.add_argument('capture',type=Path); source.add_argument('path',type=Path)
     check = sub.add_parser('verify'); check.add_argument('capture', type=Path)
+    check.add_argument('--history-dir', type=Path)
     diagnostic = sub.add_parser('diagnostic'); diagnostic.add_argument('capture', type=Path)
     args = parser.parse_args()
     if args.command == 'capture':
@@ -646,7 +706,7 @@ def main():
         check_source(args.capture,args.path)
         report = dict(outcome='PASS', assurance='Copy path matches retained identity')
     elif args.command == 'verify':
-        report = verify(args.capture)
+        report = verify_all(args.capture, args.history_dir) if args.history_dir else verify(args.capture)
     else:
         # Diagnostic status must never be used as the continuation gate.
         if caller_uid_mappings() != [(0,0,4294967295)]:

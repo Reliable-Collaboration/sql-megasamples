@@ -721,6 +721,14 @@ python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
 # END original clean stop
 ```
 
+Every capture writes an exclusive `.quiescence-reference` beside its private record.
+Never delete these index entries or older captures. Every verification uses
+`--history-dir "$BACKUP_DIR"` to verify all applicable records alongside the current
+one, including the first stop's helpers from other engines. Applicability means
+complete, same boot/store, and the same container generation or overlapping recorded
+data. Reused process/cgroup identifiers and stale/incomplete captures are reported
+as history, never substituted for current evidence. Unreadable live evidence in an
+applicable record still blocks. Keep the whole backup/attempt tree available.
 Repeat all four checks before cold copy; repeat per crashed engine if necessary.
 For an abort use the block below after the original recovery checks. Missing
 originals are a coordinator hold, never an instruction to recreate anonymous
@@ -883,7 +891,7 @@ save_context
 # BEGIN cold-copy process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.json"; then :;
+if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" --history-dir "$BACKUP_DIR" > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.exit-code"
 if test "$PROCESS_RC" != 0; then
@@ -1032,7 +1040,7 @@ else DIAGNOSTIC_RC=$?; fi
 printf '%s\n' "$DIAGNOSTIC_RC" > "$EVIDENCE_DIR/diagnostic-$CHECK_ID.exit-code"
 # Diagnostic status cannot alter PROCESS_RC or end this strict shell.
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.json"; then :;
+if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" --history-dir "$BACKUP_DIR" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.exit-code"
 # END four checks
@@ -1503,7 +1511,7 @@ python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
 # BEGIN restore process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" > "$EVIDENCE_DIR/process-restore-$CHECK_ID.json"; then :;
+if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" --history-dir "$BACKUP_DIR" > "$EVIDENCE_DIR/process-restore-$CHECK_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-restore-$CHECK_ID.exit-code"
 if test "$PROCESS_RC" != 0; then
@@ -1579,7 +1587,7 @@ python3 "$EVIDENCE_DIR/quiescence.py" extend "$QUIESCENCE_CAPTURE" "$NEXT_CAPTUR
 QUIESCENCE_CAPTURE="$NEXT_CAPTURE"
 save_context
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" \
+if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" --history-dir "$BACKUP_DIR" \
   > "$EVIDENCE_DIR/populate-process-$POPULATE_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/populate-process-$POPULATE_ID.exit-code"
@@ -1660,7 +1668,7 @@ python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/restart-before-$CHECK_ID.json" \
 # BEGIN pre-up process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.json"; then :;
+if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" --history-dir "$BACKUP_DIR" > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.exit-code"
 if test "$PROCESS_RC" != 0; then
