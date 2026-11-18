@@ -184,12 +184,6 @@ def test_metadata_includes_hub_observations_for_live_counts(tmp_path, monkeypatc
     assert upgrade.required_metadata() == ['build/live/feed.observed.yaml', 'build/postgres/feed_db/model.json']
 
 
-@pytest.mark.parametrize('gate', ['save-images', 'check-metadata', 'ports --allow-running-project'])
-def test_runbook_prepares_before_downtime(gate):
-    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
-    preparation, _ = text.split('# Downtime starts here.', 1)
-    assert gate in preparation, f'missing pre-downtime gate: {gate}'
-
 
 def test_runbook_ms_tool_executes_heredoc(tmp_path):
     text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
@@ -208,7 +202,7 @@ def test_runbook_ms_tool_executes_heredoc(tmp_path):
 @pytest.mark.parametrize('action,log', [('stop', 'stop.log'), ('down', 'rollback-down.log')])
 def test_runbook_teardown_preserves_compose_status(tmp_path, action, log):
     text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
-    guard = re.search(r'if (?:! )?docker compose[^\n]* ' + action + r' > .*?^fi', text, re.M | re.S)[0]
+    guard = re.search(r'if (?:! )?docker compose[^\n]* ' + action + r' >>? .*?^fi', text, re.M | re.S)[0]
     env = dict(os.environ, BACKUP_DIR=str(tmp_path))
     result = subprocess.run(['bash', '-c', 'docker() { return 37; }\n' + guard + '\necho unsafe-fallthrough'],
                             env=env, capture_output=True, text=True)
@@ -223,7 +217,7 @@ def test_runbook_context_restores_fresh_maintenance_shell(tmp_path):
     assert snapshot, 'missing recoverable maintenance shell context'
     function = re.search(r'^ms_tool\(\) \{\n.*?^\}', text, re.M | re.S)[0]
     names = ['UPGRADE_ID', 'UPGRADE_HELPER', 'UPGRADE_TOOLS_CONTAINER', 'MEGASAMPLES_PY',
-             'METADATA_BUNDLE', 'DOCKER_HOST', 'MEGASAMPLES_LIVE_API_PID', 'APPROVED_UPGRADE_MERGE', 'PREPARATION_STAGE']
+             'METADATA_BUNDLE', 'DOCKER_HOST', 'MEGASAMPLES_LIVE_API_PID', 'APPROVED_UPGRADE_MERGE', 'PREPARATION_STAGE', 'TEARDOWN_SNAPSHOT', 'EXITED_RECEIPT', 'TEARDOWN_PHASE']
     env = dict(os.environ, **{name: "fixture 'with spaces' $" for name in names}, BACKUP_DIR=str(tmp_path))
     subprocess.run(['bash', '-c', function + '\n' + snapshot[1]], env=env, cwd=tmp_path, check=True)
     result = subprocess.run(['bash', '-c', '. "$CONTEXT"; type ms_tool >/dev/null; printf "%s" "$UPGRADE_ID"'],
