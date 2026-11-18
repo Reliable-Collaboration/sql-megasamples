@@ -45,13 +45,38 @@ def image_rows(backup):
 
 def check_archive(path, expected):
     """A tag is not identity: hash the single manifest's actual configuration."""
-    with tarfile.open(path) as archive:
-        manifest = json.load(archive.extractfile('manifest.json'))
-        if len(manifest) != 1:
-            raise ValueError('archive must contain exactly one image')
-        content = archive.extractfile(manifest[0]['Config']).read()
-        if hashlib.sha256(content).hexdigest() != expected.removeprefix('sha256:'):
-            raise ValueError('archive configuration ID differs from recorded image')
+    try:
+        with tarfile.open(path) as archive:
+            manifest = json.load(archive.extractfile('manifest.json'))
+            if len(manifest) != 1:
+                raise ValueError('archive must contain exactly one image')
+            content = archive.extractfile(manifest[0]['Config']).read()
+            if hashlib.sha256(content).hexdigest() != expected.removeprefix('sha256:'):
+                raise ValueError('archive configuration ID differs from recorded image')
+    except (KeyError, TypeError, AttributeError, EOFError, tarfile.TarError) as error:
+        raise ValueError('incomplete archive: ' + path.name) from error
+
+
+def prepare_rollback(backup, attempt, checkout):
+    """Read retained inputs; exclusively allocate all new rollback output."""
+    if not re.fullmatch('[A-Za-z0-9-]+', attempt):
+        raise ValueError('invalid rollback attempt')
+    lines = (backup / 'original-configurations.sha256').read_text().splitlines()
+    if len(lines) != 1:
+        raise ValueError('configuration digest receipt must name one archive')
+    digest, name = lines[0].split()
+    if name != 'original-configurations.tar' or sha(backup / name) != digest:
+        raise ValueError('configuration digest mismatch')
+    target = backup / ('rollback-' + attempt)
+    target.mkdir(mode=0o700)  # No exist_ok: never reuse an attempt.
+    config = target / 'configuration'
+    config.mkdir(mode=0o700)
+    with tarfile.open(backup / name) as archive:
+        archive.extractall(config, filter='data')
+    if (checkout / '.env').is_file():
+        shutil.copyfile(checkout / '.env', target / 'failed-candidate.env')
+        (target / 'failed-candidate.env').chmod(0o600)
+    return target
 
 
 def archive_name(image):
@@ -363,6 +388,10 @@ def main():
         p = sub.add_parser(action)
         p.add_argument('bundle', type=Path)
         p.add_argument('--root', type=Path, default=ROOT)
+    p = sub.add_parser('prepare-rollback')
+    p.add_argument('backup', type=Path)
+    p.add_argument('attempt')
+    p.add_argument('checkout', type=Path)
     p = sub.add_parser('space')
     p.add_argument('backup', type=Path)
     p.add_argument('--extra-bytes', required=True, type=int)
@@ -391,7 +420,9 @@ def main():
     p.add_argument('host')
     p.add_argument('port', type=int)
     args = parser.parse_args()
-    if args.command == 'space':
+    if args.command == 'prepare-rollback':
+        print(prepare_rollback(args.backup, args.attempt, args.checkout))
+    elif args.command == 'space':
         check_space(args.backup, args.extra_bytes)
     elif args.command == 'snapshot':
         snapshot(args.output, args.project, args.engine, args.phase)

@@ -213,11 +213,11 @@ def test_runbook_ms_tool_executes_heredoc(tmp_path):
     assert result.stdout == 'stdin-executed\n'
 
 
-@pytest.mark.parametrize('action,log', [('stop', 'stop.log'), ('down', 'rollback-down.log')])
+@pytest.mark.parametrize('action,log', [('stop', 'stop.log'), ('stop', 'rollback-stop.log'), ('down', 'rollback-down.log')])
 def test_runbook_teardown_preserves_compose_status(tmp_path, action, log):
     text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
-    guard = re.search(r'if (?:! )?docker compose[^\n]* ' + action + r' >>? .*?^fi', text, re.M | re.S)[0]
-    env = dict(os.environ, BACKUP_DIR=str(tmp_path))
+    guard = next(g for g in re.findall(r'if docker compose[^\n]* ' + action + r' >> .*?^fi', text, re.M | re.S) if '$EVIDENCE_DIR/' + log + '"' in g)
+    env = dict(os.environ, BACKUP_DIR=str(tmp_path), EVIDENCE_DIR=str(tmp_path))
     result = subprocess.run(['bash', '-c', 'docker() { return 37; }\n' + guard + '\necho unsafe-fallthrough'],
                             env=env, capture_output=True, text=True)
     assert result.returncode == 37
@@ -227,18 +227,15 @@ def test_runbook_teardown_preserves_compose_status(tmp_path, action, log):
 
 def test_runbook_context_restores_fresh_maintenance_shell(tmp_path):
     text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
-    snapshot = re.search(r'# Save non-secret maintenance context\.\n(.*?)# End saved context\.', text, re.S)
-    assert snapshot, 'missing recoverable maintenance shell context'
-    function = re.search(r'^ms_tool\(\) \{\n.*?^\}', text, re.M | re.S)[0]
-    names = ['UPGRADE_ID', 'UPGRADE_HELPER', 'UPGRADE_TOOLS_CONTAINER', 'MEGASAMPLES_PY',
-             'METADATA_BUNDLE', 'DOCKER_HOST', 'MEGASAMPLES_LIVE_API_PID', 'APPROVED_UPGRADE_MERGE', 'PREPARATION_STAGE', 'TEARDOWN_SNAPSHOT', 'EXITED_RECEIPT', 'TEARDOWN_PHASE']
-    env = dict(os.environ, **{name: "fixture 'with spaces' $" for name in names}, BACKUP_DIR=str(tmp_path))
-    subprocess.run(['bash', '-c', function + '\n' + snapshot[1]], env=env, cwd=tmp_path, check=True)
-    result = subprocess.run(['bash', '-c', '. "$CONTEXT"; type ms_tool >/dev/null; printf "%s" "$UPGRADE_ID"'],
-                            env={'PATH': os.environ['PATH'], 'CONTEXT': str(tmp_path / 'resume-context.bash')},
-                            capture_output=True, text=True, check=True)
-    assert result.stdout == env['UPGRADE_ID']
-    assert (tmp_path / 'resume-context.bash').stat().st_mode & 0o777 == 0o600
+    from test_runbook_fragments import context
+    server = context(tmp_path, 'rollback-stop')
+    try:
+        result = subprocess.run(['bash', '-eu', '-c', '. "$CONTEXT"; type ms_tool >/dev/null; test "$TEARDOWN_ATTEMPT" = fixture-attempt'],
+                                env={'PATH': os.environ['PATH'], 'CONTEXT': str(tmp_path / 'resume-context.bash')},
+                                capture_output=True, text=True, check=True)
+        assert (tmp_path / 'resume-context.bash').stat().st_mode & 0o777 == 0o600
+    finally:
+        server.close()
 
 
 @pytest.mark.parametrize('engine,reply,expected', [
@@ -402,7 +399,8 @@ def test_rollback_opens_with_fresh_shell_and_checks_ports():
     text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text().split('## Roll back\n', 1)[1]
     first_block = re.search(r'```sh\n(.*?)```', text, re.S)[1]
     assert first_block.lstrip().startswith('# Fresh Bash maintenance shell')
-    assert '. "$BACKUP_DIR/resume-context.bash"' in first_block
+    assert '. "$CONTEXT_FILE"' in first_block
+    assert 'test -S' in first_block
     assert text.index('ports --port-config') < text.index(' up -d --wait')
 
 
@@ -468,7 +466,7 @@ def test_rollback_down_retry_appends_original_log_and_status(tmp_path):
     guard = re.search(r'if docker compose[^\n]* down >>? .*?^fi', text, re.M | re.S)[0]
     for _ in range(2):
         result = subprocess.run(['bash','-c','docker() { echo attempt-failed; return 37; }\n' + guard],
-                                env=dict(os.environ,BACKUP_DIR=str(tmp_path)),capture_output=True,text=True)
+                                env=dict(os.environ,BACKUP_DIR=str(tmp_path),EVIDENCE_DIR=str(tmp_path)),capture_output=True,text=True)
         assert result.returncode == 37
     assert (tmp_path / 'rollback-down.log').read_text() == 'attempt-failed\nattempt-failed\n'
     assert (tmp_path / 'rollback-down.log.exit-code').read_text() == '37\n37\n'

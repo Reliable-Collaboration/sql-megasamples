@@ -2,6 +2,9 @@
 
 This coordinator procedure was **executed live once, on 2026-11-18**, at `2cf1f3e9`, with seven defects and coordinator-pinned corrections. This revision incorporates those corrections as preparation, verification and rollback gates. The [first-run evidence](live-upgrade-evidence.md) separates what was executed from what remains unverified. As of **2026-11-18**, acceptance was held for a DataIntent test failure outside this service; the acceptance record is DataIntent’s. Clients and acceptance remain coordinator-controlled. DL-077 templates/copies and their CLI remain a later task and second rollout. Keep the two existing socket-proxy services unchanged. The owner authorized the BTS refresh and accepted the SQL Server Developer EULA for the isolated WWI export on 2026-11-17. Oracle native verification remains **Not run, pending the owner's decision on Oracle's Free Use Terms**; do not accept those terms.
 
+The revised runbook and helper have run only in scratch with two small console
+images, never end to end on the live store or with engine-size image archives.
+
 The isolated build uses `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/env.sh`. The live commands below deliberately use the default rootless Podman store instead. Run them only in the coordinator's live maintenance session. Never run them from the isolated validation shell.
 
 The dataset candidate's cold-readiness blocker is resolved by the
@@ -203,7 +206,10 @@ mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
 # Initialize recoverable paths before any operation that can refuse preparation.
 UPGRADE_HELPER= UPGRADE_TOOLS_CONTAINER= MEGASAMPLES_PY= MEGASAMPLES_LIVE_API_PID=
-TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE=
+TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE= TEARDOWN_ATTEMPT=
+ATTEMPT_DIR= CONFIG_DIR=
+EVIDENCE_DIR="$BACKUP_DIR"
+CONTEXT_FILE="$BACKUP_DIR/resume-context.bash"
 APPROVED_ENGINE_MERGE= APPROVED_CLIENTS_MERGE= APPROVED_DATASET_MERGE=
 APPROVED_LTS_MERGE= APPROVED_CREDENTIAL_MERGE=
 TOOLS_ARCHIVE= TOOLS_IMAGE= CANDIDATE_ARCHIVE= DOCKER_CLIENT=
@@ -216,6 +222,7 @@ ms_tool() {
 }
 save_context() {
 # Save non-secret maintenance context.
+(
 umask 077
 {
   printf '%s\n' 'set -eu' \
@@ -223,14 +230,16 @@ umask 077
     'unset DEMO_PASSWORD ADMIN_PASSWORD MYSQL_ROOT_PASSWORD POSTGRES_PASSWORD'
   declare -p BACKUP_DIR UPGRADE_ID UPGRADE_HELPER UPGRADE_TOOLS_CONTAINER MEGASAMPLES_PY \
     METADATA_BUNDLE DOCKER_HOST MEGASAMPLES_LIVE_API_PID APPROVED_UPGRADE_MERGE PREPARATION_STAGE \
-    TEARDOWN_SNAPSHOT EXITED_RECEIPT TEARDOWN_PHASE EXTRA_RESERVE_BYTES \
+    TEARDOWN_SNAPSHOT EXITED_RECEIPT TEARDOWN_PHASE TEARDOWN_ATTEMPT EXTRA_RESERVE_BYTES \
+    ATTEMPT_DIR CONFIG_DIR EVIDENCE_DIR CONTEXT_FILE \
     APPROVED_ENGINE_MERGE APPROVED_CLIENTS_MERGE APPROVED_DATASET_MERGE \
     APPROVED_LTS_MERGE APPROVED_CREDENTIAL_MERGE TOOLS_ARCHIVE TOOLS_IMAGE CANDIDATE_ARCHIVE DOCKER_CLIENT
   printf '%s\n' 'export DOCKER_HOST COMPOSE_PROJECT_NAME=sql-megasamples'
   printf 'cd -- %q\n' "$PWD"
   declare -f ms_tool save_context
-} > "$BACKUP_DIR/resume-context.bash"
-chmod 600 "$BACKUP_DIR/resume-context.bash"
+} > "$CONTEXT_FILE"
+chmod 600 "$CONTEXT_FILE"
+)
 # End saved context.
 }
 save_context
@@ -527,21 +536,27 @@ unresolved process or namespace evidence. Original containers/volumes still exis
 Restore original source/configuration and start only the originally running containers:
 
 ```sh
-# Abort before password rotation ONLY. Original container IDs must still exist.
+# BEGIN abort preparation
+# Abort before password rotation ONLY; original containers/volumes must still exist.
 . "$BACKUP_DIR/resume-context.bash"
 ABORT_ID=$(date -u +%Y%m%dT%H%M%S%N)
+python3 "$UPGRADE_HELPER" prepare-rollback "$BACKUP_DIR" "abort-$ABORT_ID" "$PWD"
+ATTEMPT_DIR="$BACKUP_DIR/rollback-abort-$ABORT_ID"
+CONFIG_DIR="$ATTEMPT_DIR/configuration"
 ROLLBACK_BRANCH=$(cat "$BACKUP_DIR/rollback-branch.txt")
 git switch "$ROLLBACK_BRANCH"
 test "$(git rev-parse HEAD)" = "$(cat "$BACKUP_DIR/original-commit.txt")"
-mv consoles "$BACKUP_DIR/aborted-consoles-$ABORT_ID"
-cp -a "$BACKUP_DIR/consoles" ./consoles
-cp "$BACKUP_DIR/compose.yaml" ./compose.yaml
-cp "$BACKUP_DIR/megasamples.yaml" ./megasamples.yaml
-if test -f "$BACKUP_DIR/.env"; then cp "$BACKUP_DIR/.env" .env; chmod 600 .env; else rm -f .env; fi
-if test -d .venv; then mv .venv "$BACKUP_DIR/aborted-venv-$ABORT_ID"; fi
+# Keep the console root inode while any original consoles may still bind it.
+# Retain candidate contents, then restore original contents in place.
+cp -a consoles "$ATTEMPT_DIR/aborted-consoles"
+cp -a "$CONFIG_DIR/consoles/." ./consoles/
+cp "$CONFIG_DIR/compose.yaml" ./compose.yaml
+cp "$CONFIG_DIR/megasamples.yaml" ./megasamples.yaml
+if test -f "$CONFIG_DIR/.env"; then cp "$CONFIG_DIR/.env" .env; chmod 600 .env; else rm -f .env; fi
+if test -d .venv; then mv .venv "$ATTEMPT_DIR/aborted-venv"; fi
 if test -d "$BACKUP_DIR/python-venv"; then cp -a "$BACKUP_DIR/python-venv" .venv; fi
 if test -n "$TEARDOWN_SNAPSHOT"; then
-  # Exempt only the original project's still-running ports; stopped ports must be free.
+  # Four checks must already have passed before this abort resumes stopped originals.
   python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" \
     --allow-running-project sql-megasamples --services-file "$BACKUP_DIR/original-running-services.txt"
   set --
@@ -550,6 +565,8 @@ if test -n "$TEARDOWN_SNAPSHOT"; then
   docker compose -p sql-megasamples -f compose.yaml start "$@"
 fi
 # Before any stop attempt, leave the still-running original containers alone.
+# END abort preparation
+
 ```
 
 `start` reuses the retained containers and their original anonymous volumes. If any original ID
@@ -617,21 +634,21 @@ ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports --allow-running-
 # Stop every configured console as well as all engines; keep the proxy services running.
 TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
 TEARDOWN_PHASE=stop
-TEARDOWN_SNAPSHOT="$BACKUP_DIR/stop-before-$TEARDOWN_ATTEMPT.json"
+TEARDOWN_SNAPSHOT="$EVIDENCE_DIR/stop-before-$TEARDOWN_ATTEMPT.json"
 EXITED_RECEIPT=
 python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
-printf '%s\n' "$TEARDOWN_ATTEMPT" >> "$BACKUP_DIR/stop.log.timestamps"
-if docker compose -p sql-megasamples -f compose.yaml stop >> "$BACKUP_DIR/stop.log" 2>&1; then
-  printf '0\n' >> "$BACKUP_DIR/stop.log.exit-code"
+printf '%s\n' "$TEARDOWN_ATTEMPT" >> "$EVIDENCE_DIR/stop.log.timestamps"
+if docker compose -p sql-megasamples -f compose.yaml stop >> "$EVIDENCE_DIR/stop.log" 2>&1; then
+  printf '0\n' >> "$EVIDENCE_DIR/stop.log.exit-code"
 else
   STOP_RC=$?
-  printf '%s\n' "$STOP_RC" >> "$BACKUP_DIR/stop.log.exit-code"
+  printf '%s\n' "$STOP_RC" >> "$EVIDENCE_DIR/stop.log.exit-code"
   echo 'STOP: inspect stop.log and apply the four-check teardown procedure below.'
   exit "$STOP_RC"
 fi
-EXITED_RECEIPT="$BACKUP_DIR/stop-exited-$TEARDOWN_ATTEMPT.json"
+EXITED_RECEIPT="$EVIDENCE_DIR/stop-exited-$TEARDOWN_ATTEMPT.json"
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" "$EXITED_RECEIPT"
 save_context
 # Retain the final quiesced UI workspace too, including changes made during preparation.
@@ -719,7 +736,7 @@ This is a conditional manual-probe fallback; automatic scheduling in the live st
 
 The Compose stop above includes every configured console, so SQLite consumers are closed before either copy. The cutover commands recreate the configured consoles and regenerate their local help pages. The new containers receive the freshly generated `.env` credentials. Keep this file mode 0600 and do not print or source it. No password belongs in a process argument, diagnostic log, screenshot or validation receipt.
 
-### Conditional rootless network teardown failure (stop AND rollback down)
+### Conditional rootless network teardown failure (stop, rollback stop and down)
 
 The first live run saw `kill network process: permission denied` during Compose stop (SQLite)
 and rollback down (MySQL). **The root cause is unknown.** The isolated attempts are recorded in
@@ -741,42 +758,38 @@ all four checks before resuming at the specified block. Never source `.env` for 
 Run these commands from that restored context, writing a new receipt on every attempt.
 The helper snapshots select name, ID, state, PID, exit code, OOM flag, network namespace and
 mount source/destination pairs by format string; they never retain full inspection output.
-Before `down`, the guarded `stop` and exited receipt are mandatory. A partially removed
-container is accepted only against its exact ID in that exited receipt.
+Before `down`, the guarded `stop` and phase-specific receipt are mandatory. Missing candidates are recorded, with their prior state when a retained receipt exists.
+Original cold-copy checks always refuse missing containers.
 
 ```sh
+# BEGIN four checks
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
-# 1. Engines exited, false running flag, PID 0; ordinary engine exit code must be 0.
-# Also checks recorded console IDs, even if a container lost its project label.
-# Expected: Passed: exited. Missing without an exited receipt is a refusal.
+# 1. Apply the saved phase's state table. Expected: Passed: exited.
+GATE_PHASE=candidate-teardown
+if test "$TEARDOWN_PHASE" = stop; then GATE_PHASE=original-stop; fi
 set --
 if test -n "$EXITED_RECEIPT"; then set -- --removed-with "$EXITED_RECEIPT"; fi
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
-  "$BACKUP_DIR/four-check-exited-$CHECK_ID.json" "$@"
-# Exit 137 requires explicit coordinator acknowledgment of CRASH-CONSISTENT data;
-# after recording that decision, rerun ONLY the failed exited gate, with a new output
-# path and --allow-crash-consistent. Other engine exit codes or an OOM refuse.
-
-# 2. No deployment containers running. Expected: EMPTY, plus Passed: exited above.
+  "$EVIDENCE_DIR/four-check-exited-$CHECK_ID.json" --phase "$GATE_PHASE" "$@"
+# 2. Expected: EMPTY. The helper also refuses if project containers are running.
 podman ps --filter label=com.docker.compose.project=sql-megasamples -q
-# The upgrade-tools container is separate and must have no deployment data mount.
+# 3/4. Capture status even under set -e. Expected own-scope arrays empty, status 0.
+PROCESS_RC=0
+if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
+  > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
+printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.exit-code"
+# END four checks
 
-# 3. No process holding any recorded data mount. 4. No unattributed network helper.
-# Expected: {"holders": [], "helpers": [], "unreadable": []}, status 0.
-# The scanner reads comm, namespace/cgroup, root/cwd/fd and mount roots/mountpoints;
-# it never reads process environments or argument lists.
-podman unshare python3 "$BACKUP_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
-  > "$BACKUP_DIR/process-evidence-$CHECK_ID.json"
 ```
 
-The scanner is deliberately conservative: any holder, helper or unreadable PID returns 1.
-Inspect the private evidence. A holder blocks continuation. Attribute remaining helpers and
-unreadable processes using `/proc/<pid>/ns/net`, `/proc/<pid>/ns/mnt`, `/proc/<pid>/cgroup`,
-`/proc/<pid>/fd` and parent PID from `/proc/<pid>/status`, compared with the retained container
-IDs/PIDs/namespaces/mount pairs. Record each exclusion and its evidence in the four-check
-receipt; unresolved attribution blocks continuation. Helpers for a separate isolated store
-may remain with that attribution. Never blanket-kill helpers or change the LAN forwarders.
-Rerun the scanner immediately before continuing to catch changes during process enumeration.
+The scanner classifies this user's own processes and processes in user namespaces
+owned by this user separately from other owners. It reads no arguments or environments.
+Its quiescence decision covers only the inspectable owner scope, stated in the JSON.
+Other-owner counts are informational; their descriptors/namespaces require privilege.
+Any holder, unresolved own process, mount-path resolution failure, or own network helper
+blocks continuation. Helpers for an unrelated isolated store may be excluded only with
+recorded namespace/cgroup attribution; never blanket-kill helpers or alter forwarders.
+Inspect the evidence even after status 0 and repeat immediately before continuation.
 
 Capture available kernel/AppArmor diagnostics for the failure's timestamp, without host changes:
 
@@ -784,15 +797,34 @@ Capture available kernel/AppArmor diagnostics for the failure's timestamp, witho
 # Set FAILURE_SINCE / FAILURE_UNTIL around the UTC timestamp in *.log.timestamps.
 : "${FAILURE_SINCE:?Set failure window start}" "${FAILURE_UNTIL:?Set failure window end}"
 if journalctl -k --since "$FAILURE_SINCE" --until "$FAILURE_UNTIL" --no-pager \
-  > "$BACKUP_DIR/kernel-$CHECK_ID.log" 2> "$BACKUP_DIR/kernel-$CHECK_ID.error"; then
-  printf '0\n' > "$BACKUP_DIR/kernel-$CHECK_ID.exit-code"
+  > "$EVIDENCE_DIR/kernel-$CHECK_ID.log" 2> "$EVIDENCE_DIR/kernel-$CHECK_ID.error"; then
+  printf '0\n' > "$EVIDENCE_DIR/kernel-$CHECK_ID.exit-code"
+  if test -s "$EVIDENCE_DIR/kernel-$CHECK_ID.error"; then
+    echo 'Not run: kernel/AppArmor journal access incomplete; retain stderr.'
+  fi
 else
   KERNEL_RC=$?
-  printf '%s\n' "$KERNEL_RC" > "$BACKUP_DIR/kernel-$CHECK_ID.exit-code"
+  printf '%s\n' "$KERNEL_RC" > "$EVIDENCE_DIR/kernel-$CHECK_ID.exit-code"
   echo 'Not run: kernel/AppArmor diagnostics unavailable; retain the error.'
 fi
 # Preserve status/output; permission refusal or absent journal is Not run, not proof
 # that there were no AppArmor denials. Do not use sudo or alter logging policy.
+```
+
+After inspecting all four checks, run this dispatch only when process evidence passed:
+
+```sh
+# BEGIN continuation dispatch
+test "$PROCESS_RC" = 0
+EXITED_RECEIPT="$EVIDENCE_DIR/four-check-exited-$CHECK_ID.json"
+case "$TEARDOWN_PHASE" in
+  stop) RESUME_AT=cold-copy ;;
+  rollback-stop) RESUME_AT=pre-down ;;
+  rollback-down) RESUME_AT=restore ;;
+  *) echo 'STOP: unknown teardown phase'; exit 1 ;;
+esac
+save_context
+# END continuation dispatch
 ```
 
 For **stop**, after all four checks, set `EXITED_RECEIPT` to the new exited receipt,
@@ -856,7 +888,7 @@ ms_tool "$MEGASAMPLES_PY" -c 'from megasamples.engines import get; print(get("my
 podman exec megasamples-sqlite sqlite3 /data/megasamples.sqlite \
   'SELECT name,row_counts FROM datasets ORDER BY name'
 # Actual added-dataset fingerprints against the replacement containers, without pinning fixtures.
-ms_tool "$MEGASAMPLES_PY" -c ' </dev/null
+ms_tool "$MEGASAMPLES_PY" -c '
 import json, pathlib, shutil, subprocess
 from megasamples import config, verify
 from megasamples.engines.mysql import server as mysql
@@ -887,7 +919,7 @@ for pair, result in receipt["matrix"].items():
 assert failures == 0, failures
 joins = mysql.rows("SELECT COUNT(*), SUM(o.code IS NULL), SUM(d.code IS NULL) FROM bts_ontime.ontime f LEFT JOIN bts_ontime.l_airport o ON o.code=f.origin LEFT JOIN bts_ontime.l_airport d ON d.code=f.dest")
 assert joins == [["539747", "0", "0"]], joins
-'
+' </dev/null
 ```
 
 Verify the forwards **from the host**, first at the protocol level and then with host clients.
@@ -953,41 +985,45 @@ flights. Check the complete console lists: three new MySQL databases and the sup
 ports, including the new SQLite connection in CloudBeaver and DbGate. Unsupported pairs must not
 be presented as available. Preserve the result logs with the maintenance receipt.
 
-### Recover the retained first-run backup context
+### Start a new rollback attempt (including retained first-run backups)
 
-The 2026-11-18 backups predate `resume-context.bash` and `original-ports.json`. Before using
-“Roll back” with that backup, the coordinator must create these **new non-secret sidecars**.
-Do not rerun preparation against the upgraded HEAD. The original archives, checksum file,
-configuration files and receipt stay unchanged. This compatibility bootstrap has syntax/unit
-coverage for its archive layout; it has **not** been executed on the live store.
-
-In a fresh Bash coordinator maintenance shell, set `BACKUP_DIR` from the phase-A receipt,
-`REVIEWED_CHECKOUT` to the reviewed corrected source and `UPGRADE_TOOLS_CONTAINER` to the
-retained host-network tools container from that maintenance record. The tools container must
-still mount the deployment checkout and contain its `.venv` interpreter.
+Start a fresh coordinator Bash shell with `bash --noprofile --norc` **before**
+pasting the block below. Set `BACKUP_DIR` from the private receipt, `REVIEWED_CHECKOUT`
+to the reviewed corrected source, and `UPGRADE_TOOLS_CONTAINER` to the retained
+host-network tools container. The bootstrap applies to both old and new backups.
+It writes only into a **new** attempt directory and refuses reuse. Existing backup
+files may all be read-only; the backup directory itself needs permission to add the
+new attempt directory. A completely read-only directory refuses allocation without
+changing any input. No permission bypass or host change is prescribed.
 
 ```sh
+# BEGIN rollback bootstrap
 set -eu
-: "${BACKUP_DIR:?Set the retained first-run backup directory}"
-: "${REVIEWED_CHECKOUT:?Set the reviewed corrected checkout}"
-: "${UPGRADE_TOOLS_CONTAINER:?Set the retained maintenance tools container}"
+: "${BACKUP_DIR:?Set retained backup directory}"
+: "${REVIEWED_CHECKOUT:?Set reviewed corrected checkout}"
+: "${UPGRADE_TOOLS_CONTAINER:?Set retained maintenance tools container}"
+# Coordinator only. These live-store settings must never be used in rehearsal.
 unset CONTAINERS_STORAGE_CONF CONTAINERS_CONF CONTAINERS_CONF_OVERRIDE
 unset DEMO_PASSWORD ADMIN_PASSWORD MYSQL_ROOT_PASSWORD POSTGRES_PASSWORD
 export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock" COMPOSE_PROJECT_NAME=sql-megasamples
 cd /home/rcc-vstudio/working/sql-megasamples
+# Socket refusal is distinct from a Compose teardown failure.
+test -S "${DOCKER_HOST#unix://}"
 UPGRADE_ID=$(basename "$BACKUP_DIR")
-UPGRADE_HELPER="$BACKUP_DIR/live-upgrade.py"
-test -f "$BACKUP_DIR/phase-a-resume-receipt.json"
-test ! -e "$BACKUP_DIR/resume-context.bash"
-test ! -e "$UPGRADE_HELPER"
+TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
+ATTEMPT_DIR="$BACKUP_DIR/rollback-$TEARDOWN_ATTEMPT"
+python3 "$REVIEWED_CHECKOUT/docs/validation/live-upgrade.py" prepare-rollback \
+  "$BACKUP_DIR" "$TEARDOWN_ATTEMPT" "$PWD"
+EVIDENCE_DIR="$ATTEMPT_DIR"
+CONFIG_DIR="$ATTEMPT_DIR/configuration"
+CONTEXT_FILE="$ATTEMPT_DIR/resume-context.bash"
+UPGRADE_HELPER="$ATTEMPT_DIR/live-upgrade.py"
 cp "$REVIEWED_CHECKOUT/docs/validation/live-upgrade.py" "$UPGRADE_HELPER"
-test ! -e "$BACKUP_DIR/quiescence.py"
-cp "$REVIEWED_CHECKOUT/docs/validation/quiescence.py" "$BACKUP_DIR/quiescence.py"
-chmod 600 "$UPGRADE_HELPER" "$BACKUP_DIR/quiescence.py"
-# This selects only the corrected per-service archives; never the malformed aggregate.
+cp "$REVIEWED_CHECKOUT/docs/validation/quiescence.py" "$ATTEMPT_DIR/quiescence.py"
+chmod 600 "$UPGRADE_HELPER" "$ATTEMPT_DIR/quiescence.py"
+# This validates the complete replacement archive set, never the malformed aggregate.
 python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
-# Extract ONLY the two reviewed shell definitions, never the preparation commands.
-python3 - "$REVIEWED_CHECKOUT/docs/live-upgrade-runbook.md" "$BACKUP_DIR/recovery-functions.bash" <<'PY_RECOVERY_FUNCTIONS'
+python3 - "$REVIEWED_CHECKOUT/docs/live-upgrade-runbook.md" "$ATTEMPT_DIR/recovery-functions.bash" <<'PY_RECOVERY_FUNCTIONS'
 import pathlib, re, sys
 text = pathlib.Path(sys.argv[1]).read_text()
 functions = [re.search(r'^' + name + r'\(\) \{\n.*?^\}$(?=\n)', text, re.M | re.S)[0]
@@ -995,41 +1031,44 @@ functions = [re.search(r'^' + name + r'\(\) \{\n.*?^\}$(?=\n)', text, re.M | re.
 with pathlib.Path(sys.argv[2]).open('x') as output:
     output.write('\n'.join(functions) + '\n')
 PY_RECOVERY_FUNCTIONS
-chmod 600 "$BACKUP_DIR/recovery-functions.bash"
-. "$BACKUP_DIR/recovery-functions.bash"
+chmod 600 "$ATTEMPT_DIR/recovery-functions.bash"
+. "$ATTEMPT_DIR/recovery-functions.bash"
 MEGASAMPLES_PY="$PWD/.venv/bin/python"
 METADATA_BUNDLE= MEGASAMPLES_LIVE_API_PID= APPROVED_UPGRADE_MERGE= EXTRA_RESERVE_BYTES=0
 APPROVED_ENGINE_MERGE= APPROVED_CLIENTS_MERGE= APPROVED_DATASET_MERGE=
 APPROVED_LTS_MERGE= APPROVED_CREDENTIAL_MERGE=
 TOOLS_ARCHIVE= TOOLS_IMAGE= CANDIDATE_ARCHIVE= DOCKER_CLIENT=
 TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE=
-PREPARATION_STAGE=retained-first-run-rollback
-# Configured port selection only; no credential environment is read or emitted.
-ms_tool "$MEGASAMPLES_PY" - "$BACKUP_DIR" <<'PY_RECOVERY_PORTS'
-import json, pathlib, sys
-from megasamples import config
-backup = pathlib.Path(sys.argv[1])
-cfg = config.load(str(backup / 'megasamples.yaml'))
-with (backup / 'original-ports.json').open('x') as output:
-    json.dump(dict(engines=list(cfg.engines), consoles=cfg.consoles, ports=cfg.ports), output)
-PY_RECOVERY_PORTS
+PREPARATION_STAGE=rollback-prepared
+# Retained config is read from the digest-checked extraction.
+ms_tool "$MEGASAMPLES_PY" "$UPGRADE_HELPER" export-ports \
+  "$ATTEMPT_DIR/original-ports.json" --config "$CONFIG_DIR/megasamples.yaml" </dev/null
 save_context
+# Record CONTEXT_FILE's exact path in the maintenance receipt.
+# END rollback bootstrap
 ```
 
-An unavailable tools container/interpreter/socket is a refusal: reconstruct that tooling in
-isolation with its reviewed inputs before proceeding. Never improvise a data restore. If the
-bootstrap is interrupted, resume only its failed command; do not overwrite an existing sidecar.
-The normal rollback below takes fresh candidate snapshots before stop/down and keeps its newly
-written evidence separate from every original backup file.
+If this bootstrap refuses, retain the partial attempt for diagnosis and start a new
+attempt after resolving the failed gate. Do not reuse it or write sidecars into the
+retained root. Unavailable tooling is a refusal; reconstruct it in isolation from
+reviewed inputs before proceeding. The corrected bootstrap/preparation have been
+executed only with synthetic backups and command stubs, never on retained live files.
 
 ## Roll back
 
+If continuing an already prepared attempt after a failure, start
+`bash --noprofile --norc` **outside** the following block. Set `CONTEXT_FILE` to its
+exact recorded attempt context (or the preparation context for the originals' stop).
+A new full rollback must run the bootstrap above rather than reuse an attempt.
+
 ```sh
-# Fresh Bash maintenance shell, also when the failed cutover shell exited.
-bash --noprofile --norc
-# Set BACKUP_DIR to the exact private directory in the maintenance receipt.
-: "${BACKUP_DIR:?Set the retained backup directory}"
-. "$BACKUP_DIR/resume-context.bash"
+# Fresh Bash maintenance shell has already been started outside this block.
+: "${CONTEXT_FILE:?Set the exact saved context path from the receipt}"
+. "$CONTEXT_FILE"
+# BEGIN resume socket gate
+test "${DOCKER_HOST#unix://}" != "$DOCKER_HOST"
+test -S "${DOCKER_HOST#unix://}"
+# END resume socket gate
 ```
 
 Keep clients paused. Do not remove any backup, original image tag, original branch, original anonymous volume, or proxy service.
@@ -1045,45 +1084,46 @@ rollback: it restores the new image contents, including the added datasets.
 python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
 (cd "$BACKUP_DIR" && sha256sum -c original-configurations.sha256)
 bash -c 'set -o pipefail; actual=$(podman unshare tar --sort=name --numeric-owner --format=gnu --atime-preserve=system -C "$1" -cf - postgres mysql sqlite sqlite-shared | sha256sum); test "$actual" = "$(cat "$1/cold-copies.stream.sha256")"' sh "$BACKUP_DIR"
-if test -f .env; then cp .env "$BACKUP_DIR/failed-candidate.env"; chmod 600 "$BACKUP_DIR/failed-candidate.env"; fi
-tar -xf "$BACKUP_DIR/original-configurations.tar" -C "$BACKUP_DIR"
+test -d "$CONFIG_DIR"
 # Stop candidates BEFORE down can remove evidence. Keep every failed candidate volume.
-TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
+: "${TEARDOWN_ATTEMPT:?Bootstrap a new attempt or source its saved context}"
 TEARDOWN_PHASE=rollback-stop
-TEARDOWN_SNAPSHOT="$BACKUP_DIR/rollback-stop-before-$TEARDOWN_ATTEMPT.json"
+TEARDOWN_SNAPSHOT="$ATTEMPT_DIR/rollback-stop-before-$TEARDOWN_ATTEMPT.json"
 EXITED_RECEIPT=
 python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
+  --phase candidate-teardown \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
-printf '%s\n' "$TEARDOWN_ATTEMPT" >> "$BACKUP_DIR/rollback-stop.log.timestamps"
-if docker compose -p sql-megasamples -f compose.yaml stop >> "$BACKUP_DIR/rollback-stop.log" 2>&1; then
-  printf '0\n' >> "$BACKUP_DIR/rollback-stop.log.exit-code"
+printf '%s\n' "$TEARDOWN_ATTEMPT" >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"
+if docker compose -p sql-megasamples -f compose.yaml stop >> "$EVIDENCE_DIR/rollback-stop.log" 2>&1; then
+  printf '0\n' >> "$EVIDENCE_DIR/rollback-stop.log.exit-code"
 else
   STOP_RC=$?
-  printf '%s\n' "$STOP_RC" >> "$BACKUP_DIR/rollback-stop.log.exit-code"
+  printf '%s\n' "$STOP_RC" >> "$EVIDENCE_DIR/rollback-stop.log.exit-code"
   echo 'STOP: apply the four checks to rollback-stop before down.'
   exit "$STOP_RC"
 fi
-EXITED_RECEIPT="$BACKUP_DIR/rollback-stop-exited-$TEARDOWN_ATTEMPT.json"
-python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" "$EXITED_RECEIPT"
+EXITED_RECEIPT="$ATTEMPT_DIR/rollback-stop-exited-$TEARDOWN_ATTEMPT.json"
+python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" "$EXITED_RECEIPT" --phase candidate-teardown
 # Snapshot again immediately before down, with stopped PIDs/exit codes and mounts.
 TEARDOWN_PHASE=rollback-down
-TEARDOWN_SNAPSHOT="$BACKUP_DIR/rollback-down-before-$TEARDOWN_ATTEMPT.json"
+TEARDOWN_SNAPSHOT="$ATTEMPT_DIR/rollback-down-before-$TEARDOWN_ATTEMPT.json"
 python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
+  --phase candidate-teardown \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
-printf '%s\n' "$TEARDOWN_ATTEMPT" >> "$BACKUP_DIR/rollback-down.log.timestamps"
+printf '%s\n' "$TEARDOWN_ATTEMPT" >> "$EVIDENCE_DIR/rollback-down.log.timestamps"
 # Restore original configuration and its original branch (never reset a pushed branch).
-if docker compose -p sql-megasamples -f compose.yaml down >> "$BACKUP_DIR/rollback-down.log" 2>&1; then
-  printf '0\n' >> "$BACKUP_DIR/rollback-down.log.exit-code"
+if docker compose -p sql-megasamples -f compose.yaml down >> "$EVIDENCE_DIR/rollback-down.log" 2>&1; then
+  printf '0\n' >> "$EVIDENCE_DIR/rollback-down.log.exit-code"
 else
   DOWN_RC=$?
-  printf '%s\n' "$DOWN_RC" >> "$BACKUP_DIR/rollback-down.log.exit-code"
+  printf '%s\n' "$DOWN_RC" >> "$EVIDENCE_DIR/rollback-down.log.exit-code"
   echo 'STOP: inspect rollback-down.log and apply the four-check teardown procedure below.'
   exit "$DOWN_RC"
 fi
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
-  "$BACKUP_DIR/rollback-down-exited-$TEARDOWN_ATTEMPT.json" --removed-with "$EXITED_RECEIPT"
+  "$ATTEMPT_DIR/rollback-down-exited-$TEARDOWN_ATTEMPT.json" --phase candidate-teardown --removed-with "$EXITED_RECEIPT"
 ROLLBACK_BRANCH=$(cat "$BACKUP_DIR/rollback-branch.txt")
 git switch "$ROLLBACK_BRANCH"
 test "$(git rev-parse HEAD)" = "$(cat "$BACKUP_DIR/original-commit.txt")"
@@ -1092,13 +1132,13 @@ if test -f "$BACKUP_DIR/adminer.generated.html"; then
   chmod 644 consoles/landing/adminer.html  # readable by the local web-server worker
 fi
 # Restore the entire console tree, including templates, generated connections and landing files.
-mv consoles "$BACKUP_DIR/console-tree-before-restore"
-cp -a "$BACKUP_DIR/consoles" ./consoles
-if test -d .venv; then mv .venv "$BACKUP_DIR/failed-upgrade-python-venv"; fi
+mv consoles "$ATTEMPT_DIR/console-tree-before-restore"
+cp -a "$CONFIG_DIR/consoles" ./consoles
+if test -d .venv; then mv .venv "$ATTEMPT_DIR/failed-upgrade-python-venv"; fi
 if test -d "$BACKUP_DIR/python-venv"; then cp -a "$BACKUP_DIR/python-venv" ./.venv; fi
-cp "$BACKUP_DIR/megasamples.yaml" ./megasamples.yaml
-cp "$BACKUP_DIR/compose.yaml" ./compose.yaml
-if test -f "$BACKUP_DIR/.env"; then cp "$BACKUP_DIR/.env" ./.env; chmod 600 .env; else rm -f .env; fi
+cp "$CONFIG_DIR/megasamples.yaml" ./megasamples.yaml
+cp "$CONFIG_DIR/compose.yaml" ./compose.yaml
+if test -f "$CONFIG_DIR/.env"; then cp "$CONFIG_DIR/.env" ./.env; chmod 600 .env; else rm -f .env; fi
 # Validate all per-image digests/configuration IDs before loading, then explicitly restore tags.
 python3 "$UPGRADE_HELPER" load-images "$BACKUP_DIR"
 while read -r tag expected repo_digests; do
@@ -1117,15 +1157,15 @@ For exact preservation of application writes, create four **new** named rollback
 
 ```sh
 for engine in postgres mysql sqlite sqlite-shared; do
-  podman volume create "megasamples-rollback-$engine-$UPGRADE_ID"
+  podman volume create "megasamples-rollback-$engine-$TEARDOWN_ATTEMPT"
 done
 # podman unshare preserves ownership from the cold copies in rootless Podman's namespace.
 for engine in postgres mysql sqlite sqlite-shared; do
-  target=$(podman volume inspect -f '{{.Mountpoint}}' "megasamples-rollback-$engine-$UPGRADE_ID")
+  target=$(podman volume inspect -f '{{.Mountpoint}}' "megasamples-rollback-$engine-$TEARDOWN_ATTEMPT")
   podman unshare cp -a "$BACKUP_DIR/$engine/." "$target/"
 done
 # PostgreSQL's backup above includes the 18/docker path under /var/lib/postgresql.
-cat > "$BACKUP_DIR/rollback.override.yaml" <<YAML
+cat > "$ATTEMPT_DIR/rollback.override.yaml" <<YAML
 services:
   postgres:
     image: localhost/sql-megasamples-postgres:rollback-$UPGRADE_ID
@@ -1142,22 +1182,22 @@ services:
 volumes:
   megasamples-sqlite:
     external: true
-    name: megasamples-rollback-sqlite-shared-$UPGRADE_ID
+    name: megasamples-rollback-sqlite-shared-$TEARDOWN_ATTEMPT
   rollback-postgres:
     external: true
-    name: megasamples-rollback-postgres-$UPGRADE_ID
+    name: megasamples-rollback-postgres-$TEARDOWN_ATTEMPT
   rollback-mysql:
     external: true
-    name: megasamples-rollback-mysql-$UPGRADE_ID
+    name: megasamples-rollback-mysql-$TEARDOWN_ATTEMPT
   rollback-sqlite:
     external: true
-    name: megasamples-rollback-sqlite-$UPGRADE_ID
+    name: megasamples-rollback-sqlite-$TEARDOWN_ATTEMPT
 YAML
 # Use the host's existing Docker-compatible socket and Compose client, targeting the default store.
 export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
 # Add exact saved console images if they existed before the upgrade. This is a second override,
 # so it also works when the old release used only vendor digest references.
-python3 - "$BACKUP_DIR" "$UPGRADE_ID" <<'PY_CONSOLE_ROLLBACK'
+python3 - "$BACKUP_DIR" "$UPGRADE_ID" "$ATTEMPT_DIR" <<'PY_CONSOLE_ROLLBACK'
 import json, pathlib, sys
 backup=pathlib.Path(sys.argv[1]); upgrade=sys.argv[2]
 names={"landing", "cloudbeaver", "dbgate", "adminer", "phpmyadmin"}
@@ -1165,32 +1205,54 @@ services={}
 for line in (backup/'rollback-image-tags.txt').read_text().splitlines():
     name=line.split('/sql-megasamples-',1)[1].split(':',1)[0]
     if name in names: services[name]={"image":line,"pull_policy":"never"}
-(backup/'rollback-consoles.override.json').write_text(json.dumps({"services":services},indent=2)+'\n')
+(pathlib.Path(sys.argv[3])/'rollback-consoles.override.json').write_text(json.dumps({"services":services},indent=2)+'\n')
 PY_CONSOLE_ROLLBACK
 # Standalone retained helper reads the original port selection, even on the old branch.
-python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" \
+python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" \
   --services-file "$BACKUP_DIR/original-running-services.txt"
+# The pre-up table applies to all current project containers (missing is recorded).
+python3 "$UPGRADE_HELPER" snapshot "$ATTEMPT_DIR/restart-before.json" --project sql-megasamples \
+  --phase restart-before --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
+python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/restart-before.json" \
+  "$ATTEMPT_DIR/restart-before-gate.json" --phase restart-before
 set --
 RESTORE_CLOUDBEAVER=0
 while IFS= read -r service; do
   if test "$service" = cloudbeaver; then RESTORE_CLOUDBEAVER=1; else set -- "$@" "$service"; fi
 done < "$BACKUP_DIR/original-running-services.txt"
 test "$#" -gt 0
-docker compose -p sql-megasamples -f compose.yaml -f "$BACKUP_DIR/rollback.override.yaml" \
-  -f "$BACKUP_DIR/rollback-consoles.override.json" up -d --wait "$@"
+docker compose -p sql-megasamples -f compose.yaml -f "$ATTEMPT_DIR/rollback.override.yaml" \
+  -f "$ATTEMPT_DIR/rollback-consoles.override.json" up -d --wait "$@"
 if test "$RESTORE_CLOUDBEAVER" = 1; then
-  python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" --service cloudbeaver
+  python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" --service cloudbeaver
   # Populate a stopped fresh container before its first initialization, retaining original UI state.
-  docker compose -p sql-megasamples -f compose.yaml -f "$BACKUP_DIR/rollback.override.yaml" \
-    -f "$BACKUP_DIR/rollback-consoles.override.json" create --force-recreate --no-build cloudbeaver
+  docker compose -p sql-megasamples -f compose.yaml -f "$ATTEMPT_DIR/rollback.override.yaml" \
+    -f "$ATTEMPT_DIR/rollback-consoles.override.json" create --force-recreate --no-build cloudbeaver
   CB_WORKSPACE_BACKUP="$BACKUP_DIR/cloudbeaver-workspace-final"
   if ! test -d "$CB_WORKSPACE_BACKUP"; then CB_WORKSPACE_BACKUP="$BACKUP_DIR/cloudbeaver-workspace"; fi
   if test -d "$CB_WORKSPACE_BACKUP"; then
     podman cp "$CB_WORKSPACE_BACKUP/." megasamples-cloudbeaver:/opt/cloudbeaver/workspace/
   fi
-  docker compose -p sql-megasamples -f compose.yaml -f "$BACKUP_DIR/rollback.override.yaml" \
-    -f "$BACKUP_DIR/rollback-consoles.override.json" up -d --no-deps --wait cloudbeaver
+  docker compose -p sql-megasamples -f compose.yaml -f "$ATTEMPT_DIR/rollback.override.yaml" \
+    -f "$ATTEMPT_DIR/rollback-consoles.override.json" up -d --no-deps --wait cloudbeaver
 fi
+# Check only originally selected services, each by exact container name and saved image.
+python3 - "$BACKUP_DIR" "$ATTEMPT_DIR" <<'PY_RESTART'
+import importlib.util, json, pathlib, subprocess, sys
+backup, attempt = map(pathlib.Path, sys.argv[1:])
+spec = importlib.util.spec_from_file_location('upgrade', attempt / 'live-upgrade.py')
+u = importlib.util.module_from_spec(spec); spec.loader.exec_module(u)
+rows = []
+for service in (backup / 'original-running-services.txt').read_text().splitlines():
+    row = u.container_state('megasamples-' + service)
+    rows.append(row)
+    actual = u.pod('inspect', '-f', '{{.Image}}', row['id']).removeprefix('sha256:')
+    expected = dict(u.image_rows(backup))['localhost/sql-megasamples-' + service + ':rollback-' + backup.name]
+    if actual != expected:
+        raise ValueError('restored image mismatch: ' + service)
+u.write_receipt(attempt / 'restart-after.json', dict(project='sql-megasamples', engines=[], containers=rows))
+u.exited(attempt / 'restart-after.json', attempt / 'restart-after-gate.json', phase='restart-after')
+PY_RESTART
 ```
 
 If that default socket is absent, start a Podman API service for the **default** store in the coordinator's session before the Compose command. This is separate from the isolated build's service. The override also maps the original shared-volume name to the restored cold copy for every SQLite consumer. The SQLite service's original startup command republishes `/data` into that restored shared console volume; keep SQLite consoles stopped until that copy finishes. Repeat version, actual row-count, account and DataIntent endpoint checks against the restored stack, including the forwarded endpoints. Verify only the originally running consoles, using their restored image IDs, login flows and dataset lists. Keep the original tool invocation/environment for old-release build checks; do not run its converters under the upgraded dependency lock. Resume clients only after rollback validation succeeds. Record the failed upgrade and retain its data directories separately for diagnosis.
