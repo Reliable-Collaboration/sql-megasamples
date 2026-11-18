@@ -46,6 +46,7 @@ for name,flags in cases:
     assert row['status']=='Passed',name+' reset failed'
     row=run('native',[sys.executable,'-m','pytest','tests/test_strict_read_native.py','-q','--tb=short'],directory)
     results[name]['native']=row
+    (BASE/'checkpoints.json').write_text(json.dumps(results,indent=2)+'\n')
     assert row['status']=='Passed',name+' privileges failed'
     def matrix(engine):
         return engine,run('reads-'+engine,[sys.executable,'docs/validation/strict-read-reset-matrix.py',engine,
