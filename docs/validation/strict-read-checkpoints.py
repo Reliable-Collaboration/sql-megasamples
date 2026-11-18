@@ -24,7 +24,7 @@ results={}
 
 def run(label,args,directory=BASE,extra=None):
     directory.mkdir(exist_ok=True,parents=True)
-    env={**os.environ,'MEGASAMPLES_VALIDATION_OUT':str(directory),'MEGASAMPLES_NATIVE_READ_TESTS':'1',**(extra or {})}
+    env={**os.environ,'MEGASAMPLES_VALIDATION_OUT':str(directory),'MEGASAMPLES_NATIVE_READ_TESTS':'1','STRICT_READ_NATIVE_DRIVER':'library',**(extra or {})}
     started=time.monotonic()
     with (directory/(label+'.log')).open('w') as log:
         rc=subprocess.run(args,env=env,stdout=log,stderr=subprocess.STDOUT).returncode

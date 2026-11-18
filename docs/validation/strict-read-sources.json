@@ -63,6 +63,16 @@
       "url": "https://www.postgresql.org/docs/18/functions-binarystring.html",
       "use": "Encoding conversion reads supplied byte/text values",
       "read_at": "2026-11-18T07:19:19Z"
+    },
+    {
+      "url": "https://www.psycopg.org/psycopg3/docs/basic/from_pg2.html#multiple-statements-in-the-same-query",
+      "use": "Native protocol client connection and multi-result semantics",
+      "read_at": "2026-11-18T07:24:20Z"
+    },
+    {
+      "url": "https://pymysql.readthedocs.io/en/latest/modules/connections.html",
+      "use": "Native protocol client connection and multi-result semantics",
+      "read_at": "2026-11-18T07:24:20Z"
     }
   ]
 }

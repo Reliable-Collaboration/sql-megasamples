@@ -32,6 +32,9 @@ def isolated_clients():
 
 def query(engine, database, sql, user='demo'):
     container = os.environ.get('STRICT_READ_' + engine.upper() + '_CONTAINER', 'megasamples-' + engine)
+    if os.environ.get('STRICT_READ_NATIVE_DRIVER') == 'library':
+        from docs.validation.strict_read_clients import query as native_query
+        return native_query(engine, container, user, database, sql)
     key = {'postgres': 'POSTGRES_PASSWORD', 'root': 'MYSQL_ROOT_PASSWORD'}.get(user, user.upper() + '_PASSWORD')
     with client(engine, container, user, config.passwords()[key]) as command:
         args = (['-X', '-d', database, '-v', 'ON_ERROR_STOP=1', '-qAt', '-c', sql]
@@ -194,3 +197,21 @@ def test_postgres_employee_views_do_not_require_mutating_helpers():
     assert values.splitlines()[0] == values.splitlines()[-1] == 't'
     assert accepted('postgres', 'employees',
         "SELECT has_function_privilege('current_manager(character)','EXECUTE')") == 'f'
+
+
+@pytest.mark.parametrize('engine', ['postgres', 'mysql'])
+def test_native_protocol_matches_cli(engine, monkeypatch):
+    from docs.validation.strict_read_clients import query as protocol_query
+    container = os.environ.get('STRICT_READ_' + engine.upper() + '_CONTAINER', 'megasamples-' + engine)
+    monkeypatch.delenv('STRICT_READ_NATIVE_DRIVER', raising=False)
+    statements = ['SELECT 1, NULL', 'BEGIN; SELECT 1; SELECT 2; ROLLBACK']
+    statements += (['SELECT current_user', 'BEGIN; CREATE TEMP TABLE parity_denied(i int); ROLLBACK']
+                   if engine == 'postgres' else ['SHOW GRANTS', 'CREATE TEMPORARY TABLE parity_denied(i int)'])
+    for sql in statements:
+        cli = query(engine, 'pubs', sql)
+        protocol = protocol_query(engine, container, 'demo', 'pubs', sql)
+        assert (cli.returncode == 0) == (protocol.returncode == 0), sql
+        if cli.returncode == 0:
+            assert cli.stdout.strip() == protocol.stdout.strip(), sql
+        else:
+            assert 'denied' in cli.stderr.lower() and 'denied' in protocol.stderr.lower()
