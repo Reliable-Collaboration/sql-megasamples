@@ -26,6 +26,18 @@ for name,row in checkpoints.items():
     assert row['reset']['status']==row['native']['status']=='Passed'
     assert set(row['reads'])=={'mysql','postgres','sqlite'}
     assert all(v['status']=='Passed' for v in row['reads'].values())
+native_reads={'baseline':{e:read('baseline/reset-matrix-'+e+'.json') for e in ['mysql','postgres','sqlite']},'checkpoints':{}}
+for name in expected:
+    native_reads['checkpoints'][name]={}
+    for engine in ['mysql','postgres','sqlite']:
+        path=BASE/('checkpoint-'+name)/('reset-matrix-'+engine+'.json')
+        observed=json.loads(path.read_text())
+        assert observed['status']=='Passed'
+        assert observed['databases']==native_reads['baseline'][engine]['databases']
+        native_reads['checkpoints'][name][engine]={
+            **{k:v for k,v in observed.items() if k!='databases'},
+            'databases_reference':'native_read_fingerprints.baseline.'+engine+'.databases',
+            'all_complete_table_fingerprints_equal_baseline':True,'receipt':file_record(path)}
 steps=read('final-validation-steps.json')
 assert steps and all(row['status']=='Passed' for row in steps.values())
 restoration=read('restoration.json')
@@ -85,7 +97,7 @@ receipt={
     'grants':{'before_read_at':before['read_at'],'candidate_read_at':after['read_at'],
               'postgres':grant_comparison,'mysql_before':before['mysql'],'mysql_candidate':after['mysql']},
     'executable_routines':json.loads((ROOT/'docs/validation/strict-read-executable-routines.json').read_text()),
-    'canonical_matrices':matrices,'checkpoints':checkpoints,'final_validation_steps':steps,
+    'canonical_matrices':matrices,'native_read_fingerprints':native_reads,'checkpoints':checkpoints,'final_validation_steps':steps,
     'writer_scenarios':writers,'image_checks':images,'rotation':read('rotation-results.json'),
     'restoration':restoration,'isolation':isolation,'canaries':canaries,'container_log_canaries':log_canaries,
     'credential_output_rule':{'status':'Failed','reason':'Published bootstrap credentials appeared in initial repository source inspection; no values are repeated here.'},
