@@ -73,6 +73,16 @@
       "url": "https://pymysql.readthedocs.io/en/latest/modules/connections.html",
       "use": "Native protocol client connection and multi-result semantics",
       "read_at": "2026-11-18T07:24:20Z"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/refman/9.7/en/locking-functions.html",
+      "use": "Named locks are stateful built-ins; native probe confirms SELECT-only demo can obtain one",
+      "read_at": "2026-11-18T09:56:36Z"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/refman/9.7/en/privileges-provided.html",
+      "use": "EXECUTE governs stored routines; FILE and write/admin grants are absent from demo",
+      "read_at": "2026-11-18T09:56:36Z"
     }
   ]
 }

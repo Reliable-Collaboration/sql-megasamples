@@ -90,6 +90,9 @@ log_canaries=[read('container-log-canaries-before-candidate.json'),read('contain
 assert all(row['status']=='Passed' for row in log_canaries)
 writers={name:read('final-candidate/writer-'+name+'.json') for name in ['postgres-admin','postgres-postgres','mysql-admin','mysql-root']}
 assert all(all(v['status']=='Passed' for v in row['results'].values()) for row in writers.values())
+mysql_boundary=read('mysql-boundary.json')
+assert mysql_boundary['write_denials']['status']=='Passed'
+assert mysql_boundary['builtin_function_read_only_enforcement']['status']=='Unsupported'
 receipt={
     'generated_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),
     'main_before':'2cf1f3e9538ea2e90ef23f8715c5e08e4c7de848',
@@ -99,6 +102,7 @@ receipt={
     'executable_routines':json.loads((ROOT/'docs/validation/strict-read-executable-routines.json').read_text()),
     'canonical_matrices':matrices,'native_read_fingerprints':native_reads,'checkpoints':checkpoints,'final_validation_steps':steps,
     'writer_scenarios':writers,'image_checks':images,'rotation':read('rotation-results.json'),
+    'mysql_builtin_boundary':mysql_boundary,
     'restoration':restoration,'isolation':isolation,'canaries':canaries,'container_log_canaries':log_canaries,
     'credential_output_rule':{'status':'Failed','reason':'Published bootstrap credentials appeared in initial repository source inspection; no values are repeated here.'},
     'scope':{'live_cutover':'Not run','DataIntent_suites':'Not run','Docker_BuildKit_and_other_architectures':'Not run',
