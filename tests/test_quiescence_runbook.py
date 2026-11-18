@@ -161,5 +161,6 @@ python3() { case "$2" in capture) exit 47;; esac; }
 '''+block('# BEGIN partial stop retry\n','# END partial stop retry')+'\ntest "$QUIESCENCE_CAPTURE" = "$ORIGINAL_CAPTURE"'
         result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
         assert result.returncode==0,result.stderr
+        assert (tmp_path/'evidence/calls').exists(), 'guarded partial stop was not executed'
         assert (tmp_path/'evidence/calls').read_text()=='stopped\n'
     finally:server.close()

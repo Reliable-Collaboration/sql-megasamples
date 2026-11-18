@@ -33,6 +33,11 @@ def main():
             if not task_alive(p):
                 continue"""
     controls[-1]=('W6 zombie order',source,before,after,'tests/test_quiescence_gate.py::test_exited_zombie_with_deleted_cgroup_is_not_unresolved','DL088_GATE_SOURCE')
+    controls += [
+        ('W2 membership reconciliation',source,"for pid in group_members(cgroup_root/cgroup_path(line).lstrip('/')):","for pid in ():",'tests/test_quiescence_capture.py::test_cgroup_members_reconciled_even_when_proc_listing_misses_member','DL088_GATE_SOURCE'),
+        ('W6 partial stop route',book,'if stop_project >> "$EVIDENCE_DIR/partial-stop-$PARTIAL_ID.log" 2>&1; then','if true >> "$EVIDENCE_DIR/partial-stop-$PARTIAL_ID.log" 2>&1; then','tests/test_quiescence_runbook.py::test_partial_stop_retry_keeps_capture_and_reruns_guarded_stop','DL089_RUNBOOK_SOURCE'),
+        ('W4 retained environment',book,'if test -f "$CONFIG_DIR/.env"; then cp "$CONFIG_DIR/.env" .env; chmod 600 .env; else rm -f .env; fi',': # removed retained environment restoration','tests/test_quiescence_runbook.py::test_original_restart_after_rotation_restores_config_then_engines_and_free_consoles','DL089_RUNBOOK_SOURCE'),
+    ]
     results=[]
     def execute(name,mutated,test,key):
         path=out/(str(len(results))+('.md' if key=='DL089_RUNBOOK_SOURCE' else '.py'));path.write_text(mutated)
@@ -46,6 +51,9 @@ def main():
     for reason,test in [
         ('required cgroup member identity unreadable','tests/test_quiescence_capture.py::test_surviving_cgroup_member_identity_failure_holds'),
         ('down cgroup evidence unreadable','tests/test_quiescence_down.py::test_down_live_evidence_blocks_with_reversal[unreadable-group]'),
+        ('live deployment cgroup task','tests/test_quiescence_down.py::test_down_live_evidence_blocks_with_reversal[live-task]'),
+        ('deployment process capture missing; cannot capture after stop','tests/test_quiescence_down.py::test_original_stop_all_down_still_holds'),
+        ('shared helper without verified consumer','tests/test_quiescence_down.py::test_down_shared_helper_appearing_after_absent_pidfile_is_checked'),
         ('positively associated down helper survives','tests/test_quiescence_down.py::test_down_live_evidence_blocks_with_reversal[path-helper]'),
         ('down helper association unreadable','tests/test_quiescence_down.py::test_down_live_evidence_blocks_with_reversal[unreadable-conmon]'),
     ]:
