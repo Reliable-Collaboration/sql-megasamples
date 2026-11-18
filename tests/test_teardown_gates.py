@@ -10,10 +10,12 @@ FIXTURE = json.loads((Path(__file__).parent / 'fixtures/live-teardown-states.jso
 NAMES = [r['name'] for r in FIXTURE['candidates']]
 ENGINES = [r['name'] for r in FIXTURE['originals']]
 STATES = ['running', 'created', 'exited-0', 'exited-137', 'exited-other', 'oom-killed', 'missing']
-PHASES = ['original-stop', 'candidate-teardown', 'restart-before', 'restart-after']
+PHASES = ['original-stop', 'candidate-teardown', 'restart-before', 'restart-after', 'original-restart']
 
 
 def expected(name, state, phase):
+    if phase == 'original-restart':
+        return state not in ('running','missing')
     if phase == 'restart-after':
         return state == 'running'
     if phase in ('candidate-teardown', 'restart-before'):
@@ -46,7 +48,13 @@ def test_state_phase_cell(tmp_path, monkeypatch, name, state, phase):
         assert row['state'] == ('missing' if state == 'missing' else status)
         assert row['exit_code'] == (None if state == 'missing' else code)
     else:
-        with pytest.raises(ValueError):
+        reason = ('original container missing' if phase == 'original-restart' and state == 'missing' else
+                  'OOM' if state == 'oom-killed' else
+                  'running flag must be true' if phase == 'restart-after' else
+                  'running flag must be false' if state == 'running' else
+                  'missing/unexpected state' if state == 'missing' else
+                  'unexpected engine exit code')
+        with pytest.raises(ValueError,match=reason):
             upgrade.exited(before, after, phase=phase)
         assert not after.exists()
 
@@ -90,3 +98,59 @@ def test_missing_original_restart_refuses_specifically(tmp_path,monkeypatch):
     monkeypatch.setattr(upgrade,'pod',lambda *args:'')
     with pytest.raises(ValueError,match='original container missing; use coordinator recovery'):
         upgrade.exited(before,tmp_path/'out',phase='original-restart')
+
+
+def independent_gate(tmp_path,monkeypatch,phase,changes):
+    row=dict(name='megasamples-postgres',id='id',state='exited',running=False,pid=0,exit_code=0,oom=False)
+    if phase=='restart-after': row.update(state='running',running=True,pid=22)
+    row.update(changes)
+    before=tmp_path/'independent.json'; out=tmp_path/'independent-out.json'
+    before.write_text(json.dumps(dict(project='fixture',engines=ENGINES,containers=[dict(name=row['name'],id='id')])))
+    def pod(*args):
+        if args[0]=='inspect': return '|'.join(str(row[k]).lower() if isinstance(row[k],bool) else str(row[k]) for k in ['name','id','state','running','pid','exit_code','oom'])+'|'
+        return ''
+    monkeypatch.setattr(upgrade,'pod',pod)
+    upgrade.exited(before,out,phase=phase)
+    out.unlink()
+
+
+@pytest.mark.parametrize('phase',[p for p in PHASES if p!='restart-after'])
+@pytest.mark.parametrize('field,value,reason', [('running',True,'running flag'),('pid',22,'PID must be 0'),('state','running','status must not be running')])
+def test_independent_stopped_predicates_with_reversal(tmp_path,monkeypatch,phase,field,value,reason):
+    with pytest.raises(ValueError,match=reason): independent_gate(tmp_path,monkeypatch,phase,{field:value})
+    independent_gate(tmp_path,monkeypatch,phase,{})
+
+
+@pytest.mark.parametrize('field,value,reason', [('running',False,'running flag'),('pid',0,'PID must be positive'),('state','exited','status must be running'),('oom',True,'OOM')])
+def test_independent_started_predicates_with_reversal(tmp_path,monkeypatch,field,value,reason):
+    with pytest.raises(ValueError,match=reason): independent_gate(tmp_path,monkeypatch,'restart-after',{field:value})
+    independent_gate(tmp_path,monkeypatch,'restart-after',{})
+
+
+@pytest.mark.parametrize('name',NAMES)
+@pytest.mark.parametrize('code',[0,9,137])
+def test_oom_rule_independent_of_engine_exit_with_reversal(tmp_path,monkeypatch,name,code):
+    with pytest.raises(ValueError,match='OOM before cold copy'):
+        independent_gate(tmp_path,monkeypatch,'original-stop',dict(name=name,oom=True,exit_code=code))
+    # Exit-zero makes removing OOM the only difference for every engine, not just SQLite.
+    independent_gate(tmp_path,monkeypatch,'original-stop',dict(name=name,oom=False,exit_code=0))
+
+
+def test_still_running_deployment_branch(tmp_path,monkeypatch):
+    original=upgrade.pod
+    def inspect(*args):
+        if args[0]=='ps': return 'unrecorded-running-id'
+        return ''
+    before=tmp_path/'before';before.write_text(json.dumps(dict(project='fixture',engines=[],containers=[])))
+    monkeypatch.setattr(upgrade,'pod',inspect)
+    with pytest.raises(ValueError,match='deployment container still running'):
+        upgrade.exited(before,tmp_path/'out',phase='candidate-teardown')
+    monkeypatch.setattr(upgrade,'pod',lambda *args:'')
+    upgrade.exited(before,tmp_path/'out',phase='candidate-teardown')
+
+
+def test_snapshot_missing_original_refuses_with_reason_and_reversal(tmp_path,monkeypatch):
+    monkeypatch.setattr(upgrade,'pod',lambda *args:'')
+    with pytest.raises(ValueError,match='original container missing; use coordinator recovery'):
+        upgrade.snapshot(tmp_path/'out','fixture',['megasamples-postgres'])
+    upgrade.snapshot(tmp_path/'out','fixture',[])

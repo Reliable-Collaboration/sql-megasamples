@@ -253,15 +253,26 @@ def exited(before, output, removed_with=None, phase='original-stop'):
         if phase == 'original-restart' and row['state'] == 'missing':
             raise ValueError('original container missing; use coordinator recovery: ' + row['name'])
         if phase == 'restart-after':
-            if not row['running'] or row['pid'] <= 0 or row['state'] != 'running' or row['oom']:
-                raise ValueError('restored service must be running, PID positive, no OOM: ' + row['name'])
+            if row['oom']:
+                raise ValueError('OOM after original start: ' + row['name'])
+            if not row['running']:
+                raise ValueError('running flag must be true: ' + row['name'])
+            if row['pid'] <= 0:
+                raise ValueError('PID must be positive: ' + row['name'])
+            if row['state'] != 'running':
+                raise ValueError('status must be running: ' + row['name'])
         else:
-            if row['running'] or row['pid'] != 0 or row['state'] == 'running':
-                raise ValueError('container must be not running with PID 0: ' + row['name'])
+            if phase == 'original-stop' and row['oom']:
+                raise ValueError('OOM before cold copy: ' + row['name'])
+            if row['running']:
+                raise ValueError('running flag must be false: ' + row['name'])
+            if row['pid'] != 0:
+                raise ValueError('PID must be 0: ' + row['name'])
+            if row['state'] == 'running':
+                raise ValueError('status must not be running: ' + row['name'])
             if phase == 'original-stop':
-                # OOM is independent of exit code, including SQLite's expected 137.
-                if row['oom'] or row['state'] not in ('created', 'exited'):
-                    raise ValueError('missing/unexpected state or OOM before cold copy: ' + row['name'])
+                if row['state'] not in ('created', 'exited'):
+                    raise ValueError('missing/unexpected state before cold copy: ' + row['name'])
                 if row['name'] in saved['engines']:
                     codes = (0, 137) if row['name'] == 'megasamples-sqlite' else (0,)
                     if row['state'] != 'exited' or row['exit_code'] not in codes:

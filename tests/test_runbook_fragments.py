@@ -28,10 +28,11 @@ def context(tmp_path, phase):
     assignments = '\n'.join(n + '=' + shlex.quote('fixture') for n in names)
     socket_path = tmp_path / 'podman.sock'
     server = socket.socket(socket.AF_UNIX); server.bind(str(socket_path))
-    extra = dict(BACKUP_DIR=str(tmp_path), EVIDENCE_DIR=str(tmp_path), ATTEMPT_DIR=str(tmp_path),
+    for name in ('retained','evidence','attempt'): (tmp_path/name).mkdir()
+    extra = dict(BACKUP_DIR=str(tmp_path/'retained'), EVIDENCE_DIR=str(tmp_path/'evidence'), ATTEMPT_DIR=str(tmp_path/'attempt'),
                  CONTEXT_FILE=str(tmp_path / 'resume-context.bash'), DOCKER_HOST='unix://' + str(socket_path),
                  TEARDOWN_PHASE=phase, TEARDOWN_ATTEMPT='fixture-attempt',
-                 TEARDOWN_SNAPSHOT=str(tmp_path / 'before.json'), EXITED_RECEIPT='')
+                 TEARDOWN_SNAPSHOT=str(tmp_path / 'evidence/before.json'), EXITED_RECEIPT='')
     assignments += '\n' + '\n'.join(n + '=' + shlex.quote(v) for n,v in extra.items())
     subprocess.run(['bash', '-eu', '-c', assignments + '\n' + text + '\nsave_context'], cwd=tmp_path, check=True)
     return server
@@ -60,7 +61,7 @@ podman() { if test "$1" = unshare; then printf '{"holders":[],"helpers":[],"unre
         resumed = subprocess.run(['bash', '-eu', '-c', script], env=env, capture_output=True, text=True)
         assert resumed.returncode == 0, resumed.stderr
         assert resumed.stdout.endswith({'stop':'cold-copy','rollback-stop':'pre-down','rollback-down':'restore'}[phase])
-        assert list(tmp_path.glob('process-evidence-*.exit-code'))
+        assert list((tmp_path/'evidence').glob('process-evidence-*.exit-code'))
     finally:
         server.close()
 
@@ -117,7 +118,7 @@ def test_scanner_failure_is_saved_without_exiting_strict_shell(tmp_path):
                                 capture_output=True,text=True)
         assert result.returncode == 0, result.stderr
         assert result.stdout.endswith('captured-refusal\n')
-        assert next(tmp_path.glob('process-evidence-*.exit-code')).read_text() == '1\n'
+        assert next((tmp_path/'evidence').glob('process-evidence-*.exit-code')).read_text() == '1\n'
     finally:
         server.close()
 
@@ -125,10 +126,10 @@ def test_scanner_failure_is_saved_without_exiting_strict_shell(tmp_path):
 @pytest.mark.parametrize('phase', ['stop', 'rollback-stop', 'rollback-down'])
 def test_actual_continuation_in_fresh_strict_shell(tmp_path,phase):
     server = context(tmp_path,phase)
-    (tmp_path/'rollback-branch.txt').write_text('fixture-branch\n')
-    (tmp_path/'original-commit.txt').write_text('fixture-commit\n')
-    (tmp_path/'rollback-image-ids.txt').write_text('')
-    (tmp_path/'original-tool-images.txt').write_text('')
+    (tmp_path/'retained/rollback-branch.txt').write_text('fixture-branch\n')
+    (tmp_path/'retained/original-commit.txt').write_text('fixture-commit\n')
+    (tmp_path/'retained/rollback-image-ids.txt').write_text('')
+    (tmp_path/'retained/original-tool-images.txt').write_text('')
     point = {'stop':'cold-copy','rollback-stop':'pre-down','rollback-down':'restore'}[phase]
     stubs = r'''
 python3() { printf 'python %s\n' "$*" >> "$EVIDENCE_DIR/continuation-calls"; }
@@ -154,7 +155,7 @@ bash() { printf 'bash digest\n' >> "$EVIDENCE_DIR/continuation-calls"; }
         script += block('# BEGIN ' + point + ' continuation\n','# END ' + point + ' continuation')
         result = subprocess.run(['bash','-eu','-c',script],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},capture_output=True,text=True)
         assert result.returncode == 0, result.stderr
-        calls = (tmp_path/'continuation-calls').read_text()
+        calls = (tmp_path/'evidence/continuation-calls').read_text()
         assert {'stop':'unshare cp -a','rollback-stop':'docker compose -p sql-megasamples -f compose.yaml down',
                 'rollback-down':'git switch fixture-branch'}[phase] in calls
     finally:
@@ -185,7 +186,7 @@ def test_success_path_scanner_refusal_prevents_next_mutation(tmp_path,name):
         result=subprocess.run(['bash','-eu','-c',script],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},capture_output=True,text=True)
         assert result.returncode != 0
         assert 'UNSAFE' not in result.stdout
-        assert list(tmp_path.glob('process-*.exit-code'))
+        assert list((tmp_path/'evidence').glob('process-*.exit-code'))
     finally:
         server.close()
 
@@ -224,11 +225,11 @@ def test_pre_up_checkpoint_resumes_without_restoring_again(tmp_path):
     server=context(tmp_path,'rollback-pre-up')
     try:
         # Represents the saved combined inventory, including newly populated targets.
-        (tmp_path/'before.json').write_text(json.dumps({'containers':[{'mounts':[['/new/rollback-data','/restore-target']]}]}))
+        (tmp_path/'evidence/before.json').write_text(json.dumps({'containers':[{'mounts':[['/new/rollback-data','/restore-target']]}]}))
         env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')}
         failed=subprocess.run(['bash','-eu','-c','. "$CONTEXT"\npython3() { case "$1" in */quiescence.py) return 1;; esac; }; podman() { :; }\n'+block('# BEGIN pre-up process gate\n','# END pre-up process gate')],env=env,capture_output=True,text=True)
         assert failed.returncode == 1
-        (tmp_path/'original-running-services.txt').write_text('')
+        (tmp_path/'retained/original-running-services.txt').write_text('')
         script='. "$CONTEXT"\n' + r'''
 python3() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/calls"; cat >/dev/null; }
 podman() { if test "$1" = unshare; then grep -q /new/rollback-data "$TEARDOWN_SNAPSHOT"; fi; }
@@ -240,7 +241,7 @@ podman() { if test "$1" = unshare; then grep -q /new/rollback-data "$TEARDOWN_SN
         script+=block('# BEGIN pre-up continuation\n','# END pre-up continuation')
         result=subprocess.run(['bash','-eu','-c',script],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},capture_output=True,text=True)
         assert result.returncode == 0,result.stderr
-        assert '--phase restart-before' in (tmp_path/'calls').read_text()
+        assert '--phase restart-before' in (tmp_path/'evidence/calls').read_text()
     finally:
         server.close()
 
@@ -255,7 +256,7 @@ def test_cloudbeaver_creation_uses_supported_up_flags():
 def test_pre_up_first_refusal_already_saved_checkpoint(tmp_path,refusal):
     server=context(tmp_path,'rollback-down')
     try:
-        (tmp_path/'original-running-services.txt').write_text('postgres\n')
+        (tmp_path/'retained/original-running-services.txt').write_text('postgres\n')
         script='. "$CONTEXT"\n'+r'''
 python3() {
   case " $* " in
@@ -301,10 +302,10 @@ docker() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/recovery-calls"; }
         else:
             # Execute abort's start path after its separately tested extraction.
             script+=block('# BEGIN abort original start\n','# END abort original start')
-            (tmp_path/'original-running-services.txt').write_text('postgres\n')
+            (tmp_path/'retained/original-running-services.txt').write_text('postgres\n')
         r=subprocess.run(['bash','-eu','-c',script],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},capture_output=True,text=True)
         assert r.returncode==0,r.stderr
-        calls=(tmp_path/'recovery-calls').read_text()
+        calls=(tmp_path/'evidence/recovery-calls').read_text()
         assert '--phase original-restart' in calls
         assert 'start --wait --wait-timeout 300 postgres' in calls
         if mode=='clean-stop':
@@ -338,5 +339,5 @@ podman() {
         script+=block('# BEGIN rollback population\n','# END rollback population')
         resumed=subprocess.run(['bash','-eu','-c',script],env=env,capture_output=True,text=True)
         assert resumed.returncode==0,resumed.stderr
-        assert (tmp_path/'populate-calls').read_text().count('copy\n')==4
+        assert (tmp_path/'evidence/populate-calls').read_text().count('copy\n')==4
     finally: server.close()

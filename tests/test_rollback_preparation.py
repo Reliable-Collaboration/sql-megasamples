@@ -144,3 +144,56 @@ docker() { printf '%s\n' "$*" >> "$CHECKOUT/docker-calls"; }
     finally:
         server.close()
         subprocess.run(['chmod', '-R', 'u+w', str(backup)], check=True)
+
+
+def test_whole_rollback_preserves_frozen_retained_file_list_and_digests(tmp_path):
+    from test_runbook_fragments import RUNBOOK, context
+    import re
+    server=context(tmp_path,'rollback-down')
+    backup=tmp_path/'retained'; attempt=tmp_path/'attempt'; checkout=tmp_path/'checkout'; checkout.mkdir()
+    for name,value in {'rollback-branch.txt':'fixture','original-commit.txt':'fixture',
+                       'rollback-image-ids.txt':'','original-tool-images.txt':'','rollback-image-tags.txt':'',
+                       'original-running-services.txt':'','original-configurations.sha256':'',
+                       'original-ports.json':'{}'}.items(): (backup/name).write_text(value)
+    config=attempt/'configuration';(config/'consoles/landing').mkdir(parents=True)
+    for name in ['megasamples.yaml','compose.yaml']: (config/name).write_text('{}')
+    (config/'consoles/landing/index.html').write_text('original')
+    (checkout/'consoles').mkdir();(checkout/'consoles/candidate').write_text('candidate')
+    (checkout/'.venv').mkdir();(checkout/'.venv/fixture').write_text('candidate')
+    (backup/'python-venv').mkdir();(backup/'python-venv/fixture').write_text('original')
+    before=digests(backup)
+    subprocess.run(['chmod','-R','a-w',str(backup)],check=True)
+    body=RUNBOOK.read_text().split('## Roll back\n',1)[1].split('### Partial original restart',1)[0]
+    shell='\n'.join(re.findall(r'```sh\n(.*?)```',body,re.S))
+    stubs=r'''
+python3() { cat >/dev/null; }
+podman() {
+ case "$1 $2" in
+ 'volume exists') return 1;;
+ 'volume inspect') printf /scratch/target;;
+ esac
+}
+docker() { :; }
+git() { if test "$1" = rev-parse; then echo fixture; fi; }
+sha256sum() { :; }
+bash() { :; }
+'''
+    # Context cd is retained by design: append an explicit fixture checkout after source.
+    shell=shell.replace('. "$CONTEXT_FILE"','. "$CONTEXT_FILE"\ncd "$CHECKOUT"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"')
+    try:
+        env=dict(os.environ,CONTEXT_FILE=str(tmp_path/'resume-context.bash'),CHECKOUT=str(checkout))
+        result=subprocess.run(['bash','-eu','-c',stubs+shell],cwd=checkout,env=env,capture_output=True,text=True)
+        assert result.returncode==0,result.stderr
+        assert digests(backup)==before
+        assert sorted(p.relative_to(backup).as_posix() for p in backup.rglob('*') if p.is_file())==sorted(before)
+        # Execute configuration restoration again: no nested console or venv trees.
+        from test_runbook_fragments import block
+        repeat='. "$CONTEXT_FILE"\ncd "$CHECKOUT"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"\n'+block('# BEGIN restore continuation\n','# END restore continuation')
+        result=subprocess.run(['bash','-eu','-c',stubs+repeat],env=env,capture_output=True,text=True)
+        assert result.returncode==0,result.stderr
+        assert not (checkout/'consoles/consoles').exists()
+        assert not (checkout/'.venv/python-venv').exists()
+        assert (checkout/'.venv/fixture').read_text()=='original'
+        assert digests(backup)==before
+    finally:
+        server.close();subprocess.run(['chmod','-R','u+w',str(backup)],check=True)

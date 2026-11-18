@@ -216,7 +216,7 @@ def test_runbook_ms_tool_executes_heredoc(tmp_path):
 @pytest.mark.parametrize('action,log', [('stop', 'stop.log'), ('stop', 'rollback-stop.log'), ('down', 'rollback-down.log')])
 def test_runbook_teardown_preserves_compose_status(tmp_path, action, log):
     text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
-    guard = next(g for g in re.findall(r'if docker compose[^\n]* ' + action + r' >> .*?^fi', text, re.M | re.S) if '$EVIDENCE_DIR/' + log + '"' in g)
+    guard = next(g for g in re.findall(r'if docker compose[^\n]* ' + action + r'(?: --timeout 300)? >> .*?^fi', text, re.M | re.S) if '$EVIDENCE_DIR/' + log + '"' in g)
     env = dict(os.environ, BACKUP_DIR=str(tmp_path), EVIDENCE_DIR=str(tmp_path))
     result = subprocess.run(['bash', '-c', 'docker() { return 37; }\n' + guard + '\necho unsafe-fallthrough'],
                             env=env, capture_output=True, text=True)
@@ -343,7 +343,7 @@ def test_original_stop_refuses_running_crash_and_oom(tmp_path, monkeypatch):
             return '/fixture-engine|id|' + '|'.join(state) + '|/netns'
         return ''
     monkeypatch.setattr(upgrade, 'pod', pod)
-    with pytest.raises(ValueError, match='not running'):
+    with pytest.raises(ValueError, match='running flag must be false'):
         upgrade.exited(before, tmp_path / 'after.json')
     state[:] = ['exited', 'false', '0', '137', 'false']
     with pytest.raises(ValueError, match='exit code'):
