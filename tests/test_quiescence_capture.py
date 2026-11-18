@@ -192,9 +192,9 @@ def test_original_volume_restart_override_does_not_require_copy_quiescence(captu
     gate.original_override(out,override,'fixture',candidate)
     saved=json.loads(override.read_text())
     assert saved['services']['postgres']['volumes'][0]['source']==str(dirs['pg'])
-    assert saved['services']['sqlite']['volumes'][1]['source']==str(dirs['shared'])
+    assert saved['services']['sqlite']['volumes'][1]['source']=='megasamples-sqlite'
     assert saved['services']['mysql']['image']=='localhost/sql-megasamples-mysql:rollback-fixture'
-    assert all(not v['bind']['create_host_path'] for row in saved['services'].values() for v in row['volumes'])
+    assert all(not v['bind']['create_host_path'] for row in saved['services'].values() for v in row['volumes'] if v['type']=='bind')
     candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(dirs['pg']),'/candidate-data']])])))
     with pytest.raises(ValueError,match='candidate used original data'):
         gate.original_override(out,data.parent/'used-by-candidate.json','fixture',candidate)
@@ -270,3 +270,26 @@ def test_clean_stop_verifies_first_capture_other_engine_survivor(capture_fixture
     shutil.rmtree(helper)
     for name in ('cgroup.procs','cgroup.threads'):(cg/'libpod-test.scope'/name).write_text('')
     assert gate.verify_all(current,data.parent,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+
+
+def test_unchanged_originals_real_shared_mount_overlap_gets_fresh_volume(capture_fixture):
+    snap,out,proc,cg,data=capture_fixture
+    dirs={name:data.parent/name for name in ('pg','my','sq','shared')}
+    for path in dirs.values():path.mkdir()
+    rows=[dict(name='megasamples-postgres',id='pg',mounts=[[str(dirs['pg']),'/var/lib/postgresql']]),
+          dict(name='megasamples-mysql',id='my',mounts=[[str(dirs['my']),'/var/lib/mysql']]),
+          dict(name='megasamples-sqlite',id='sq',mounts=[[str(dirs['sq']),'/data'],[str(dirs['shared']),'/shared']])]
+    out.write_text(json.dumps(dict(complete=True,containers=rows,sources=[gate.source_identity(p) for p in dirs.values()])))
+    candidate=data.parent/'candidate.json'
+    candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(dirs['shared']),'/shared'],[str(data),'/data']])])) )
+    target=data.parent/'unchanged.json'
+    gate.original_override(out,target,'fixture',candidate)
+    result=json.loads(target.read_text())
+    shared=result['services']['sqlite']['volumes'][1]
+    assert shared==dict(type='volume',source='megasamples-sqlite',target='/shared')
+    assert result['volumes']['megasamples-sqlite']['name'].startswith('megasamples-unchanged-shared-')
+    assert result['volumes']['megasamples-sqlite']['external'] is False
+    assert shared['source']!=str(dirs['shared'])
+    candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(dirs['sq']),'/data']])])) )
+    with pytest.raises(ValueError,match='candidate used original data'):
+        gate.original_override(out,data.parent/'refused.json','fixture',candidate)

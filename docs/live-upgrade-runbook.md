@@ -1765,8 +1765,11 @@ this override separately. That parser check is not a native restoration.
 It ignores process/boot
 quiescence because this operation is an original restart, while requiring exact
 current canonical data identity. Candidate mount evidence must independently
-show no overlap with those original data roots; a reused SQLite shared volume,
-for example, is ineligible for this unchanged-data route. Directory identity alone
+show no overlap with the original engine data roots. SQLite's `/shared` is rebuilt
+from `/data` on every start (`megasamples/engines/sqlite/__init__.py`). The override
+therefore allocates a fresh named shared volume for SQLite and all its consoles;
+only that disposable copy is exempt from the overlap rule. Wait for SQLite health
+before starting consoles. Retain and record the generated volume name for cleanup. Directory identity alone
 does not prove unchanged contents. Keep all other writers prevented and retain the
 candidate mount history; unavailable mount evidence needs coordinator verification.
 A changed restoration target, surviving helper,
@@ -1788,7 +1791,9 @@ python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/unchanged-before-$RECOVERY_ID.jso
 python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" \
   --services-file "$BACKUP_DIR/original-running-services.txt"
 set --
-while IFS= read -r service; do set -- "$@" "$service"; done < "$BACKUP_DIR/original-running-services.txt"
+while IFS= read -r service; do
+  case "$service" in postgres|mysql|sqlite) set -- "$@" "$service";; esac
+done < "$BACKUP_DIR/original-running-services.txt"
 test "$#" -gt 0
 TEARDOWN_PHASE=rollback-starting
 save_context
@@ -1800,6 +1805,15 @@ for engine in postgres mysql sqlite; do
     *" $engine "*) python3 "$UPGRADE_HELPER" wait-healthy "$engine" --timeout 300 ;;
   esac
 done
+# Only after SQLite has rebuilt the fresh shared volume may consoles start.
+set --
+while IFS= read -r service; do
+  case "$service" in postgres|mysql|sqlite) :;; *) set -- "$@" "$service";; esac
+done < "$BACKUP_DIR/original-running-services.txt"
+if test "$#" -gt 0; then
+  docker compose -p sql-megasamples -f compose.yaml \
+    -f "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" up --no-deps --force-recreate --no-build -d "$@"
+fi
 # END unchanged volume recovery
 ```
 

@@ -363,6 +363,11 @@ def original_override(capture_path, output, upgrade_id, candidate_capture):
             raise ValueError('unchanged original data identity: missing original engine')
         volumes = []
         for destination in destinations:
+            if destination == '/shared':
+                # Rebuilt from /data on every SQLite start. Consoles use this
+                # same logical volume; no original or candidate shared data used.
+                volumes.append(dict(type='volume', source='megasamples-sqlite', target='/shared'))
+                continue
             sources = [src for src, dest in rows[0]['mounts'] if dest == destination]
             if len(sources) != 1:
                 raise ValueError('unchanged original data identity: missing original mount')
@@ -377,7 +382,9 @@ def original_override(capture_path, output, upgrade_id, candidate_capture):
                                 bind=dict(create_host_path=False)))
         services[service] = dict(image='localhost/sql-megasamples-'+service+':rollback-'+upgrade_id,
                                  pull_policy='never',volumes=volumes)
-    private_write(output,dict(services=services))
+    import uuid
+    private_write(output,dict(services=services, volumes={'megasamples-sqlite': dict(
+        name='megasamples-unchanged-shared-'+uuid.uuid4().hex, external=False)}))
 
 
 def check_source(capture_path, path):
