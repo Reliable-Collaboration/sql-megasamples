@@ -26,6 +26,10 @@ for name,row in checkpoints.items():
     assert row['reset']['status']==row['native']['status']=='Passed'
     assert set(row['reads'])=={'mysql','postgres','sqlite'}
     assert all(v['status']=='Passed' for v in row['reads'].values())
+    native_log=BASE/('checkpoint-'+name)/'native.log'
+    native_result=re.search(r'^254 passed in .+$',native_log.read_text(),re.M)
+    assert native_result,name+': missing native gate summary'
+    row['native']['summary']=native_result.group(0)
 native_reads={'baseline':{e:read('baseline/reset-matrix-'+e+'.json') for e in ['mysql','postgres','sqlite']},'checkpoints':{}}
 for name in expected:
     native_reads['checkpoints'][name]={}
