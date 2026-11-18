@@ -307,6 +307,38 @@ def extend_capture(capture_path, output, snapshot=None, extra_sources=()):
     private_write(output, saved)
 
 
+def original_override(capture_path, output, upgrade_id):
+    """Restart only unchanged original data; this is not a copy/restore gate.
+
+    Process/boot quiescence is deliberately inapplicable. Each actual original
+    data object must independently match its retained canonical filesystem identity.
+    """
+    import re
+    if not re.fullmatch('[A-Za-z0-9-]+', upgrade_id):
+        raise ValueError('invalid retained upgrade identifier')
+    saved = json.loads(capture_path.read_text())
+    if not saved.get('complete'):
+        raise ValueError('unchanged original data identity requires complete original evidence')
+    services = {}
+    for service, destinations in [('postgres', ['/var/lib/postgresql']), ('mysql', ['/var/lib/mysql']), ('sqlite', ['/data','/shared'])]:
+        rows = [r for r in saved['containers'] if r['name'] == 'megasamples-'+service]
+        if len(rows) != 1:
+            raise ValueError('unchanged original data identity: missing original engine')
+        volumes = []
+        for destination in destinations:
+            sources = [src for src, dest in rows[0]['mounts'] if dest == destination]
+            if len(sources) != 1:
+                raise ValueError('unchanged original data identity: missing original mount')
+            identity = source_identity(sources[0])
+            if not any(identity == row for row in saved['sources']):
+                raise ValueError('unchanged original data identity differs from retained evidence')
+            volumes.append(dict(type='bind',source=identity['canonical'],target=destination,
+                                bind=dict(create_host_path=False)))
+        services[service] = dict(image='localhost/sql-megasamples-'+service+':rollback-'+upgrade_id,
+                                 pull_policy='never',volumes=volumes)
+    private_write(output,dict(services=services))
+
+
 def check_source(capture_path, path):
     saved = json.loads(capture_path.read_text())
     if not saved.get('complete') or saved['boot_id'] != boot_id() or saved['store'] != store_identity():
@@ -563,6 +595,7 @@ def main():
     cap.add_argument('--data-only', action='store_true')
     ext = sub.add_parser('extend'); ext.add_argument('capture',type=Path); ext.add_argument('output',type=Path)
     ext.add_argument('--snapshot',type=Path); ext.add_argument('--source',action='append',default=[])
+    original = sub.add_parser('original-override'); original.add_argument('capture',type=Path); original.add_argument('output',type=Path); original.add_argument('--upgrade-id',required=True)
     source = sub.add_parser('check-source'); source.add_argument('capture',type=Path); source.add_argument('path',type=Path)
     check = sub.add_parser('verify'); check.add_argument('capture', type=Path)
     diagnostic = sub.add_parser('diagnostic'); diagnostic.add_argument('capture', type=Path)
@@ -572,6 +605,9 @@ def main():
     elif args.command == 'extend':
         extend_capture(args.capture,args.output,args.snapshot,args.source)
         report = dict(outcome='PASS', assurance='Sources added; verify remains mandatory before use')
+    elif args.command == 'original-override':
+        original_override(args.capture,args.output,args.upgrade_id)
+        report = dict(outcome='PASS', assurance='Original data identities match; no copy or restoration authorized')
     elif args.command == 'check-source':
         check_source(args.capture,args.path)
         report = dict(outcome='PASS', assurance='Copy path matches retained identity')

@@ -1056,7 +1056,7 @@ checks original IDs/state and ports, then `start` and bounded health; it does no
 require copy/restore quiescence. This does not authorize copying, restoring over an
 active mount, recreating a missing original, or resuming clients without health
 and data checks. After candidate creation use guarded rollback for restoration;
-if no unchanged originals remain, coordinator recovery is required.
+if original IDs were replaced, use the unchanged-data recovery route below; missing original mount evidence requires separate coordinator verification.
 
 Capture available kernel/AppArmor diagnostics for the command-time start/end UTC
 window in the appended timestamps, not the attempt ID, without host changes:
@@ -1513,6 +1513,66 @@ done < "$BACKUP_DIR/original-tool-images.txt"
 # END restore continuation
 ```
 
+### Recovery without a cold restore: retained unchanged original data
+
+If a copy/restore gate refuses after the original container IDs were replaced,
+unchanged original anonymous volumes may still be retained. Their restart does
+not require that copy/restore gate. Keep clients paused and stop the current
+project with its saved state receipt; no running project container is eligible.
+From the verified bootstrap extraction, run `# BEGIN restore continuation`
+through `# END restore continuation` above to restore configuration/images only.
+Do **not** run rollback population, cold-copy digest verification or a process
+copy gate for this route: it does not use cold copies or write new data targets.
+
+Set `ORIGINAL_CAPTURE` to the retained **original pre-upgrade** capture, never the
+candidate capture. The command below independently rechecks each original data
+object and writes explicit bind overrides with `create_host_path: false`; it
+cannot create an empty replacement at a missing path. It ignores process/boot
+quiescence because this operation is an original restart, while requiring exact
+current canonical data identity. A changed restoration target, surviving helper,
+or unreadable copy evidence does not bar this route. Changed original data must
+be resolved independently; never start an old binary on candidate data.
+
+```sh
+# BEGIN unchanged volume recovery
+: "${ORIGINAL_CAPTURE:?Set retained original pre-upgrade data capture}"
+RECOVERY_ID=$(date -u +%Y%m%dT%H%M%S%N)
+python3 "$EVIDENCE_DIR/quiescence.py" original-override "$ORIGINAL_CAPTURE" \
+  "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" --upgrade-id "$UPGRADE_ID"
+python3 "$UPGRADE_HELPER" snapshot "$ATTEMPT_DIR/unchanged-before-$RECOVERY_ID.json" \
+  --project sql-megasamples --phase restart-before \
+  --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
+python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/unchanged-before-$RECOVERY_ID.json" \
+  "$ATTEMPT_DIR/unchanged-state-$RECOVERY_ID.json" --phase restart-before
+python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" \
+  --services-file "$BACKUP_DIR/original-running-services.txt"
+set --
+while IFS= read -r service; do set -- "$@" "$service"; done < "$BACKUP_DIR/original-running-services.txt"
+test "$#" -gt 0
+TEARDOWN_PHASE=rollback-starting
+save_context
+# Record this exact override path in the maintenance receipt before starting.
+docker compose -p sql-megasamples -f compose.yaml \
+  -f "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" up --no-deps --force-recreate --no-build -d "$@"
+for engine in postgres mysql sqlite; do
+  case " $* " in
+    *" $engine "*) python3 "$UPGRADE_HELPER" wait-healthy "$engine" --timeout 300 ;;
+  esac
+done
+# END unchanged volume recovery
+```
+
+Verify selected images, mounts, accounts, counts, fingerprints and consoles before
+resuming clients, using the normal post-start checks. A startup failure uses the
+partial-original-restart hold below, with this recorded unchanged-data override;
+never substitute the cold-restoration override. This route is fixture-tested;
+recreating engines on retained original data has **Not run** natively here.
+If original mount identity evidence is missing (including the first live backup's
+missing DL-088 capture), do not manufacture it: existing original containers can
+still use the earlier `start` route; recreating removed originals requires separate
+coordinator verification of retained volume mappings. That recovery remains an
+explicit limit; no copy/restore refusal is its prerequisite.
+
 Configuration extraction restores safe recorded directory modes even under umask 077;
 the extraction parent stays private. Check console bind-tree readability before start.
 
@@ -1732,7 +1792,7 @@ receipt and verify them before restore. A local image may have no registry RepoD
 image ID and saved-archive digest remain mandatory. After loading, compare each saved tag's actual
 image ID with its recorded ID before starting it. These are rollback inputs, not a reset of new data.
 
-Rollback never starts the 9.7.2 image against the candidate data directory. Restore the retained pre-upgrade cold copy and exact saved image/configuration; keep failed candidate volumes separately. The fact that this is a same-LTS patch upgrade does not replace that required rollback discipline.
+Rollback never starts the retained original image against the candidate data directory. Restore the verified pre-upgrade cold copy, or use the explicit unchanged-original-data recovery route, with exact saved images/configuration; keep failed candidate volumes separately. The fact that this is a same-LTS patch upgrade does not replace that required rollback discipline.
 
 Rollback keeps all original engine/console images in per-image archives, the original complete console/configuration tree, credentials, original Python environment and an immutable rollback branch. The new tools container and new environments are separate resources. Keep them stopped or retained for diagnosis after rollback; never replace the original tooling with the new dependency set. The original live deployment may have no running consoles: the saved running-service list ensures rollback does not start additional ones. Newly built console images are never substituted for their saved rollback image IDs.
 

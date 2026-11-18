@@ -72,3 +72,20 @@ def test_fresh_shell_keeps_diagnostics_private(tmp_path):
         for path in (tmp_path/'evidence').glob('*'):
             assert path.stat().st_mode & 0o777 == 0o600,path
     finally:server.close()
+
+
+@pytest.mark.parametrize('copy_rc',[1,2])
+def test_recreate_originals_on_retained_unchanged_data_is_not_copy_gated(tmp_path,copy_rc):
+    server=context(tmp_path,'rollback-down')
+    try:
+        (tmp_path/'retained/original-running-services.txt').write_text('postgres\n')
+        script='. "$CONTEXT"\n'+r'''
+ORIGINAL_CAPTURE=fixture
+PROCESS_RC="$COPY_RC"
+python3() { case "$2" in verify|capture|extend) return "$COPY_RC";; esac; }
+docker() { printf 'recreated %s\n' "$*"; }
+'''+block('# BEGIN unchanged volume recovery\n','# END unchanged volume recovery')
+        result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash'),COPY_RC=str(copy_rc)),capture_output=True,text=True)
+        assert result.returncode==0,result.stderr
+        assert 'unchanged-original-data-' in result.stdout and 'up --no-deps' in result.stdout
+    finally:server.close()
