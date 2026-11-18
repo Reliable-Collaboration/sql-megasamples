@@ -179,47 +179,62 @@ def write_receipt(path, data):
     path.chmod(0o600)
 
 
-def snapshot(output, project, engines):
+def snapshot(output, project, engines, phase='original-stop'):
     rows = []
     for identity in pod('ps', '-aq', '--filter', 'label=com.docker.compose.project=' + project).split():
         row = container_state(identity)
         mounts = pod('inspect', '-f', r'{{range .Mounts}}{{printf "%s\t%s\n" .Source .Destination}}{{end}}', identity)
         row['mounts'] = [line.split('\t') for line in mounts.splitlines() if line]
         rows.append(row)
-    if not set(engines) <= {row['name'] for row in rows}:
-        raise ValueError('missing engine before teardown; retain original snapshot')
-    write_receipt(output, dict(project=project, engines=engines, containers=rows))
+    missing = set(engines) - {row['name'] for row in rows}
+    if missing and phase == 'original-stop':
+        raise ValueError('missing engine before cold copy; restore original containers before retrying')
+    rows += [dict(name=name, id=None, state='missing', running=False, pid=0,
+                  exit_code=None, oom=False, mounts=[], network='') for name in sorted(missing)]
+    write_receipt(output, dict(project=project, engines=engines, phase=phase, containers=rows))
 
 
-def exited(before, output, removed_with=None, allow_crash_consistent=False):
+def exited(before, output, removed_with=None, phase='original-stop'):
+    """One state table; cold-copy eligibility is distinct from failed-candidate removal."""
     saved = json.loads(before.read_text())
     prior = json.loads(removed_with.read_text())['containers'] if removed_with else []
-    prior = {row['id']: row for row in prior}
+    prior = {row['id']: row for row in prior if row['id']}
     rows = []
     for original in saved['containers']:
+        identity = original['id']
         try:
-            pod('container', 'exists', original['id'])
+            if not identity:
+                raise subprocess.CalledProcessError(1, ['missing'])
+            pod('container', 'exists', identity)
         except subprocess.CalledProcessError as error:
             if error.returncode != 1:
                 raise
-            if original['id'] not in prior:
-                raise ValueError('missing container without retained exited receipt: ' + original['name']) from error
-            row = prior[original['id']]
+            row = dict(original, state='missing', running=False, pid=0, exit_code=None, oom=False)
+            if identity in prior:
+                row['last_observed'] = prior[identity]
         else:
-            row = container_state(original['id'])
-        if row['id'] != original['id'] or row['state'] != 'exited' or row['running'] or row['pid'] != 0:
-            raise ValueError('container must be exited with PID 0: ' + original['name'])
-        if row['name'] in saved['engines']:
-            if row['exit_code'] == 137:
-                if not allow_crash_consistent:
-                    raise ValueError('137 requires coordinator acknowledgment: crash-consistent backup')
-            elif row['exit_code'] != 0 or row['oom']:
-                raise ValueError('unexpected engine exit code/OOM: ' + original['name'])
+            row = container_state(identity)
+            if row['id'] != identity:
+                raise ValueError('container identity changed: ' + original['name'])
+        if phase == 'restart-after':
+            if not row['running'] or row['pid'] <= 0 or row['state'] != 'running' or row['oom']:
+                raise ValueError('restored service must be running, PID positive, no OOM: ' + row['name'])
+        else:
+            if row['running'] or row['pid'] != 0 or row['state'] == 'running':
+                raise ValueError('container must be not running with PID 0: ' + row['name'])
+            if phase == 'original-stop':
+                # OOM is independent of exit code, including SQLite's expected 137.
+                if row['oom'] or row['state'] not in ('created', 'exited'):
+                    raise ValueError('missing/unexpected state or OOM before cold copy: ' + row['name'])
+                if row['name'] in saved['engines']:
+                    codes = (0, 137) if row['name'] == 'megasamples-sqlite' else (0,)
+                    if row['state'] != 'exited' or row['exit_code'] not in codes:
+                        raise ValueError('unexpected engine exit code before cold copy: ' + row['name'])
+                row['expected_sqlite_137'] = row['name'] == 'megasamples-sqlite' and row['exit_code'] == 137
         rows.append(row)
-    if pod('ps', '-q', '--filter', 'label=com.docker.compose.project=' + saved['project']):
+    if phase != 'restart-after' and pod('ps', '-q', '--filter', 'label=com.docker.compose.project=' + saved['project']):
         raise ValueError('deployment container still running')
-    write_receipt(output, dict(project=saved['project'], engines=saved['engines'], containers=rows,
-                               crash_consistent_acknowledged=allow_crash_consistent))
+    write_receipt(output, dict(project=saved['project'], engines=saved['engines'], phase=phase, containers=rows))
 
 
 def check_ports(endpoints, allowed=()):
@@ -355,11 +370,12 @@ def main():
     p.add_argument('output', type=Path)
     p.add_argument('--project', required=True)
     p.add_argument('--engine', action='append', required=True)
+    p.add_argument('--phase', choices=['original-stop', 'candidate-teardown', 'restart-before', 'restart-after'], default='original-stop')
     p = sub.add_parser('exited')
     p.add_argument('before', type=Path)
     p.add_argument('output', type=Path)
     p.add_argument('--removed-with', type=Path)
-    p.add_argument('--allow-crash-consistent', action='store_true')
+    p.add_argument('--phase', choices=['original-stop', 'candidate-teardown', 'restart-before', 'restart-after'], default='original-stop')
     p = sub.add_parser('ports')
     p.add_argument('--allow-running-project')
     p.add_argument('--port-config', type=Path)
@@ -378,9 +394,9 @@ def main():
     if args.command == 'space':
         check_space(args.backup, args.extra_bytes)
     elif args.command == 'snapshot':
-        snapshot(args.output, args.project, args.engine)
+        snapshot(args.output, args.project, args.engine, args.phase)
     elif args.command == 'exited':
-        exited(args.before, args.output, args.removed_with, args.allow_crash_consistent)
+        exited(args.before, args.output, args.removed_with, args.phase)
     elif args.command == 'resume-save-images':
         save_images(args.backup, resume=True)
     elif args.command.endswith('-images'):

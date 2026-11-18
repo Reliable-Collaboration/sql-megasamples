@@ -98,6 +98,56 @@ Six additional fresh-volume MySQL starts all Passed: **23.886–26.167 s** copy/
 
 Plan several hours of offline source preparation and exhaustive verification, including the measured rebuild, fresh restore, bake, all reset scopes and runtime checks. Compilation/download time and the coordinator's DataIntent suites are additional. Live downtime still requires a separate allowance for quiescing writers, final logical backups, cold rollback copies, replacement readiness, chosen verification, DataIntent and rollback reserve. Cold-backup size/throughput and live rollback duration remain unverified; derive those from the coordinator's actual `B` and `D` measurements. Rollback restores only the retained pre-upgrade 9.7.2 cold copy and exact images/configuration.
 
+## Teardown and rollback: states and gates
+
+Retained inputs are immutable. A rollback creates exactly one new
+`BACKUP_DIR/rollback-<attempt>/` (refuse if it exists). Only that directory receives
+the failed candidate credentials, verified configuration extraction, helper copies,
+context, snapshots, receipts, overrides and logs. No rollback overwrites or adds a
+sidecar beside an existing retained input. Read the checked configuration from the
+attempt's extraction, never from loose retained configuration files. Each retry of
+the full rollback gets a new attempt; a fresh-shell continuation keeps its saved
+attempt. Keep failed candidate volumes and original cold copies unchanged.
+
+Every recorded engine **and** console is a row in this table. PID/running checks
+are independent of status and exit code. An OOM is checked independently of 137.
+
+| Observed state | (a) Originals before cold copy: PostgreSQL / MySQL | (a) SQLite | (a) Consoles | (b) Candidate teardown; (c) before original `up` | (c) After original `up`, selected services |
+|---|---|---|---|---|---|
+| running | Refuse | Refuse | Refuse | Refuse | Pass: PID positive, no OOM |
+| created (never started), PID 0 | Refuse | Refuse | Pass | Pass, record | Refuse |
+| exited 0, PID 0 | Pass | Pass | Pass | Pass, record | Refuse |
+| exited 137, PID 0 | Refuse | Pass, expected | Pass | Pass, record | Refuse |
+| exited other, PID 0 | Refuse | Refuse | Pass | Pass, record | Refuse |
+| OOM-killed, PID 0 (any exit) | Refuse | Refuse | Refuse | Pass, record | Refuse |
+| missing | Refuse | Refuse | Refuse | Pass, record missing | Refuse |
+
+SQLite's PID 1 is `sleep infinity` (`megasamples/engines/sqlite/__init__.py`),
+which needs SIGKILL on stop; its observed 137 needs no crash-consistency acknowledgment.
+The two live records behind the regression fixture are
+`phase-b-3/initial-stopped-checks.json` and `phase-b-3/failed-candidate-state.json`;
+only name/status/exit_code/running fields are retained in the fixture.
+`tests/test_teardown_gates.py::test_state_phase_cell` tests every cell for every
+recorded service, including 137 plus OOM. A refused original stop requires diagnosis
+and a clean database shutdown before cold copy; never relax that gate for a crashed database.
+
+Before cold copying or restoring, all four checks below must pass over inspectable
+processes: state eligibility, no project containers running, no recorded data-mount
+holders, and no unresolved own/rootless-user network helpers. Other owners' processes
+are counted separately; their descriptors/namespaces cannot be certified without
+privilege. Unresolved inspection of this user's processes refuses. Capture scanner
+status without exiting the shell, inspect evidence, and repeat checks before continuation.
+A missing candidate is valid and recorded; teardown must never depend on its continued
+existence after `down`.
+
+Before original `up`: verified archives and tag/ID mappings, configuration digest and
+attempt extraction, unchanged cold-copy digest, populated **new** rollback volumes,
+original-only service selection, available ports and quiescence must all pass. After
+`up`: selected services running with positive PIDs and no OOM, exact saved image IDs,
+configured health probes, counts/fingerprints, account checks and console/workspace
+checks must pass. Clients stay paused on any refusal. Full restoration and live
+forwarded sign-ins have not been rehearsed by this correction.
+
 ## Prepare while the live servers are still running
 
 Quiesce DataIntent writers before the final backups and cutover. Keep its clients paused through verification. Building from upstream can take much longer than the outage; finish it before stopping the live servers. The previous core build documented in README took approximately twenty minutes; the full manifest includes much larger datasets. No full-manifest outage duration has been established.

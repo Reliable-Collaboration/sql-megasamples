@@ -331,12 +331,12 @@ def test_snapshot_retains_nonsecret_evidence_and_partial_removal(tmp_path, monke
     assert all('.Config' not in str(c) for c in calls)
     upgrade.exited(before, exited)
     del state['engine-id']  # down removed it after the guarded stop.
-    upgrade.exited(before, tmp_path / 'removed.json', removed_with=exited)
+    upgrade.exited(before, tmp_path / 'removed.json', removed_with=exited, phase='candidate-teardown')
     with pytest.raises(ValueError, match='missing'):
         upgrade.exited(before, tmp_path / 'unproven.json')
 
 
-def test_exited_refuses_running_and_requires_crash_acknowledgment(tmp_path, monkeypatch):
+def test_original_stop_refuses_running_crash_and_oom(tmp_path, monkeypatch):
     before = tmp_path / 'before.json'
     before.write_text(json.dumps({'project': 'fixture', 'engines': ['fixture-engine'],
                                  'containers': [{'name': 'fixture-engine', 'id': 'id'}]}))
@@ -346,15 +346,16 @@ def test_exited_refuses_running_and_requires_crash_acknowledgment(tmp_path, monk
             return '/fixture-engine|id|' + '|'.join(state) + '|/netns'
         return ''
     monkeypatch.setattr(upgrade, 'pod', pod)
-    with pytest.raises(ValueError, match='exited'):
+    with pytest.raises(ValueError, match='not running'):
         upgrade.exited(before, tmp_path / 'after.json')
     state[:] = ['exited', 'false', '0', '137', 'false']
-    with pytest.raises(ValueError, match='crash-consistent'):
+    with pytest.raises(ValueError, match='exit code'):
         upgrade.exited(before, tmp_path / 'after.json')
-    upgrade.exited(before, tmp_path / 'ack.json', allow_crash_consistent=True)
+    with pytest.raises(ValueError, match='exit code'):
+        upgrade.exited(before, tmp_path / 'ack.json')
     state[3] = '9'
     with pytest.raises(ValueError, match='exit code'):
-        upgrade.exited(before, tmp_path / 'bad-code.json', allow_crash_consistent=True)
+        upgrade.exited(before, tmp_path / 'bad-code.json')
 
 
 @pytest.mark.parametrize('failed_gate', ['save-images', 'check-images', 'check-metadata', 'ports'])
