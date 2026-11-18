@@ -97,6 +97,7 @@ writers={name:read('final-candidate/writer-'+name+'.json') for name in ['postgre
 assert all(all(v['status']=='Passed' for v in row['results'].values()) for row in writers.values())
 mysql_boundary=read('mysql-boundary.json')
 assert mysql_boundary['write_denials']['status']=='Passed'
+assert mysql_boundary['strict_read_builtin_denial']['status']=='Failed'
 assert mysql_boundary['builtin_function_read_only_enforcement']['status']=='Unsupported'
 red_log=BASE/'native-before-connected.log'
 red_summary=re.search(r'^94 failed, 94 passed in .+$',red_log.read_text(),re.M)

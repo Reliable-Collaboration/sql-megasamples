@@ -58,6 +58,9 @@ receipt = {
     'read_at': datetime.datetime.now(datetime.timezone.utc).isoformat(),
     'write_denials': {'status': 'Passed', 'databases': databases},
     'temporary_and_stored_routines': 'Covered separately by test_strict_read_native.py',
+    'strict_read_builtin_denial': {
+        'status': 'Failed', 'expected': 'The strict read rule would refuse acquiring a named lock',
+        'observed': 'SELECT-only demo acquired and released the lock successfully'},
     'builtin_function_read_only_enforcement': {
         'status': 'Unsupported', 'demo_get_lock_succeeded': True, 'release_succeeded': True,
         'lock_free_after_connection_closed': True,
@@ -66,4 +69,4 @@ receipt = {
     'sources': ['https://dev.mysql.com/doc/refman/9.7/en/locking-functions.html',
                 'https://dev.mysql.com/doc/refman/9.7/en/privileges-provided.html']}
 Path('build/strict-read/mysql-boundary.json').write_text(json.dumps(receipt, indent=2) + '\n')
-print('Passed: native write denials; Unsupported: blanket built-in read-only enforcement using account grants')
+print('Passed: native write denials; Failed: strict named-lock denial; Unsupported: enforcing it using stored-routine grants')
