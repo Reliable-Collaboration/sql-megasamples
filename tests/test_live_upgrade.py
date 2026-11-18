@@ -513,7 +513,8 @@ def test_health_wait_rejects_late_inspection_success(monkeypatch, stage):
 
 
 @pytest.mark.parametrize('stage', ['state', 'health'])
-def test_health_wait_bounds_nonreturning_inspection_command(tmp_path, stage):
+@pytest.mark.parametrize('delay', ['1.2', '30'], ids=['delayed-success', 'nonreturning'])
+def test_health_wait_bounds_inspection_command(tmp_path, stage, delay):
     import signal
     import sys
     import time
@@ -524,12 +525,12 @@ from pathlib import Path
 stage = 'health' if sys.argv[3] == '{{.State.Health.Status}}' else 'state'
 if stage == os.environ['BLOCK_STAGE']:
     Path(os.environ['MARKER']).write_text(stage)
-    time.sleep(30)
+    time.sleep(float(os.environ['INSPECTION_DELAY']))
 print('healthy' if stage == 'health' else 'megasamples-postgres|id|running|true|22|0|false|')
 ''')
     binary.chmod(0o755)
     env = dict(os.environ, PATH=str(tmp_path) + os.pathsep + os.environ['PATH'],
-               BLOCK_STAGE=stage, MARKER=str(tmp_path/'blocked'))
+               BLOCK_STAGE=stage, INSPECTION_DELAY=delay, MARKER=str(tmp_path/'blocked'))
     started = time.monotonic()
     # Own process group also contains the deliberately blocked fake inspection;
     # clean it up even when the pre-fix helper hangs beyond our outer test bound.
