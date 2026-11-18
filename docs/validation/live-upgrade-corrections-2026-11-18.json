@@ -1,0 +1,266 @@
+{
+  "scope": "DL-086 documentation and replayable preparation helpers",
+  "acceptance": "Held by DataIntent (DL-087); draft PR; no merge authorized",
+  "source_receipts": [
+    {
+      "path": "phase-a-resume-receipt.json",
+      "sha256": "05a4aace8a4ebe245226498b0fa4816e0bc7f030537a59e22b4497b685b21de9"
+    },
+    {
+      "path": "rollback-load-rehearsal.json",
+      "sha256": "9b892095497b0d867d1b9b0592b10e9372f77dadaf501f09f04e17b93f5c72ca"
+    },
+    {
+      "path": "phase-b-5/runbook-defects.json",
+      "sha256": "10a6852ede038eb67d2a59c6db86bc5ce49cfba1a74507be0cb788fe45770b80"
+    },
+    {
+      "path": "phase-b-5/copied-build-metadata.json",
+      "sha256": "351e5d40163043d3065cc573cc81f5384cf1c99d7cbf83b4d61fb49c2ddb275e"
+    },
+    {
+      "path": "phase-b-6/phase-b-receipt.json",
+      "sha256": "cdee91ab8cacc3b8e52a33ac379413a4c2d95d23c3672506e14cb755f6a510dd"
+    },
+    {
+      "path": "phase-b-6/live-end-state.json",
+      "sha256": "40d8ca04cc87f5a6b3c7647aed87c6d96433daf1bf5f50a77223cb50ee529c06"
+    },
+    {
+      "path": "phase-b-6/forwarded-protocol.json",
+      "sha256": "a4ad929f7e9a2e7e9d4c99a25a0c75becb97fa277d15f3fc8ba638fa58b79a66"
+    }
+  ],
+  "archive_rehearsal": {
+    "at": "2026-11-18T17:18:31.235357+00:00",
+    "artifacts": "build/dl086/rehearsal-7s6cqwmm",
+    "checks": {
+      "old_archive_completeness": "Failed (expected red): second image configuration absent",
+      "old_rollback_tag_identity": "Failed (expected red): second tag points at first image",
+      "per_image_save_check_load_retag": "Passed",
+      "isolated_containers_unchanged": "Passed"
+    }
+  },
+  "validation": {
+    "preparation_red": {
+      "status": "Failed",
+      "expected": true,
+      "detail": "Three missing pre-downtime runbook gates; original six helper tests passed."
+    },
+    "metadata_observations_red": {
+      "status": "Failed",
+      "expected": true,
+      "detail": "Selected live-feed observation omitted before correction."
+    },
+    "ports_socket_red": {
+      "status": "Failed",
+      "expected": true,
+      "detail": "Native Podman unavailable in tools-container path; now uses selected Docker socket."
+    },
+    "repository_gate": {
+      "status": "Passed",
+      "command": "python -m megasamples check (locked tools environment, isolated socket/project)",
+      "tests": 269,
+      "unit_seconds": 23.79,
+      "gate_failures": 0
+    },
+    "postgres_image": {
+      "status": "Passed",
+      "command": "python -m megasamples test-image --engine postgres",
+      "failures": 0
+    },
+    "metadata_scratch_checkout": {
+      "status": "Passed",
+      "red": "Removed warehouse model was refused before downtime",
+      "green": "Install/check and repair of only missing files passed"
+    },
+    "configured_ports": {
+      "status": "Passed",
+      "command": "live-upgrade.py ports --allow-running-project megasamples-upgrade",
+      "fixture": "Owned listener refused; port accepted after close"
+    },
+    "host_protocol_fixtures": {
+      "status": "Passed",
+      "observations": {
+        "postgres": "PostgreSQL SSLRequest answered",
+        "mysql": "MySQL greeting: scratch-fixture"
+      }
+    },
+    "runbook_syntax": {
+      "status": "Passed",
+      "shell_blocks": 9,
+      "python_heredocs": 5
+    },
+    "runtime_software_tree": {
+      "status": "Passed",
+      "detail": "Matches prepared_candidate software_tree_sha256; no runtime change"
+    },
+    "strict_password_output_rule": {
+      "status": "Failed",
+      "detail": "Source inspection displayed public repository factory password defaults. No private credential file was read; no values repeated in this receipt."
+    },
+    "live_operations": {
+      "status": "Not run",
+      "detail": "No live engine/forwarder operation or connection; final identity inspection only"
+    },
+    "forwarded_host_client_signins": {
+      "status": "Not run",
+      "detail": "Neither host psql nor mysql available; no host installation"
+    },
+    "oracle_native": {
+      "status": "Not run",
+      "detail": "Owner terms decision still pending"
+    },
+    "sqlite_server_authentication": {
+      "status": "Unsupported",
+      "detail": "SQLite has no server accounts"
+    }
+  },
+  "netns": {
+    "cause": "Unknown",
+    "scratch_startup": {
+      "status": "Failed",
+      "detail": "Pasta namespace open permission denied; slirp startup stalled; neither reached teardown. Only owned scratch resources cleaned."
+    },
+    "isolated_teardown": {
+      "status": "Passed",
+      "detail": "Three owned-fixture Compose up/stop/up/down cycles, no permission error reproduced; isolated stack remained running",
+      "observations": [
+        {
+          "cycle": 0,
+          "action": [
+            "up",
+            "-d",
+            "--pull",
+            "never"
+          ],
+          "exit_code": 0,
+          "stderr": " Network dl086-teardown_default  Creating\n Network dl086-teardown_default  Created\n Container dl086-teardown-fixture-1  Creating\n Container dl086-teardown-fixture-1  Created\n Container dl086-teardown-fixture-1  Starting\n Container dl086-teardown-fixture-1  Started\n"
+        },
+        {
+          "cycle": 0,
+          "action": [
+            "stop"
+          ],
+          "exit_code": 0,
+          "stderr": " Container dl086-teardown-fixture-1  Stopping\n Container dl086-teardown-fixture-1  Stopped\n"
+        },
+        {
+          "cycle": 0,
+          "action": [
+            "up",
+            "-d",
+            "--pull",
+            "never"
+          ],
+          "exit_code": 0,
+          "stderr": " Container dl086-teardown-fixture-1  Starting\n Container dl086-teardown-fixture-1  Started\n"
+        },
+        {
+          "cycle": 0,
+          "action": [
+            "down"
+          ],
+          "exit_code": 0,
+          "stderr": " Container dl086-teardown-fixture-1  Stopping\n Container dl086-teardown-fixture-1  Stopped\n Container dl086-teardown-fixture-1  Removing\n Container dl086-teardown-fixture-1  Removed\n Network dl086-teardown_default  Removing\n Network dl086-teardown_default  Removed\n"
+        },
+        {
+          "cycle": 1,
+          "action": [
+            "up",
+            "-d",
+            "--pull",
+            "never"
+          ],
+          "exit_code": 0,
+          "stderr": " Network dl086-teardown_default  Creating\n Network dl086-teardown_default  Created\n Container dl086-teardown-fixture-1  Creating\n Container dl086-teardown-fixture-1  Created\n Container dl086-teardown-fixture-1  Starting\n Container dl086-teardown-fixture-1  Started\n"
+        },
+        {
+          "cycle": 1,
+          "action": [
+            "stop"
+          ],
+          "exit_code": 0,
+          "stderr": " Container dl086-teardown-fixture-1  Stopping\n Container dl086-teardown-fixture-1  Stopped\n"
+        },
+        {
+          "cycle": 1,
+          "action": [
+            "up",
+            "-d",
+            "--pull",
+            "never"
+          ],
+          "exit_code": 0,
+          "stderr": " Container dl086-teardown-fixture-1  Starting\n Container dl086-teardown-fixture-1  Started\n"
+        },
+        {
+          "cycle": 1,
+          "action": [
+            "down"
+          ],
+          "exit_code": 0,
+          "stderr": " Container dl086-teardown-fixture-1  Stopping\n Container dl086-teardown-fixture-1  Stopped\n Container dl086-teardown-fixture-1  Removing\n Container dl086-teardown-fixture-1  Removed\n Network dl086-teardown_default  Removing\n Network dl086-teardown_default  Removed\n"
+        },
+        {
+          "cycle": 2,
+          "action": [
+            "up",
+            "-d",
+            "--pull",
+            "never"
+          ],
+          "exit_code": 0,
+          "stderr": " Network dl086-teardown_default  Creating\n Network dl086-teardown_default  Created\n Container dl086-teardown-fixture-1  Creating\n Container dl086-teardown-fixture-1  Created\n Container dl086-teardown-fixture-1  Starting\n Container dl086-teardown-fixture-1  Started\n"
+        },
+        {
+          "cycle": 2,
+          "action": [
+            "stop"
+          ],
+          "exit_code": 0,
+          "stderr": " Container dl086-teardown-fixture-1  Stopping\n Container dl086-teardown-fixture-1  Stopped\n"
+        },
+        {
+          "cycle": 2,
+          "action": [
+            "up",
+            "-d",
+            "--pull",
+            "never"
+          ],
+          "exit_code": 0,
+          "stderr": " Container dl086-teardown-fixture-1  Starting\n Container dl086-teardown-fixture-1  Started\n"
+        },
+        {
+          "cycle": 2,
+          "action": [
+            "down"
+          ],
+          "exit_code": 0,
+          "stderr": " Container dl086-teardown-fixture-1  Stopping\n Container dl086-teardown-fixture-1  Stopped\n Container dl086-teardown-fixture-1  Removing\n Container dl086-teardown-fixture-1  Removed\n Network dl086-teardown_default  Removing\n Network dl086-teardown_default  Removed\n"
+        },
+        {
+          "action": [
+            "cleanup-down"
+          ],
+          "exit_code": 0,
+          "stderr": ""
+        }
+      ]
+    }
+  },
+  "in_progress": [
+    "mysql image suite",
+    "sqlite image suite",
+    "final isolation proof"
+  ],
+  "limitations": [
+    "Complete new runbook not executed against live service",
+    "No complete live rollback restoration",
+    "Forward protocol fixtures do not prove authentication or TLS",
+    "External DataIntent suites not run here",
+    "No full 95-pair fingerprint rerun in this documentation task; full configured image checks are separate",
+    "Fable review pending coordinator; Astra review pending completed validation"
+  ]
+}

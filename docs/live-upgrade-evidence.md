@@ -91,6 +91,10 @@ terminated; neither attempt reached stop/down. Those are startup limitations,
 not reproductions of the live teardown failure. Only this task's scratch processes,
 fixture containers and networks were cleaned up. Scratch image stores/receipts remain.
 The separate isolated stop/down attempt and its result are in the correction receipt.
+Three cycles of Compose up/stop/up/down with an owned console-image fixture and
+ephemeral port **Passed** in the isolated store, with no teardown permission error.
+The existing stack stayed running, so this does not reproduce removal of its last
+rootless-network consumer.
 
 **The live teardown root cause is unknown.** The runbook requires all four checks,
 for both stop and rollback down: all engines exited; no deployment container running;
@@ -116,3 +120,7 @@ Repository gate, full configured image suites, runbook syntax checks and final
 isolation results are recorded in the correction receipt. Previous evidence pages
 remain dated isolated reports, with this follow-up linked explicitly. No runtime
 image, dependency pin, dataset expectation or credential value changes in this PR.
+
+The strict password-output rule **Failed** during source inspection: repository
+factory defaults were displayed. No private credential file was read. The receipt
+records this process failure without repeating any value.
