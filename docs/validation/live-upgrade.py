@@ -58,19 +58,33 @@ def archive_name(image):
     return 'rollback-image-' + image + '.tar'
 
 
-def save_images(backup):
+def save_images(backup, resume=False):
     rows = image_rows(backup)
-    digests = []
-    for image in dict.fromkeys(image for _, image in rows):
+    checksum = backup / 'rollback-images.sha256'
+    if checksum.exists():
+        if not resume:
+            raise ValueError('archive receipt already exists; use resume-save-images to verify it')
+        check_images(backup)
+        return
+    images = list(dict.fromkeys(image for _, image in rows))
+    # Preflight ALL existing files before creating anything new.
+    for image in images:
         path = backup / archive_name(image)
         if path.exists():
-            raise ValueError('archive already exists; use a new backup directory')
-        # One full image ID per docker archive. No multi-image positional arguments.
-        pod('save', '--format=docker-archive', '-o', str(path), 'sha256:' + image)
-        path.chmod(0o600)
+            if not resume:
+                raise ValueError('archive already exists; use a new backup directory')
+            check_archive(path, image)
+    digests = []
+    for image in images:
+        path = backup / archive_name(image)
+        if not path.exists():
+            # One full image ID per docker archive. No multi-image positional arguments.
+            pod('save', '--format=docker-archive', '-o', str(path), 'sha256:' + image)
+            path.chmod(0o600)
         check_archive(path, image)
         digests.append(sha(path) + '  ' + path.name)
-    (backup / 'rollback-images.sha256').write_text('\n'.join(digests) + '\n')
+    with checksum.open('x') as out:
+        out.write('\n'.join(digests) + '\n')
     check_images(backup)
 
 
@@ -169,7 +183,7 @@ def snapshot(output, project, engines):
     rows = []
     for identity in pod('ps', '-aq', '--filter', 'label=com.docker.compose.project=' + project).split():
         row = container_state(identity)
-        mounts = pod('inspect', '-f', '{{range .Mounts}}{{printf "%s\t%s\n" .Source .Destination}}{{end}}', identity)
+        mounts = pod('inspect', '-f', r'{{range .Mounts}}{{printf "%s\t%s\n" .Source .Destination}}{{end}}', identity)
         row['mounts'] = [line.split('\t') for line in mounts.splitlines() if line]
         rows.append(row)
     if not set(engines) <= {row['name'] for row in rows}:
@@ -328,7 +342,7 @@ def forwarded_protocol(engine, host, port):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
-    for action in ('save-images', 'check-images', 'load-images'):
+    for action in ('save-images', 'resume-save-images', 'check-images', 'load-images'):
         sub.add_parser(action).add_argument('backup', type=Path)
     for action in ('export-metadata', 'install-metadata', 'check-metadata'):
         p = sub.add_parser(action)
@@ -365,6 +379,8 @@ def main():
         snapshot(args.output, args.project, args.engine)
     elif args.command == 'exited':
         exited(args.before, args.output, args.removed_with, args.allow_crash_consistent)
+    elif args.command == 'resume-save-images':
+        save_images(args.backup, resume=True)
     elif args.command.endswith('-images'):
         globals()[args.command.replace('-', '_')](args.backup)
     elif args.command.endswith('-metadata'):
@@ -396,5 +412,5 @@ def main():
 if __name__ == '__main__':
     try:
         main()
-    except (ValueError, OSError, subprocess.CalledProcessError) as error:
+    except (ValueError, OSError, tarfile.TarError, subprocess.CalledProcessError) as error:
         sys.exit('Failed: ' + str(error))

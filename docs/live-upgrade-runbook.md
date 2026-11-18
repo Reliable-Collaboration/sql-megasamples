@@ -1,6 +1,6 @@
 # Live engines, clients and consoles upgrade (coordinator only)
 
-This coordinator procedure was **executed live once, on 2026-11-18**, at `2cf1f3e9`, with seven defects and coordinator-pinned corrections. This revision incorporates those corrections as preparation, verification and rollback gates. The [first-run evidence](live-upgrade-evidence.md) separates what was executed from what remains unverified. **Acceptance is held** for a DataIntent test failure outside this service; clients and acceptance remain coordinator-controlled. This documentation PR stays draft until the coordinator releases DL-087; Fable and Astra reviews precede any merge. DL-077 templates/copies and their CLI remain a later task and second rollout. Keep the two existing socket-proxy services unchanged. The owner authorized the BTS refresh and accepted the SQL Server Developer EULA for the isolated WWI export on 2026-11-17. Oracle native verification remains **Not run, pending the owner's decision on Oracle's Free Use Terms**; do not accept those terms.
+This coordinator procedure was **executed live once, on 2026-11-18**, at `2cf1f3e9`, with seven defects and coordinator-pinned corrections. This revision incorporates those corrections as preparation, verification and rollback gates. The [first-run evidence](live-upgrade-evidence.md) separates what was executed from what remains unverified. As of **2026-11-18**, acceptance was held for a DataIntent test failure outside this service; the acceptance record is DataIntent’s. Clients and acceptance remain coordinator-controlled. DL-077 templates/copies and their CLI remain a later task and second rollout. Keep the two existing socket-proxy services unchanged. The owner authorized the BTS refresh and accepted the SQL Server Developer EULA for the isolated WWI export on 2026-11-17. Oracle native verification remains **Not run, pending the owner's decision on Oracle's Free Use Terms**; do not accept those terms.
 
 The isolated build uses `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/env.sh`. The live commands below deliberately use the default rootless Podman store instead. Run them only in the coordinator's live maintenance session. Never run them from the isolated validation shell.
 
@@ -136,6 +136,8 @@ export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
 cd /home/rcc-vstudio/working/sql-megasamples
 # Coordinator supplies the reviewed main merge before ANY backup/configuration change.
 : "${APPROVED_UPGRADE_MERGE:?Set the reviewed main merge containing DL-086}"
+: "${METADATA_BUNDLE:?Set the unique verified metadata bundle directory}"
+: "${EXTRA_RESERVE_BYTES:?Set measured backup/dump/candidate/tool/scratch reserve in bytes}"
 git fetch origin main
 # BEGIN original-head guard
 if git merge-base --is-ancestor "$APPROVED_UPGRADE_MERGE" HEAD; then
@@ -150,6 +152,10 @@ chmod 700 "$BACKUP_DIR"
 # Initialize recoverable paths before any operation that can refuse preparation.
 UPGRADE_HELPER= UPGRADE_TOOLS_CONTAINER= MEGASAMPLES_PY= MEGASAMPLES_LIVE_API_PID=
 TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE=
+APPROVED_ENGINE_MERGE= APPROVED_CLIENTS_MERGE= APPROVED_DATASET_MERGE=
+APPROVED_LTS_MERGE= APPROVED_CREDENTIAL_MERGE=
+TOOLS_ARCHIVE= TOOLS_IMAGE= CANDIDATE_ARCHIVE= DOCKER_CLIENT=
+: "${EXTRA_RESERVE_BYTES:?Set measured backup/dump/candidate/tool/scratch reserve in bytes}"
 : "${METADATA_BUNDLE:?Set the unique verified metadata bundle directory}"
 PREPARATION_STAGE=original-inputs
 ms_tool() {
@@ -164,7 +170,10 @@ umask 077
     'unset CONTAINERS_STORAGE_CONF CONTAINERS_CONF CONTAINERS_CONF_OVERRIDE' \
     'unset DEMO_PASSWORD ADMIN_PASSWORD MYSQL_ROOT_PASSWORD POSTGRES_PASSWORD'
   declare -p BACKUP_DIR UPGRADE_ID UPGRADE_HELPER UPGRADE_TOOLS_CONTAINER MEGASAMPLES_PY \
-    METADATA_BUNDLE DOCKER_HOST MEGASAMPLES_LIVE_API_PID APPROVED_UPGRADE_MERGE PREPARATION_STAGE TEARDOWN_SNAPSHOT EXITED_RECEIPT TEARDOWN_PHASE
+    METADATA_BUNDLE DOCKER_HOST MEGASAMPLES_LIVE_API_PID APPROVED_UPGRADE_MERGE PREPARATION_STAGE \
+    TEARDOWN_SNAPSHOT EXITED_RECEIPT TEARDOWN_PHASE EXTRA_RESERVE_BYTES \
+    APPROVED_ENGINE_MERGE APPROVED_CLIENTS_MERGE APPROVED_DATASET_MERGE \
+    APPROVED_LTS_MERGE APPROVED_CREDENTIAL_MERGE TOOLS_ARCHIVE TOOLS_IMAGE CANDIDATE_ARCHIVE DOCKER_CLIENT
   printf '%s\n' 'export DOCKER_HOST COMPOSE_PROJECT_NAME=sql-megasamples'
   printf 'cd -- %q\n' "$PWD"
   declare -f ms_tool save_context
@@ -281,7 +290,8 @@ APPROVED_CREDENTIAL_MERGE=$(gh pr list --repo Reliable-Collaboration/sql-megasam
   --state merged --head fix/dl079-configured-reset-credentials --limit 1 \
   --json mergeCommit --jq '.[0].mergeCommit.oid // empty')
 test -n "$APPROVED_CREDENTIAL_MERGE"
-# Coordinator supplies the reviewed main merge containing DL-086 after its merge hold is released.
+PREPARATION_STAGE=source-switch
+save_context
 git fetch origin
 if git ls-files --error-unmatch consoles/landing/adminer.html >/dev/null 2>&1; then
   git restore -- consoles/landing/adminer.html
@@ -351,6 +361,8 @@ test -f "$METADATA_BUNDLE/metadata.json"
 UPGRADE_TOOLS_CONTAINER="megasamples-live-upgrade-tools-$UPGRADE_ID"
 # The existing Docker CLI is mounted read-only; no host package installation.
 DOCKER_CLIENT=$(command -v docker)
+PREPARATION_STAGE=tools-start
+save_context
 podman run -d --name "$UPGRADE_TOOLS_CONTAINER" --network host --memory 18g \
   --label megasamples.role=upgrade-tools \
   -e "DOCKER_HOST=$DOCKER_HOST" -e COMPOSE_PROJECT_NAME=sql-megasamples \
@@ -427,8 +439,12 @@ inputs; preparing another candidate requires the full isolated gates and compari
 prepared images already contain the owner-approved BTS refresh and WWI exports. No new SQL Server
 or Oracle database/terms acceptance is involved in importing them. Verify the archive and every
 repository image reference while the original live containers are still running; preserve their
-rollback tags, archive and cold copies. A pinned vendor manifest may need fetching when its
+rollback tags, per-image archives and cold copies. A pinned vendor manifest may need fetching when its
 RepoDigest was not retained by Docker archive transport, but its resulting image ID must be identical.
+
+The scratch cleanup follows [Podman's reset reference](https://docs.podman.io/en/latest/markdown/podman-system-reset.1.html),
+read **2026-11-18 18:03:54 UTC**. It deletes the selected store's resources and graph/run roots;
+the graphroot assertions above restrict it to the freshly created rehearsal store.
 
 ### Resume or abort preparation
 
@@ -437,9 +453,12 @@ At a refusal, start a fresh Bash shell, set the recorded `BACKUP_DIR`, and sourc
 Rerun **only that failed gate**, then continue at its next command. A failed metadata check can
 be repaired only from the same verified bundle; a port refusal requires the unrelated listener's
 owner to release it or a separately reviewed port configuration. Do not kill it or improvise a
-port. For an interrupted save, retain the partial archives; verify complete existing ones and
-save only the absent full IDs with the same single-image command, then create a separate digest
-receipt after validating the whole set. Never overwrite original configuration/image mappings,
+port. For an interrupted save, retain all files and run
+`python3 "$UPGRADE_HELPER" resume-save-images "$BACKUP_DIR"`. It validates every existing archive
+before saving only missing full IDs, then creates the per-image checksum receipt exclusively.
+An existing complete checksum receipt is verified without rewriting it. A damaged partial archive
+refuses; record its path/digest and move only that damaged file to a unique `.partial` name in the
+same private backup directory before rerunning this gate. Never replace a verified archive. Never overwrite original configuration/image mappings,
 rerun the preparation capture, or reinterpret the upgraded HEAD as the rollback source.
 
 If abandoning before `.env` rotation, cold copies may not exist, so do **not** enter the full
@@ -461,13 +480,16 @@ cp "$BACKUP_DIR/megasamples.yaml" ./megasamples.yaml
 if test -f "$BACKUP_DIR/.env"; then cp "$BACKUP_DIR/.env" .env; chmod 600 .env; else rm -f .env; fi
 if test -d .venv; then mv .venv "$BACKUP_DIR/aborted-venv-$ABORT_ID"; fi
 if test -d "$BACKUP_DIR/python-venv"; then cp -a "$BACKUP_DIR/python-venv" .venv; fi
-# Exempt only the original project's still-running ports; stopped ports must be free.
-python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" \
-  --allow-running-project sql-megasamples
-set --
-while IFS= read -r service; do set -- "$@" "$service"; done < "$BACKUP_DIR/original-running-services.txt"
-test "$#" -gt 0
-docker compose -p sql-megasamples -f compose.yaml start "$@"
+if test -n "$TEARDOWN_SNAPSHOT"; then
+  # Exempt only the original project's still-running ports; stopped ports must be free.
+  python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" \
+    --allow-running-project sql-megasamples
+  set --
+  while IFS= read -r service; do set -- "$@" "$service"; done < "$BACKUP_DIR/original-running-services.txt"
+  test "$#" -gt 0
+  docker compose -p sql-megasamples -f compose.yaml start "$@"
+fi
+# Before any stop attempt, leave the still-running original containers alone.
 ```
 
 `start` reuses the retained containers and their original anonymous volumes. If any original ID
@@ -701,8 +723,14 @@ Capture available kernel/AppArmor diagnostics for the failure's timestamp, witho
 ```sh
 # Set FAILURE_SINCE / FAILURE_UNTIL around the UTC timestamp in *.log.timestamps.
 : "${FAILURE_SINCE:?Set failure window start}" "${FAILURE_UNTIL:?Set failure window end}"
-journalctl -k --since "$FAILURE_SINCE" --until "$FAILURE_UNTIL" --no-pager \
-  > "$BACKUP_DIR/kernel-$CHECK_ID.log" 2> "$BACKUP_DIR/kernel-$CHECK_ID.error"
+if journalctl -k --since "$FAILURE_SINCE" --until "$FAILURE_UNTIL" --no-pager \
+  > "$BACKUP_DIR/kernel-$CHECK_ID.log" 2> "$BACKUP_DIR/kernel-$CHECK_ID.error"; then
+  printf '0\n' > "$BACKUP_DIR/kernel-$CHECK_ID.exit-code"
+else
+  KERNEL_RC=$?
+  printf '%s\n' "$KERNEL_RC" > "$BACKUP_DIR/kernel-$CHECK_ID.exit-code"
+  echo 'Not run: kernel/AppArmor diagnostics unavailable; retain the error.'
+fi
 # Preserve status/output; permission refusal or absent journal is Not run, not proof
 # that there were no AppArmor denials. Do not use sudo or alter logging policy.
 ```
@@ -803,11 +831,13 @@ assert joins == [["539747", "0", "0"]], joins
 ```
 
 Verify the forwards **from the host**, first at the protocol level and then with host clients.
-Rootless engine containers cannot reliably connect to their own host's LAN address. The tools
-container and `credentials.client()` run clients in containers, so do not use them for this check.
-Before downtime, confirm both host clients are already available (`command -v psql` and
-`command -v mysql`); otherwise record **Not run** and arrange coordinator-side host verification.
-Do not install packages on the host as a cutover workaround.
+Rootless engine containers cannot reliably connect to their own host's LAN address.
+Use host clients or native clients installed in the prepared upgrade-tools container, which is
+started above with `--network host`. Do not use `credentials.client()` for forwarded checks:
+it executes inside the engine container. Prepare and validate client binaries inside the tools
+image during isolated preparation; the retained tools image does not currently supply them.
+If neither host nor prepared tools clients are available, record **Not run** and arrange
+coordinator verification. Do not install packages on the host.
 
 ```sh
 # Host maintenance shell. Obtain these endpoints from private forwarder configuration or
@@ -824,6 +854,28 @@ psql -X -W -h "$FORWARD_HOST" -p "$PG_FORWARD_PORT" -U demo -d megasamples \
 mysql --no-defaults --host="$FORWARD_HOST" --port="$MYSQL_FORWARD_PORT" --user=demo --password \
   --batch --skip-column-names --execute='SELECT CURRENT_USER(), VERSION(); SELECT count(*) FROM megasamples.datasets'
 ```
+
+Alternatively, with native clients prepared in the **host-network tools container**, use its
+terminal for private password prompts. First require its namespace to match the host and both
+binaries to exist. This method is a coordinator backlog action; **Not run against live forwards**
+by this documentation task.
+
+```sh
+TOOLS_PID=$(podman inspect -f '{{.State.Pid}}' "$UPGRADE_TOOLS_CONTAINER")
+test "$(readlink /proc/$$/ns/net)" = "$(readlink /proc/$TOOLS_PID/ns/net)"
+podman exec "$UPGRADE_TOOLS_CONTAINER" sh -c 'command -v psql && command -v mysql' </dev/null
+# -it is intentional here: prompts read from the operator's terminal, not pasted script input.
+podman exec -it "$UPGRADE_TOOLS_CONTAINER" psql -X -W -h "$FORWARD_HOST" \
+  -p "$PG_FORWARD_PORT" -U demo -d megasamples -v ON_ERROR_STOP=1 -tAc \
+  'SELECT current_user, version(); SELECT count(*) FROM datasets'
+podman exec -it "$UPGRADE_TOOLS_CONTAINER" mysql --no-defaults --host="$FORWARD_HOST" \
+  --port="$MYSQL_FORWARD_PORT" --user=demo --password --batch --skip-column-names \
+  --execute='SELECT CURRENT_USER(), VERSION(); SELECT count(*) FROM megasamples.datasets'
+```
+
+The [Podman network reference](https://docs.podman.io/en/latest/markdown/podman-run.1.html),
+read **2026-11-18 18:03:54 UTC**, documents host network namespace sharing. It does not establish
+that either forwarded sign-in was executed.
 
 Require the `demo` identity, expected runtime versions and complete expected registry counts.
 The first live run proved the two protocols from the host; forwarded client sign-ins were

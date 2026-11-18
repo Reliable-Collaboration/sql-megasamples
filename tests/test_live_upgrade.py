@@ -402,3 +402,31 @@ def test_space_gate_counts_duplicate_archives_and_scratch_store(tmp_path, monkey
         upgrade.check_space(tmp_path, 100)
     monkeypatch.setattr(upgrade.shutil, 'disk_usage', lambda _: SimpleNamespace(free=2600))
     assert upgrade.check_space(tmp_path, 100)['required_bytes'] == 2600
+
+
+def test_resume_save_keeps_valid_archives_and_checks_all_before_new_save(tmp_path, monkeypatch):
+    images = [hashlib.sha256(c).hexdigest() for c in (b'a', b'b')]
+    (tmp_path / 'rollback-image-ids.txt').write_text(''.join(f'localhost/{n}:old {image} []\n' for n,image in enumerate(images)))
+    first = tmp_path / upgrade.archive_name(images[0])
+    archive(first, [b'a'])
+    old_bytes = first.read_bytes()
+    calls = []
+    def pod(*args):
+        calls.append(args)
+        archive(Path(args[args.index('-o') + 1]), [b'b'])
+        return ''
+    monkeypatch.setattr(upgrade, 'pod', pod)
+    upgrade.save_images(tmp_path, resume=True)
+    assert first.read_bytes() == old_bytes
+    assert len(calls) == 1
+    checksums = (tmp_path / 'rollback-images.sha256').read_bytes()
+    upgrade.save_images(tmp_path, resume=True)
+    assert (tmp_path / 'rollback-images.sha256').read_bytes() == checksums
+    assert len(calls) == 1
+    (tmp_path / 'rollback-images.sha256').unlink()
+    first.write_bytes(b'broken archive')
+    (tmp_path / upgrade.archive_name(images[1])).unlink()
+    calls.clear()
+    with pytest.raises((ValueError, tarfile.ReadError)):
+        upgrade.save_images(tmp_path, resume=True)
+    assert not calls
