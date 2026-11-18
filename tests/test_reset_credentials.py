@@ -8,6 +8,35 @@ import yaml
 from megasamples import compose, config, reset
 
 
+def test_native_root_verifier_uses_socket_for_localhost(monkeypatch):
+    from importlib import import_module
+    verifier = import_module("docs.validation.verify-configured-passwords")
+    calls = []
+    @contextmanager
+    def private(*args, **kwargs):
+        yield ['docker', 'exec', 'target', 'mysql', '--defaults-extra-file=/private',
+               '--host=127.0.0.1', '--protocol=TCP']
+    def run(args, **kwargs):
+        calls.append(args)
+        return subprocess.CompletedProcess(args, 0,
+            '{"stack":{"IPAddress":"10.89.0.2"}}' if 'inspect' in args else 'root@localhost\t1', '')
+    monkeypatch.setattr(verifier, 'client', private)
+    monkeypatch.setattr(verifier.subprocess, 'run', run)
+    verifier.query('mysql', 'target', 'root', 'unit_canary', local_root=True)
+    assert '--protocol=SOCKET' in calls[-1]
+    assert '--protocol=TCP' not in calls[-1]
+    assert '--host=localhost' in calls[-1]
+
+
+def test_native_root_verifier_rejects_wrong_authenticated_account(monkeypatch):
+    from importlib import import_module
+    verifier = import_module("docs.validation.verify-configured-passwords")
+    monkeypatch.setattr(verifier.config, 'load', lambda: config.Config({'engines': {'mysql': {'datasets': ['pubs']}}}))
+    monkeypatch.setattr(verifier, 'query', lambda engine, container, user, password, local:
+                        subprocess.CompletedProcess([], 0, user + '@%\t1', ''))
+    assert verifier.main([]) == 1
+
+
 def test_all_password_overrides_reach_the_servers():
     cfg = config.Config({'engines': {'mysql': {'datasets': ['pubs']},
                                       'postgres': {'datasets': ['pubs']}}, 'consoles': []})

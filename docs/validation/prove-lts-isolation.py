@@ -9,7 +9,7 @@ import subprocess
 assert os.environ['CONTAINERS_STORAGE_CONF'] == '/home/rcc-vstudio/working/sql-megasamples-upgrade-env/storage.conf'
 assert os.environ['DOCKER_HOST'] == 'unix:///home/rcc-vstudio/working/sql-megasamples-upgrade-env/podman.sock'
 assert os.environ['COMPOSE_PROJECT_NAME'] == 'megasamples-upgrade'
-out = Path('build/lts-audit')
+out = Path(os.environ.get('MEGASAMPLES_VALIDATION_OUT', 'build/lts-audit'))
 expected = {'megasamples-upgrade-tools', 'megasamples-upgrade-browser',
             'megasamples-landing', 'megasamples-phpmyadmin', 'megasamples-adminer',
             'megasamples-build-mysql', 'megasamples-build-postgres',
@@ -33,6 +33,7 @@ live_env = {k: v for k, v in os.environ.items() if k not in {
     'CONTAINERS_STORAGE_CONF', 'CONTAINERS_CONF', 'CONTAINERS_CONF_OVERRIDE',
     'DOCKER_HOST', 'COMPOSE_PROJECT_NAME', 'CONTAINER_HOST', 'CONTAINER_CONNECTION'}}
 live_names = ['megasamples-postgres', 'megasamples-mysql', 'megasamples-sqlite']
+default_listing = command('ps', '-a', '--format', '{{.ID}} {{.Names}} {{.Status}}', env=live_env)
 observed = json.loads(command('inspect', *live_names, env=live_env))
 baseline = Path('/home/rcc-vstudio/working/RCC.DataIntent/.local/megasamples-upgrade/live-before.txt').read_text()
 
@@ -56,10 +57,15 @@ for line in baseline.strip().splitlines():
     before.append(row(*match.groups()))
 after = [row(r['Name'], r['Id'], r['Image'], r['State']['StartedAt'], r['State']['Status']) for r in observed]
 assert sorted(before, key=lambda r: r['name']) == sorted(after, key=lambda r: r['name']), 'Live baseline mismatch'
+application = json.loads(command('inspect', *['megasamples-'+name for name in ['mysql','postgres','sqlite','landing','phpmyadmin','adminer','dbgate','cloudbeaver']]))
+assert all(row['State']['Running'] for row in application), 'an isolated application service is stopped'
+assert all(row['Config']['Labels']['com.docker.compose.project'] == 'megasamples-upgrade' for row in application)
 result = dict(status='Passed', read_at=datetime.datetime.now(datetime.timezone.utc).isoformat(),
-              isolated_ps=listing, graph_root=graph_root, live=after,
+              isolated_ps=listing, graph_root=graph_root, live=after, default_ps=default_listing,
+              all_eight_isolated_application_services_running=True,
               comparison='IDs, image IDs, full nanosecond start times and running states match live-before.txt',
-              default_store_operation=['podman', 'inspect', *live_names], proxy_service_actions='None')
+              default_store_operations=[['podman', 'ps', '-a', '--format', '{{.ID}} {{.Names}} {{.Status}}'],
+                                        ['podman', 'inspect', *live_names]], proxy_service_actions='None')
 (out / 'isolation.json').write_text(json.dumps(result, indent=2)+'\n')
 print(listing, end='')
 print('Passed: isolated store contains only the twelve inherited project containers; all three live containers match the supplied baseline exactly.')

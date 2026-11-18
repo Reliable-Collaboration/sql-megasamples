@@ -58,6 +58,9 @@ def native(engine, user, password, local=False):
     container = 'megasamples-mysql' if local else clients[engine]
     port = 3306 if local else config.load().ports[engine]
     with client(engine, container, user, password, host='127.0.0.1', port=port) as command:
+        if local:
+            command = [arg for arg in command if not arg.startswith(('--host=', '--protocol='))]
+            command += ['--host=localhost', '--protocol=SOCKET']
         if engine == 'mysql':
             args = [*command, '-N', '--batch', '-e', 'SELECT CURRENT_USER(),1']
         else:
@@ -72,10 +75,12 @@ def check_round(label, current, previous):
         accepted = native(engine, user, current[key], local)
         rejected = native(engine, user, previous[key], local)
         identity = accepted.stdout.strip()
-        assert accepted.returncode == 0 and identity.endswith('1'), engine + ':' + user + ' new credential failed'
+        expected = (user + ('@localhost' if local else '@%') + '\t1'
+                    if engine == 'mysql' else user + '|1')
+        assert accepted.returncode == 0 and identity == expected, engine + ':' + user + ' new credential or identity failed'
         expected_error = 'Access denied' if engine == 'mysql' else 'password authentication failed'
         assert rejected.returncode != 0 and expected_error in rejected.stderr, engine + ':' + user + ' previous credential was not refused by authentication'
-        records.append(dict(engine=engine, account=user, route='container TCP' if local else 'published localhost TCP',
+        records.append(dict(engine=engine, account=user, route='container Unix socket' if local else 'published localhost TCP',
                             authenticated_identity=identity, new_password='Passed', previous_password_refused='Passed'))
     # A configured root/postgres password must also reach reset's count helpers.
     for engine in ['mysql', 'postgres']:

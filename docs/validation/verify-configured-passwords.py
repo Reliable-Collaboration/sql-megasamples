@@ -25,6 +25,11 @@ def query(engine, container, user, password, local_root=False):
     if not host:
         raise RuntimeError('server requires a network address for authentication verification')
     with client(engine, container, user, password, host=host) as command:
+        if engine == 'mysql' and local_root:
+            # With skip-name-resolve, loopback TCP can select root@%.
+            # A Unix socket selects the separate root@localhost account.
+            command = [arg for arg in command if not arg.startswith(('--host=', '--protocol='))]
+            command += ['--host=localhost', '--protocol=SOCKET']
         command += ['-N', '--batch', '-e', 'SELECT CURRENT_USER(),1'] if engine == 'mysql' else ['-d', 'megasamples', '-tAc', 'SELECT current_user,1']
         return subprocess.run(command, capture_output=True, text=True)
 
@@ -55,7 +60,9 @@ def main(argv=None):
         for user, key, local in accounts:
             label = engine + ':' + user + ('@localhost' if local else ' (network TCP)')
             accepted = query(engine, 'megasamples-' + engine, user, current[key], local)
-            valid = accepted.returncode == 0 and accepted.stdout.strip().endswith('1')
+            expected = (user + ('@localhost' if local else '@%') + '\t1'
+                        if engine == 'mysql' else user + '|1')
+            valid = accepted.returncode == 0 and accepted.stdout.strip() == expected
             refused = True
             if previous is not None:
                 rejected = query(engine, 'megasamples-' + engine, user, previous[key], local)

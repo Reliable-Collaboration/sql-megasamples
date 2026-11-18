@@ -3,6 +3,7 @@
 Run in the locked tools container with the isolated env.sh in effect. Runtime
 volumes and .env are excluded: this saves images, never container writable layers.
 """
+import argparse
 import datetime
 import hashlib
 import json
@@ -20,6 +21,9 @@ assert os.environ['DOCKER_HOST'] == 'unix:///home/rcc-vstudio/working/sql-megasa
 assert os.environ['COMPOSE_PROJECT_NAME'] == 'megasamples-upgrade'
 assert os.environ['CONTAINERS_STORAGE_CONF'] == str(ROOT.parent / 'sql-megasamples-upgrade-env/storage.conf')
 assert subprocess.check_output(['docker', 'info', '--format', '{{.DockerRootDir}}'], text=True).strip().startswith(str(ROOT.parent / 'sql-megasamples-upgrade-env/'))
+parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+parser.add_argument('--existing-archive', action='store_true', help='hash/check an archive already written by this export')
+args = parser.parse_args()
 os.umask(0o077)
 required = ['test-image-mysql', 'test-image-postgres', 'test-image-sqlite', 'console-gate', 'console-deep', 'endpoints']
 while True:
@@ -57,9 +61,12 @@ for service in services:
     subprocess.run(['docker', 'tag', image_id, tag], check=True)
     records[service] = dict(image_id=image_id, validated_reference=tag, repository_reference=reference)
 archive = OUT / 'candidate-images.tar'
-assert not archive.exists(), 'candidate archive already exists; verify it instead of overwriting'
 start = time.monotonic()
-subprocess.run(['docker', 'save', '-o', str(archive), *[row['validated_reference'] for row in records.values()]], check=True)
+if args.existing_archive:
+    assert archive.is_file(), 'no existing candidate archive to verify'
+else:
+    assert not archive.exists(), 'candidate archive already exists; use --existing-archive to verify it'
+    subprocess.run(['docker', 'save', '-o', str(archive), *[row['validated_reference'] for row in records.values()]], check=True)
 archive.chmod(0o600)
 hash_value = hashlib.sha256()
 with archive.open('rb') as stream:
@@ -71,7 +78,8 @@ manifest = dict(status='Passed', captured_at=datetime.datetime.now(datetime.time
                 software_tree_sha256=hashlib.sha256(software_tree.encode()).hexdigest(), software_paths=software_paths,
                 archive=dict(path=str(archive.relative_to(ROOT)), bytes=archive.stat().st_size, sha256=hash_value.hexdigest(), mode='0600'),
                 services=records, datasets=cfg.engines, consoles=cfg.consoles,
-                rehearsal_ports={name: cfg.ports[name] for name in services},
+                rehearsal_ports={name: cfg.ports[name] for name in services if name in cfg.ports},
+                sqlite_access='files under /data and /shared; no TCP port',
                 export_seconds=time.monotonic() - start,
                 runtime_volumes_exported=False, env_file_exported=False)
 (OUT / 'candidate-images.json').write_text(json.dumps(manifest, indent=2) + '\n')
