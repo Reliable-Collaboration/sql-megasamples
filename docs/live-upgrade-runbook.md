@@ -139,6 +139,8 @@ cd /home/rcc-vstudio/working/sql-megasamples
 : "${METADATA_BUNDLE:?Set the unique verified metadata bundle directory}"
 : "${EXTRA_RESERVE_BYTES:?Set measured backup/dump/candidate/tool/scratch reserve in bytes}"
 git fetch origin main
+git cat-file -e "$APPROVED_UPGRADE_MERGE^{commit}"
+test "$(git rev-parse origin/main)" = "$APPROVED_UPGRADE_MERGE"
 # BEGIN original-head guard
 if git merge-base --is-ancestor "$APPROVED_UPGRADE_MERGE" HEAD; then
   echo 'STOP: HEAD already contains the upgrade. Restore the retained context; do not repeat preparation.'
@@ -905,6 +907,7 @@ be presented as available. Preserve the result logs with the maintenance receipt
 
 ```sh
 # Fresh Bash maintenance shell, also when the failed cutover shell exited.
+bash --noprofile --norc
 # Set BACKUP_DIR to the exact private directory in the maintenance receipt.
 : "${BACKUP_DIR:?Set the retained backup directory}"
 . "$BACKUP_DIR/resume-context.bash"
@@ -1089,7 +1092,7 @@ workspace backup followed by recreating only CloudBeaver reseeds the generated c
 that backup (it can contain credentials and saved queries), and restore it into a stopped original
 console container for rollback as above. No engine data volume is renewed by this console step.
 
-After cutover, run `ms_tool make test-console PY="$MEGASAMPLES_PY"`. In addition, open the landing page and every configured console through their actual live localhost ports. In phpMyAdmin, list the MySQL datasets for both configured accounts. In Adminer, sign in for MySQL and PostgreSQL and list their databases. In DbGate, open each engine, including a SQLite file; in CloudBeaver, open both server accounts and every SQLite connection and list the databases. Confirm each shows the complete configured registry, test read-only denial and admin writes on a disposable table, then remove the probe. The isolated receipt records the automated HTTP/GraphQL/installed-driver probes; repeat those checks against live ports without substituting HTTP 200 for a database connection.
+After cutover, run `ms_tool make test-console PY="$MEGASAMPLES_PY" </dev/null`. In addition, open the landing page and every configured console through their actual live localhost ports. In phpMyAdmin, list the MySQL datasets for both configured accounts. In Adminer, sign in for MySQL and PostgreSQL and list their databases. In DbGate, open each engine, including a SQLite file; in CloudBeaver, open both server accounts and every SQLite connection and list the databases. Confirm each shows the complete configured registry, test read-only denial and admin writes on a disposable table, then remove the probe. The isolated receipt records the automated HTTP/GraphQL/installed-driver probes; repeat those checks against live ports without substituting HTTP 200 for a database connection.
 
 For the first live run's retained layout, the helper reads `saved_images` in
 `phase-a-resume-receipt.json` when `rollback-images.sha256` names only the malformed

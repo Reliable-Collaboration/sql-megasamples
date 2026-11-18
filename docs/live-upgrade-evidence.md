@@ -3,7 +3,7 @@
 The coordinator executed the runbook at `2cf1f3e9` on **2026-11-18**. The upgraded
 service was verified as described below. As of **2026-11-18**, acceptance was held for a
 DataIntent test failure outside this service; the acceptance record is DataIntent’s.
-Independent review of these corrections remained pending as of that date.
+Independent approval of this revised procedure remained pending as of that date.
 
 
 The private maintenance record is `build/live-upgrade-backups/20261118T133807Z/` in
@@ -87,7 +87,7 @@ python3 docs/validation/rehearse-live-upgrade.py
 It asserts the graphroot, reads two existing isolated console images, seeds fresh
 scratch stores and runs both old and corrected commands there. It starts no engine
 and uses no database volume. It preserves the malformed fixture and successful
-receipts under `build/dl086/rehearsal-*/`. The corrected runbook and helper have run only in scratch, never on the live store or the engine-size images.
+receipts under `build/dl086/rehearsal-*/`. Validation of the corrected runbook and helper has run only in scratch, never on the live store or the engine-size images. The complete revised runbook has not been replayed end to end.
 The two-image regression is deliberately small; the runbook separately requires rehearsal of the **complete actual rollback
 set** before downtime. That future live rehearsal was **Not run** by this task.
 The first live run's full-set scratch rehearsal is recorded in the private phase-A
@@ -150,3 +150,27 @@ The narrowed PostgreSQL account guidance was checked against `engines/postgres/i
 **2026-11-18 18:03:54 UTC**. Sample-table write refusal does not revoke `TEMPORARY`,
 large-object creation or routine execution. This change documents those limits;
 it does not claim account hardening has been deployed.
+
+## Correction follow-up on 2026-11-18
+
+The [follow-up receipt](validation/live-upgrade-review-r1-2026-11-18.json) records
+regressions for retained service-named archives, actual restored ID/tag pairs, complete-set
+corruption refusal, host socket fixtures, executable preparation gates and recovery context.
+A disabled preparation command and an ID-based loader against the service-named layout each
+made the strengthened tests fail. The corrected scratch rehearsal also stopped two owned
+fixtures, removed one and required the retained exited receipt before accepting its absence.
+Exit 137 was refused until explicitly acknowledged for that fixture. A private scratch runtime
+and scoped migrate/reset cleaned up its recorded pause processes.
+
+The additional netns attempt ran three owned-fixture Compose up/stop/up/down cycles in the
+isolated store and did not reproduce the live error. The cause remains unknown. No live
+teardown, full rollback, forwarded sign-in, kernel/AppArmor capture or DataIntent suite was
+run by this follow-up. Kernel/AppArmor capture is an instruction for the next failure.
+
+The README verifier command was run exactly with `PYTHONPATH=. .venv/bin/python` in the
+isolated tools container, including the private previous-credential directory argument.
+All configured accounts accepted the current password and refused the prior one specifically
+by authentication. SQLite server authentication is Unsupported. A separate transactional
+isolated PostgreSQL probe proved `demo` can create temporary tables and large objects and
+execute routines; its changes were rolled back. Host `.venv/bin/python` was absent, so this
+check does not claim the command ran natively on the host.
