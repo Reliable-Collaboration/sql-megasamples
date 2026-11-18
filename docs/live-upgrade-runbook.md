@@ -115,15 +115,15 @@ attempt. Keep failed candidate volumes and original cold copies unchanged.
 Every recorded engine **and** console is a row in this table. PID/running checks
 are independent of status and exit code. An OOM is checked independently of 137.
 
-| Observed state | (a) Originals before cold copy: PostgreSQL / MySQL | (a) SQLite | (a) Consoles | (b) Candidate teardown; (c) before original `up` | (c) After original `up`, selected services |
-|---|---|---|---|---|---|
-| running | Refuse | Refuse | Refuse | Refuse | Pass: PID positive, no OOM |
-| created (never started), PID 0 | Refuse | Refuse | Pass | Pass, record | Refuse |
-| exited 0, PID 0 | Pass | Pass | Pass | Pass, record | Refuse |
-| exited 137, PID 0 | Refuse | Pass, expected | Pass | Pass, record | Refuse |
-| exited other, PID 0 | Refuse | Refuse | Pass | Pass, record | Refuse |
-| OOM-killed, PID 0 (any exit) | Refuse | Refuse | Refuse | Pass, record | Refuse |
-| missing | Refuse | Refuse | Refuse | Pass, record missing | Refuse |
+| Observed state | (a) Originals before cold copy: PostgreSQL / MySQL | (a) SQLite | (a) Consoles | (b) Candidate teardown; (c) before original `up` | Originals restart on unchanged volumes (abort / clean-stop recovery) | (c) After original `up`, selected services |
+|---|---|---|---|---|---|---|
+| running | Refuse | Refuse | Refuse | Refuse | Refuse | Pass: PID positive, no OOM |
+| created (never started), PID 0 | Refuse | Refuse | Pass | Pass, record | Pass, record | Refuse |
+| exited 0, PID 0 | Pass | Pass | Pass | Pass, record | Pass, record | Refuse |
+| exited 137, PID 0 | Refuse | Pass, expected | Pass | Pass, record | Pass, record | Refuse |
+| exited other, PID 0 | Refuse | Refuse | Pass | Pass, record | Pass, record | Refuse |
+| OOM-killed, PID 0 (any exit) | Refuse | Refuse | Refuse | Pass, record | Pass, record | Refuse |
+| missing | Refuse | Refuse | Refuse | Pass, record missing | Refuse | Refuse |
 
 SQLite's PID 1 is `sleep infinity` (`megasamples/engines/sqlite/__init__.py`),
 which needs SIGKILL on stop; its observed 137 needs no crash-consistency acknowledgment.
@@ -552,9 +552,75 @@ refuses; record its path/digest and move only that damaged file to a unique `.pa
 same private backup directory before rerunning this gate. Never replace a verified archive. Never overwrite original configuration/image mappings,
 rerun the preparation capture, or reinterpret the upgraded HEAD as the rollback source.
 
+### Refused original stop: restart on unchanged original volumes
+
+A crash/OOM refuses cold copy, but does not forbid restarting the **existing**
+original containers to obtain a clean shutdown. Keep clients paused and diagnose
+the crash first. Start a fresh Bash shell outside the source block; source the
+preparation `CONTEXT_FILE` and check the socket as in “Roll back”. No `.env` rotation
+or candidate recreation may have occurred. Run these checks for either an abort
+or a restart followed by clean stop:
+
+```sh
+# BEGIN original recovery checks
+RECOVERY_ID=$(date -u +%Y%m%dT%H%M%S%N)
+python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
+  "$EVIDENCE_DIR/original-restart-$RECOVERY_ID.json" --phase original-restart
+# State gate also proves no project container running. Original IDs must exist.
+PROCESS_RC=0
+if python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
+  > "$EVIDENCE_DIR/original-restart-process-$RECOVERY_ID.json"; then :;
+else PROCESS_RC=$?; fi
+printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/original-restart-process-$RECOVERY_ID.exit-code"
+test "$PROCESS_RC" = 0
+# END original recovery checks
+```
+
+For a clean-stop recovery, select the diagnosed engine explicitly, start that
+existing container, wait for its configured health, then allow 300 seconds for
+shutdown. A failed health wait is a hold: diagnose that engine before stopping it;
+never copy a running database. A stop error uses the same four-check procedure,
+with a fresh snapshot and original-stop gate. The 300-second bounds are maintenance
+choices, not measured guarantees.
+
+```sh
+# BEGIN original clean stop
+: "${RECOVER_ENGINE:?Set the diagnosed original engine}"
+case "$RECOVER_ENGINE" in postgres|mysql|sqlite) :;; *) exit 1;; esac
+python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" --service "$RECOVER_ENGINE"
+docker compose -p sql-megasamples -f compose.yaml start --wait --wait-timeout 300 "$RECOVER_ENGINE"
+TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
+TEARDOWN_PHASE=stop
+TEARDOWN_SNAPSHOT="$EVIDENCE_DIR/clean-stop-before-$TEARDOWN_ATTEMPT.json"
+EXITED_RECEIPT=
+python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
+  --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
+save_context
+date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/clean-stop.log.timestamps"
+if docker compose -p sql-megasamples -f compose.yaml stop --timeout 300 "$RECOVER_ENGINE" \
+  >> "$EVIDENCE_DIR/clean-stop.log" 2>&1; then :;
+else STOP_RC=$?; printf '%s\n' "$STOP_RC" >> "$EVIDENCE_DIR/clean-stop.log.exit-code"; exit "$STOP_RC"; fi
+python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
+  "$EVIDENCE_DIR/clean-stop-exited-$TEARDOWN_ATTEMPT.json" --phase original-stop
+# END original clean stop
+```
+
+Repeat all four checks before cold copy; repeat per crashed engine if necessary.
+For an abort use the block below after the original recovery checks. Missing
+originals are a coordinator hold, never an instruction to recreate anonymous
+volumes by `up`. Before downtime, use the preparation abort to restore source and
+configuration in place. After downtime, if any original ID or mount is missing,
+use the full verified cold-copy rollback on **new** volumes below; if a complete
+cold copy does not exist, keep clients paused for coordinator recovery. No automatic
+missing-original reconstruction is provided.
+
+[Compose start](https://docs.docker.com/reference/cli/docker/compose/start/) and
+[stop](https://docs.docker.com/reference/cli/docker/compose/stop/) document the wait
+and timeout flags (read 2026-11-18 19:39 UTC).
+
 If abandoning before `.env` rotation, cold copies may not exist, so do **not** enter the full
-cold-copy rollback. If stop was attempted, complete the four teardown checks first; accept no
-unresolved process or namespace evidence. Original containers/volumes still exist in this path.
+cold-copy rollback. If stop was attempted, complete the original recovery checks below first, using `original-restart`
+(not the cold-copy eligibility rule). Original containers/volumes still exist in this path.
 Restore original source/configuration and start only the originally running containers:
 
 ```sh
@@ -578,13 +644,17 @@ if test -f "$CONFIG_DIR/.env"; then cp "$CONFIG_DIR/.env" .env; chmod 600 .env; 
 if test -d .venv; then mv .venv "$ATTEMPT_DIR/aborted-venv"; fi
 if test -d "$BACKUP_DIR/python-venv"; then cp -a "$BACKUP_DIR/python-venv" .venv; fi
 if test -n "$TEARDOWN_SNAPSHOT"; then
-  # Four checks must already have passed before this abort resumes stopped originals.
+  # Original recovery checks must already have passed; recheck state and ports.
+# BEGIN abort original start
+  python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
+    "$ATTEMPT_DIR/abort-restart-$ABORT_ID.json" --phase original-restart
   python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" \
     --allow-running-project sql-megasamples --services-file "$BACKUP_DIR/original-running-services.txt"
   set --
   while IFS= read -r service; do set -- "$@" "$service"; done < "$BACKUP_DIR/original-running-services.txt"
   test "$#" -gt 0
-  docker compose -p sql-megasamples -f compose.yaml start "$@"
+  docker compose -p sql-megasamples -f compose.yaml start --wait --wait-timeout 300 "$@"
+# END abort original start
 fi
 # Before any stop attempt, leave the still-running original containers alone.
 # END abort preparation
@@ -662,7 +732,7 @@ python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasample
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
 printf '%s\n' "$TEARDOWN_ATTEMPT" >> "$EVIDENCE_DIR/stop.log.timestamps"
-if docker compose -p sql-megasamples -f compose.yaml stop >> "$EVIDENCE_DIR/stop.log" 2>&1; then
+if docker compose -p sql-megasamples -f compose.yaml stop --timeout 300 >> "$EVIDENCE_DIR/stop.log" 2>&1; then
   printf '0\n' >> "$EVIDENCE_DIR/stop.log.exit-code"
 else
   STOP_RC=$?
@@ -1167,7 +1237,7 @@ python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasample
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
 printf '%s\n' "$TEARDOWN_ATTEMPT" >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"
-if docker compose -p sql-megasamples -f compose.yaml stop >> "$EVIDENCE_DIR/rollback-stop.log" 2>&1; then
+if docker compose -p sql-megasamples -f compose.yaml stop --timeout 300 >> "$EVIDENCE_DIR/rollback-stop.log" 2>&1; then
   printf '0\n' >> "$EVIDENCE_DIR/rollback-stop.log.exit-code"
 else
   STOP_RC=$?

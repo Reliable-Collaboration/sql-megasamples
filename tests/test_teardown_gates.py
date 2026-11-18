@@ -73,3 +73,20 @@ def test_restart_mounts_include_new_targets_and_missing_candidate_evidence(tmp_p
     rows=json.loads(after.read_text())['containers']
     assert rows[0]['mounts'] == [['/old/data','/data']]
     assert {r['mounts'][0][0] for r in rows[1:]} == {'/new/megasamples-rollback-'+e+'-fixture' for e in ['postgres','mysql','sqlite','sqlite-shared']}
+
+@pytest.mark.parametrize('code,oom', [(0,False),(137,False),(1,False),(0,True),(9,True)])
+def test_original_restart_records_any_stopped_exit(tmp_path,monkeypatch,code,oom):
+    before=tmp_path/'before.json'; after=tmp_path/'after.json'
+    before.write_text(json.dumps(dict(project='fixture',engines=ENGINES,containers=[dict(name='megasamples-postgres',id='id')])))
+    monkeypatch.setattr(upgrade,'pod',lambda *args: f'megasamples-postgres|id|exited|false|0|{code}|{str(oom).lower()}|' if args[0]=='inspect' else '')
+    upgrade.exited(before,after,phase='original-restart')
+    row=json.loads(after.read_text())['containers'][0]
+    assert (row['exit_code'],row['oom']) == (code,oom)
+
+
+def test_missing_original_restart_refuses_specifically(tmp_path,monkeypatch):
+    before=tmp_path/'before.json'
+    before.write_text(json.dumps(dict(project='fixture',engines=ENGINES,containers=[dict(name='megasamples-postgres',id=None)])))
+    monkeypatch.setattr(upgrade,'pod',lambda *args:'')
+    with pytest.raises(ValueError,match='original container missing; use coordinator recovery'):
+        upgrade.exited(before,tmp_path/'out',phase='original-restart')

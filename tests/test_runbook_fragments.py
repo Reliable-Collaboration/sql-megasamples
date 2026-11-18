@@ -43,7 +43,7 @@ def test_failure_fresh_shell_checks_then_continuation(tmp_path, phase):
     try:
         text = RUNBOOK.read_text()
         action = 'down' if phase == 'rollback-down' else 'stop'
-        guard = next(g for g in re.findall(r'if docker compose[^\n]* (?:stop|down) >> .*?^fi', text, re.M | re.S)
+        guard = next(g for g in re.findall(r'if docker compose[^\n]* (?:stop(?: --timeout 300)?|down) >> .*?^fi', text, re.M | re.S)
                      if '"$EVIDENCE_DIR/' + phase + '.log"' in g)
         env = {'PATH': os.environ['PATH'], 'CONTEXT': str(tmp_path / 'resume-context.bash')}
         result = subprocess.run(['bash', '-eu', '-c', '. "$CONTEXT"\ndocker() { return 37; }\n' + guard], env=env)
@@ -285,3 +285,29 @@ def test_start_boundary_saves_partial_restart_hold(tmp_path):
         subprocess.run(['bash','-eu','-c','. "$CONTEXT"; test "$TEARDOWN_PHASE" = rollback-starting'],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},check=True)
     finally:
         server.close()
+
+@pytest.mark.parametrize('mode',['clean-stop','abort'])
+def test_refused_original_stop_recovery_from_fresh_shell(tmp_path,mode):
+    server=context(tmp_path,'stop')
+    try:
+        script='. "$CONTEXT"\n'+r'''
+RECOVER_ENGINE=postgres
+ABORT_ID=fixture
+python3() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/recovery-calls"; }
+docker() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/recovery-calls"; }
+'''
+        script+=block('# BEGIN original recovery checks\n','# END original recovery checks')
+        if mode=='clean-stop': script+=block('# BEGIN original clean stop\n','# END original clean stop')
+        else:
+            # Execute abort's start path after its separately tested extraction.
+            script+=block('# BEGIN abort original start\n','# END abort original start')
+            (tmp_path/'original-running-services.txt').write_text('postgres\n')
+        r=subprocess.run(['bash','-eu','-c',script],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},capture_output=True,text=True)
+        assert r.returncode==0,r.stderr
+        calls=(tmp_path/'recovery-calls').read_text()
+        assert '--phase original-restart' in calls
+        assert 'start --wait --wait-timeout 300 postgres' in calls
+        if mode=='clean-stop':
+            assert 'stop --timeout 300 postgres' in calls
+            assert calls.index('stop --timeout') < calls.rindex('--phase original-stop')
+    finally: server.close()

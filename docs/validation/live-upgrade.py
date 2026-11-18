@@ -221,8 +221,8 @@ def snapshot(output, project, engines, phase='original-stop'):
                 raise ValueError('cannot record running container network/cgroup: ' + row['name']) from error
         rows.append(row)
     missing = set(engines) - {row['name'] for row in rows}
-    if missing and phase == 'original-stop':
-        raise ValueError('missing engine before cold copy; restore original containers before retrying')
+    if missing and phase in ('original-stop', 'original-restart'):
+        raise ValueError('original container missing; use coordinator recovery; no cold copy or restart')
     rows += [dict(name=name, id=None, state='missing', running=False, pid=0,
                   exit_code=None, oom=False, mounts=[], network='') for name in sorted(missing)]
     write_receipt(output, dict(project=project, engines=engines, phase=phase, containers=rows))
@@ -250,6 +250,8 @@ def exited(before, output, removed_with=None, phase='original-stop'):
             row = container_state(identity)
             if row['id'] != identity:
                 raise ValueError('container identity changed: ' + original['name'])
+        if phase == 'original-restart' and row['state'] == 'missing':
+            raise ValueError('original container missing; use coordinator recovery: ' + row['name'])
         if phase == 'restart-after':
             if not row['running'] or row['pid'] <= 0 or row['state'] != 'running' or row['oom']:
                 raise ValueError('restored service must be running, PID positive, no OOM: ' + row['name'])
@@ -427,12 +429,12 @@ def main():
     p.add_argument('output', type=Path)
     p.add_argument('--project', required=True)
     p.add_argument('--engine', action='append', required=True)
-    p.add_argument('--phase', choices=['original-stop', 'candidate-teardown', 'restart-before', 'restart-after'], default='original-stop')
+    p.add_argument('--phase', choices=['original-stop', 'original-restart', 'candidate-teardown', 'restart-before', 'restart-after'], default='original-stop')
     p = sub.add_parser('exited')
     p.add_argument('before', type=Path)
     p.add_argument('output', type=Path)
     p.add_argument('--removed-with', type=Path)
-    p.add_argument('--phase', choices=['original-stop', 'candidate-teardown', 'restart-before', 'restart-after'], default='original-stop')
+    p.add_argument('--phase', choices=['original-stop', 'original-restart', 'candidate-teardown', 'restart-before', 'restart-after'], default='original-stop')
     p = sub.add_parser('ports')
     p.add_argument('--allow-running-project')
     p.add_argument('--port-config', type=Path)
