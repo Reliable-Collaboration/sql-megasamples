@@ -283,3 +283,29 @@ The netns root cause remains unknown. Native acceptance and test results for thi
 revision are recorded separately; prior scanner receipts do not prove DL-088.
 As of 2026-11-18, DataIntent acceptance remains held; no independent blessing or
 live restoration is claimed by this correction.
+
+
+The [DL-088 receipt](validation/live-upgrade-review-r4-part2-2026-11-18.json)
+records this session's tests, decision-rule removal controls and native outcomes.
+The running isolated deployment's capture identified its shared helper and seven
+dedicated helpers without process arguments. Scratch network-independent checks
+proved process/exec survivors, partial removal and fresh-shell continuation,
+subordinate-UID descriptor-only inspection, an unreadable required inspection,
+cross-filesystem aliases, equal path text on different filesystems, source
+replacement and a zombie leader with a live worker. Expected REFUSE and HOLD
+outcomes are successful tests, not cold-copy authorization.
+
+**Unsupported on this host in this rehearsal:** starting the fresh scratch
+published bridge failed when Pasta could not open its rootless network namespace
+(permission denied); the earlier slirp attempt timed out. Consequently the full
+published-port lifecycle and native dedicated/shared helper-survivor acceptance
+cases are not Passed. Shared-consumer decision branches have focused fixtures;
+read-only capture of the already running isolated deployment passed separately.
+This startup failure does not reproduce or explain the live teardown failure.
+The original netns root cause remains unknown.
+
+The alternative unchanged-original-data restart route is fixture-tested only.
+It independently checks original data objects and rejects overlap with candidate
+mounts; a reused shared volume cannot be represented as unchanged. No native or
+live original-volume recreation is claimed. As of 2026-11-18, DataIntent acceptance
+remains held; this authoring session supplies no independent reviewer blessing.

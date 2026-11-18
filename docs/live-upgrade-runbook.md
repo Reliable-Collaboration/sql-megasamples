@@ -1740,7 +1740,11 @@ copy gate for this route: it does not use cold copies or write new data targets.
 Set `ORIGINAL_CAPTURE` to the retained **original pre-upgrade** capture, never the
 candidate capture. The command below independently rechecks each original data
 object and writes explicit bind overrides with `create_host_path: false`; it
-cannot create an empty replacement at a missing path. It ignores process/boot
+cannot create an empty replacement at a missing path. The no-create setting follows
+[Compose's long bind syntax](https://docs.docker.com/reference/compose-file/services/#long-syntax),
+read **2026-11-18 22:01:30 UTC**; the existing client's configuration parser accepted
+this override separately. That parser check is not a native restoration.
+It ignores process/boot
 quiescence because this operation is an original restart, while requiring exact
 current canonical data identity. Candidate mount evidence must independently
 show no overlap with those original data roots; a reused SQLite shared volume,
