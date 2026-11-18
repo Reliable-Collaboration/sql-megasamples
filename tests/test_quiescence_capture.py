@@ -35,6 +35,7 @@ def capture_fixture(tmp_path, monkeypatch):
     snapshot=tmp_path/'snapshot.json'
     row=dict(name='engine',id='test',pid=12345,running=True,state='running',mounts=[[str(data),'/data']])
     snapshot.write_text(json.dumps(dict(project='project',containers=[row])))
+    monkeypatch.setattr(gate,'caller_uid_mappings',lambda:[(0,0,4294967295)])
     monkeypatch.setattr(gate,'boot_id',lambda:'boot')
     monkeypatch.setattr(gate,'store_identity',lambda:dict(graph=str(tmp_path/'graph'),run=str(run)))
     def pod(*args):
@@ -168,3 +169,11 @@ def test_capture_namespace_object_comes_from_live_process_not_host_placeholder(c
     report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
     assert report['outcome']=='PASS'
     assert any(r['pid']==12348 and r['role']=='dedicated helper' for r in json.loads(out.read_text())['processes'])
+
+
+def test_capture_in_child_namespace_holds_before_process_inspection(capture_fixture,monkeypatch):
+    snap,out,proc,cg,data=capture_fixture
+    monkeypatch.setattr(gate,'caller_uid_mappings',lambda:[(0,1000,1)])
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='HOLD'
+    assert report['holds'][0]['reason']=='host initial user namespace required'

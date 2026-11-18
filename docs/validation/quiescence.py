@@ -169,6 +169,10 @@ DATA_DESTINATIONS = {'/var/lib/postgresql', '/var/lib/mysql', '/data', '/shared'
 def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), extra_sources=(), data_only=False):
     if output.exists():
         raise FileExistsError(output)
+    if caller_uid_mappings() != [(0,0,4294967295)]:
+        report = dict(outcome='HOLD', holds=[dict(reason='host initial user namespace required')])
+        private_write(output, dict(schema=1, complete=False, holds=report['holds']))
+        return report
     saved = dict(schema=1, complete=False, boot_id=boot_id(), store=store_identity(),
                  containers=[], processes=[], cgroups=[], sources=[], shared_helper=None, holds=[])
     def hold(reason, **detail):
@@ -575,6 +579,8 @@ def main():
         report = verify(args.capture)
     else:
         # Diagnostic status must never be used as the continuation gate.
+        if caller_uid_mappings() != [(0,0,4294967295)]:
+            raise ValueError('host initial user namespace required')
         saved = json.loads(args.capture.read_text())
         report = holder_scan(saved['sources'], [], Path('/proc'))
         print(json.dumps(report, indent=2)); return
