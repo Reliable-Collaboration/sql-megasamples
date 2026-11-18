@@ -58,6 +58,12 @@ def classify_owner(process, uid, owners=None):
     if process_uid == uid:
         return 'own'
     mappings = caller_uid_mappings()
+    # In rootless unshare, every non-overflow mapped UID represents this user's
+    # own host UID or allocated subordinate range. uid_map's outside IDs are in
+    # the parent namespace, so comparing them with caller UID 0 is not sufficient.
+    rootless = mappings != [(0, 0, 4294967295)]
+    if rootless and process_uid != overflow_uid() and any(start <= process_uid < start + size for start, _, size in mappings):
+        return 'owned-user-namespace'
     if owners is not None:
         entry = owners.get(process.name, {})
         try:
@@ -67,13 +73,16 @@ def classify_owner(process, uid, owners=None):
             return 'unresolved-owner'
         owned = any(outside <= host_uid < outside + size
                     for host_uid in entry['uids'] for _, outside, size in mappings)
+        if not owned:
+            line = next(line for line in (process / 'status').read_text().splitlines() if line.startswith('Uid:'))
+            current = list(map(int, line.split()[1:]))
+            translated = []
+            for host_uid in entry['uids']:
+                translated.append(next((inside + host_uid - outside for inside, outside, size in mappings
+                                        if outside <= host_uid < outside + size), overflow_uid()))
+            if current != translated:
+                return 'unresolved-owner'
         return 'owned-user-namespace' if owned else 'other-owner'
-    # In rootless unshare, every non-overflow mapped UID represents this user's
-    # own host UID or allocated subordinate range. uid_map's outside IDs are in
-    # the parent namespace, so comparing them with caller UID 0 is not sufficient.
-    rootless = mappings != [(0, 0, 4294967295)]
-    if rootless and process_uid != overflow_uid() and any(start <= process_uid < start + size for start, _, size in mappings):
-        return 'owned-user-namespace'
     # Linux NS_GET_OWNER_UID: owner of a user namespace, translated to caller's UID space.
     # Opening namespace entries of other owners may be denied: do not inspect their FDs.
     try:
@@ -96,6 +105,23 @@ def classify_owner(process, uid, owners=None):
     # A full identity map proves the initial/privileged namespace, outside our
     # rootless ownership scope. Any other unproved relationship remains unresolved.
     return 'other-owner' if mappings == [(0, 0, 4294967295)] else 'unresolved-owner'
+
+
+def verify_owners(report, proc=Path('/proc')):
+    """Bracket assumed-other owners with a second native-host credential sample."""
+    if caller_uid_mappings() != [(0, 0, 4294967295)]:
+        raise ValueError('owner verification must run in host initial user namespace')
+    for pid, entry in json.loads(report.read_text())['other_owner_records'].items():
+        process = proc / pid
+        try:
+            start = start_time(process)
+            line = next(line for line in (process / 'status').read_text().splitlines() if line.startswith('Uid:'))
+            current = list(map(int, line.split()[1:]))
+            if start != entry['start'] or start != start_time(process) or current != entry['uids']:
+                raise ValueError('ownership changed during process scan; repeat complete inventory and scan')
+        except (FileNotFoundError, ProcessLookupError):
+            if process.exists():
+                raise ValueError('ownership inspection incomplete')
 
 
 def unescape(value):
@@ -132,6 +158,7 @@ def evidence(snapshot, proc=Path('/proc'), owners=None):
     sources = {src for row in saved['containers'] for src, _ in row.get('mounts', [])}
     counts = dict(own=0, **{'owned-user-namespace': 0, 'other-owner': 0, 'unresolved-owner': 0})
     holders, helpers, unreadable = [], [], []
+    other_owner_records = {}
     mounts = host_mounts(proc)
     for process in proc.iterdir():
         if not process.name.isdigit() or int(process.name) == os.getpid():
@@ -141,6 +168,8 @@ def evidence(snapshot, proc=Path('/proc'), owners=None):
             owner = classify_owner(process, os.getuid(), owners)
             counts[owner] += 1
             if owner == 'other-owner':
+                if owners is not None:
+                    other_owner_records[process.name] = owners[process.name]
                 continue
             if owner == 'unresolved-owner':
                 unreadable.append(dict(pid=pid, error='OwnershipUnresolved',
@@ -174,10 +203,14 @@ def evidence(snapshot, proc=Path('/proc'), owners=None):
             unreadable.append(item)
     return dict(scope='own and owned-user-namespace processes only', counts=counts,
                 other_owner_inspection='Not run: requires privilege',
+                other_owner_records=other_owner_records,
                 holders=holders, helpers=helpers, unreadable=unreadable)
 
 
 def main():
+    if len(sys.argv) == 3 and sys.argv[1] == 'verify-owners':
+        verify_owners(Path(sys.argv[2]))
+        return
     if len(sys.argv) == 3 and sys.argv[1] == 'inventory':
         owner_inventory(Path(sys.argv[2]))
         return

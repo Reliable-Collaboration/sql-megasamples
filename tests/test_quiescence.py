@@ -151,6 +151,7 @@ def test_overflow_owner_with_mapping_extent_is_unresolved(tmp_path,monkeypatch):
 def test_host_owner_inventory_disambiguates_overflow_uid(tmp_path,monkeypatch):
     from types import SimpleNamespace
     process=tmp_path/'12345'; process.mkdir()
+    (process/'status').write_text('Uid:\t65534\t65534\t65534\t65534\n')
     original_stat=Path.stat
     monkeypatch.setattr(Path,'stat',lambda p,*a,**k: SimpleNamespace(st_uid=65534) if p==process else original_stat(p,*a,**k))
     monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,1000,1),(1,100000,65536)])
@@ -172,3 +173,26 @@ def test_native_inventory_records_only_uids_start_and_inspection_errors(tmp_path
     assert result == dict(host_initial_namespace=True,processes={'12345':dict(start='fixture-start',uids=[1000]*4),'54321':dict(error='FileNotFoundError')})
     assert output.stat().st_mode & 0o777 == 0o600
     with pytest.raises(FileExistsError): scanner.owner_inventory(output,proc)
+
+
+def test_current_mapped_uid_overrides_stale_host_owner(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    process=tmp_path/'12345'; process.mkdir()
+    original_stat=Path.stat
+    monkeypatch.setattr(Path,'stat',lambda p,*a,**k: SimpleNamespace(st_uid=27) if p==process else original_stat(p,*a,**k))
+    monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,1000,1),(1,100000,65536)])
+    monkeypatch.setattr(scanner,'start_time',lambda _:'same-start')
+    assert scanner.classify_owner(process,0,{'12345':dict(start='same-start',uids=[0]*4)}) == 'owned-user-namespace'
+
+
+def test_native_final_owner_check_refuses_credential_transition(tmp_path,monkeypatch):
+    proc=tmp_path/'proc'; process=proc/'12345'; process.mkdir(parents=True)
+    (process/'status').write_text('Uid:\t165533\t165533\t165533\t165533\n')
+    monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,0,4294967295)])
+    monkeypatch.setattr(scanner,'start_time',lambda _:'same-start')
+    report=tmp_path/'report.json'
+    report.write_text(json.dumps({'other_owner_records':{'12345':dict(start='same-start',uids=[0]*4)}}))
+    with pytest.raises(ValueError,match='ownership changed'):
+        scanner.verify_owners(report,proc)
+    (process/'status').write_text('Uid:\t0\t0\t0\t0\n')
+    scanner.verify_owners(report,proc)

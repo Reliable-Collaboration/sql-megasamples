@@ -220,7 +220,8 @@ The scanner's field interpretation follows Linux's
 cannot prove that the host is quiescent. The UID-map fallback follows
 [user namespace mapping rules](https://man7.org/linux/man-pages/man7/user_namespaces.7.html)
 (read **2026-11-18 19:03:41 UTC**): mapped subordinate IDs remain in scope. A native-host UID/start-time inventory
-distinguishes other owners before unshare translates their UIDs to overflow. Without
+distinguishes other owners before unshare translates their UIDs to overflow. Assumed-other owners get a second native credential check before a successful gate;
+changed credentials refuse. Current mapped UIDs take precedence over inventory. Without
 that independent evidence, an ambiguous overflow UID remains unresolved; a mapping
 extent’s unmapped starting ID cannot prove that every ID in the extent is unmapped.
 
