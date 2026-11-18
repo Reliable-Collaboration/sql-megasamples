@@ -83,6 +83,7 @@ def test_unreadable_own_or_racing_live_process_refuses(tmp_path,monkeypatch):
 
 
 def test_namespace_owner_ioctl_and_primary_mapping(tmp_path,monkeypatch):
+    monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,0,4294967295)])
     process = tmp_path / 'process'; (process / 'ns').mkdir(parents=True)
     (process / 'ns/user').write_bytes(b'fixture')
     uid = os.getuid() + 123
@@ -115,6 +116,7 @@ def test_closed_fd_shared_mapping_is_a_holder(tmp_path,monkeypatch):
 
 
 def test_unresolved_namespace_ownership_never_becomes_other_owner(tmp_path,monkeypatch):
+    monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,0,4294967295)])
     process=tmp_path/'process'; (process/'ns').mkdir(parents=True)
     # stat UID is mapped subordinate relative to a synthetic caller UID.
     uid=os.getuid()+123
@@ -124,3 +126,13 @@ def test_unresolved_namespace_ownership_never_becomes_other_owner(tmp_path,monke
         return original(path,*args,**kwargs)
     monkeypatch.setattr(Path,'open',denied)
     assert scanner.classify_owner(process,uid) == 'unresolved-owner'
+
+
+def test_mapped_subordinate_uid_is_inspected_even_when_namespace_denied(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    process=tmp_path/'process'; (process/'ns').mkdir(parents=True)
+    (process/'uid_map').write_text('0 1000 1\n1 100000 65536\n')
+    original_stat=Path.stat
+    monkeypatch.setattr(Path,'stat',lambda p,*a,**k: SimpleNamespace(st_uid=27) if p==process else original_stat(p,*a,**k))
+    monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,1000,1),(1,100000,65536)])
+    assert scanner.classify_owner(process,0) == 'owned-user-namespace'

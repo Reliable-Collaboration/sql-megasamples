@@ -248,3 +248,27 @@ def test_cloudbeaver_creation_uses_supported_up_flags():
     text=RUNBOOK.read_text()
     assert 'create --no-deps' not in text
     assert 'up --no-start --no-deps --force-recreate --no-build cloudbeaver' in text
+
+
+@pytest.mark.parametrize('refusal',['ports','state'])
+def test_pre_up_first_refusal_already_saved_checkpoint(tmp_path,refusal):
+    server=context(tmp_path,'rollback-down')
+    try:
+        (tmp_path/'original-running-services.txt').write_text('postgres\n')
+        script='. "$CONTEXT"\n'+r'''
+python3() {
+  case " $* " in
+    *' restart-mounts '*) printf '{"containers":[{"mounts":[["/new/target","/restore-target"]]}]}' > "$TEARDOWN_SNAPSHOT";;
+    *' ports '*) if test "$REFUSAL" = ports; then return 44; fi;;
+    *' exited '*) if test "$REFUSAL" = state; then return 44; fi;;
+  esac
+}
+podman() { :; }
+'''
+        script+=block('# BEGIN pre-up checkpoint\n','# END pre-up process gate')
+        result=subprocess.run(['bash','-eu','-c',script],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash'),'REFUSAL':refusal},capture_output=True,text=True)
+        assert result.returncode == 44,result.stderr
+        fresh=subprocess.run(['bash','-eu','-c','. "$CONTEXT"; test "$TEARDOWN_PHASE" = rollback-pre-up; grep -q /new/target "$TEARDOWN_SNAPSHOT"'],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},capture_output=True,text=True)
+        assert fresh.returncode == 0,fresh.stderr
+    finally:
+        server.close()

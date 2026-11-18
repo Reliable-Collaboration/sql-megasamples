@@ -401,7 +401,7 @@ def test_rollback_opens_with_fresh_shell_and_checks_ports():
     assert first_block.lstrip().startswith('# Fresh Bash maintenance shell')
     assert '. "$CONTEXT_FILE"' in first_block
     assert 'test -S' in first_block
-    assert text.index('ports --port-config') < text.index(' up -d --wait')
+    assert text.index('ports --port-config') < text.index(' up -d --no-deps --wait')
 
 
 def test_space_gate_counts_duplicate_archives_and_scratch_store(tmp_path, monkeypatch):

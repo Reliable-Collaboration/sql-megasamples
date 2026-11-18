@@ -17,9 +17,21 @@ def under(path, base):
     return path == base or path.startswith(base.rstrip('/') + '/')
 
 
+def caller_uid_mappings():
+    return [tuple(map(int, line.split())) for line in Path('/proc/self/uid_map').read_text().splitlines()]
+
+
 def classify_owner(process, uid):
-    if process.stat().st_uid == uid:
+    process_uid = process.stat().st_uid
+    if process_uid == uid:
         return 'own'
+    mappings = caller_uid_mappings()
+    # In rootless unshare, every non-overflow mapped UID represents this user's
+    # own host UID or allocated subordinate range. uid_map's outside IDs are in
+    # the parent namespace, so comparing them with caller UID 0 is not sufficient.
+    rootless = mappings != [(0, 0, 4294967295)]
+    if rootless and process_uid != 65534 and any(start <= process_uid < start + size for start, _, size in mappings):
+        return 'owned-user-namespace'
     # Linux NS_GET_OWNER_UID: owner of a user namespace, translated to caller's UID space.
     # Opening namespace entries of other owners may be denied: do not inspect their FDs.
     try:
@@ -39,7 +51,9 @@ def classify_owner(process, uid):
             return 'owned-user-namespace'
     except (PermissionError, OSError, ValueError):
         return 'unresolved-owner'
-    return 'other-owner'
+    # A full identity map proves the initial/privileged namespace, outside our
+    # rootless ownership scope. Any other unproved relationship remains unresolved.
+    return 'other-owner' if mappings == [(0, 0, 4294967295)] else 'unresolved-owner'
 
 
 def unescape(value):

@@ -212,7 +212,7 @@ git show "$APPROVED_UPGRADE_MERGE:docs/validation/live-upgrade.py" > "$UPGRADE_H
 git show "$APPROVED_UPGRADE_MERGE:docs/validation/quiescence.py" > "$BACKUP_DIR/quiescence.py"
 chmod 600 "$UPGRADE_HELPER" "$BACKUP_DIR/quiescence.py"
 TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE= TEARDOWN_ATTEMPT=
-ATTEMPT_DIR= CONFIG_DIR=
+ATTEMPT_DIR= CONFIG_DIR= CANDIDATE_SNAPSHOT=
 EVIDENCE_DIR="$BACKUP_DIR"
 CONTEXT_FILE="$BACKUP_DIR/resume-context.bash"
 APPROVED_ENGINE_MERGE= APPROVED_CLIENTS_MERGE= APPROVED_DATASET_MERGE=
@@ -236,7 +236,7 @@ umask 077
   declare -p BACKUP_DIR UPGRADE_ID UPGRADE_HELPER UPGRADE_TOOLS_CONTAINER MEGASAMPLES_PY \
     METADATA_BUNDLE DOCKER_HOST MEGASAMPLES_LIVE_API_PID APPROVED_UPGRADE_MERGE PREPARATION_STAGE \
     TEARDOWN_SNAPSHOT EXITED_RECEIPT TEARDOWN_PHASE TEARDOWN_ATTEMPT EXTRA_RESERVE_BYTES \
-    ATTEMPT_DIR CONFIG_DIR EVIDENCE_DIR CONTEXT_FILE XDG_RUNTIME_DIR \
+    ATTEMPT_DIR CONFIG_DIR EVIDENCE_DIR CONTEXT_FILE XDG_RUNTIME_DIR CANDIDATE_SNAPSHOT \
     APPROVED_ENGINE_MERGE APPROVED_CLIENTS_MERGE APPROVED_DATASET_MERGE \
     APPROVED_LTS_MERGE APPROVED_CREDENTIAL_MERGE TOOLS_ARCHIVE TOOLS_IMAGE CANDIDATE_ARCHIVE DOCKER_CLIENT
   printf '%s\n' 'export DOCKER_HOST COMPOSE_PROJECT_NAME=sql-megasamples'
@@ -1078,7 +1078,7 @@ METADATA_BUNDLE= MEGASAMPLES_LIVE_API_PID= APPROVED_UPGRADE_MERGE= EXTRA_RESERVE
 APPROVED_ENGINE_MERGE= APPROVED_CLIENTS_MERGE= APPROVED_DATASET_MERGE=
 APPROVED_LTS_MERGE= APPROVED_CREDENTIAL_MERGE=
 TOOLS_ARCHIVE= TOOLS_IMAGE= CANDIDATE_ARCHIVE= DOCKER_CLIENT=
-TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE=
+TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE= CANDIDATE_SNAPSHOT=
 PREPARATION_STAGE=rollback-prepared
 # Retained config is read from the digest-checked extraction.
 ms_tool "$MEGASAMPLES_PY" "$UPGRADE_HELPER" export-ports \
@@ -1262,25 +1262,27 @@ for line in (backup/'rollback-image-tags.txt').read_text().splitlines():
     if name in names: services[name]={"image":line,"pull_policy":"never"}
 (pathlib.Path(sys.argv[3])/'rollback-consoles.override.json').write_text(json.dumps({"services":services},indent=2)+'\n')
 PY_CONSOLE_ROLLBACK
-# Standalone retained helper reads the original port selection, even on the old branch.
-python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" \
-  --services-file "$BACKUP_DIR/original-running-services.txt"
-# The pre-up table applies to all current project containers (missing is recorded).
-python3 "$UPGRADE_HELPER" snapshot "$ATTEMPT_DIR/restart-before.json" --project sql-megasamples \
-  --phase restart-before --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
-python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/restart-before.json" \
-  "$ATTEMPT_DIR/restart-before-gate.json" --phase restart-before
-# Include old candidate mounts AND the new cold-restore targets, even before containers exist.
-python3 "$UPGRADE_HELPER" restart-mounts "$TEARDOWN_SNAPSHOT" \
-  "$ATTEMPT_DIR/restart-mounts.json" --attempt "$TEARDOWN_ATTEMPT"
-# Persist the populated-volume checkpoint before a process/port gate can refuse.
+# BEGIN pre-up checkpoint
+# Save the restart phase BEFORE any state, port or process gate can refuse.
+CANDIDATE_SNAPSHOT="$TEARDOWN_SNAPSHOT"
 TEARDOWN_PHASE=rollback-pre-up
 TEARDOWN_SNAPSHOT="$ATTEMPT_DIR/restart-mounts.json"
 EXITED_RECEIPT=
 save_context
+# If inventory construction refuses, rerun only this failed command first. Its
+# output is exclusive and is written only after every mountpoint was resolved.
+python3 "$UPGRADE_HELPER" restart-mounts "$CANDIDATE_SNAPSHOT" \
+  "$TEARDOWN_SNAPSHOT" --attempt "$TEARDOWN_ATTEMPT"
 # BEGIN pre-up continuation
+# Standalone helper reads the original port selection even on the old branch.
 python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" \
   --services-file "$BACKUP_DIR/original-running-services.txt"
+CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
+# Repeated state checks get fresh receipt paths; missing containers are recorded.
+python3 "$UPGRADE_HELPER" snapshot "$ATTEMPT_DIR/restart-before-$CHECK_ID.json" --project sql-megasamples \
+  --phase restart-before --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
+python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/restart-before-$CHECK_ID.json" \
+  "$ATTEMPT_DIR/restart-before-gate-$CHECK_ID.json" --phase restart-before
 # BEGIN pre-up process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
