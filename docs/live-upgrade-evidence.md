@@ -8,8 +8,8 @@ does not authorize a merge or another live cutover.
 
 The private maintenance record is `build/live-upgrade-backups/20261118T133807Z/` in
 the deployment checkout. Only its defect records and receipts were read for this
-change. No `.env`, `containers.json`, database dump or database files were read or
-copied. The public [correction receipt](validation/live-upgrade-corrections-2026-11-18.json)
+change. No private `.env`, `containers.json`, dump or data file from that backup
+was inspected or copied. The public [correction receipt](validation/live-upgrade-corrections-2026-11-18.json)
 records source-receipt hashes and the isolated validation results. Private backup
 contents and credential values are not published.
 
@@ -60,6 +60,19 @@ now includes those observations as well as port models and optional SQLite drop 
 A separate red test caught using native Podman in the tools-container port inspection;
 that inspection now uses the selected Docker socket, while the bind probes run in
 the tools container's host network namespace.
+
+Astra's review found that the inherited `ms_tool` function omitted interactive stdin.
+A regression and an actual harmless heredoc in the isolated tools container both
+**Failed (expected red)** before `podman exec -i` was added; both then **Passed**.
+The runbook now checks a stdin execution marker and requires nonempty logical dumps.
+Podman's [exec reference](https://docs.podman.io/en/latest/markdown/podman-exec.1.html),
+read 2026-11-18 17:27:30 UTC, confirms that stdin is otherwise closed. Review also
+caught discarded teardown exit codes and missing shell recovery instructions.
+Both status regressions and the fresh-shell recovery regression Failed before the
+fix and Passed afterwards. Actual Compose exit codes are retained beside the logs;
+a mode-0600 Bash context snapshot restores only selected non-secret variables and
+the tooling function. These additional review findings do not renumber the seven
+defects in the original live record.
 
 Run the archive rehearsal **on the host**, from the upgrade clone:
 
@@ -122,5 +135,6 @@ remain dated isolated reports, with this follow-up linked explicitly. No runtime
 image, dependency pin, dataset expectation or credential value changes in this PR.
 
 The strict password-output rule **Failed** during source inspection: repository
-factory defaults were displayed. No private credential file was read. The receipt
+factory defaults and fixture credentials were displayed. No private credential value
+was displayed or copied. The receipt
 records this process failure without repeating any value.

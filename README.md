@@ -221,7 +221,7 @@ connection examples prompt for the password. For a cutover, verify every new pas
 every previous password to be refused; see the [live runbook](docs/live-upgrade-runbook.md).
 Rotate all four values together, keep the previous file privately for rollback, run `make up`
 to apply them, then verify new-password sign-ins and authentication refusal of every old password
-with `docs/validation/verify-configured-passwords.py --previous-dir <private-backup-directory>`.
+with `python3 docs/validation/verify-configured-passwords.py --previous-dir <private-backup-directory>`.
 Run that verifier with the repository environment and the same container socket/project as the
 stack; do not put password values on the command line or in receipts.
 

@@ -60,14 +60,17 @@
     "repository_gate": {
       "status": "Passed",
       "command": "python -m megasamples check (locked tools environment, isolated socket/project)",
-      "tests": 269,
-      "unit_seconds": 23.79,
+      "tests": 273,
+      "unit_seconds": 23.41,
       "gate_failures": 0
     },
     "postgres_image": {
       "status": "Passed",
       "command": "python -m megasamples test-image --engine postgres",
-      "failures": 0
+      "failures": 0,
+      "cold_copy_run_seconds": 151.3,
+      "unchanged_budget_seconds": 180.0,
+      "log_sha256": "eedf5d0c379c0a399d253d7c3a08eebd3947ca257e322dfcc5b2f666b7bd4326"
     },
     "metadata_scratch_checkout": {
       "status": "Passed",
@@ -89,7 +92,7 @@
     "runbook_syntax": {
       "status": "Passed",
       "shell_blocks": 9,
-      "python_heredocs": 5
+      "python_heredocs": 6
     },
     "runtime_software_tree": {
       "status": "Passed",
@@ -97,7 +100,7 @@
     },
     "strict_password_output_rule": {
       "status": "Failed",
-      "detail": "Source inspection displayed public repository factory password defaults. No private credential file was read; no values repeated in this receipt."
+      "detail": "Source inspection displayed public repository factory defaults and fixture credentials. No private credential value displayed or copied; no values repeated in this receipt."
     },
     "live_operations": {
       "status": "Not run",
@@ -114,6 +117,115 @@
     "sqlite_server_authentication": {
       "status": "Unsupported",
       "detail": "SQLite has no server accounts"
+    },
+    "mysql_image": {
+      "status": "Passed",
+      "command": "python -m megasamples test-image --engine mysql",
+      "failures": 0,
+      "cold_copy_run_seconds": 155.3,
+      "unchanged_budget_seconds": 170.0,
+      "log_sha256": "ad8feec76551a1ecb7a7504b84ebdefa16490d6043bdcd65e27ecf9ea468474c"
+    },
+    "sqlite_image": {
+      "status": "Passed",
+      "command": "python -m megasamples test-image --engine sqlite",
+      "failures": 0,
+      "cold_copy_run_seconds": 124.7,
+      "unchanged_budget_seconds": 150.0,
+      "log_sha256": "9a43a914d8b4970fd2b0393cf56a1f2e881ed60a26b2f40df3a1b0164e4173c5"
+    },
+    "heredoc_delivery": {
+      "status": "Passed",
+      "red": "Unit regression and actual isolated stdin marker refused empty execution before exec -i",
+      "green": "Both passed with exec -i; nonempty logical-dump gates added"
+    },
+    "teardown_status_and_context": {
+      "status": "Passed",
+      "red": "Both teardown guards discarded status 37, and recoverable context was absent",
+      "green": "Exact exit codes retained without fallthrough; fresh Bash context restoration and mode 0600 passed"
+    },
+    "isolation": {
+      "status": "Passed",
+      "isolated_container_id_image_state_unchanged": true,
+      "live_container_id_image_state_start_time_unchanged": true,
+      "live_baseline_receipt": "phase-b-6/live-end-state.json",
+      "live_containers": [
+        {
+          "name": "megasamples-mysql",
+          "id": "a3f5c1204ee44b48dedbc5d3b7d9a8981aa5ffe04988019d58864b5157eac0d6",
+          "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:10.170768484-06:00"
+        },
+        {
+          "name": "megasamples-postgres",
+          "id": "ba1a9f7586814467210c0a5549f02f777dbd6d32af13f4176bb3e99c613316cc",
+          "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:13.76245404-06:00"
+        },
+        {
+          "name": "megasamples-sqlite",
+          "id": "7adacf6eca19046bc2d8daa1a69271ac3bd112046eb41ffc143364e60b740a5e",
+          "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+          "state": "running",
+          "started_at": "2026-11-18T08:50:55.525102141-06:00"
+        },
+        {
+          "name": "megasamples-landing",
+          "id": "10dcf6333c62c4c636272bdbf591dfc6a7cce847d2ac0c979b39d274fb2a2e29",
+          "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.809734163-06:00"
+        },
+        {
+          "name": "megasamples-cloudbeaver",
+          "id": "2c08eebb7364571e658ef56d61769ff8e0d815a54954bc7a6c5c45259d859931",
+          "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.847600394-06:00"
+        },
+        {
+          "name": "megasamples-dbgate",
+          "id": "3d219c0b086d05f86e972d6f107743e4140719c67ca5dee67c20be05bd14120e",
+          "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.787017348-06:00"
+        },
+        {
+          "name": "megasamples-adminer",
+          "id": "7ef317c5e2574872c447d7b2a090d91669ec61f224415ece77bde7ba4e4e8343",
+          "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.977097776-06:00"
+        },
+        {
+          "name": "megasamples-phpmyadmin",
+          "id": "044fa1e2a6ee97811efc2d0165776330493c6ef66c33c1dcad9ee4da03f08128",
+          "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.93073862-06:00"
+        }
+      ],
+      "isolated_containers": [
+        "ef64d26b142c7ecbe5b0ffa3b2e223a1501b8f0c7582e8ad7baf357db7183f14 megasamples-upgrade-tools 8ef0c198735c09bd0434807c462f61595e3b1b1fe4c7557d441a3e2c257b6740 running",
+        "c1ebd848a39b3ec7a104c80185ba5ea4f8ccae1b22a53885ca0f2d611b1e53e3 megasamples-upgrade-browser 32cfab2f09595b0266babd6ef76ee175ef024617f4077797bcecf235fe88eb68 exited",
+        "764e08b53d08300dcfd369de7dc65257f531dc3be2b7850e37efc9b2695d0e59 megasamples-build-postgres 3cccc725163a95947178f4da5e9bf16add75cb286170ac5a2cd2f6513534955d running",
+        "adc7ac97d80975e5c7b8d670a2d962000815ac380c95621bab6c8e39430e07e2 megasamples-build-mysql e3c5e24cdccea30c955dfa05b9b07fdc3b62323321c1e827a563e846d7552ea5 running",
+        "f094743e286e5475ed47db4a335b5ebfca7d923683699fa5bcb2cf2a0ab6561b megasamples-adminer 3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82 running",
+        "dbc3b188a07d6c9920d1fc7011b43e5f6958f96e2d8abee622ce9860b3f9a76d megasamples-landing c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39 running",
+        "c5f6b29fc07e06613f9c145a536e723be2fe28cc98a6e7a1d0ea71fa6c53fe47 megasamples-phpmyadmin 3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786 running",
+        "9019958eba77e79dfd88fa02426d84b2b64a0a188d5b88ef97b056a9a3301634 megasamples-dbgate 29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0 running",
+        "9a8bc77db454ed2faa7ce0cd264479166cb8a761b766a46787ce7b2f48a4f6fb megasamples-cloudbeaver 3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7 running",
+        "4dbd24f800b97d2937a47eb0b2455d67b1256d8fd55431fe340af30fa4f52734 megasamples-sqlite 090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb running",
+        "3ac86c34b9eb04c1d0ece86a10884816ef79d9cd0b278ae8690e651f28951b1d megasamples-postgres 41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3 running",
+        "9507a0bf975fc7833b2aa483f9449f5d95bdceab495782c6365145dc18f13e19 megasamples-mysql 20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134 running"
+      ],
+      "limitation": "No active database-byte snapshot; live command inspected only identities/states/start times",
+      "initial_parser": {
+        "status": "Failed",
+        "detail": "Initial parser treated Go-formatted timestamp as one word; corrected offline using saved output, without another live command."
+      }
     }
   },
   "netns": {
@@ -250,17 +362,21 @@
       ]
     }
   },
-  "in_progress": [
-    "mysql image suite",
-    "sqlite image suite",
-    "final isolation proof"
-  ],
   "limitations": [
     "Complete new runbook not executed against live service",
     "No complete live rollback restoration",
     "Forward protocol fixtures do not prove authentication or TLS",
     "External DataIntent suites not run here",
     "No full 95-pair fingerprint rerun in this documentation task; full configured image checks are separate",
-    "Fable review pending coordinator; Astra review pending completed validation"
-  ]
+    "Fable model unavailable in this session; review left pending for coordinator. Astra final review tracked on PR handoff."
+  ],
+  "artifacts": {
+    "check-reviewed.log": "5818422b752b231927ec3984af717f5389086b706bcf75f94edbf1159dfa151d",
+    "syntax.txt": "1b63c613d229472be11ad2d40a9de8f2e036dc69787f8af5e1dc0a95c7280aaf",
+    "stdin-red.txt": "da186b3582765658f09d2f22946fa442490a9e5b00334e12c8518bbfa9dc1abb",
+    "teardown-status-red.txt": "785c303f4f1a5e5bc0bc3a9393e9cd71e6979255d1954ef3ee24266098f5622a",
+    "context-red.txt": "4d5eeb2d0879fc47e0608b589b6fbfadefc347b8489e04f24e12778602b667a9",
+    "scratch-metadata-red.txt": "95312d7971114045897037b960fa5da8102257c32150a9c6c92f5fe82f4e147c",
+    "netns-isolated.json": "0e99f9099ad0177f781f9f02a96532a3be9470f644ab668e949785d371ec1215"
+  }
 }
