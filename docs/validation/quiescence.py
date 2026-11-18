@@ -147,9 +147,6 @@ def resolve_roots(device, root, mounts):
                   for dev, base, point in mounts if dev == device and under(root, base)]
     if candidates:
         return sorted({path or '/' for _, path in candidates})
-    # A namespace-private filesystem's whole root cannot itself identify a host bind.
-    if root == '/':
-        return []
     raise ValueError('cannot resolve mount root to host path: ' + device + ' ' + root)
 
 

@@ -309,3 +309,12 @@ def test_shared_host_network_and_service_cgroup_do_not_attribute_helper(tmp_path
     report=scanner.evidence(snap,proc)
     assert report['helpers'][0]['deployment'] is False
     assert report['refusals']==[]
+
+
+def test_unresolvable_whole_root_on_source_device_refuses(tmp_path,monkeypatch):
+    snap,proc,p=fixture(tmp_path,monkeypatch)
+    monkeypatch.setattr(scanner,'host_mounts',lambda _: [('8:9','/private/store','/store')])
+    (p/'mountinfo').write_text('10 1 8:9 / /data rw - ext4 /dev/fixture rw\n')
+    report=scanner.evidence(snap,proc)
+    assert report['refusals'][0]['reason']=='unresolvable mount on recorded source device'
+    assert report['refusals'][0]['holds']==dict(device='8:9',root='/')

@@ -616,7 +616,7 @@ missing-original reconstruction is provided.
 
 [Compose start](https://docs.docker.com/reference/cli/docker/compose/start/) and
 [stop](https://docs.docker.com/reference/cli/docker/compose/stop/) document the wait
-and timeout flags (read 2026-11-18 19:39 UTC).
+and timeout flags (read 2026-11-18 19:50:17 UTC).
 
 If abandoning before `.env` rotation, cold copies may not exist, so do **not** enter the full
 cold-copy rollback. If stop was attempted, complete the original recovery checks below first, using `original-restart`
@@ -902,9 +902,11 @@ survive removal in that retained snapshot. No arguments or environments are read
 Its decision is explicitly over inspectable operations. Other owners are counted
 separately, without descriptor inspection. Every unreadable own operation names
 `comm`, PID, owner and operation; these rows are **not certified**, and do not alone
-refuse. On this host some native non-dumpable processes and rootless descriptors
+refuse. On this host some native processes and rootless descriptors
 remain unreadable even natively. Review and retain these limits at every gate;
-status 0 does not certify those operations or other owners. Zombies and exited tasks
+status 0 does not certify those operations or other owners. Descriptor link access is governed by
+[ptrace access checks](https://man7.org/linux/man-pages/man5/proc_pid_fd.5.html)
+(read 2026-11-18 19:50:17 UTC); this correction does not establish each denial's cause. Zombies and exited tasks
 have their own counts and no surviving file descriptors or network namespace.
 Processes that disappear are scan races. Repeat immediately for a newly born process
 or changed ownership; repetition is not a remedy for a persistent permission denial.
