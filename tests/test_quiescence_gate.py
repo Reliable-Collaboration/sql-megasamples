@@ -209,3 +209,28 @@ def test_exited_zombie_with_deleted_cgroup_is_not_unresolved(fixture):
     report=verify()
     assert 'required association unresolved' in reasons(report,'holds')
     assert 'recorded process survives' in reasons(report,'refusals')
+
+
+def test_history_walk_failure_holds_instead_of_dropping_prior_records(fixture,monkeypatch):
+    saved,proc,cg,data,path,verify=fixture
+    assert verify()['outcome']=='PASS'
+    def denied(root,onerror=None):
+        onerror(PermissionError('history directory unreadable'))
+        return iter(())
+    monkeypatch.setattr(gate.os,'walk',denied)
+    report=gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='HOLD'
+    assert 'capture history inspection unreadable' in reasons(report,'holds')
+
+
+def test_legacy_unindexed_capture_is_also_required(fixture):
+    saved,proc,cg,data,path,verify=fixture
+    assert verify()['outcome']=='PASS'
+    prior=copy.deepcopy(saved);p=process(proc,comm='rootlessport')
+    prior['processes']=[dict(gate.process_identity(p),role='dedicated helper')]
+    legacy=data.parent/'stop-capture-20261118T120000.json';legacy.write_text(json.dumps(prior))
+    report=gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='REFUSE'
+    assert 'dedicated helper survives' in reasons(report,'refusals')
+    legacy.unlink()
+    assert gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)['outcome']=='PASS'
