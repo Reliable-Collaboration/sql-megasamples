@@ -960,6 +960,7 @@ case "$TEARDOWN_PHASE" in
   rollback-stop) RESUME_AT=pre-down ;;
   rollback-down) RESUME_AT=restore ;;
   rollback-pre-up) RESUME_AT=pre-up ;;
+  rollback-populate) RESUME_AT=populate ;;
   *) echo 'STOP: unknown teardown phase'; exit 1 ;;
 esac
 save_context
@@ -974,7 +975,12 @@ retry only the same scoped guarded down (append logs, retain the prior exited re
 repeat the four checks. For **rollback-pre-up**, keep the saved combined snapshot
 (including all four new volume targets), repeat the four checks and resume at
 `# BEGIN pre-up continuation`; never repeat branch/configuration restoration or volume
-creation. Recheck original ports there before starting. Never use `down -v`, force-remove an active mount, repeat preparation,
+creation. For **rollback-populate**, source the exact attempt context in a fresh
+shell, verify the socket and immutable digests at the beginning of Roll back,
+then resume at `# BEGIN rollback population` through the overrides and pre-up
+checkpoint. That block rechecks labelled volume ownership, state and all target
+mounts before retrying the copy. Never repeat branch/configuration restoration
+for this checkpoint. Recheck original ports before starting. Never use `down -v`, force-remove an active mount, repeat preparation,
 regenerate passwords or restart candidates implicitly. Preserve original volumes and inputs.
 
 In the isolated 30-dataset rehearsal, replacing all three engine containers and restoring SQLite's shared files took 121.65 seconds. Individual whole-engine resets took 23.07 seconds (MySQL), 26.4 seconds (PostgreSQL) and 92.4 seconds (SQLite). A stop/start of the existing eight-service stack, without replacing data volumes, took 38.66 seconds and preserved every recorded count, SQLite hash and inserted probe row. These measurements exclude cold-backup time and the coordinator's DataIntent checks and predate this follow-up; the added datasets have separate measurements in “Added dataset cost and scope”. Initial stack startup took 328.32 seconds while this custom store waited for health scheduling; real probes then completed successfully through the isolated-only runner. These are observed preparation/outage components, not a full-manifest downtime guarantee. The complete full-Contoso repository check against the shipped MySQL configuration took 1,736.02 seconds in this rehearsal, dominated by an indexed nested-loop constraint query. If the maintenance window includes that full integrity audit, budget its verification time as well as startup, cold copies and DataIntent tests.
@@ -1182,9 +1188,15 @@ APPROVED_LTS_MERGE= APPROVED_CREDENTIAL_MERGE=
 TOOLS_ARCHIVE= TOOLS_IMAGE= CANDIDATE_ARCHIVE= DOCKER_CLIENT=
 TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE= CANDIDATE_SNAPSHOT=
 PREPARATION_STAGE=rollback-prepared
-# Retained config is read from the digest-checked extraction.
-ms_tool "$MEGASAMPLES_PY" "$UPGRADE_HELPER" export-ports \
-  "$ATTEMPT_DIR/original-ports.json" --config "$CONFIG_DIR/megasamples.yaml" </dev/null
+# Ports are immutable evidence, independent of checkout/venv/tools state.
+if test -f "$BACKUP_DIR/original-ports.json"; then
+  cp "$BACKUP_DIR/original-ports.json" "$ATTEMPT_DIR/original-ports.json"
+else
+  : "${PORTS_RECEIPT:?Set exact original-ports.json from the first attempt receipt}"
+  test -f "$PORTS_RECEIPT"
+  cp "$PORTS_RECEIPT" "$ATTEMPT_DIR/original-ports.json"
+fi
+chmod 600 "$ATTEMPT_DIR/original-ports.json"
 save_context
 # Record CONTEXT_FILE's exact path in the maintenance receipt.
 # END rollback bootstrap
@@ -1288,10 +1300,18 @@ if test -f "$BACKUP_DIR/adminer.generated.html"; then
   chmod 644 consoles/landing/adminer.html  # readable by the local web-server worker
 fi
 # Restore the entire console tree, including templates, generated connections and landing files.
-mv consoles "$ATTEMPT_DIR/console-tree-before-restore"
-cp -a "$CONFIG_DIR/consoles" ./consoles
-if test -d .venv; then mv .venv "$ATTEMPT_DIR/failed-upgrade-python-venv"; fi
-if test -d "$BACKUP_DIR/python-venv"; then cp -a "$BACKUP_DIR/python-venv" ./.venv; fi
+if ! test -e "$ATTEMPT_DIR/console-tree-before-restore"; then
+  mv consoles "$ATTEMPT_DIR/console-tree-before-restore"
+fi
+mkdir -p consoles
+cp -a "$CONFIG_DIR/consoles/." ./consoles/
+if test -d .venv && ! test -e "$ATTEMPT_DIR/failed-upgrade-python-venv"; then
+  mv .venv "$ATTEMPT_DIR/failed-upgrade-python-venv"
+fi
+if test -d "$BACKUP_DIR/python-venv"; then
+  mkdir -p .venv
+  cp -a "$BACKUP_DIR/python-venv/." ./.venv/
+fi
 cp "$CONFIG_DIR/megasamples.yaml" ./megasamples.yaml
 cp "$CONFIG_DIR/compose.yaml" ./compose.yaml
 if test -f "$CONFIG_DIR/.env"; then cp "$CONFIG_DIR/.env" ./.env; chmod 600 .env; else rm -f .env; fi
@@ -1313,14 +1333,37 @@ done < "$BACKUP_DIR/original-tool-images.txt"
 For exact preservation of application writes, create four **new** named rollback volumes (the three engine data directories and SQLite shared files), populate them from the cold copies while no database has them open, and attach them to the original image IDs. The backup loop resolves the actual source of each stopped data mount and copies it without changing ownership. Both backup and restore run `cp -a` inside the native rootless user namespace ([unshare reference](https://docs.podman.io/en/latest/markdown/podman-unshare.1.html), read 2026-11-16 21:05 UTC); this command is unavailable through a remote Podman client. The cold files may require `podman unshare` to inspect because their subordinate UID/GID ownership is retained. Use a Compose override, leaving original volumes untouched:
 
 ```sh
+# BEGIN rollback population
+# Save BEFORE creating or filling any volume. A partial copy resumes here only.
+TEARDOWN_PHASE=rollback-populate
+save_context
 for engine in postgres mysql sqlite sqlite-shared; do
-  podman volume create "megasamples-rollback-$engine-$TEARDOWN_ATTEMPT"
+  volume="megasamples-rollback-$engine-$TEARDOWN_ATTEMPT"
+  if podman volume exists "$volume"; then
+    test "$(podman volume inspect -f '{{index .Labels "dl086.rollback-attempt"}}' "$volume")" = "$TEARDOWN_ATTEMPT"
+  else
+    podman volume create --label "dl086.rollback-attempt=$TEARDOWN_ATTEMPT" "$volume"
+  fi
 done
-# podman unshare preserves ownership from the cold copies in rootless Podman's namespace.
+POPULATE_ID=$(date -u +%Y%m%dT%H%M%S%N)
+POPULATE_SNAPSHOT="$ATTEMPT_DIR/populate-mounts-$POPULATE_ID.json"
+python3 "$UPGRADE_HELPER" restart-mounts "$TEARDOWN_SNAPSHOT" \
+  "$POPULATE_SNAPSHOT" --attempt "$TEARDOWN_ATTEMPT"
+python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
+  "$ATTEMPT_DIR/populate-state-$POPULATE_ID.json" --phase candidate-teardown
+PROCESS_RC=0
+if python3 "$EVIDENCE_DIR/quiescence.py" "$POPULATE_SNAPSHOT" \
+  > "$EVIDENCE_DIR/populate-process-$POPULATE_ID.json"; then :;
+else PROCESS_RC=$?; fi
+printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/populate-process-$POPULATE_ID.exit-code"
+test "$PROCESS_RC" = 0
+# Rerunning cp -a overlays only these attempt-labelled, never-started targets.
+# Do not resume this phase after any original startup. Preserve partial copies.
 for engine in postgres mysql sqlite sqlite-shared; do
   target=$(podman volume inspect -f '{{.Mountpoint}}' "megasamples-rollback-$engine-$TEARDOWN_ATTEMPT")
   podman unshare cp -a "$BACKUP_DIR/$engine/." "$target/"
 done
+# END rollback population
 # PostgreSQL's backup above includes the 18/docker path under /var/lib/postgresql.
 cat > "$ATTEMPT_DIR/rollback.override.yaml" <<YAML
 services:

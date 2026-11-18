@@ -21,6 +21,7 @@ def retained(tmp_path):
             out.addfile(entry, io.BytesIO(b'{}\n'))
     digest = upgrade.sha(backup / 'original-configurations.tar')
     (backup / 'original-configurations.sha256').write_text(digest + '  original-configurations.tar\n')
+    (backup / 'original-ports.json').write_text('{"engines":["postgres"],"consoles":[],"ports":{"postgres":5432}}')
     (backup / 'failed-candidate.env').write_text('# retained empty fixture\n')
     (backup / 'phase-a-resume-receipt.json').write_text('{}')
     return backup
@@ -104,6 +105,7 @@ def test_bootstrap_and_abort_execute_without_mutating_retained_inputs(tmp_path):
     stubs = r'''
 cd() { if test "$1" = /home/rcc-vstudio/working/sql-megasamples; then builtin cd "$CHECKOUT"; else builtin cd "$@"; fi; }
 podman() {
+  return 42  # Bootstrap must not need the tools container, including export-ports.
   while test "$#" -gt 0; do
     if test "$1" = export-ports; then shift; printf '{"engines":["postgres"],"consoles":[],"ports":{"postgres":5432}}' > "$1"; return; fi
     shift

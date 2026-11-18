@@ -311,3 +311,32 @@ docker() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/recovery-calls"; }
             assert 'stop --timeout 300 postgres' in calls
             assert calls.index('stop --timeout') < calls.rindex('--phase original-stop')
     finally: server.close()
+
+
+def test_population_failure_resumes_in_fresh_shell_without_restore(tmp_path):
+    server=context(tmp_path,'rollback-down')
+    try:
+        script='. "$CONTEXT"\n' + r'''
+python3() { :; }
+podman() { case "$1 $2" in 'volume exists') return 1;; 'volume create') return 0;; 'volume inspect') printf /scratch/target;; 'unshare cp') return 45;; esac; }
+'''
+        script+=block('# BEGIN rollback population\n','# END rollback population')
+        env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')}
+        failed=subprocess.run(['bash','-eu','-c',script],env=env,capture_output=True,text=True)
+        assert failed.returncode==45,failed.stderr
+        script='. "$CONTEXT"\ntest "$TEARDOWN_PHASE" = rollback-populate\n'+r'''
+python3() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/populate-calls"; }
+podman() {
+ case "$1 $2" in
+ 'volume exists') return 0;;
+ 'volume inspect') case "$*" in *Labels*) printf '%s' "$TEARDOWN_ATTEMPT";; *) printf /scratch/target;; esac;;
+ 'volume create') return 46;;
+ 'unshare cp') printf 'copy\n' >> "$EVIDENCE_DIR/populate-calls";;
+ esac
+}
+'''
+        script+=block('# BEGIN rollback population\n','# END rollback population')
+        resumed=subprocess.run(['bash','-eu','-c',script],env=env,capture_output=True,text=True)
+        assert resumed.returncode==0,resumed.stderr
+        assert (tmp_path/'populate-calls').read_text().count('copy\n')==4
+    finally: server.close()
