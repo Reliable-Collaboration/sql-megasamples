@@ -1,0 +1,118 @@
+# First live upgrade and runbook corrections (DL-086)
+
+The coordinator executed the runbook at `2cf1f3e9` on **2026-11-18**. The upgraded
+service was verified as described below. **Acceptance is held** for a DataIntent test
+failure outside this service. DL-087 holds this documentation PR in draft. Fable and
+Astra review and the coordinator's release are required before merging it; this task
+does not authorize a merge or another live cutover.
+
+The private maintenance record is `build/live-upgrade-backups/20261118T133807Z/` in
+the deployment checkout. Only its defect records and receipts were read for this
+change. No `.env`, `containers.json`, database dump or database files were read or
+copied. The public [correction receipt](validation/live-upgrade-corrections-2026-11-18.json)
+records source-receipt hashes and the isolated validation results. Private backup
+contents and credential values are not published.
+
+## Executed service checks and their limits
+
+`phase-b-6/phase-b-receipt.json` and `phase-b-6/live-end-state.json` retain the final
+container/image identities and inherited runtime queries from attempt 5. They record
+native account rotation, complete registry/count checks, SQLite file hashes and the
+five supported added-dataset fingerprint/structural checks. They do **not** establish
+a complete live rerun of the isolated fingerprint matrix, successful DataIntent suites,
+certificate validation or a complete live rollback restoration.
+
+The forwarded checks were **host protocol proofs**: PostgreSQL answered an SSLRequest;
+MySQL sent the upgraded server greeting. Forwarded authenticated SQL was **Not run**.
+Local authenticated account tests do not close that gap. The corrected procedure
+requires host client sign-ins after protocol checks. Host `psql` and `mysql` are absent
+in this documentation environment; no host installation or live connection was attempted.
+
+| Runtime recorded after cutover | Release source | Source read (UTC) |
+|---|---|---|
+| PostgreSQL 18.7 (previously 18.6) | [Release notes](https://www.postgresql.org/docs/release/18.7/) | 2026-11-18 17:06:28 |
+| MySQL 9.7.4 (previously 9.7.2) | [Release notes](https://dev.mysql.com/doc/relnotes/mysql/9.7/en/) | 2026-11-18 17:06:28 |
+| SQLite 3.54.1 | [Release record](https://sqlite.org/releaselog/3_54_1.html) | 2026-11-18 17:06:28 |
+
+MySQL's selected line is LTS ([release policy](https://dev.mysql.com/doc/refman/9.7/en/mysql-releases.html),
+read 2026-11-18 17:13:34 UTC). PostgreSQL major 18 is supported under its major-version
+policy ([version table](https://www.postgresql.org/support/versioning/), read
+2026-11-18 17:13:34 UTC); PostgreSQL does not designate a separate LTS product line.
+The earlier [LTS audit](lts-upgrade-evidence.md) retains all unchanged client/runtime
+pins and the source URL/read time for each historical version or support selection.
+
+## Corrections and regression evidence
+
+| Defect | Replayed correction | Validation |
+|---|---|---|
+| 1. Multi-image save archived the first configuration under every tag | One docker archive per unique full image ID; hash the actual config referenced by `manifest.json` | **Failed (expected red):** old save omitted the second image. **Passed:** corrected saves identify both distinct configurations. |
+| 2. Rollback checked/loaded the malformed archive | Check the entire per-image digest/configuration set before loading anything; load, explicitly re-tag every mapping, retain tag-to-ID checks; rehearse the full rollback set before downtime | **Failed (expected red):** old load mapped the second tag to the first image. **Passed:** corrected load restored each ID/tag. Corruption refused before any load in unit tests. |
+| 3. Compose stop failed during SQLite network teardown | Stop on failure; permit coordinator continuation only after the four recorded checks | Reproduction attempts below; cause unknown. Cold copies must follow confirmed stop, not merely a Compose error. |
+| 4. Unrelated process occupied the console port | Check every configured endpoint before downtime, after stop and again before console startup | **Failed (expected red):** old runbook omitted the gate. **Passed:** owned scratch listener refused; same port accepted after closing it. Project exemptions use only running containers' port fields. |
+| 5. Rollback down failed during MySQL network teardown | Apply the same four checks before restoring branch/configuration/data | Reproduction attempts below; cause unknown. No blanket ignore, sudo or host-service workaround. |
+| 6. Fourteen generated models were absent | Bundle compared-build metadata with digests, copy only missing matching files, audit the entire selected set before downtime | **Failed (expected red):** old runbook lacked the gate. Scratch checkout with its warehouse model removed was refused. **Passed:** transfer/repair and complete digest checks. Existing differing files cannot be overwritten. |
+| 7. Forward verification ran inside an engine container | Probe protocols and sign in with clients on the host; take endpoint from private configuration/listening sockets | **Passed:** host-local synthetic PostgreSQL/MySQL protocol fixtures. Actual first-run host protocol proofs are inherited from the receipt. **Not run:** new live probes and forwarded client authentication. |
+
+The unchanged six initial helper tests Passed before continuation. Three preparation
+assertions then Failed against the old runbook. A further red test identified the
+verifier's dependency on selected `build/live/*.observed.yaml`; the metadata bundle
+now includes those observations as well as port models and optional SQLite drop lists.
+A separate red test caught using native Podman in the tools-container port inspection;
+that inspection now uses the selected Docker socket, while the bind probes run in
+the tools container's host network namespace.
+
+Run the archive rehearsal **on the host**, from the upgrade clone:
+
+```sh
+. /home/rcc-vstudio/working/sql-megasamples-upgrade-env/env.sh
+test "$CONTAINERS_STORAGE_CONF" = /home/rcc-vstudio/working/sql-megasamples-upgrade-env/storage.conf
+mkdir -p build/dl086
+python3 docs/validation/rehearse-live-upgrade.py
+```
+
+It asserts the graphroot, reads two existing isolated console images, seeds fresh
+scratch stores and runs both old and corrected commands there. It starts no engine
+and uses no database volume. It preserves the malformed fixture and successful
+receipts under `build/dl086/rehearsal-*/`. The two-image regression is deliberately
+small; the runbook separately requires rehearsal of the **complete actual rollback
+set** before downtime. That future live rehearsal was **Not run** by this task.
+The first live run's full-set scratch rehearsal is recorded in the private phase-A
+and rollback-load receipts. A complete live restoration remains unverified.
+
+Podman's [save reference](https://docs.podman.io/en/latest/markdown/podman-save.1.html),
+read 2026-11-18 17:06:28 UTC, explains that additional positional names are tags
+unless multi-image mode is enabled. The corrected helper avoids that ambiguity.
+
+## Network teardown investigation
+
+Fresh scratch-store Compose startup with Pasta **Failed** opening the rootless network
+namespace with permission denied. A scratch slirp4netns startup stalled and was
+terminated; neither attempt reached stop/down. Those are startup limitations,
+not reproductions of the live teardown failure. Only this task's scratch processes,
+fixture containers and networks were cleaned up. Scratch image stores/receipts remain.
+The separate isolated stop/down attempt and its result are in the correction receipt.
+
+**The live teardown root cause is unknown.** The runbook requires all four checks,
+for both stop and rollback down: all engines exited; no deployment container running;
+no process holding any data mount; no leftover pasta/slirp4netns/rootlessport belonging
+to that deployment. Inconclusive attribution blocks continuation. Helpers belonging
+to a separate isolated store can remain only with recorded attribution. Existing
+LAN forwarders are unchanged.
+
+## Documentation checks
+
+The README's password/default/rotation/reset guidance was checked against
+`.env.example`, `.gitignore`, `config.passwords()`, the Compose generators,
+`megasamples/reset.py`, `megasamples/credentials.py`, and the existing native-password
+verifier. Its LAN examples prompt for the read account's configured password and
+keep the address outside Git. The examples' client flags were checked against
+[psql](https://www.postgresql.org/docs/18/app-psql.html) and
+[mysql](https://dev.mysql.com/doc/refman/9.7/en/mysql-command-options.html), both read
+2026-11-18 17:13:34 UTC. They were not authenticated against live forwards here.
+The runbook's metadata list was checked against the PostgreSQL/SQLite adapters,
+`verify.live_hub_observed()` and `registry.image_counts()`.
+
+Repository gate, full configured image suites, runbook syntax checks and final
+isolation results are recorded in the correction receipt. Previous evidence pages
+remain dated isolated reports, with this follow-up linked explicitly. No runtime
+image, dependency pin, dataset expectation or credential value changes in this PR.

@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-"""Archive regression and rootless teardown rehearsal; isolated store READ ONLY.
+"""Archive regression rehearsal; isolated store READ ONLY.
 
 Source the isolated env.sh first. Runs on the host (native Podman required).
 Uses two small existing images, never a database volume, and fresh scratch stores.
 Artifacts stay under build/dl086; no prune or existing-container operation.
 """
 import importlib.util
-import argparse
 import json
 import os
 from pathlib import Path
@@ -29,9 +28,6 @@ def run(args, env=None, check=True):
 
 
 def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--teardown', action='store_true', help='also attempt scratch Compose stop/down (requires rootless networking)')
-    args = parser.parse_args()
     assert Path.cwd() == ROOT
     assert os.environ.get('CONTAINERS_STORAGE_CONF') == str(ENV / 'storage.conf')
     assert os.environ.get('DOCKER_HOST') == 'unix://' + str(ENV / 'podman.sock')
@@ -60,7 +56,7 @@ def main():
         assert pod('info', '--format', '{{.Store.GraphRoot}}') == str(base / 'graph')
         return pod, env
 
-    source, source_env = scratch('save-store')
+    source, _ = scratch('save-store')
     target, _ = scratch('load-store')
     backup = out / 'backup'
     backup.mkdir()
@@ -92,47 +88,6 @@ def main():
     upgrade.load_images(backup)
     receipt['checks']['per_image_save_check_load_retag'] = 'Passed'
     (out / 'archive-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
-    if not args.teardown:
-        upgrade.pod = lambda *args: run(['podman', *args]).stdout.strip()
-        assert upgrade.pod('ps', '-a', '--no-trunc', '--format', '{{.ID}} {{.ImageID}} {{.State}}') == before
-        receipt['checks']['isolated_containers_unchanged'] = 'Passed'
-        (out / 'receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
-        print(json.dumps(receipt, indent=2))
-        return
-
-    # The same teardown paths as Compose, with a scratch-only Compose project/socket.
-    compose = out / 'compose.yaml'
-    compose.write_text('services:\n  fixture:\n    image: ' + images[1] + '\n    entrypoint: ["sh", "-c", "sleep 300"]\n    ports: ["127.0.0.1::80"]\n')
-    socket_path = out / 'api.sock'
-    api = subprocess.Popen(['podman', 'system', 'service', '--time=0', 'unix://' + str(socket_path)],
-                           env=source_env, stdout=(out / 'api.log').open('w'), stderr=subprocess.STDOUT)
-    try:
-        import time
-        for _ in range(100):
-            if socket_path.is_socket():
-                break
-            if api.poll() is not None:
-                raise RuntimeError('scratch API exited')
-            time.sleep(.1)
-        env = dict(source_env, DOCKER_HOST='unix://' + str(socket_path), COMPOSE_PROJECT_NAME='dl086-rehearsal')
-        command = ['docker', 'compose', '-p', 'dl086-rehearsal', '-f', str(compose)]
-        observations = []
-        for cycle in range(3):
-            run([*command, 'up', '-d', '--pull', 'never'], env)
-            for action in ('stop', 'down'):
-                result = run([*command, action], env, check=False)
-                observations.append({'cycle': cycle, 'action': action, 'exit_code': result.returncode, 'stderr': result.stderr})
-                if result.returncode:
-                    raise RuntimeError('teardown failed; inspect scratch artifacts')
-        receipt['netns_observations'] = observations
-        receipt['checks']['compose_stop_down'] = 'Passed: three cycles; permission error not reproduced; cause unknown'
-        assert not source('ps', '-a', '-q'), 'scratch container left behind'
-    finally:
-        if api.poll() is None and socket_path.is_socket():
-            run(['docker', 'compose', '-p', 'dl086-rehearsal', '-f', str(compose), 'down'],
-                dict(source_env, DOCKER_HOST='unix://' + str(socket_path)), check=False)
-        api.terminate()
-        api.wait(timeout=10)
     upgrade.pod = lambda *args: run(['podman', *args]).stdout.strip()
     assert upgrade.pod('ps', '-a', '--no-trunc', '--format', '{{.ID}} {{.ImageID}} {{.State}}') == before
     receipt['checks']['isolated_containers_unchanged'] = 'Passed'

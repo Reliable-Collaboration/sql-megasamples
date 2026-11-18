@@ -13,6 +13,11 @@ choice and one command builds it.
 | **PostgreSQL 18.7** | `sql-megasamples-postgres`: an image with the databases in its cluster, ported from the verified MySQL corpus | depends on the selected datasets; see [LTS upgrade evidence](docs/lts-upgrade-evidence.md) |
 | **SQLite 3.54.1** | `sql-megasamples-sqlite`: one `.sqlite` file per database with the `sqlite3` shell beside them; the files are also under `build/sqlite/` to copy anywhere | depends on the selected datasets; see [LTS upgrade evidence](docs/lts-upgrade-evidence.md) |
 
+The maintained deployment ran the upgrade to these versions on **2026-11-18**, including new
+passwords. MySQL uses the 9.7 LTS line; PostgreSQL uses supported major 18. Release/support sources,
+read times and the executed checks are in the [live-upgrade evidence](docs/live-upgrade-evidence.md).
+Acceptance remains held for a DataIntent test failure outside this service.
+
 Every dataset is built and verified on all three engines. PostgreSQL and SQLite are **ports of the
 MySQL corpus**: the same rows, proved by the same per-table content digests, foreign-key checks and
 index parity that MySQL is checked against — and produced by one deterministic program, never by hand.
@@ -110,15 +115,19 @@ in its data directory. First start copies that directory into a fresh volume, th
 server; [LTS validation](docs/lts-upgrade-evidence.md) records these separate readiness costs.
 Two accounts are offered from every console, and both are usable from any client:
 
-| account | password | privileges |
+| account | factory password (without overrides) | privileges |
 |---|---|---|
 | `demo` | `demo` | `SELECT`, `SHOW VIEW`. Cannot write anything, anywhere |
 | `admin` | `admin` | `ALL PRIVILEGES WITH GRANT OPTION` |
 
 Each console opens on `demo`, because the safe account should be the one you get without choosing.
-The passwords are boilerplate for a disposable local database and are committed on purpose; to
-change them, copy `.env.example` to `.env`, set mode 0600, and edit it privately — the same value reaches the server (applied at startup)
-and every console, so the two cannot drift apart.
+The table lists factory defaults. **They do not apply where `.env` sets new passwords**, including
+the upgraded deployment. The private `.env` is the single source for all four passwords:
+`DEMO_PASSWORD`, `ADMIN_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `POSTGRES_PASSWORD`. For a new setup,
+copy `.env.example` to `.env` with `umask 077`, set mode 0600 and edit it privately. Preserve an
+existing `.env` when rotating; never commit, print or source it. Unset exported overrides for
+these keys so Compose and repository tools read the file. The values reach the engines at startup
+and the consoles together.
 
 ```sh
 mysql -h 127.0.0.1 -P 3306 -u demo -p sakila
@@ -133,7 +142,7 @@ catalogue, the landing page and the image tests all read it, so none can drift f
 
 `sql-megasamples-postgres:dev` is `postgres:18.7-trixie` with one database per dataset already in
 its cluster, the same `demo` (read-only) and `admin` accounts, the superuser `postgres` with
-password `root`, and a `megasamples` database holding the registry. `POSTGRES_PASSWORD`,
+factory password `root` (overridden by the private `.env`), and a `megasamples` database holding the registry. `POSTGRES_PASSWORD`,
 `DEMO_PASSWORD` and `ADMIN_PASSWORD` override the passwords at start. Tables, data, primary and
 unique keys, secondary indexes, foreign keys, check constraints, stored generated columns, views,
 stored routines (as PL/pgSQL; a procedure that returns rows is a function you `SELECT * FROM`),
@@ -210,6 +219,11 @@ Reset, its row-count checks and registry readers use that same configuration. Na
 clients use private option/pass files; password values do not enter process arguments. Interactive
 connection examples prompt for the password. For a cutover, verify every new password and require
 every previous password to be refused; see the [live runbook](docs/live-upgrade-runbook.md).
+Rotate all four values together, keep the previous file privately for rollback, run `make up`
+to apply them, then verify new-password sign-ins and authentication refusal of every old password
+with `docs/validation/verify-configured-passwords.py --previous-dir <private-backup-directory>`.
+Run that verifier with the repository environment and the same container socket/project as the
+stack; do not put password values on the command line or in receipts.
 
 ## Connect with your own tool
 
@@ -217,6 +231,9 @@ Every server engine listens on `127.0.0.1` of the machine running the stack, wit
 accounts. DBeaver, DataGrip, TablePlus, VS Code's database extensions, a language driver or the
 engine's own client take these details as they are; the console index page repeats them with the
 ports and passwords you actually configured.
+
+The password entries and URLs below are **factory examples only**. Use the configured `.env`
+password through the client's prompt or a private client credential file on an upgraded stack.
 
 | | MySQL | PostgreSQL | SQLite |
 |---|---|---|---|
@@ -228,6 +245,20 @@ ports and passwords you actually configured.
 | client | `mysql -h 127.0.0.1 -P 3306 -u demo -p sakila` | `psql -W -h 127.0.0.1 -p 5432 -U demo sakila` | `sqlite3 sakila.sqlite` |
 | URL | `mysql://demo:demo@127.0.0.1:3306/sakila` | `postgresql://demo:demo@127.0.0.1:5432/sakila` | the file's path |
 | JDBC | `jdbc:mysql://127.0.0.1:3306/sakila` | `jdbc:postgresql://127.0.0.1:5432/sakila` | `jdbc:sqlite:/path/to/sakila.sqlite` |
+
+From another machine on an already configured LAN forward, use the read account `demo` and
+the configured `DEMO_PASSWORD`, obtained privately from the deployment owner. Set `DB_HOST`
+to that forward's address and use its configured ports (the examples assume the standard ports):
+
+```sh
+mysql -h "$DB_HOST" -P 3306 -u demo -p sakila
+psql -X -W -h "$DB_HOST" -p 5432 -U demo -d sakila
+```
+
+These commands run on the other machine and prompt for the password; its own `127.0.0.1` would
+refer to itself. The maintained deployment already has SQL forwards; this upgrade leaves them
+unchanged. Its web consoles remain bound to loopback. Host-side forward checks and their limits
+are in the [runbook](docs/live-upgrade-runbook.md#verify-before-resuming-clients).
 
 MySQL 9 authenticates with `caching_sha2_password` only, so use a client or driver from the MySQL 8
 era or newer. The SQLite files live inside the `megasamples-sqlite` container under `/data/`, one
@@ -269,6 +300,11 @@ closing their existing connections (including connections to other engines in th
 Close any manually opened SQLite shells before resetting. Disposable containers and their
 anonymous volumes are removed on success or failure. Whole-engine SQLite reset removes stale
 WAL, SHM and rollback-journal files before replacing the shared databases.
+
+Resets use the current private `.env` credentials, including non-default superuser passwords;
+whole-engine recreation reapplies them. Keep that file mode 0600, unset exported password
+overrides and run reset from the stack's configured checkout/socket/project. A reset restores
+image data and is destructive to application writes; it is not the live-upgrade rollback procedure.
 
 Overlapping resets of the same engine by the same user on one host are rejected before any
 changes; retry after the active reset finishes. This also applies across local checkouts. Resets
