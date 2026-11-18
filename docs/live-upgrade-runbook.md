@@ -731,11 +731,13 @@ EXITED_RECEIPT=
 python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
-printf '%s\n' "$TEARDOWN_ATTEMPT" >> "$EVIDENCE_DIR/stop.log.timestamps"
+date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/stop.log.timestamps"
 if docker compose -p sql-megasamples -f compose.yaml stop --timeout 300 >> "$EVIDENCE_DIR/stop.log" 2>&1; then
+  date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/stop.log.timestamps"
   printf '0\n' >> "$EVIDENCE_DIR/stop.log.exit-code"
 else
   STOP_RC=$?
+  date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/stop.log.timestamps"
   printf '%s\n' "$STOP_RC" >> "$EVIDENCE_DIR/stop.log.exit-code"
   echo 'STOP: inspect stop.log and apply the four-check teardown procedure below.'
   exit "$STOP_RC"
@@ -929,7 +931,8 @@ after status 0. Keep clients paused while diagnosing a deployment-related inspec
 limit. Take a new snapshot if the deployment changes, and repeat all four checks
 immediately before cold copy, restoration or original startup.
 
-Capture available kernel/AppArmor diagnostics for the failure's timestamp, without host changes:
+Capture available kernel/AppArmor diagnostics for the command-time start/end UTC
+window in the appended timestamps, not the attempt ID, without host changes:
 
 ```sh
 # Set FAILURE_SINCE / FAILURE_UNTIL around the UTC timestamp in *.log.timestamps.
@@ -1248,11 +1251,13 @@ python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasample
   --phase candidate-teardown \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
-printf '%s\n' "$TEARDOWN_ATTEMPT" >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"
+date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"
 if docker compose -p sql-megasamples -f compose.yaml stop --timeout 300 >> "$EVIDENCE_DIR/rollback-stop.log" 2>&1; then
+  date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"
   printf '0\n' >> "$EVIDENCE_DIR/rollback-stop.log.exit-code"
 else
   STOP_RC=$?
+  date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"
   printf '%s\n' "$STOP_RC" >> "$EVIDENCE_DIR/rollback-stop.log.exit-code"
   echo 'STOP: apply the four checks to rollback-stop before down.'
   exit "$STOP_RC"
@@ -1267,12 +1272,14 @@ python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasample
   --phase candidate-teardown \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
-printf '%s\n' "$TEARDOWN_ATTEMPT" >> "$EVIDENCE_DIR/rollback-down.log.timestamps"
+date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-down.log.timestamps"
 # Restore original configuration and its original branch (never reset a pushed branch).
 if docker compose -p sql-megasamples -f compose.yaml down >> "$EVIDENCE_DIR/rollback-down.log" 2>&1; then
+  date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-down.log.timestamps"
   printf '0\n' >> "$EVIDENCE_DIR/rollback-down.log.exit-code"
 else
   DOWN_RC=$?
+  date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-down.log.timestamps"
   printf '%s\n' "$DOWN_RC" >> "$EVIDENCE_DIR/rollback-down.log.exit-code"
   echo 'STOP: inspect rollback-down.log and apply the four-check teardown procedure below.'
   exit "$DOWN_RC"
@@ -1329,6 +1336,9 @@ while read -r reference saved; do
 done < "$BACKUP_DIR/original-tool-images.txt"
 # END restore continuation
 ```
+
+Configuration extraction restores safe recorded directory modes even under umask 077;
+the extraction parent stays private. Check console bind-tree readability before start.
 
 For exact preservation of application writes, create four **new** named rollback volumes (the three engine data directories and SQLite shared files), populate them from the cold copies while no database has them open, and attach them to the original image IDs. The backup loop resolves the actual source of each stopped data mount and copies it without changing ownership. Both backup and restore run `cp -a` inside the native rootless user namespace ([unshare reference](https://docs.podman.io/en/latest/markdown/podman-unshare.1.html), read 2026-11-16 21:05 UTC); this command is unavailable through a remote Podman client. The cold files may require `podman unshare` to inspect because their subordinate UID/GID ownership is retained. Use a Compose override, leaving original volumes untouched:
 
@@ -1467,27 +1477,8 @@ if test "$RESTORE_CLOUDBEAVER" = 1; then
     -f "$ATTEMPT_DIR/rollback-consoles.override.json" up -d --no-deps --wait cloudbeaver
 fi
 # Check only originally selected services, each by exact container name and saved image.
-python3 - "$BACKUP_DIR" "$ATTEMPT_DIR" <<'PY_RESTART'
-import importlib.util, json, pathlib, subprocess, sys
-backup, attempt = map(pathlib.Path, sys.argv[1:])
-spec = importlib.util.spec_from_file_location('upgrade', attempt / 'live-upgrade.py')
-u = importlib.util.module_from_spec(spec); spec.loader.exec_module(u)
-selected = (backup / 'original-running-services.txt').read_text().splitlines()
-actual_names = set(u.pod('ps', '--filter', 'label=com.docker.compose.project=sql-megasamples',
-                         '--format', '{{.Names}}').splitlines())
-if actual_names != {'megasamples-' + service for service in selected}:
-    raise ValueError('running service set differs from original selection')
-rows = []
-for service in selected:
-    row = u.container_state('megasamples-' + service)
-    rows.append(row)
-    actual = u.pod('inspect', '-f', '{{.Image}}', row['id']).removeprefix('sha256:')
-    expected = dict(u.image_rows(backup))['localhost/sql-megasamples-' + service + ':rollback-' + backup.name]
-    if actual != expected:
-        raise ValueError('restored image mismatch: ' + service)
-u.write_receipt(attempt / 'restart-after.json', dict(project='sql-megasamples', engines=[], containers=rows))
-u.exited(attempt / 'restart-after.json', attempt / 'restart-after-gate.json', phase='restart-after')
-PY_RESTART
+CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
+python3 "$UPGRADE_HELPER" check-restored "$BACKUP_DIR" "$ATTEMPT_DIR" "$CHECK_ID"
 TEARDOWN_PHASE=rollback-restored
 save_context
 # END pre-up continuation

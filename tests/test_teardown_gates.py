@@ -154,3 +154,28 @@ def test_snapshot_missing_original_refuses_with_reason_and_reversal(tmp_path,mon
     with pytest.raises(ValueError,match='original container missing; use coordinator recovery'):
         upgrade.snapshot(tmp_path/'out','fixture',['megasamples-postgres'])
     upgrade.snapshot(tmp_path/'out','fixture',[])
+
+@pytest.mark.parametrize('failure', ['selection','image','running','pid','status','oom',None])
+def test_post_start_logic_and_repeatable_receipts(tmp_path,monkeypatch,failure):
+    backup=tmp_path/'retained';backup.mkdir();attempt=tmp_path/'attempt';attempt.mkdir()
+    (backup/'original-running-services.txt').write_text('postgres\n')
+    expected='a'*64
+    (backup/'rollback-image-ids.txt').write_text(f'localhost/sql-megasamples-postgres:rollback-retained {expected} []\n')
+    def pod(*args):
+        if args[0]=='ps': return 'wrong' if failure=='selection' else 'megasamples-postgres'
+        if args[0]=='inspect' and args[2]=='{{.Image}}': return 'b'*64 if failure=='image' else expected
+        if args[0]=='inspect':
+            status='exited' if failure=='status' else 'running'
+            running='false' if failure=='running' else 'true'
+            pid=0 if failure=='pid' else 22
+            oom='true' if failure=='oom' else 'false'
+            return f'megasamples-postgres|id|{status}|{running}|{pid}|0|{oom}|'
+        return ''
+    monkeypatch.setattr(upgrade,'pod',pod)
+    reasons={'selection':'running service set differs','image':'restored image mismatch','running':'running flag',
+             'pid':'PID must be positive','status':'status must be running','oom':'OOM after original start'}
+    if failure:
+        with pytest.raises(ValueError,match=reasons[failure]): upgrade.check_restored(backup,attempt,'first')
+    else:
+        upgrade.check_restored(backup,attempt,'first');upgrade.check_restored(backup,attempt,'repeat')
+        assert len(list(attempt.glob('restart-after-gate-*.json')))==2

@@ -73,6 +73,12 @@ def prepare_rollback(backup, attempt, checkout):
     config.mkdir(mode=0o700)
     with tarfile.open(backup / name) as archive:
         archive.extractall(config, filter='data')
+        # tar's data filter intentionally leaves directory modes to the caller's
+        # umask. Restore safe recorded traversal modes, inside the private parent.
+        modes = {m.name.rstrip('/'): m.mode & 0o755 for m in archive.getmembers() if m.isdir()}
+        for directory in sorted(config.rglob('*'), key=lambda p: len(p.parts), reverse=True):
+            if directory.is_dir() and not directory.is_symlink():
+                directory.chmod(modes.get(directory.relative_to(config).as_posix(), 0o755))
     if (checkout / '.env').is_file():
         shutil.copyfile(checkout / '.env', target / 'failed-candidate.env')
         (target / 'failed-candidate.env').chmod(0o600)
@@ -284,6 +290,29 @@ def exited(before, output, removed_with=None, phase='original-stop'):
     write_receipt(output, dict(project=saved['project'], engines=saved['engines'], phase=phase, containers=rows))
 
 
+def check_restored(backup, attempt, check_id):
+    """Recheck selection, exact images and each independent post-start predicate."""
+    if not re.fullmatch('[A-Za-z0-9-]+', check_id):
+        raise ValueError('invalid restart check ID')
+    selected = (backup / 'original-running-services.txt').read_text().splitlines()
+    actual_names = set(pod('ps', '--filter', 'label=com.docker.compose.project=sql-megasamples',
+                           '--format', '{{.Names}}').splitlines())
+    if actual_names != {'megasamples-' + service for service in selected}:
+        raise ValueError('running service set differs from original selection')
+    images = dict(image_rows(backup))
+    rows = []
+    for service in selected:
+        row = container_state('megasamples-' + service)
+        rows.append(row)
+        actual = pod('inspect', '-f', '{{.Image}}', row['id']).removeprefix('sha256:')
+        expected = images['localhost/sql-megasamples-' + service + ':rollback-' + backup.name]
+        if actual != expected:
+            raise ValueError('restored image mismatch: ' + service)
+    before = attempt / ('restart-after-' + check_id + '.json')
+    write_receipt(before, dict(project='sql-megasamples', engines=[], containers=rows))
+    exited(before, attempt / ('restart-after-gate-' + check_id + '.json'), phase='restart-after')
+
+
 def restart_mounts(before, output, attempt):
     """Keep candidate sources after removal and include every NEW restore target."""
     if not re.fullmatch('[A-Za-z0-9-]+', attempt):
@@ -425,6 +454,10 @@ def main():
         p = sub.add_parser(action)
         p.add_argument('bundle', type=Path)
         p.add_argument('--root', type=Path, default=ROOT)
+    p = sub.add_parser('check-restored')
+    p.add_argument('backup', type=Path)
+    p.add_argument('attempt', type=Path)
+    p.add_argument('check_id')
     p = sub.add_parser('restart-mounts')
     p.add_argument('before', type=Path)
     p.add_argument('output', type=Path)
@@ -461,7 +494,9 @@ def main():
     p.add_argument('host')
     p.add_argument('port', type=int)
     args = parser.parse_args()
-    if args.command == 'restart-mounts':
+    if args.command == 'check-restored':
+        check_restored(args.backup, args.attempt, args.check_id)
+    elif args.command == 'restart-mounts':
         restart_mounts(args.before, args.output, args.attempt)
     elif args.command == 'prepare-rollback':
         print(prepare_rollback(args.backup, args.attempt, args.checkout))

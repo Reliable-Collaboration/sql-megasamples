@@ -197,3 +197,13 @@ bash() { :; }
         assert digests(backup)==before
     finally:
         server.close();subprocess.run(['chmod','-R','u+w',str(backup)],check=True)
+
+
+def test_configuration_modes_survive_private_umask(tmp_path):
+    backup=retained(tmp_path)
+    previous=os.umask(0o077)
+    try: target=upgrade.prepare_rollback(backup,'private-umask',tmp_path)
+    finally: os.umask(previous)
+    assert (target/'configuration/consoles').stat().st_mode & 0o777 == 0o755
+    assert (target/'configuration/consoles/fixture').stat().st_mode & 0o777 == 0o644
+    assert target.stat().st_mode & 0o777 == 0o700

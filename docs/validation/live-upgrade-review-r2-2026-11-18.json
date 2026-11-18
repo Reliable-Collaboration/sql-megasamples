@@ -74,7 +74,7 @@
       "findings": [
         "F2"
       ],
-      "red": "Failed: scanner-red.log; independent-review-red.log; resume-ownership-red.log; early-checkpoint-red.log; overflow-ambiguity-red.log; owner-transition-red.log",
+      "red": "Failed: scanner-red.log; author-session-review-red.log; resume-ownership-red.log; early-checkpoint-red.log; overflow-ambiguity-red.log; owner-transition-red.log",
       "green": "Passed: own/rootless/other/unresolved classification, aliases, nonroot filesystem roots, mappings, helper prefixes, native UID/start-time inventory and final credential recheck. Host execution Passed, host quiescence Failed; not a clean-host claim.",
       "commits": [
         "0134165d6a3b7e3f1bfd11216973bcc602c60141",
@@ -2184,8 +2184,8 @@
     "build/dl086/r2/image-sqlite-retry.log": "a30dc46980fcd719646864afd2ed4b77cb15408a4385e50af606393b4c2c4027",
     "build/dl086/r2/image-sqlite.log": "166cddf92a1a4ac239b9e9598a0d1a42e42ec5af4bb96a2af2596c04d4c61ed6",
     "build/dl086/r2/immutable-red.log": "62cf6a8431a1ffbd6bac39e2eb5c9f86a2596cd2aef99d4ab47e729dad767eec",
-    "build/dl086/r2/independent-review-green.log": "c40d3fd8c044d2ffc121b398c054f5b57a7fcdd82d333acc7f68a13833bd77e2",
-    "build/dl086/r2/independent-review-red.log": "dc4e7ea239e65ba0b39e81ca1aef70694961576f3ca9c6a10d951d690025636e",
+    "build/dl086/r2/author-session-review-green.log": "c40d3fd8c044d2ffc121b398c054f5b57a7fcdd82d333acc7f68a13833bd77e2",
+    "build/dl086/r2/author-session-review-red.log": "dc4e7ea239e65ba0b39e81ca1aef70694961576f3ca9c6a10d951d690025636e",
     "build/dl086/r2/netns.log": "80f0b03d42ad7ac3597612fffdd58b6a39fb6d9ede748aa4c4af72fc0c4f1215",
     "build/dl086/r2/new-mounts-red.log": "a835f0fd00a307da1df5e6c1cadacf1b70b6d9962a60349ed09b6fc3de3e6047",
     "build/dl086/r2/old-fragments-red.log": "22d94954dd2997a70bd75225d8cddd94400d0ceeff4131b08d8999ff2af742d7",
