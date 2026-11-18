@@ -113,12 +113,16 @@ ephemeral port **Passed** in the isolated store, with no teardown permission err
 The existing stack stayed running, so this does not reproduce removal of its last
 rootless-network consumer.
 
-**The live teardown root cause is unknown.** The runbook requires all four checks,
+**Historical policy from the first correction, superseded below.** The live teardown
+root cause is unknown. The first correction required all four checks,
 for both stop and rollback down: all engines exited; no deployment container running;
 no process holding any data mount; no leftover pasta/slirp4netns/rootlessport belonging
 to that deployment. Inconclusive attribution blocks continuation. Helpers belonging
 to a separate isolated store can remain only with recorded attribution. Existing
-LAN forwarders are unchanged.
+LAN forwarders were unchanged. For recovery use the current
+[phase-specific state table](live-upgrade-runbook.md#teardown-and-rollback-states-and-gates)
+and [native scanner policy](live-upgrade-runbook.md#conditional-rootless-network-teardown-failure-stop-rollback-stop-and-down),
+which distinguish original cold-copy eligibility from failed-candidate removal.
 
 ## Documentation checks
 
@@ -196,6 +200,7 @@ The populated-volume checkpoint survives a pre-start refusal without repeating r
 Once original startup begins, a separate saved phase holds any partial restart for
 coordinator diagnosis; it cannot dispatch back into teardown/restoration.
 
+**Historical round-two scanner policy, superseded by the round-three correction.**
 The owner-scoped scanner reports other owners separately and refuses ambiguous
 ownership, unreadable own processes, unresolvable mount roots and all remaining
 network helpers. It resolves every host mount alias and includes file mappings
@@ -230,3 +235,21 @@ engine-size archives. Full live restoration, forwarded authentication/TLS,
 kernel/AppArmor capture and the DataIntent acceptance suite remain Not run here.
 The netns root cause remains unknown. As of 2026-11-18, acceptance remained held;
 DataIntent owns its acceptance record.
+
+## Round-three scanner correction, 2026-11-18
+
+The previous scanner policy is historical, not a recovery instruction. Use the
+current [state table](live-upgrade-runbook.md#teardown-and-rollback-states-and-gates)
+and the native scanner procedure in the runbook's teardown-error section. The
+scanner now walks the host initial namespace, compares mounts only on recorded
+source devices/roots, classifies zombies/exited tasks, names unreadable operations,
+and attributes helpers by recorded namespace or specific container cgroup. It
+refuses evidence of deployment holders/helpers or unresolved mounts on a source's
+device. It reports other owners, unreadable operations and outside-deployment
+helpers without certifying them. Review those limits even after status 0.
+
+The native scratch proof kept all existing stacks up. An unheld directory passed;
+a deliberate host file holder and a scratch rootless bind holder each refused with
+the named process, then passed after that owned process/container stopped. These
+are scanner proofs, not an end-to-end live rollback or acceptance. DataIntent owns
+the acceptance record; acceptance remained held as of 2026-11-18.
