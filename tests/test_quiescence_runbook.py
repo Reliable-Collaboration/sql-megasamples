@@ -100,3 +100,17 @@ def test_failed_capture_has_exclusive_retry_route_before_downtime(tmp_path):
         fresh=subprocess.run(['bash','-eu','-c','. "$CONTEXT"; case "$QUIESCENCE_CAPTURE" in */capture-retry-*) :;; *) exit 43;; esac'],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
         assert fresh.returncode==0,fresh.stderr
     finally:server.close()
+
+
+def test_required_gate_runs_after_diagnostic_holder_discovery(tmp_path):
+    server=context(tmp_path,'rollback-down')
+    try:
+        script='. "$CONTEXT"\n'+r'''
+python3() { printf '%s\n' "$2" >> "$EVIDENCE_DIR/order"; }
+podman() { :; }
+'''+block('# BEGIN four checks\n','# END four checks')
+        result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
+        assert result.returncode==0,result.stderr
+        order=(tmp_path/'evidence/order').read_text().splitlines()
+        assert order.index('diagnostic') < order.index('verify')
+    finally:server.close()

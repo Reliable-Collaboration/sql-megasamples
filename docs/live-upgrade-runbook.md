@@ -1019,16 +1019,16 @@ python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
 # 2. Expected: EMPTY. The helper also refuses if project containers are running.
 podman ps --filter label=com.docker.compose.project=sql-megasamples -q
 # 3/4. Verify saved pre-stop identities/data. Expected PASS (0); REFUSE (1) and HOLD (2) both block copying.
-PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.json"; then :;
-else PROCESS_RC=$?; fi
-printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.exit-code"
 DIAGNOSTIC_RC=0
 if python3 "$EVIDENCE_DIR/quiescence.py" diagnostic "$QUIESCENCE_CAPTURE" \
   > "$EVIDENCE_DIR/diagnostic-$CHECK_ID.json"; then :;
 else DIAGNOSTIC_RC=$?; fi
 printf '%s\n' "$DIAGNOSTIC_RC" > "$EVIDENCE_DIR/diagnostic-$CHECK_ID.exit-code"
 # Diagnostic status cannot alter PROCESS_RC or end this strict shell.
+PROCESS_RC=0
+if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.json"; then :;
+else PROCESS_RC=$?; fi
+printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.exit-code"
 # END four checks
 
 ```
@@ -1063,8 +1063,12 @@ before copying to those targets.
 `verify` exits **0 PASS, 1 REFUSE, 2 HOLD**. Retain JSON and status in the private
 attempt (mode 0600 under umask 077). The separate exhaustive-discovery diagnostic
 always has its own guarded status; that status never changes the gate or ends the
-shell. Its findings are diagnostic; the gate independently requires readable
-positive holder evidence and required deployment inspection.
+shell. Run diagnostic discovery first and the required verification last. Any readable
+holder it finds must be removed or shown false by evidence before copying;
+verification independently rechecks the current holders. An unconfirmed holder
+remains HOLD pending that evidence, regardless of diagnostic exit status. Never
+acknowledge a holder row away or copy based only on a prior PASS. The final gate
+requires readable positive-holder evidence and required deployment inspection.
 
 | REFUSE / HOLD reason | Route, without requiring that same gate to pass |
 |---|---|
