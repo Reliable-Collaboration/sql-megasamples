@@ -100,6 +100,9 @@ assert red_summary,'missing connected failing baseline'
 native_log=BASE/'native-final.log'
 native_summary=re.search(r'^254 passed in .+$',native_log.read_text(),re.M)
 assert native_summary,'missing passing native candidate gate'
+repository_log=BASE/'repository-final.log'
+repository_summary=re.search(r'^\d+ passed(?:, \d+ skipped)? in .+$',repository_log.read_text(),re.M)
+assert repository_summary and 'check: 0 failure(s)' in repository_log.read_text()
 receipt={
     'generated_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),
     'main_before':'2cf1f3e9538ea2e90ef23f8715c5e08e4c7de848',
@@ -109,10 +112,12 @@ receipt={
     'executable_routines':json.loads((ROOT/'docs/validation/strict-read-executable-routines.json').read_text()),
     'test_first':{'connected_original_main':{'status':'Failed','expected_permission_regressions':True,'summary':red_summary.group(0),'log':file_record(red_log)},
                   'candidate_native_gate':{'status':'Passed','summary':native_summary.group(0),'log':file_record(native_log)}},
+    'repository_gate':{'status':'Passed','summary':repository_summary.group(0),'log':file_record(repository_log)},
     'canonical_matrices':matrices,'native_read_fingerprints':native_reads,'checkpoints':checkpoints,'final_validation_steps':steps,
     'writer_scenarios':writers,'image_checks':images,'rotation':read('rotation-results.json'),
     'mysql_builtin_boundary':mysql_boundary,
-    'restoration':restoration,'isolation':isolation,'canaries':canaries,'container_log_canaries':log_canaries,
+    'restoration':restoration,'restoration_harness':read('restore-harness.json'),'restoration_transition':read('restore-transition.json'),
+    'isolation':isolation,'canaries':canaries,'container_log_canaries':log_canaries,
     'credential_output_rule':{'status':'Failed','reason':'Repository SQL and Dockerfile source inspections displayed published bootstrap credentials; no values are repeated here.'},
     'scope':{'live_cutover':'Not run','DataIntent_suites':'Not run','Docker_BuildKit_and_other_architectures':'Not run',
              'unconfigured_generated_benchmarks':'Not run','SQLite_server_accounts':'Unsupported',
