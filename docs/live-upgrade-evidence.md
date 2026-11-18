@@ -219,8 +219,10 @@ The scanner's field interpretation follows Linux's
 **2026-11-18 18:58:17 UTC**. Inspection refusals remain refusals; these sources
 cannot prove that the host is quiescent. The UID-map fallback follows
 [user namespace mapping rules](https://man7.org/linux/man-pages/man7/user_namespaces.7.html)
-(read **2026-11-18 19:03:41 UTC**): mapped subordinate IDs remain in scope; an
-overflow owner is excluded only when every target mapping is affirmatively unmapped.
+(read **2026-11-18 19:03:41 UTC**): mapped subordinate IDs remain in scope. A native-host UID/start-time inventory
+distinguishes other owners before unshare translates their UIDs to overflow. Without
+that independent evidence, an ambiguous overflow UID remains unresolved; a mapping
+extent’s unmapped starting ID cannot prove that every ID in the extent is unmapped.
 
 The revised procedure still has not run end to end on the live store or with
 engine-size archives. Full live restoration, forwarded authentication/TLS,

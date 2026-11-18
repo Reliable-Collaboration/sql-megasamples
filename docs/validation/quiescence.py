@@ -25,11 +25,49 @@ def overflow_uid():
     return int(Path('/proc/sys/kernel/overflowuid').read_text())
 
 
-def classify_owner(process, uid):
+def start_time(process):
+    # stat's comm can contain spaces and parentheses; starttime is field 22.
+    return (process / 'stat').read_text().rsplit(') ', 1)[1].split()[19]
+
+
+def owner_inventory(output, proc=Path('/proc')):
+    """Native-host UID evidence, paired with starttime to reject PID reuse."""
+    if caller_uid_mappings() != [(0, 0, 4294967295)]:
+        raise ValueError('owner inventory must run in the host initial user namespace')
+    rows = {}
+    for process in proc.iterdir():
+        if not process.name.isdigit():
+            continue
+        try:
+            start = start_time(process)
+            line = next(line for line in (process / 'status').read_text().splitlines() if line.startswith('Uid:'))
+            uids = list(map(int, line.split()[1:]))
+            if len(uids) != 4 or start != start_time(process):
+                raise ValueError('ownership changed during inventory')
+            rows[process.name] = dict(start=start, uids=uids)
+        except (OSError, ValueError, StopIteration, IndexError) as error:
+            if process.exists():
+                rows[process.name] = dict(error=type(error).__name__)
+    with output.open('x') as stream:
+        os.fchmod(stream.fileno(), 0o600)
+        json.dump(dict(host_initial_namespace=True, processes=rows), stream)
+
+
+def classify_owner(process, uid, owners=None):
     process_uid = process.stat().st_uid
     if process_uid == uid:
         return 'own'
     mappings = caller_uid_mappings()
+    if owners is not None:
+        entry = owners.get(process.name, {})
+        try:
+            if entry.get('start') != start_time(process) or len(entry.get('uids', [])) != 4:
+                return 'unresolved-owner'
+        except (OSError, IndexError):
+            return 'unresolved-owner'
+        owned = any(outside <= host_uid < outside + size
+                    for host_uid in entry['uids'] for _, outside, size in mappings)
+        return 'owned-user-namespace' if owned else 'other-owner'
     # In rootless unshare, every non-overflow mapped UID represents this user's
     # own host UID or allocated subordinate range. uid_map's outside IDs are in
     # the parent namespace, so comparing them with caller UID 0 is not sufficient.
@@ -55,8 +93,6 @@ def classify_owner(process, uid):
             return 'owned-user-namespace'
     except (PermissionError, OSError, ValueError):
         return 'unresolved-owner'
-    if process_uid == overflow_uid() and mappings and all(outside == 4294967295 for _, outside, _ in mappings):
-        return 'other-owner'  # Every ID is affirmatively outside the caller's UID space.
     # A full identity map proves the initial/privileged namespace, outside our
     # rootless ownership scope. Any other unproved relationship remains unresolved.
     return 'other-owner' if mappings == [(0, 0, 4294967295)] else 'unresolved-owner'
@@ -91,7 +127,7 @@ def resolve_roots(device, root, mounts):
     raise ValueError('cannot resolve mount root to host path: ' + device + ' ' + root)
 
 
-def evidence(snapshot, proc=Path('/proc')):
+def evidence(snapshot, proc=Path('/proc'), owners=None):
     saved = json.loads(snapshot.read_text())
     sources = {src for row in saved['containers'] for src, _ in row.get('mounts', [])}
     counts = dict(own=0, **{'owned-user-namespace': 0, 'other-owner': 0, 'unresolved-owner': 0})
@@ -102,7 +138,7 @@ def evidence(snapshot, proc=Path('/proc')):
             continue
         pid = int(process.name)
         try:
-            owner = classify_owner(process, os.getuid())
+            owner = classify_owner(process, os.getuid(), owners)
             counts[owner] += 1
             if owner == 'other-owner':
                 continue
@@ -142,10 +178,20 @@ def evidence(snapshot, proc=Path('/proc')):
 
 
 def main():
+    if len(sys.argv) == 3 and sys.argv[1] == 'inventory':
+        owner_inventory(Path(sys.argv[2]))
+        return
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('snapshot', type=Path)
+    parser.add_argument('--owners', type=Path)
     args = parser.parse_args()
-    report = evidence(args.snapshot)
+    owners = None
+    if args.owners:
+        data = json.loads(args.owners.read_text())
+        if data.get('host_initial_namespace') is not True:
+            raise ValueError('owner inventory lacks host-namespace evidence')
+        owners = data['processes']
+    report = evidence(args.snapshot, owners=owners)
     print(json.dumps(report, indent=2))
     if report['holders'] or report['helpers'] or report['unreadable']:
         sys.exit(1)

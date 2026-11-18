@@ -138,11 +138,37 @@ def test_mapped_subordinate_uid_is_inspected_even_when_namespace_denied(tmp_path
     assert scanner.classify_owner(process,0) == 'owned-user-namespace'
 
 
-def test_overflow_owner_with_all_ids_unmapped_is_other_owner(tmp_path,monkeypatch):
+def test_overflow_owner_with_mapping_extent_is_unresolved(tmp_path,monkeypatch):
     from types import SimpleNamespace
     process=tmp_path/'process'; (process/'ns').mkdir(parents=True)
     (process/'uid_map').write_text('0 4294967295 4294967295\n')
     original_stat=Path.stat
     monkeypatch.setattr(Path,'stat',lambda p,*a,**k: SimpleNamespace(st_uid=65534) if p==process else original_stat(p,*a,**k))
     monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,1000,1),(1,100000,65536)])
-    assert scanner.classify_owner(process,0) == 'other-owner'
+    assert scanner.classify_owner(process,0) == 'unresolved-owner'
+
+
+def test_host_owner_inventory_disambiguates_overflow_uid(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    process=tmp_path/'12345'; process.mkdir()
+    original_stat=Path.stat
+    monkeypatch.setattr(Path,'stat',lambda p,*a,**k: SimpleNamespace(st_uid=65534) if p==process else original_stat(p,*a,**k))
+    monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,1000,1),(1,100000,65536)])
+    monkeypatch.setattr(scanner,'start_time',lambda _: 'fixture-start')
+    assert scanner.classify_owner(process,0,{'12345':{'start':'fixture-start','uids':[0,0,0,0]}}) == 'other-owner'
+    assert scanner.classify_owner(process,0,{'12345':{'start':'fixture-start','uids':[165533]*4}}) == 'owned-user-namespace'
+    assert scanner.classify_owner(process,0,{'12345':{'start':'old-start','uids':[0]*4}}) == 'unresolved-owner'
+
+
+def test_native_inventory_records_only_uids_start_and_inspection_errors(tmp_path,monkeypatch):
+    proc=tmp_path/'proc'; process=proc/'12345'; process.mkdir(parents=True)
+    (process/'status').write_text('Name:\tfixture\nUid:\t1000\t1000\t1000\t1000\n')
+    (proc/'54321').mkdir()
+    monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,0,4294967295)])
+    monkeypatch.setattr(scanner,'start_time',lambda _:'fixture-start')
+    output=tmp_path/'owners.json'
+    scanner.owner_inventory(output,proc)
+    result=json.loads(output.read_text())
+    assert result == dict(host_initial_namespace=True,processes={'12345':dict(start='fixture-start',uids=[1000]*4),'54321':dict(error='FileNotFoundError')})
+    assert output.stat().st_mode & 0o777 == 0o600
+    with pytest.raises(FileExistsError): scanner.owner_inventory(output,proc)

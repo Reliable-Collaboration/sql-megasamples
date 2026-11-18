@@ -676,8 +676,10 @@ save_context
 # BEGIN cold-copy process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
-if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
-  > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
+if python3 "$EVIDENCE_DIR/quiescence.py" inventory "$EVIDENCE_DIR/owners-$CHECK_ID.json"; then
+  if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
+    --owners "$EVIDENCE_DIR/owners-$CHECK_ID.json" > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
+else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.exit-code"
 if test "$PROCESS_RC" != 0; then
   echo 'STOP: process evidence refuses cold-copy; inspect it and apply the four checks.'
@@ -815,13 +817,19 @@ python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
 podman ps --filter label=com.docker.compose.project=sql-megasamples -q
 # 3/4. Capture status even under set -e. Expected own-scope arrays empty, status 0.
 PROCESS_RC=0
-if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
-  > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
+if python3 "$EVIDENCE_DIR/quiescence.py" inventory "$EVIDENCE_DIR/owners-$CHECK_ID.json"; then
+  if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
+    --owners "$EVIDENCE_DIR/owners-$CHECK_ID.json" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
+else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.exit-code"
 # END four checks
 
 ```
 
+The scanner first records native-host UIDs and process start times without privilege,
+then verifies those start times inside rootless unshare. This distinguishes host
+root/other users from mapped subordinate IDs that share the numeric overflow UID.
+A changed or missing ownership record refuses; it is never an exemption.
 The scanner classifies this user's own processes and processes in user namespaces
 owned by this user separately from other owners. It reads no arguments or environments.
 Its quiescence decision covers only the inspectable owner scope, stated in the JSON.
@@ -1174,8 +1182,10 @@ python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
 # BEGIN restore process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
-if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
-  > "$EVIDENCE_DIR/process-restore-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
+if python3 "$EVIDENCE_DIR/quiescence.py" inventory "$EVIDENCE_DIR/owners-$CHECK_ID.json"; then
+  if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
+    --owners "$EVIDENCE_DIR/owners-$CHECK_ID.json" > "$EVIDENCE_DIR/process-restore-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
+else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-restore-$CHECK_ID.exit-code"
 if test "$PROCESS_RC" != 0; then
   echo 'STOP: process evidence refuses restore; inspect it and apply the four checks.'
@@ -1291,8 +1301,10 @@ python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/restart-before-$CHECK_ID.json" \
 # BEGIN pre-up process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
-if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$ATTEMPT_DIR/restart-mounts.json" \
-  > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
+if python3 "$EVIDENCE_DIR/quiescence.py" inventory "$EVIDENCE_DIR/owners-$CHECK_ID.json"; then
+  if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$ATTEMPT_DIR/restart-mounts.json" \
+    --owners "$EVIDENCE_DIR/owners-$CHECK_ID.json" > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
+else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.exit-code"
 if test "$PROCESS_RC" != 0; then
   echo 'STOP: process evidence refuses pre-up; inspect it and apply the four checks.'

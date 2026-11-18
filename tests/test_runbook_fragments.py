@@ -179,7 +179,7 @@ git() { if test "$1" = show; then printf '# reviewed helper fixture\n'; else ret
 def test_success_path_scanner_refusal_prevents_next_mutation(tmp_path,name):
     server=context(tmp_path,'stop' if name=='cold-copy' else 'rollback-down')
     try:
-        script='. "$CONTEXT"\npodman() { return 1; }\n'
+        script='. "$CONTEXT"\npython3() { :; }; podman() { return 1; }\n'
         script+=block('# BEGIN '+name+' process gate\n','# END '+name+' process gate')
         script+='\necho UNSAFE\n'
         result=subprocess.run(['bash','-eu','-c',script],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},capture_output=True,text=True)
@@ -226,7 +226,7 @@ def test_pre_up_checkpoint_resumes_without_restoring_again(tmp_path):
         # Represents the saved combined inventory, including newly populated targets.
         (tmp_path/'before.json').write_text(json.dumps({'containers':[{'mounts':[['/new/rollback-data','/restore-target']]}]}))
         env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')}
-        failed=subprocess.run(['bash','-eu','-c','. "$CONTEXT"\npodman() { return 1; }\n'+block('# BEGIN pre-up process gate\n','# END pre-up process gate')],env=env,capture_output=True,text=True)
+        failed=subprocess.run(['bash','-eu','-c','. "$CONTEXT"\npython3() { :; }; podman() { return 1; }\n'+block('# BEGIN pre-up process gate\n','# END pre-up process gate')],env=env,capture_output=True,text=True)
         assert failed.returncode == 1
         (tmp_path/'original-running-services.txt').write_text('')
         script='. "$CONTEXT"\n' + r'''
