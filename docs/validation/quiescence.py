@@ -60,14 +60,14 @@ def host_mounts(proc):
     return mount_rows(proc / 'self/mountinfo')
 
 
-def resolve_root(device, root, mounts):
+def resolve_roots(device, root, mounts):
     candidates = [(len(base), point.rstrip('/') + root[len(base):] if base != '/' else point.rstrip('/') + root)
                   for dev, base, point in mounts if dev == device and under(root, base)]
     if candidates:
-        return max(candidates)[1] or '/'
+        return sorted({path or '/' for _, path in candidates})
     # A namespace-private filesystem's whole root cannot itself identify a host bind.
     if root == '/':
-        return None
+        return []
     raise ValueError('cannot resolve mount root to host path: ' + device + ' ' + root)
 
 
@@ -94,9 +94,12 @@ def evidence(snapshot, proc=Path('/proc')):
             paths = [(key, os.readlink(process / key)) for key in ('root', 'cwd')]
             paths += [('fd/' + fd.name, os.readlink(fd)) for fd in (process / 'fd').iterdir()]
             for device, root, _ in mount_rows(process / 'mountinfo'):
-                target = resolve_root(device, root, mounts)
-                if target:
-                    paths.append(('mount-root', target))
+                paths += [('mount-root', target) for target in resolve_roots(device, root, mounts)]
+            # A shared mmap can retain a writable data file after its FD is closed.
+            for line in (process / 'maps').read_text().splitlines():
+                fields = line.split(maxsplit=5)
+                if len(fields) == 6 and fields[5].startswith('/'):
+                    paths.append(('mapping', fields[5]))
             matched = [(kind, target) for kind, target in paths
                        if any(under(target.removesuffix(' (deleted)'), src) for src in sources)]
             if matched:

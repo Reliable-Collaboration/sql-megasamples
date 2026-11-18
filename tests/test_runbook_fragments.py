@@ -159,3 +159,60 @@ bash() { printf 'bash digest\n' >> "$EVIDENCE_DIR/continuation-calls"; }
                 'rollback-down':'git switch fixture-branch'}[phase] in calls
     finally:
         server.close()
+
+
+def test_early_preparation_retains_helper_before_source_switch(tmp_path):
+    text=RUNBOOK.read_text()
+    early=text.split('UPGRADE_ID=$(date',1)[1]
+    early='UPGRADE_ID=$(date'+early.split('\n# Older branches tracked',1)[0]
+    script=r'''
+date() { echo fixture; }
+git() { if test "$1" = show; then printf '# reviewed helper fixture\n'; else return 42; fi; }
+'''+early+'\ntest -s "$UPGRADE_HELPER"\n'
+    result=subprocess.run(['bash','-eu','-c',script],cwd=tmp_path,env=dict(os.environ,
+        APPROVED_UPGRADE_MERGE='fixture-commit',METADATA_BUNDLE='fixture',EXTRA_RESERVE_BYTES='0',
+        DOCKER_HOST='unix:///fixture',XDG_RUNTIME_DIR=str(tmp_path)),capture_output=True,text=True)
+    assert result.returncode == 0,result.stderr
+
+
+@pytest.mark.parametrize('name', ['cold-copy', 'restore', 'pre-up'])
+def test_success_path_scanner_refusal_prevents_next_mutation(tmp_path,name):
+    server=context(tmp_path,'stop' if name=='cold-copy' else 'rollback-down')
+    try:
+        script='. "$CONTEXT"\npodman() { return 1; }\n'
+        script+=block('# BEGIN '+name+' process gate\n','# END '+name+' process gate')
+        script+='\necho UNSAFE\n'
+        result=subprocess.run(['bash','-eu','-c',script],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},capture_output=True,text=True)
+        assert result.returncode != 0
+        assert 'UNSAFE' not in result.stdout
+        assert list(tmp_path.glob('process-*.exit-code'))
+    finally:
+        server.close()
+
+
+@pytest.mark.parametrize('services',[['postgres','landing'],['cloudbeaver'],[]])
+def test_original_startup_never_adds_dependencies(tmp_path,services):
+    (tmp_path/'original-running-services.txt').write_text(''.join(n+'\n' for n in services))
+    text=RUNBOOK.read_text()
+    start='set --\nRESTORE_CLOUDBEAVER=0'
+    body=start+text.split(start,1)[1].split('# Check only originally selected services',1)[0]
+    stubs=r'''
+python3() { :; }
+podman() { :; }
+docker() {
+ case " $* " in
+ *' up '*|*' create '*) case " $* " in *' --no-deps '*) :;; *) return 43;; esac;;
+ esac
+ printf '%s\n' "$*" >> "$BACKUP_DIR/starts"
+}
+'''
+    result=subprocess.run(['bash','-eu','-c',stubs+body],env=dict(os.environ,BACKUP_DIR=str(tmp_path),
+        ATTEMPT_DIR=str(tmp_path),UPGRADE_HELPER='fixture'),cwd=tmp_path,capture_output=True,text=True)
+    assert result.returncode == 0,result.stderr
+    if services:
+        calls=(tmp_path/'starts').read_text()
+        assert '--no-deps' in calls
+        if services==['cloudbeaver']:
+            assert calls.count(' up ') == 1
+    else:
+        assert not (tmp_path/'starts').exists()

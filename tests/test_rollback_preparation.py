@@ -28,7 +28,7 @@ def retained(tmp_path):
 
 def digests(backup):
     return {str(p.relative_to(backup)): upgrade.sha(p) for p in backup.rglob('*')
-            if p.is_file() and not p.relative_to(backup).parts[0].startswith('rollback-')}
+            if p.is_file() and not (len(p.relative_to(backup).parts) > 1 and p.relative_to(backup).parts[0].startswith('rollback-'))}
 
 
 def test_preparation_preserves_readonly_inputs_and_refuses_reuse(tmp_path):
@@ -129,14 +129,16 @@ docker() { printf '%s\n' "$*" >> "$CHECKOUT/docker-calls"; }
         assert digests(backup) == before
         backup.chmod(0o700)
         # Abort opens the preparation context. Fixture context includes every saved variable.
-        (backup / 'resume-context.bash').write_text(attempts[0].read_text())
+        # Abort fixture resolves its original preparation context via a command stub,
+        # without creating any sidecar at the retained root.
+        env['ATTEMPT_CONTEXT'] = str(attempts[0])
         # This fixture is preparation-stage, before any stop was attempted.
-        abort = block('# BEGIN abort preparation\n', '# END abort preparation')
+        abort = block('# BEGIN abort preparation\n', '# END abort preparation').replace('. "$BACKUP_DIR/resume-context.bash"', '. "$ATTEMPT_CONTEXT"')
         result = subprocess.run(['bash', '-eu', '-c', stubs + abort], cwd=checkout, env=env, capture_output=True, text=True)
         assert result.returncode == 0, result.stderr
         assert not (checkout / 'docker-calls').exists()
         assert (checkout / 'consoles/fixture').read_bytes() == b'{}\n'
-        assert {k:v for k,v in digests(backup).items() if k != 'resume-context.bash'} == before
+        assert digests(backup) == before
     finally:
         server.close()
         subprocess.run(['chmod', '-R', 'u+w', str(backup)], check=True)

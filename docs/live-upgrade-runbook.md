@@ -206,6 +206,11 @@ mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
 # Initialize recoverable paths before any operation that can refuse preparation.
 UPGRADE_HELPER= UPGRADE_TOOLS_CONTAINER= MEGASAMPLES_PY= MEGASAMPLES_LIVE_API_PID=
+# Retain reviewed recovery helpers before ANY source switch or preparation gate.
+UPGRADE_HELPER="$BACKUP_DIR/live-upgrade.py"
+git show "$APPROVED_UPGRADE_MERGE:docs/validation/live-upgrade.py" > "$UPGRADE_HELPER"
+git show "$APPROVED_UPGRADE_MERGE:docs/validation/quiescence.py" > "$BACKUP_DIR/quiescence.py"
+chmod 600 "$UPGRADE_HELPER" "$BACKUP_DIR/quiescence.py"
 TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE= TEARDOWN_ATTEMPT=
 ATTEMPT_DIR= CONFIG_DIR=
 EVIDENCE_DIR="$BACKUP_DIR"
@@ -231,7 +236,7 @@ umask 077
   declare -p BACKUP_DIR UPGRADE_ID UPGRADE_HELPER UPGRADE_TOOLS_CONTAINER MEGASAMPLES_PY \
     METADATA_BUNDLE DOCKER_HOST MEGASAMPLES_LIVE_API_PID APPROVED_UPGRADE_MERGE PREPARATION_STAGE \
     TEARDOWN_SNAPSHOT EXITED_RECEIPT TEARDOWN_PHASE TEARDOWN_ATTEMPT EXTRA_RESERVE_BYTES \
-    ATTEMPT_DIR CONFIG_DIR EVIDENCE_DIR CONTEXT_FILE \
+    ATTEMPT_DIR CONFIG_DIR EVIDENCE_DIR CONTEXT_FILE XDG_RUNTIME_DIR \
     APPROVED_ENGINE_MERGE APPROVED_CLIENTS_MERGE APPROVED_DATASET_MERGE \
     APPROVED_LTS_MERGE APPROVED_CREDENTIAL_MERGE TOOLS_ARCHIVE TOOLS_IMAGE CANDIDATE_ARCHIVE DOCKER_CLIENT
   printf '%s\n' 'export DOCKER_HOST COMPOSE_PROJECT_NAME=sql-megasamples'
@@ -371,11 +376,9 @@ if test -f "$BACKUP_DIR/adminer.generated.html"; then
   chmod 644 consoles/landing/adminer.html  # readable by the local web-server worker
 fi
 git rev-parse HEAD > "$BACKUP_DIR/upgrade-commit.txt"
-# Retain the helper outside the checkout: rollback switches to a branch predating it.
-cp docs/validation/live-upgrade.py "$BACKUP_DIR/live-upgrade.py"
-cp docs/validation/quiescence.py "$BACKUP_DIR/quiescence.py"
-UPGRADE_HELPER="$BACKUP_DIR/live-upgrade.py"
-chmod 600 "$UPGRADE_HELPER"
+# Helpers were retained from the exact approved commit before source switch.
+cmp docs/validation/live-upgrade.py "$UPGRADE_HELPER"
+cmp docs/validation/quiescence.py "$BACKUP_DIR/quiescence.py"
 PREPARATION_STAGE=archive-gates
 save_context
 # Native host Python + Podman; no package installation, one docker archive per full image ID.
@@ -670,6 +673,17 @@ fi
 EXITED_RECEIPT="$EVIDENCE_DIR/stop-exited-$TEARDOWN_ATTEMPT.json"
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" "$EXITED_RECEIPT"
 save_context
+# BEGIN cold-copy process gate
+CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
+PROCESS_RC=0
+if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
+  > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
+printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.exit-code"
+if test "$PROCESS_RC" != 0; then
+  echo 'STOP: process evidence refuses cold-copy; inspect it and apply the four checks.'
+  exit 1
+fi
+# END cold-copy process gate
 # BEGIN cold-copy continuation
 # Retain the final quiesced UI workspace too, including changes made during preparation.
 if podman container exists megasamples-cloudbeaver; then
@@ -1147,6 +1161,17 @@ fi
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
   "$ATTEMPT_DIR/rollback-down-exited-$TEARDOWN_ATTEMPT.json" --phase candidate-teardown --removed-with "$EXITED_RECEIPT"
 # END pre-down continuation
+# BEGIN restore process gate
+CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
+PROCESS_RC=0
+if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
+  > "$EVIDENCE_DIR/process-restore-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
+printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-restore-$CHECK_ID.exit-code"
+if test "$PROCESS_RC" != 0; then
+  echo 'STOP: process evidence refuses restore; inspect it and apply the four checks.'
+  exit 1
+fi
+# END restore process gate
 # BEGIN restore continuation
 ROLLBACK_BRANCH=$(cat "$BACKUP_DIR/rollback-branch.txt")
 git switch "$ROLLBACK_BRANCH"
@@ -1240,19 +1265,34 @@ python3 "$UPGRADE_HELPER" snapshot "$ATTEMPT_DIR/restart-before.json" --project 
   --phase restart-before --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/restart-before.json" \
   "$ATTEMPT_DIR/restart-before-gate.json" --phase restart-before
+# Include old candidate mounts AND the new cold-restore targets, even before containers exist.
+python3 "$UPGRADE_HELPER" restart-mounts "$TEARDOWN_SNAPSHOT" \
+  "$ATTEMPT_DIR/restart-mounts.json" --attempt "$TEARDOWN_ATTEMPT"
+# BEGIN pre-up process gate
+CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
+PROCESS_RC=0
+if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$ATTEMPT_DIR/restart-mounts.json" \
+  > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
+printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.exit-code"
+if test "$PROCESS_RC" != 0; then
+  echo 'STOP: process evidence refuses pre-up; inspect it and apply the four checks.'
+  exit 1
+fi
+# END pre-up process gate
 set --
 RESTORE_CLOUDBEAVER=0
 while IFS= read -r service; do
   if test "$service" = cloudbeaver; then RESTORE_CLOUDBEAVER=1; else set -- "$@" "$service"; fi
 done < "$BACKUP_DIR/original-running-services.txt"
-test "$#" -gt 0
-docker compose -p sql-megasamples -f compose.yaml -f "$ATTEMPT_DIR/rollback.override.yaml" \
-  -f "$ATTEMPT_DIR/rollback-consoles.override.json" up -d --wait "$@"
+if test "$#" -gt 0; then
+  docker compose -p sql-megasamples -f compose.yaml -f "$ATTEMPT_DIR/rollback.override.yaml" \
+    -f "$ATTEMPT_DIR/rollback-consoles.override.json" up -d --no-deps --wait "$@"
+fi
 if test "$RESTORE_CLOUDBEAVER" = 1; then
   python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" --service cloudbeaver
   # Populate a stopped fresh container before its first initialization, retaining original UI state.
   docker compose -p sql-megasamples -f compose.yaml -f "$ATTEMPT_DIR/rollback.override.yaml" \
-    -f "$ATTEMPT_DIR/rollback-consoles.override.json" create --force-recreate --no-build cloudbeaver
+    -f "$ATTEMPT_DIR/rollback-consoles.override.json" create --no-deps --force-recreate --no-build cloudbeaver
   CB_WORKSPACE_BACKUP="$BACKUP_DIR/cloudbeaver-workspace-final"
   if ! test -d "$CB_WORKSPACE_BACKUP"; then CB_WORKSPACE_BACKUP="$BACKUP_DIR/cloudbeaver-workspace"; fi
   if test -d "$CB_WORKSPACE_BACKUP"; then
@@ -1267,8 +1307,13 @@ import importlib.util, json, pathlib, subprocess, sys
 backup, attempt = map(pathlib.Path, sys.argv[1:])
 spec = importlib.util.spec_from_file_location('upgrade', attempt / 'live-upgrade.py')
 u = importlib.util.module_from_spec(spec); spec.loader.exec_module(u)
+selected = (backup / 'original-running-services.txt').read_text().splitlines()
+actual_names = set(u.pod('ps', '--filter', 'label=com.docker.compose.project=sql-megasamples',
+                         '--format', '{{.Names}}').splitlines())
+if actual_names != {'megasamples-' + service for service in selected}:
+    raise ValueError('running service set differs from original selection')
 rows = []
-for service in (backup / 'original-running-services.txt').read_text().splitlines():
+for service in selected:
     row = u.container_state('megasamples-' + service)
     rows.append(row)
     actual = u.pod('inspect', '-f', '{{.Image}}', row['id']).removeprefix('sha256:')

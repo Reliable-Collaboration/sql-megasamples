@@ -262,6 +262,21 @@ def exited(before, output, removed_with=None, phase='original-stop'):
     write_receipt(output, dict(project=saved['project'], engines=saved['engines'], phase=phase, containers=rows))
 
 
+def restart_mounts(before, output, attempt):
+    """Keep candidate sources after removal and include every NEW restore target."""
+    if not re.fullmatch('[A-Za-z0-9-]+', attempt):
+        raise ValueError('invalid rollback attempt')
+    saved = json.loads(before.read_text())
+    for engine in ('postgres', 'mysql', 'sqlite', 'sqlite-shared'):
+        volume = 'megasamples-rollback-' + engine + '-' + attempt
+        source = pod('volume', 'inspect', '-f', '{{.Mountpoint}}', volume)
+        if not source.startswith('/'):
+            raise ValueError('rollback volume has no absolute host mountpoint')
+        saved['containers'].append(dict(name=volume, id=None, state='missing',
+                                        mounts=[[source, '/restore-target']]))
+    write_receipt(output, saved)
+
+
 def check_ports(endpoints, allowed=()):
     for host, port in endpoints:
         try:
@@ -388,6 +403,10 @@ def main():
         p = sub.add_parser(action)
         p.add_argument('bundle', type=Path)
         p.add_argument('--root', type=Path, default=ROOT)
+    p = sub.add_parser('restart-mounts')
+    p.add_argument('before', type=Path)
+    p.add_argument('output', type=Path)
+    p.add_argument('--attempt', required=True)
     p = sub.add_parser('prepare-rollback')
     p.add_argument('backup', type=Path)
     p.add_argument('attempt')
@@ -420,7 +439,9 @@ def main():
     p.add_argument('host')
     p.add_argument('port', type=int)
     args = parser.parse_args()
-    if args.command == 'prepare-rollback':
+    if args.command == 'restart-mounts':
+        restart_mounts(args.before, args.output, args.attempt)
+    elif args.command == 'prepare-rollback':
         print(prepare_rollback(args.backup, args.attempt, args.checkout))
     elif args.command == 'space':
         check_space(args.backup, args.extra_bytes)

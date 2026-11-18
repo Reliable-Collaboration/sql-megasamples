@@ -19,6 +19,7 @@ def fixture(tmp_path, monkeypatch, comm='server'):
         os.symlink(target, process / name)
     (process / 'comm').write_text(comm)
     (process / 'cgroup').write_text('fixture')
+    (process / 'maps').write_text('')
     (process / 'mountinfo').write_text('10 1 8:2 / / rw - ext4 /dev/fixture rw\n')
     monkeypatch.setattr(scanner, 'host_mounts', lambda _: [('8:2','/','/')])
     return snapshot, proc, process
@@ -96,3 +97,18 @@ def test_namespace_owner_ioctl_and_primary_mapping(tmp_path,monkeypatch):
     assert scanner.classify_owner(process,uid) == 'owned-user-namespace'
     (process / 'uid_map').write_text('0 0 4294967295\n')
     assert scanner.classify_owner(process,uid) == 'other-owner'
+
+
+def test_mount_alias_never_hides_original_source(tmp_path,monkeypatch):
+    snapshot,proc,process = fixture(tmp_path,monkeypatch)
+    monkeypatch.setattr(scanner,'host_mounts',lambda _: [('8:2','/','/'),('8:2','/store/data','/alias')])
+    (process/'mountinfo').write_text('10 1 8:2 /store/data /data rw - ext4 /dev/fixture rw\n')
+    report=scanner.evidence(snapshot,proc)
+    assert report['holders'], 'a more-specific alias must not hide /store/data'
+
+
+def test_closed_fd_shared_mapping_is_a_holder(tmp_path,monkeypatch):
+    snapshot,proc,process = fixture(tmp_path,monkeypatch)
+    (process/'maps').write_text('1000-2000 rw-s 0000 08:02 123 /store/data/pages (deleted)\n')
+    report=scanner.evidence(snapshot,proc)
+    assert report['holders'][0]['paths'] == [('mapping','/store/data/pages (deleted)')]

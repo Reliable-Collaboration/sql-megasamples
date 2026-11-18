@@ -63,3 +63,13 @@ def test_candidate_snapshot_allows_missing_engines(tmp_path, monkeypatch):
     monkeypatch.setattr(upgrade, 'pod', lambda *args: '')
     upgrade.snapshot(tmp_path / 'snapshot.json', 'fixture', ENGINES, phase='candidate-teardown')
     assert {r['name'] for r in json.loads((tmp_path / 'snapshot.json').read_text())['containers']} == set(ENGINES)
+
+
+def test_restart_mounts_include_new_targets_and_missing_candidate_evidence(tmp_path,monkeypatch):
+    before=tmp_path/'candidate.json'; after=tmp_path/'restart.json'
+    before.write_text(json.dumps(dict(project='fixture',engines=[],containers=[dict(name='removed',id=None,state='missing',mounts=[['/old/data','/data']])])) )
+    monkeypatch.setattr(upgrade,'pod',lambda *args:'/new/'+args[-1])
+    upgrade.restart_mounts(before,after,'fixture')
+    rows=json.loads(after.read_text())['containers']
+    assert rows[0]['mounts'] == [['/old/data','/data']]
+    assert {r['mounts'][0][0] for r in rows[1:]} == {'/new/megasamples-rollback-'+e+'-fixture' for e in ['postgres','mysql','sqlite','sqlite-shared']}
