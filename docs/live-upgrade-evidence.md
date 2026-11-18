@@ -261,3 +261,9 @@ classifies these before attempting namespace or descriptor inspection. Native
 inspection still encounters denied operations; its receipt records these by
 process name, operation and error class, and status 0 certifies only inspectable
 evidence. The original netns teardown cause remains unknown.
+
+The [round-three correction receipt](validation/live-upgrade-review-r3-2026-11-18.json)
+records S1–S8, T1–T5, reason-specific reds/greens and commits, the native scratch
+proof, all-engine image checks, the repository gate and exact container isolation
+comparison. The full original restoration and forwarded live sign-ins remain
+unverified; no independent blessing is claimed by the authoring session.
