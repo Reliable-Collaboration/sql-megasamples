@@ -6,8 +6,10 @@ DECLARE command record;
 BEGIN
   FOR command IN SELECT * FROM pg_event_trigger_ddl_commands() LOOP
     IF command.classid = 'pg_proc'::regclass THEN
+      IF has_function_privilege('admin', command.objid, 'EXECUTE') THEN
+        EXECUTE format('GRANT EXECUTE ON ROUTINE %s TO admin', command.objid::regprocedure);
+      END IF;
       EXECUTE format('REVOKE EXECUTE ON ROUTINE %s FROM PUBLIC', command.objid::regprocedure);
-      EXECUTE format('GRANT EXECUTE ON ROUTINE %s TO admin', command.objid::regprocedure);
     END IF;
   END LOOP;
 END

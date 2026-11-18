@@ -115,6 +115,10 @@ def test_postgres_future_databases_schemas_and_owners():
             accepted('postgres', db, 'CREATE ROLE strict_later_owner; CREATE SCHEMA later_owner AUTHORIZATION strict_later_owner; '
                      "SET ROLE strict_later_owner; CREATE FUNCTION later_owner.f() RETURNS int LANGUAGE sql AS 'SELECT 1'; RESET ROLE", 'postgres')
             test_postgres_demo_has_no_unapproved_routines(db)
+            accepted('postgres', db, "SET ROLE strict_later_owner; ALTER DEFAULT PRIVILEGES REVOKE EXECUTE ON ROUTINES FROM PUBLIC; "
+                     "CREATE FUNCTION later_owner.private_f() RETURNS int LANGUAGE sql AS 'SELECT 1'; RESET ROLE", 'postgres')
+            assert accepted('postgres', db,
+                "SELECT has_function_privilege('admin','later_owner.private_f()','EXECUTE')", 'postgres') == 'f'
         finally:
             accepted('postgres', 'postgres', f'DROP DATABASE {db} WITH (FORCE)', 'postgres')
             accepted('postgres', 'postgres', 'DROP ROLE IF EXISTS strict_later_owner', 'postgres')
