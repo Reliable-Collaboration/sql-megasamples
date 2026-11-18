@@ -202,3 +202,31 @@ def test_original_volume_restart_override_does_not_require_copy_quiescence(captu
     dirs['pg'].rename(data.parent/'retained-pg');dirs['pg'].mkdir()
     with pytest.raises(ValueError,match='unchanged original data identity'):
         gate.original_override(out,data.parent/'wrong.json','fixture',candidate)
+
+
+def test_surviving_cgroup_member_identity_failure_holds(capture_fixture, monkeypatch):
+    snap,out,proc,cg,data=capture_fixture
+    member=process(proc,12349)
+    (cg/'libpod-test.scope/cgroup.procs').write_text('12345\n12349\n')
+    original=gate.process_identity
+    def unreadable(path):
+        if path==member: raise PermissionError('required identity denied')
+        return original(path)
+    monkeypatch.setattr(gate,'process_identity',unreadable)
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='HOLD'
+    assert any(r['reason']=='required cgroup member identity unreadable' and r['pid']==12349 for r in report['holds'])
+    monkeypatch.setattr(gate,'process_identity',original)
+    assert gate.capture(snap,data.parent/'reversed.json',proc=proc,cgroup_root=cg)['outcome']=='PASS'
+
+
+def test_cgroup_members_reconciled_even_when_proc_listing_misses_member(capture_fixture,monkeypatch):
+    snap,out,proc,cg,data=capture_fixture
+    member=process(proc,12349)
+    (cg/'libpod-test.scope/cgroup.threads').write_text('12345\n12349\n')
+    original=Path.iterdir
+    def listing(path):
+        return iter(p for p in original(path) if p!=member) if path==proc else original(path)
+    monkeypatch.setattr(Path,'iterdir',listing)
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+    assert 12349 in {r['pid'] for r in json.loads(out.read_text())['processes']}

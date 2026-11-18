@@ -140,6 +140,15 @@ def group_capture(line, cgroup_root):
     return dict(line=line, **identity)
 
 
+def group_members(path):
+    """Complete recursive cgroup membership, including threads; errors propagate."""
+    members = set()
+    for directory, _, _ in os.walk(path, onerror=lambda error: (_ for _ in ()).throw(error)):
+        for name in ('cgroup.procs', 'cgroup.threads'):
+            members.update((Path(directory)/name).read_text().split())
+    return members
+
+
 def private_write(path, data):
     with path.open('x') as stream:
         os.fchmod(stream.fileno(), 0o600)
@@ -236,6 +245,7 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
         for process in proc.iterdir():
             if not process.name.isdigit():
                 continue
+            belongs = False
             try:
                 lines = (process/'cgroup').read_text().splitlines()
                 comm = (process/'comm').read_text().strip()
@@ -253,8 +263,22 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                             hold('dedicated helper association unresolved', pid=int(process.name))
             except (OSError, ValueError) as error:
                 # Missing global evidence is diagnostic unless scope is established.
-                if int(process.name) in identities:
-                    hold('process capture incomplete', pid=int(process.name), error=type(error).__name__)
+                if belongs or int(process.name) in identities:
+                    if not isinstance(error, FileNotFoundError) or process.exists():
+                        hold('required cgroup member identity unreadable', pid=int(process.name), error=type(error).__name__)
+        # /proc iteration is not a membership inventory (and omits non-leader
+        # threads). Reconcile independently established scope even if stat failed.
+        for line in groups:
+            try:
+                for pid in group_members(cgroup_root/cgroup_path(line).lstrip('/')):
+                    try:
+                        identity = process_identity(proc/pid)
+                        identities.setdefault(int(pid), dict(identity, role='process'))
+                    except (OSError, ValueError) as error:
+                        if not isinstance(error, FileNotFoundError) or (proc/pid).exists():
+                            hold('required cgroup member identity unreadable', pid=int(pid), error=type(error).__name__)
+            except OSError as error:
+                hold('cgroup capture incomplete', error=type(error).__name__)
         if set(networks) != found_networks:
             hold('dedicated helper association unresolved')
         if bridge:
