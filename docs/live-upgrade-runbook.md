@@ -1369,7 +1369,7 @@ else
 fi
 python3 "$REVIEWED_CHECKOUT/docs/validation/live-upgrade.py" ports \
   --retained-backup "$BACKUP_DIR" --port-config "$PORTS_RECEIPT" \
-  --allow-running-project sql-megasamples
+  --allow-running-project sql-megasamples --services-file "$BACKUP_DIR/original-running-services.txt"
 TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
 ATTEMPT_DIR="$BACKUP_DIR/rollback-$TEARDOWN_ATTEMPT"
 python3 "$REVIEWED_CHECKOUT/docs/validation/live-upgrade.py" prepare-rollback \

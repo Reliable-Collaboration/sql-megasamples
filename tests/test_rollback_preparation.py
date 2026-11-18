@@ -195,6 +195,7 @@ def test_bootstrap_checks_ports_before_allocating_or_hashing_images(tmp_path):
     import socket
     backup = retained(tmp_path)
     runtime = tmp_path / 'runtime/podman'; runtime.mkdir(parents=True)
+    (backup / 'original-running-services.txt').write_text('postgres\n')
     server = socket.socket(socket.AF_UNIX); server.bind(str(runtime / 'podman.sock'))
     with socket.socket() as listener:
         listener.bind(('127.0.0.1', 0)); listener.listen()
@@ -310,3 +311,23 @@ def test_explicit_archived_directory_modes_restored(tmp_path):
     finally: os.umask(mask)
     assert (target/'configuration/consoles/workspace').stat().st_mode & 0o777 == 0o775
     assert (target/'configuration/consoles/private').stat().st_mode & 0o777 == 0o700
+
+
+@pytest.mark.parametrize('selected_console',[False,True])
+def test_bootstrap_occupied_unselected_console_port(tmp_path,selected_console):
+    from test_runbook_fragments import block
+    import socket
+    backup=retained(tmp_path)
+    runtime=tmp_path/'runtime/podman';runtime.mkdir(parents=True)
+    server=socket.socket(socket.AF_UNIX);server.bind(str(runtime/'podman.sock'))
+    try:
+        with socket.socket() as listener:
+            listener.bind(('127.0.0.1',0));listener.listen()
+            (backup/'original-ports.json').write_text(json.dumps(dict(engines=['sqlite'],consoles=['landing'],ports={'landing':listener.getsockname()[1]})))
+            (backup/'original-running-services.txt').write_text('sqlite\n'+('landing\n' if selected_console else ''))
+            prefix=block('# BEGIN rollback bootstrap\n','# END rollback bootstrap').split('TEARDOWN_ATTEMPT=',1)[0]
+            env=dict(os.environ,BACKUP_DIR=str(backup),REVIEWED_CHECKOUT=str(ROOT),UPGRADE_TOOLS_CONTAINER='fixture',XDG_RUNTIME_DIR=str(runtime.parent),PATH=project_ports_path(tmp_path))
+            result=subprocess.run(['bash','-eu','-c','cd() { :; }\n'+prefix+'\necho PORTS_PASSED'],env=env,capture_output=True,text=True)
+            assert (result.returncode==0)==(not selected_console),result.stderr
+            assert ('occupied or unavailable port' in result.stderr)==selected_console
+    finally: server.close()
