@@ -16,6 +16,7 @@ import struct
 import subprocess
 import sys
 import tarfile
+import time
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -303,6 +304,24 @@ def exited(before, output, removed_with=None, phase='original-stop'):
     write_receipt(output, dict(project=saved['project'], engines=saved['engines'], phase=phase, containers=rows))
 
 
+def wait_healthy(service, timeout):
+    """Bounded native state/health poll; Compose start need not support --wait."""
+    if service not in ('postgres', 'mysql', 'sqlite') or timeout <= 0:
+        raise ValueError('health wait requires an engine and positive timeout')
+    deadline = time.monotonic() + timeout
+    while True:
+        row = container_state('megasamples-' + service)
+        if row['oom']:
+            raise ValueError('OOM during health wait: ' + service)
+        if not row['running'] or row['pid'] <= 0 or row['state'] != 'running':
+            raise ValueError('engine stopped during health wait: ' + service)
+        if pod('inspect', '-f', '{{.State.Health.Status}}', row['id']) == 'healthy':
+            return
+        if time.monotonic() >= deadline:
+            raise ValueError('health wait timed out: ' + service)
+        time.sleep(min(1, max(0, deadline - time.monotonic())))
+
+
 def check_restored(backup, attempt, check_id):
     """Recheck selection, exact images and each independent post-start predicate."""
     if not re.fullmatch('[A-Za-z0-9-]+', check_id):
@@ -467,6 +486,9 @@ def main():
         p = sub.add_parser(action)
         p.add_argument('bundle', type=Path)
         p.add_argument('--root', type=Path, default=ROOT)
+    p = sub.add_parser('wait-healthy')
+    p.add_argument('service', choices=['postgres','mysql','sqlite'])
+    p.add_argument('--timeout', required=True, type=int)
     p = sub.add_parser('check-restored')
     p.add_argument('backup', type=Path)
     p.add_argument('attempt', type=Path)
@@ -508,7 +530,9 @@ def main():
     p.add_argument('host')
     p.add_argument('port', type=int)
     args = parser.parse_args()
-    if args.command == 'check-restored':
+    if args.command == 'wait-healthy':
+        wait_healthy(args.service, args.timeout)
+    elif args.command == 'check-restored':
         check_restored(args.backup, args.attempt, args.check_id)
     elif args.command == 'restart-mounts':
         restart_mounts(args.before, args.output, args.attempt)

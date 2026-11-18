@@ -307,7 +307,9 @@ docker() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/recovery-calls"; }
         assert r.returncode==0,r.stderr
         calls=(tmp_path/'evidence/recovery-calls').read_text()
         assert '--phase original-restart' in calls
-        assert 'start --wait --wait-timeout 300 postgres' in calls
+        assert 'start postgres' in calls
+        assert 'wait-healthy postgres --timeout 300' in calls
+        assert 'start --wait' not in calls
         if mode=='clean-stop':
             assert 'stop --timeout 300 postgres' in calls
             assert calls.index('stop --timeout') < calls.rindex('--phase original-stop')

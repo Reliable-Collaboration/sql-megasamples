@@ -591,7 +591,8 @@ choices, not measured guarantees.
 : "${RECOVER_ENGINE:?Set the diagnosed original engine}"
 case "$RECOVER_ENGINE" in postgres|mysql|sqlite) :;; *) exit 1;; esac
 python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" --service "$RECOVER_ENGINE"
-docker compose -p sql-megasamples -f compose.yaml start --wait --wait-timeout 300 "$RECOVER_ENGINE"
+docker compose -p sql-megasamples -f compose.yaml start "$RECOVER_ENGINE"
+python3 "$UPGRADE_HELPER" wait-healthy "$RECOVER_ENGINE" --timeout 300
 TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
 TEARDOWN_PHASE=stop
 TEARDOWN_SNAPSHOT="$EVIDENCE_DIR/clean-stop-before-$TEARDOWN_ATTEMPT.json"
@@ -624,9 +625,13 @@ use the full verified cold-copy rollback on **new** volumes below; if a complete
 cold copy does not exist, keep clients paused for coordinator recovery. No automatic
 missing-original reconstruction is provided.
 
-[Compose start](https://docs.docker.com/reference/cli/docker/compose/start/) and
-[stop](https://docs.docker.com/reference/cli/docker/compose/stop/) document the wait
-and timeout flags (read 2026-11-18 19:50:17 UTC).
+The current [Compose start reference](https://docs.docker.com/reference/cli/docker/compose/start/)
+lists wait flags, but this host's existing client's `start --help` does not. These
+commands therefore use plain `start` followed by a bounded native health-status
+poll. A stopped engine, OOM or timeout refuses and keeps clients paused. No health
+status is edited. [Compose stop](https://docs.docker.com/reference/cli/docker/compose/stop/)
+and the existing client both provide `--timeout` (references read
+2026-11-18 19:50:17 UTC; local help checked 2026-11-18 20:02 UTC).
 
 If abandoning before `.env` rotation, cold copies may not exist, so do **not** enter the full
 cold-copy rollback. If stop was attempted, complete the original recovery checks below first, using `original-restart`
@@ -663,7 +668,12 @@ if test -n "$TEARDOWN_SNAPSHOT"; then
   set --
   while IFS= read -r service; do set -- "$@" "$service"; done < "$BACKUP_DIR/original-running-services.txt"
   test "$#" -gt 0
-  docker compose -p sql-megasamples -f compose.yaml start --wait --wait-timeout 300 "$@"
+  docker compose -p sql-megasamples -f compose.yaml start "$@"
+  for engine in postgres mysql sqlite; do
+    case " $* " in
+      *" $engine "*) python3 "$UPGRADE_HELPER" wait-healthy "$engine" --timeout 300 ;;
+    esac
+  done
 # END abort original start
 fi
 # Before any stop attempt, leave the still-running original containers alone.

@@ -470,3 +470,23 @@ def test_rollback_down_retry_appends_original_log_and_status(tmp_path):
         assert result.returncode == 37
     assert (tmp_path / 'rollback-down.log').read_text() == 'attempt-failed\nattempt-failed\n'
     assert (tmp_path / 'rollback-down.log.exit-code').read_text() == '37\n37\n'
+
+@pytest.mark.parametrize('outcome',['healthy','timeout','oom','stopped'])
+def test_original_health_wait_is_bounded_and_state_checked(monkeypatch,outcome):
+    clock=[0]; polls=[]
+    monkeypatch.setattr(upgrade.time,'monotonic',lambda:clock[0])
+    monkeypatch.setattr(upgrade.time,'sleep',lambda seconds:clock.__setitem__(0,clock[0]+seconds))
+    def pod(*args):
+        polls.append(args)
+        if args[2]=='{{.State.Health.Status}}': return 'healthy' if outcome=='healthy' and clock[0]>=2 else 'starting'
+        state='exited|false|0' if outcome=='stopped' else 'running|true|22'
+        return 'megasamples-postgres|id|'+state+'|0|'+('true' if outcome=='oom' else 'false')+'|'
+    monkeypatch.setattr(upgrade,'pod',pod)
+    if outcome=='healthy':
+        upgrade.wait_healthy('postgres',3)
+        assert clock[0]==2
+    else:
+        with pytest.raises(ValueError,match={'timeout':'health wait timed out','oom':'OOM during health wait','stopped':'engine stopped during health wait'}[outcome]):
+            upgrade.wait_healthy('postgres',3)
+        assert clock[0]<=3
+    assert polls
