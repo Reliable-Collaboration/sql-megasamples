@@ -88,6 +88,11 @@
       "url": "https://raw.githubusercontent.com/postgres/postgres/REL_18_STABLE/src/backend/commands/typecmds.c",
       "read_at": "2026-11-18T10:47:41Z",
       "use": "Generated range constructors use the bootstrap superuser owner; closed postgres defaults and explicit admin grants cover them"
+    },
+    {
+      "url": "https://www.sqlite.org/omitted.html",
+      "read_at": "2026-11-18T10:56:21Z",
+      "use": "SQLite has file permissions rather than server GRANT/REVOKE account enforcement"
     }
   ]
 }
