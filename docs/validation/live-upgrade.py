@@ -58,21 +58,38 @@ def check_archive(path, expected):
         raise ValueError('incomplete archive: ' + path.name) from error
 
 
-def prepare_rollback(backup, attempt, checkout):
-    """Read retained inputs; exclusively allocate all new rollback output."""
-    if not re.fullmatch('[A-Za-z0-9-]+', attempt):
-        raise ValueError('invalid rollback attempt')
+def configuration_digest(backup):
     lines = (backup / 'original-configurations.sha256').read_text().splitlines()
     if len(lines) != 1:
         raise ValueError('configuration digest receipt must name one archive')
     digest, name = lines[0].split()
     if name != 'original-configurations.tar' or sha(backup / name) != digest:
         raise ValueError('configuration digest mismatch')
+    return digest
+
+
+def retained_ports(backup, receipt):
+    """Read a retained or reviewed ports receipt without importing the package."""
+    digest = configuration_digest(backup)
+    raw = json.loads(receipt.read_text())
+    if receipt != backup / 'original-ports.json':
+        if raw.get('backup_id') != backup.name:
+            raise ValueError('ports receipt backup differs from retained backup')
+        if raw.get('configuration_archive_sha256') != digest:
+            raise ValueError('ports receipt configuration digest differs from checked archive')
+    return {key: raw[key] for key in ('engines', 'consoles', 'ports')}
+
+
+def prepare_rollback(backup, attempt, checkout):
+    """Read retained inputs; exclusively allocate all new rollback output."""
+    if not re.fullmatch('[A-Za-z0-9-]+', attempt):
+        raise ValueError('invalid rollback attempt')
+    configuration_digest(backup)
     target = backup / ('rollback-' + attempt)
     target.mkdir(mode=0o700)  # No exist_ok: never reuse an attempt.
     config = target / 'configuration'
     config.mkdir(mode=0o700)
-    with tarfile.open(backup / name) as archive:
+    with tarfile.open(backup / 'original-configurations.tar') as archive:
         archive.extractall(config, filter='data')
         # tar's data filter intentionally leaves directory modes to the caller's
         # umask. Restore safe recorded traversal modes, inside the private parent.
@@ -523,6 +540,9 @@ def main():
     p = sub.add_parser('export-ports')
     p.add_argument('output', type=Path)
     p.add_argument('--config', type=Path)
+    p.add_argument('--port-config', type=Path)
+    for action in ('ports', 'export-ports'):
+        sub.choices[action].add_argument('--retained-backup', type=Path)
     p = sub.choices['ports']
     p.add_argument('--consoles-only', action='store_true')
     p = sub.add_parser('forwarded-protocol')
@@ -551,7 +571,11 @@ def main():
     elif args.command.endswith('-metadata'):
         globals()[args.command.replace('-', '_')](args.root, args.bundle, required_metadata())
     elif args.command in ('ports', 'export-ports'):
-        if args.command == 'ports' and args.port_config:
+        if args.retained_backup:
+            if not args.port_config:
+                raise ValueError('retained backup requires an explicit ports receipt')
+            raw = retained_ports(args.retained_backup, args.port_config)
+        elif args.command == 'ports' and args.port_config:
             raw = json.loads(args.port_config.read_text())
         else:
             from megasamples import config

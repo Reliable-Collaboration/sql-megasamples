@@ -1,0 +1,25 @@
+{
+  "backup_id": "20261118T133807Z",
+  "configuration_archive_sha256": "adf035d3c5d3fda34fde392b9592e84c407298d76eb5e12978528dc81c48a830",
+  "engines": [
+    "mysql",
+    "postgres",
+    "sqlite"
+  ],
+  "consoles": [
+    "landing",
+    "cloudbeaver",
+    "dbgate",
+    "adminer",
+    "phpmyadmin"
+  ],
+  "ports": {
+    "mysql": 3306,
+    "postgres": 5432,
+    "landing": 8080,
+    "phpmyadmin": 8081,
+    "adminer": 8082,
+    "dbgate": 8083,
+    "cloudbeaver": 8084
+  }
+}

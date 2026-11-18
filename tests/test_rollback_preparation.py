@@ -32,6 +32,18 @@ def digests(backup):
             if p.is_file() and not (len(p.relative_to(backup).parts) > 1 and p.relative_to(backup).parts[0].startswith('rollback-'))}
 
 
+def project_ports_path(tmp_path):
+    """Only the bootstrap helper's external project-port inventory is stubbed."""
+    binary = tmp_path / 'bin'; binary.mkdir()
+    docker = binary / 'docker'
+    bindings = {str(port) + '/tcp': [dict(HostIp='127.0.0.1', HostPort=str(port))]
+                for port in [3306, 5432, 8080, 8081, 8082, 8083, 8084]}
+    docker.write_text('#!/bin/sh\ncase "$1" in\nps) echo fixture;;\ninspect) cat <<\'JSON\'\n'
+                      + json.dumps(bindings) + '\nJSON\n;;\n*) exit 42;;\nesac\n')
+    docker.chmod(0o755)
+    return str(binary) + os.pathsep + os.environ['PATH']
+
+
 def test_preparation_preserves_readonly_inputs_and_refuses_reuse(tmp_path):
     backup = retained(tmp_path)
     checkout = tmp_path / 'checkout'; checkout.mkdir()
@@ -75,9 +87,12 @@ def test_truncated_archive_is_clean_refusal(tmp_path):
         upgrade.check_archive(path, 'a' * 64)
 
 
-def test_bootstrap_and_abort_execute_without_mutating_retained_inputs(tmp_path):
+@pytest.mark.parametrize('first_run_layout', [False, True])
+def test_bootstrap_and_abort_execute_without_mutating_retained_inputs(tmp_path, first_run_layout):
     from test_runbook_fragments import block
     backup = retained(tmp_path)
+    if first_run_layout:
+        backup = backup.rename(tmp_path / '20261118T133807Z')
     # Minimal valid image receipt; no Podman calls during archive verification.
     from test_live_upgrade import archive
     digest, = archive(backup / 'rollback-image-fixture.tar', [b'fixture'])
@@ -88,6 +103,24 @@ def test_bootstrap_and_abort_execute_without_mutating_retained_inputs(tmp_path):
     (backup / 'rollback-branch.txt').write_text('fixture-branch\n')
     (backup / 'original-commit.txt').write_text('fixture-commit\n')
     (backup / 'original-running-services.txt').write_text('postgres\n')
+    receipt = tmp_path / 'retained-ports.json'
+    if first_run_layout:
+        # Names from the only retained live backup; no payloads copied.
+        names = json.loads((ROOT / 'tests/fixtures/live-upgrade/retained-root-names.json').read_text())
+        assert 'original-ports.json' not in names
+        assert not any(n.startswith('rollback-') and n.endswith('/') for n in names)
+        for name in names:
+            target = backup / name.rstrip('/')
+            if name.endswith('/'):
+                target.mkdir(exist_ok=True)
+            elif not target.exists():
+                target.touch()
+        (backup / 'original-ports.json').unlink()
+        ports = json.loads((ROOT / 'docs/validation/retained-backups/20261118T133807Z-ports.json').read_text())
+        # Bind the names-only fixture receipt to its synthetic archive, never live data.
+        ports['backup_id'] = backup.name
+        ports['configuration_archive_sha256'] = upgrade.sha(backup / 'original-configurations.tar')
+        receipt.write_text(json.dumps(ports))
     checkout = tmp_path / 'checkout'; checkout.mkdir()
     (checkout / 'consoles').mkdir(); (checkout / 'consoles/file').write_text('candidate')
     (checkout / '.env').write_text('# empty fixture\n')
@@ -99,7 +132,16 @@ def test_bootstrap_and_abort_execute_without_mutating_retained_inputs(tmp_path):
     # Directory allocation requires parent write permission; retained files stay read-only.
     backup.chmod(0o700)
     env = dict(os.environ, BACKUP_DIR=str(backup), REVIEWED_CHECKOUT=str(ROOT),
-               UPGRADE_TOOLS_CONTAINER='fixture', XDG_RUNTIME_DIR=str(runtime.parent), CHECKOUT=str(checkout))
+               UPGRADE_TOOLS_CONTAINER='fixture', XDG_RUNTIME_DIR=str(runtime.parent), CHECKOUT=str(checkout),
+               PATH=project_ports_path(tmp_path))
+    if first_run_layout:
+        reviewed = tmp_path / 'reviewed'
+        receipts = reviewed / 'docs/validation/retained-backups'; receipts.mkdir(parents=True)
+        (receipts / (backup.name + '-ports.json')).write_bytes(receipt.read_bytes())
+        for name in ['live-upgrade.py', 'quiescence.py']:
+            (receipts.parent / name).symlink_to(ROOT / 'docs/validation' / name)
+        (reviewed / 'docs/live-upgrade-runbook.md').symlink_to(ROOT / 'docs/live-upgrade-runbook.md')
+        env['REVIEWED_CHECKOUT'] = str(reviewed)
     # Only external commands are stubbed. Actual bootstrap, extraction, function capture,
     # context save and filesystem restoration all execute.
     stubs = r'''
@@ -144,6 +186,52 @@ docker() { printf '%s\n' "$*" >> "$CHECKOUT/docker-calls"; }
     finally:
         server.close()
         subprocess.run(['chmod', '-R', 'u+w', str(backup)], check=True)
+
+
+def test_bootstrap_checks_ports_before_allocating_or_hashing_images(tmp_path):
+    from test_runbook_fragments import block
+    import socket
+    backup = retained(tmp_path)
+    runtime = tmp_path / 'runtime/podman'; runtime.mkdir(parents=True)
+    server = socket.socket(socket.AF_UNIX); server.bind(str(runtime / 'podman.sock'))
+    with socket.socket() as listener:
+        listener.bind(('127.0.0.1', 0)); listener.listen()
+        (backup / 'original-ports.json').write_text(json.dumps(dict(
+            engines=['postgres'], consoles=[], ports={'postgres': listener.getsockname()[1]})))
+        stubs = '''
+cd() { :; }
+podman() { test "$1" = ps; }
+'''
+        env = dict(os.environ, BACKUP_DIR=str(backup), REVIEWED_CHECKOUT=str(ROOT),
+                   UPGRADE_TOOLS_CONTAINER='fixture', XDG_RUNTIME_DIR=str(runtime.parent), PATH=project_ports_path(tmp_path))
+        try:
+            result = subprocess.run(['bash', '-eu', '-c', stubs + block(
+                '# BEGIN rollback bootstrap\n', '# END rollback bootstrap')], env=env, capture_output=True, text=True)
+            assert result.returncode != 0
+            assert 'occupied or unavailable port' in result.stderr
+            assert not list(backup.glob('rollback-*/'))
+            assert 'rollback-image-ids' not in result.stderr
+        finally:
+            server.close()
+
+
+def test_retained_ports_receipt_is_bound_to_backup_and_checked_archive(tmp_path):
+    backup = retained(tmp_path)
+    receipt = tmp_path / 'ports.json'
+    ports = dict(backup_id=backup.name, configuration_archive_sha256=upgrade.sha(backup/'original-configurations.tar'),
+                 engines=['postgres'], consoles=[], ports={'postgres': 5432})
+    receipt.write_text(json.dumps(ports))
+    assert upgrade.retained_ports(backup, receipt)['ports'] == {'postgres': 5432}
+    ports['backup_id'] = 'another-backup'; receipt.write_text(json.dumps(ports))
+    with pytest.raises(ValueError, match='ports receipt backup'):
+        upgrade.retained_ports(backup, receipt)
+    ports['backup_id'] = backup.name; ports['configuration_archive_sha256'] = '0'*64
+    receipt.write_text(json.dumps(ports))
+    with pytest.raises(ValueError, match='ports receipt configuration digest'):
+        upgrade.retained_ports(backup, receipt)
+    (backup/'original-configurations.tar').write_bytes(b'changed')
+    with pytest.raises(ValueError, match='configuration digest mismatch'):
+        upgrade.retained_ports(backup, receipt)
 
 
 def test_whole_rollback_preserves_frozen_retained_file_list_and_digests(tmp_path):

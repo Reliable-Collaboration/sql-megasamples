@@ -1169,6 +1169,39 @@ files may all be read-only; the backup directory itself needs permission to add 
 new attempt directory. A completely read-only directory refuses allocation without
 changing any input. No permission bypass or host change is prescribed.
 
+The first-run backup `20261118T133807Z` has neither `original-ports.json` nor an
+earlier rollback attempt. Its route is the reviewed
+[ports receipt](validation/retained-backups/20261118T133807Z-ports.json), transcribed
+only from the service names and local ports in its digest-checked archived
+`megasamples.yaml`. The bootstrap checks that receipt's backup ID and configuration
+archive digest using only Python's standard library, then checks the ports before
+allocating an attempt or hashing image archives. It copies the port fields into
+the new attempt for the later, unexempted pre-up check. For another historical
+backup, supply `PORTS_RECEIPT` in the same reviewed format; never invent a receipt
+from the candidate configuration. New backups use their retained `original-ports.json`.
+
+Retained-input inventory, checked by filenames against that first-run backup on
+2026-11-18 (the names-only fixture is
+[`retained-root-names.json`](../tests/fixtures/live-upgrade/retained-root-names.json)):
+
+| Bootstrap or Roll back input under `BACKUP_DIR` | First-run layout and use |
+|---|---|
+| `original-configurations.sha256`, `original-configurations.tar` | Present; verified before extraction. The archive supplies `compose.yaml`, `megasamples.yaml`, `consoles/` and optional `.env`; do not read credential values into output. |
+| `original-ports.json` | **Absent**; use the digest-bound reviewed receipt above. No prior-attempt receipt is required. |
+| `rollback-image-ids.txt`, `rollback-images.sha256` | Present; mapping and archive-layout selection. |
+| `phase-a-resume-receipt.json` | Present; required for this layout's corrected service-named archives, because the checksum file names the malformed aggregate. |
+| `rollback-image-{postgres,mysql,sqlite,landing,cloudbeaver,dbgate,adminer,phpmyadmin}.tar` | Present; each corrected payload is checked against the phase-A digest and full configuration ID before any load. `rollback-images.tar` is never loaded. New backups instead use `rollback-image-<full-ID>.tar`. |
+| `cold-copies.stream.sha256`, `postgres/`, `mysql/`, `sqlite/`, `sqlite-shared/` | Present; cold-data hash check and restoration sources. Payloads were not read for this filename audit. |
+| `rollback-branch.txt`, `original-commit.txt` | Present; original branch and identity check. |
+| `original-tool-images.txt`, `rollback-image-tags.txt`, `original-running-services.txt` | Present; tool retags, console overrides, service selection, port selection and post-start image checks. |
+| `adminer.generated.html`, `python-venv/` | Present; conditional restoration inputs. |
+| `cloudbeaver-workspace-final/`, fallback `cloudbeaver-workspace/` | Both present; conditional workspace restoration after original startup. |
+
+`CONTEXT_FILE`, copied helpers, configuration extraction and all new receipts/logs
+belong to the selected attempt. A fresh bootstrap does not require a retained-root
+`resume-context.bash` or `quiescence.py`. It copies reviewed helpers into its attempt.
+The filename audit neither certifies cold-data/image contents nor executes a live restoration.
+
 ```sh
 # BEGIN rollback bootstrap
 set -eu
@@ -1183,6 +1216,17 @@ cd /home/rcc-vstudio/working/sql-megasamples
 # Socket refusal is distinct from a Compose teardown failure.
 test -S "${DOCKER_HOST#unix://}"
 UPGRADE_ID=$(basename "$BACKUP_DIR")
+# Check configuration identity and original ports BEFORE allocating an attempt or
+# hashing engine archives. Only this project's running bindings are exempt here;
+# the pre-up check below permits no exemptions.
+if test -f "$BACKUP_DIR/original-ports.json"; then
+  PORTS_RECEIPT="$BACKUP_DIR/original-ports.json"
+else
+  PORTS_RECEIPT=${PORTS_RECEIPT:-"$REVIEWED_CHECKOUT/docs/validation/retained-backups/$UPGRADE_ID-ports.json"}
+fi
+python3 "$REVIEWED_CHECKOUT/docs/validation/live-upgrade.py" ports \
+  --retained-backup "$BACKUP_DIR" --port-config "$PORTS_RECEIPT" \
+  --allow-running-project sql-megasamples
 TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
 ATTEMPT_DIR="$BACKUP_DIR/rollback-$TEARDOWN_ATTEMPT"
 python3 "$REVIEWED_CHECKOUT/docs/validation/live-upgrade.py" prepare-rollback \
@@ -1213,14 +1257,9 @@ APPROVED_LTS_MERGE= APPROVED_CREDENTIAL_MERGE=
 TOOLS_ARCHIVE= TOOLS_IMAGE= CANDIDATE_ARCHIVE= DOCKER_CLIENT=
 TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE= CANDIDATE_SNAPSHOT=
 PREPARATION_STAGE=rollback-prepared
-# Ports are immutable evidence, independent of checkout/venv/tools state.
-if test -f "$BACKUP_DIR/original-ports.json"; then
-  cp "$BACKUP_DIR/original-ports.json" "$ATTEMPT_DIR/original-ports.json"
-else
-  : "${PORTS_RECEIPT:?Set exact original-ports.json from the first attempt receipt}"
-  test -f "$PORTS_RECEIPT"
-  cp "$PORTS_RECEIPT" "$ATTEMPT_DIR/original-ports.json"
-fi
+# Freeze only the service/port fields into this attempt; no candidate package used.
+python3 "$UPGRADE_HELPER" export-ports "$ATTEMPT_DIR/original-ports.json" \
+  --retained-backup "$BACKUP_DIR" --port-config "$PORTS_RECEIPT"
 chmod 600 "$ATTEMPT_DIR/original-ports.json"
 save_context
 # Record CONTEXT_FILE's exact path in the maintenance receipt.
