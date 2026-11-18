@@ -130,6 +130,12 @@ are independent of status and exit code. An OOM is checked independently of 137.
 
 SQLite's PID 1 is `sleep infinity` (`megasamples/engines/sqlite/__init__.py`),
 which needs SIGKILL on stop; its observed 137 needs no crash-consistency acknowledgment.
+Both whole-project stops use `stop_project`: configured consoles first with a
+10-second grace period, SQLite with 2 seconds, then PostgreSQL/MySQL with 300
+seconds. Expect SQLite to consume about its two-second grace period, plus command
+overhead. Budget the console and database grace periods separately; those are
+per-container timeout choices, not an enforced total outage deadline. Any failed
+group stops continuation and uses the existing recorded-state checks.
 The two live records behind the regression fixture are
 `phase-b-3/initial-stopped-checks.json` and `phase-b-3/failed-candidate-state.json`;
 only name/status/exit_code/running fields are retained in the fixture.
@@ -228,6 +234,31 @@ ms_tool() {
   podman exec -i -e "DOCKER_HOST=$DOCKER_HOST" -e COMPOSE_PROJECT_NAME=sql-megasamples \
     -e PYTHONPATH=. -w "$PWD" "$UPGRADE_TOOLS_CONTAINER" "$@"
 }
+stop_project() {
+  local services service
+  services=$(docker compose -p sql-megasamples -f compose.yaml config --services) || return $?
+  # Stop every configured console first, including SQLite file consumers.
+  set --
+  for service in $services; do
+    case "$service" in postgres|mysql|sqlite) :;; *) set -- "$@" "$service";; esac
+  done
+  if test "$#" -gt 0; then
+    docker compose -p sql-megasamples -f compose.yaml stop --timeout 10 "$@" || return $?
+  fi
+  for service in $services; do
+    if test "$service" = sqlite; then
+      docker compose -p sql-megasamples -f compose.yaml stop --timeout 2 sqlite || return $?
+    fi
+  done
+  set --
+  for service in $services; do
+    case "$service" in postgres|mysql) set -- "$@" "$service";; esac
+  done
+  if test "$#" -gt 0; then
+    docker compose -p sql-megasamples -f compose.yaml stop --timeout 300 "$@" || return $?
+  fi
+  return 0
+}
 save_context() {
 # Save non-secret maintenance context.
 (
@@ -244,7 +275,7 @@ umask 077
     APPROVED_LTS_MERGE APPROVED_CREDENTIAL_MERGE TOOLS_ARCHIVE TOOLS_IMAGE CANDIDATE_ARCHIVE DOCKER_CLIENT
   printf '%s\n' 'export DOCKER_HOST COMPOSE_PROJECT_NAME=sql-megasamples'
   printf 'cd -- %q\n' "$PWD"
-  declare -f ms_tool save_context
+  declare -f ms_tool save_context stop_project
 } > "$CONTEXT_FILE"
 chmod 600 "$CONTEXT_FILE"
 )
@@ -744,6 +775,7 @@ ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py check-metadata "$METAD
 ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports --allow-running-project sql-megasamples </dev/null
 # Downtime starts here. SQLite consumers must be stopped before copying its files.
 # Stop every configured console as well as all engines; keep the proxy services running.
+# stop_project: consoles first (10s), SQLite (2s), then PostgreSQL/MySQL (300s).
 TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
 TEARDOWN_PHASE=stop
 TEARDOWN_SNAPSHOT="$EVIDENCE_DIR/stop-before-$TEARDOWN_ATTEMPT.json"
@@ -752,7 +784,7 @@ python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasample
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
 date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/stop.log.timestamps"
-if docker compose -p sql-megasamples -f compose.yaml stop --timeout 300 >> "$EVIDENCE_DIR/stop.log" 2>&1; then
+if stop_project >> "$EVIDENCE_DIR/stop.log" 2>&1; then
   date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/stop.log.timestamps"
   printf '0\n' >> "$EVIDENCE_DIR/stop.log.exit-code"
 else
@@ -1008,7 +1040,7 @@ mounts before retrying the copy. Never repeat branch/configuration restoration
 for this checkpoint. Recheck original ports before starting. Never use `down -v`, force-remove an active mount, repeat preparation,
 regenerate passwords or restart candidates implicitly. Preserve original volumes and inputs.
 
-In the isolated 30-dataset rehearsal, replacing all three engine containers and restoring SQLite's shared files took 121.65 seconds. Individual whole-engine resets took 23.07 seconds (MySQL), 26.4 seconds (PostgreSQL) and 92.4 seconds (SQLite). A stop/start of the existing eight-service stack, without replacing data volumes, took 38.66 seconds and preserved every recorded count, SQLite hash and inserted probe row. These measurements exclude cold-backup time and the coordinator's DataIntent checks and predate this follow-up; the added datasets have separate measurements in “Added dataset cost and scope”. Initial stack startup took 328.32 seconds while this custom store waited for health scheduling; real probes then completed successfully through the isolated-only runner. These are observed preparation/outage components, not a full-manifest downtime guarantee. The complete full-Contoso repository check against the shipped MySQL configuration took 1,736.02 seconds in this rehearsal, dominated by an indexed nested-loop constraint query. If the maintenance window includes that full integrity audit, budget its verification time as well as startup, cold copies and DataIntent tests.
+In the isolated 30-dataset rehearsal, replacing all three engine containers and restoring SQLite's shared files took 121.65 seconds. Individual whole-engine resets took 23.07 seconds (MySQL), 26.4 seconds (PostgreSQL) and 92.4 seconds (SQLite). A historical stop/start of the existing eight-service stack, without replacing data volumes, took 38.66 seconds under its earlier stop procedure (it does not measure the revised grouped stops) and preserved every recorded count, SQLite hash and inserted probe row. These measurements exclude cold-backup time and the coordinator's DataIntent checks and predate this follow-up; the added datasets have separate measurements in “Added dataset cost and scope”. Initial stack startup took 328.32 seconds while this custom store waited for health scheduling; real probes then completed successfully through the isolated-only runner. These are observed preparation/outage components, not a full-manifest downtime guarantee. The complete full-Contoso repository check against the shipped MySQL configuration took 1,736.02 seconds in this rehearsal, dominated by an indexed nested-loop constraint query. If the maintenance window includes that full integrity audit, budget its verification time as well as startup, cold copies and DataIntent tests.
 
 Historical PR #11 calibration (superseded for MySQL version selection): the 2026-11-17 cold-readiness follow-up measured six fresh-volume starts per PR #11 image,
 plus six each for the retained main MySQL and SQLite images. Starts were sequential, with
@@ -1244,7 +1276,7 @@ python3 - "$REVIEWED_CHECKOUT/docs/live-upgrade-runbook.md" "$ATTEMPT_DIR/recove
 import pathlib, re, sys
 text = pathlib.Path(sys.argv[1]).read_text()
 functions = [re.search(r'^' + name + r'\(\) \{\n.*?^\}$(?=\n)', text, re.M | re.S)[0]
-             for name in ('ms_tool', 'save_context')]
+             for name in ('ms_tool', 'save_context', 'stop_project')]
 with pathlib.Path(sys.argv[2]).open('x') as output:
     output.write('\n'.join(functions) + '\n')
 PY_RECOVERY_FUNCTIONS
@@ -1313,7 +1345,7 @@ python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasample
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
 date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"
-if docker compose -p sql-megasamples -f compose.yaml stop --timeout 300 >> "$EVIDENCE_DIR/rollback-stop.log" 2>&1; then
+if stop_project >> "$EVIDENCE_DIR/rollback-stop.log" 2>&1; then
   date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"
   printf '0\n' >> "$EVIDENCE_DIR/rollback-stop.log.exit-code"
 else

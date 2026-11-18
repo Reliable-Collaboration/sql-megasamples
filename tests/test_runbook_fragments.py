@@ -19,7 +19,7 @@ def block(start, end):
 def functions():
     text = RUNBOOK.read_text()
     return '\n'.join(re.search(r'^' + n + r'\(\) \{\n.*?^\}$(?=\n)', text, re.M | re.S)[0]
-                     for n in ('ms_tool', 'save_context'))
+                     for n in ('ms_tool', 'save_context', 'stop_project') if n + '() {' in text)
 
 
 def context(tmp_path, phase):
@@ -44,7 +44,7 @@ def test_failure_fresh_shell_checks_then_continuation(tmp_path, phase):
     try:
         text = RUNBOOK.read_text()
         action = 'down' if phase == 'rollback-down' else 'stop'
-        guard = next(g for g in re.findall(r'if docker compose[^\n]* (?:stop(?: --timeout 300)?|down) >> .*?^fi', text, re.M | re.S)
+        guard = next(g for g in re.findall(r'if (?:docker compose[^\n]* (?:stop(?: --timeout 300)?|down)|stop_project) >> .*?^fi', text, re.M | re.S)
                      if '"$EVIDENCE_DIR/' + phase + '.log"' in g)
         env = {'PATH': os.environ['PATH'], 'CONTEXT': str(tmp_path / 'resume-context.bash')}
         result = subprocess.run(['bash', '-eu', '-c', '. "$CONTEXT"\ndocker() { return 37; }\n' + guard], env=env)
@@ -64,6 +64,45 @@ podman() { if test "$1" = unshare; then printf '{"holders":[],"helpers":[],"unre
         assert list((tmp_path/'evidence').glob('process-evidence-*.exit-code'))
     finally:
         server.close()
+
+
+@pytest.mark.parametrize('log', ['stop', 'rollback-stop'])
+@pytest.mark.parametrize('services', ['postgres\nmysql\nsqlite\nlanding\nadminer', 'postgres\nsqlite'])
+@pytest.mark.parametrize('failure', ['', 'config', 'consoles', 'sqlite', 'engines'])
+def test_project_stop_selects_timeouts_and_preserves_failures(tmp_path, log, services, failure):
+    text = RUNBOOK.read_text()
+    guard = next(g for g in re.findall(r'if (?:docker compose[^\n]* stop --timeout 300|stop_project) >> .*?^fi', text, re.M | re.S)
+                 if '"$EVIDENCE_DIR/' + log + '.log"' in g)
+    stubs = r'''
+docker() {
+  printf '%s\n' "$*" >> "$EVIDENCE_DIR/compose-calls"
+  if test "$6" = config; then
+    test "$FAILURE" != config || return 37
+    printf '%s\n' "$SERVICES"; return
+  fi
+  case "${9-}" in
+    landing) stage=consoles;; sqlite) stage=sqlite;; *) stage=engines;;
+  esac
+  test "$FAILURE" != "$stage" || return 37
+}
+'''
+    env = dict(os.environ, EVIDENCE_DIR=str(tmp_path), SERVICES=services, FAILURE=failure)
+    result = subprocess.run(['bash', '-eu', '-c', functions() + '\n' + stubs + guard],
+                            env=env, capture_output=True, text=True)
+    groups = [('config', 'config --services')]
+    if 'landing' in services:
+        groups.append(('consoles', 'stop --timeout 10 landing adminer'))
+    groups += [('sqlite', 'stop --timeout 2 sqlite'),
+               ('engines', 'stop --timeout 300 postgres' + (' mysql' if 'mysql' in services else ''))]
+    expected = []
+    code = 0
+    for stage, command in groups:
+        expected.append('compose -p sql-megasamples -f compose.yaml ' + command)
+        if failure == stage:
+            code = 37; break
+    assert (tmp_path / 'compose-calls').read_text().splitlines() == expected
+    assert result.returncode == code, result.stderr
+    assert (tmp_path / (log + '.log.exit-code')).read_text() == str(code) + '\n'
 
 
 def test_context_does_not_change_caller_umask(tmp_path):

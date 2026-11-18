@@ -216,9 +216,10 @@ def test_runbook_ms_tool_executes_heredoc(tmp_path):
 @pytest.mark.parametrize('action,log', [('stop', 'stop.log'), ('stop', 'rollback-stop.log'), ('down', 'rollback-down.log')])
 def test_runbook_teardown_preserves_compose_status(tmp_path, action, log):
     text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
-    guard = next(g for g in re.findall(r'if docker compose[^\n]* ' + action + r'(?: --timeout 300)? >> .*?^fi', text, re.M | re.S) if '$EVIDENCE_DIR/' + log + '"' in g)
+    guard = next(g for g in re.findall(r'if (?:docker compose[^\n]* ' + action + r'(?: --timeout 300)?|stop_project) >> .*?^fi', text, re.M | re.S) if '$EVIDENCE_DIR/' + log + '"' in g)
     env = dict(os.environ, BACKUP_DIR=str(tmp_path), EVIDENCE_DIR=str(tmp_path))
-    result = subprocess.run(['bash', '-c', 'docker() { return 37; }\n' + guard + '\necho unsafe-fallthrough'],
+    from test_runbook_fragments import functions
+    result = subprocess.run(['bash', '-c', functions() + '\ndocker() { return 37; }\n' + guard + '\necho unsafe-fallthrough'],
                             env=env, capture_output=True, text=True)
     assert result.returncode == 37
     assert (tmp_path / (log + '.exit-code')).read_text() == '37\n'
