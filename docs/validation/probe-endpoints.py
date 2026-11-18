@@ -11,7 +11,7 @@ root=Path.cwd();out=root/os.environ.get('MEGASAMPLES_VALIDATION_OUT', 'build/cli
 assert root==Path('/home/rcc-vstudio/working/sql-megasamples-upgrade')
 assert os.environ.get('COMPOSE_PROJECT_NAME')=='megasamples-upgrade'
 cfg=config.load();assert cfg.ports['mysql']==13306 and cfg.ports['postgres']==15432
-secrets=dict(line.split('=',1) for line in (root/'.env').read_text().splitlines() if line and not line.startswith('#'))
+secrets=config.passwords()
 expected=registry.image_counts('pubs')['jobs'];results={}
 for engine in ['mysql','postgres']:
  port=cfg.ports[engine]

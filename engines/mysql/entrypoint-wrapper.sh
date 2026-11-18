@@ -28,4 +28,16 @@ if [ "${1:-}" = "mysqld" ] && [ -n "${MYSQL_ROOT_PASSWORD:-}${DEMO_PASSWORD:-}${
     set -- "$@" --init-file="$init_file"
 fi
 
+# Healthchecks run as the container owner. A private option file keeps the password
+# out of both mysql's command line and its environment (including process listings).
+umask 077
+health_file=/run/megasamples-health.cnf
+{
+    printf '[client]\nuser=demo\npassword="'
+    printf '%s' "${DEMO_PASSWORD:-demo}" | sed 's/\\/\\\\/g; s/"/\\"/g'
+    printf '"\nhost=127.0.0.1\nprotocol=TCP\n'
+} > "$health_file"
+chmod 600 "$health_file"
+unset MYSQL_ROOT_PASSWORD DEMO_PASSWORD ADMIN_PASSWORD
+
 exec /usr/local/bin/docker-entrypoint.sh "$@"

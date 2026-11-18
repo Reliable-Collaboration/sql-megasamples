@@ -30,6 +30,7 @@ import argparse, fcntl, json, os, re, subprocess, sys, time, tempfile, uuid
 from contextlib import ExitStack, contextmanager, nullcontext
 
 from megasamples import compose, config as stack, consoles, datasets as inventory, engines as engine_registry
+from megasamples.credentials import client, session
 from megasamples.engines import unique_databases
 from megasamples.paths import COMPOSE, ROOT
 
@@ -167,8 +168,19 @@ class Pristine:
         if inspected.returncode or not image:
             sys.exit(f"could not inspect the running image for {self.engine.container}: {inspected.stderr.strip()[:300]}")
         try:
-            run = sh("docker", "run", "--rm", "-d", "--name", self.name, *TRANSIENT,
-                     "--memory", "2g", *self.env, image)
+            # Docker reads this owner-only file; passwords never enter argv or the host environment.
+            with tempfile.NamedTemporaryFile(mode="w", prefix="megasamples-reset-", suffix=".env") as env_file:
+                if self.engine.name in ("mysql", "postgres"):
+                    values = stack.passwords()
+                    keys = ["DEMO_PASSWORD", "ADMIN_PASSWORD",
+                            "MYSQL_ROOT_PASSWORD" if self.engine.name == "mysql" else "POSTGRES_PASSWORD"]
+                    for key in keys:
+                        if any(c in values[key] for c in "\n\r\0"):
+                            sys.exit("reset requires single-line configured passwords")
+                        env_file.write(key + "=" + values[key] + "\n")
+                env_file.flush()
+                run = sh("docker", "run", "--rm", "-d", "--name", self.name, *TRANSIENT,
+                         "--memory", "2g", "--env-file", env_file.name, *self.env, image)
             if run.returncode != 0:
                 sys.exit(f"could not start a pristine {image}: {run.stderr.strip()[:300]}")
             started = time.monotonic()
@@ -212,36 +224,42 @@ def pipe(source, target):
 
 
 def pg(container, sql, database="postgres"):
-    # The official image trusts its own loopback: the superuser runs maintenance without its password.
-    return sh("docker", "exec", container, "psql", "-h", "127.0.0.1", "-U", "postgres", "-d", database,
-              "-v", "ON_ERROR_STOP=1", "-tAc", sql)
+    with client("postgres", container, "postgres", stack.passwords()["POSTGRES_PASSWORD"]) as command:
+        return sh(*command, "-d", database, "-v", "ON_ERROR_STOP=1", "-tAc", sql)
 
 
 def pg_counts(container, database):
     tables = pg(container, "SELECT format('%I.%I', schemaname, tablename) FROM pg_tables "
                            "WHERE schemaname NOT IN ('pg_catalog', 'information_schema') ORDER BY 1", database)
+    if tables.returncode:
+        sys.exit(f"postgres:{database}: could not list tables for row counts")
     out = {}
-    for table in tables.stdout.split():
-        out[table] = pg(container, f"SELECT count(*) FROM {table}", database).stdout.strip()
+    for table in tables.stdout.splitlines():
+        counted = pg(container, f"SELECT count(*) FROM {table}", database)
+        if counted.returncode or not counted.stdout.strip().isdigit():
+            sys.exit(f"postgres:{database}: could not count a table")
+        out[table] = counted.stdout.strip()
     return out
 
 
 def reset_postgres(engine, databases):
+    password = stack.passwords()["POSTGRES_PASSWORD"]
     with Pristine(engine, lambda c: pg(c, "SELECT 1").returncode == 0) as pristine:
         for database in databases:
             print(f"  . postgres:{database}: restoring from the image")
             source = pg(pristine.name, "SELECT 1", database)
             if source.returncode:
                 sys.exit(f"postgres:{database}: source database is unavailable: {source.stderr.strip()[:300]}")
-            dropped = pg(engine.container, f'DROP DATABASE IF EXISTS "{database}" WITH (FORCE)')
-            if dropped.returncode != 0:
-                sys.exit(f"postgres:{database}: {dropped.stderr.strip()[:300]}")
-            # --create carries the database's own settings and the grants on it.
-            failed = pipe(["docker", "exec", pristine.name, "pg_dump", "-h", "127.0.0.1", "-U", "postgres", "-Fc", "--create", database],
-                          ["docker", "exec", "-i", engine.container, "pg_restore", "-h", "127.0.0.1", "-U", "postgres",
-                           "-d", "postgres", "--create", "--exit-on-error"])
-            if failed:
-                sys.exit(f"postgres:{database}: {failed}")
+            # Stage both pass files before dropping anything. --create preserves settings and grants.
+            with client("postgres", pristine.name, "postgres", password, "pg_dump") as dump, \
+                 client("postgres", engine.container, "postgres", password, "pg_restore") as restore:
+                dropped = pg(engine.container, f'DROP DATABASE IF EXISTS "{database}" WITH (FORCE)')
+                if dropped.returncode != 0:
+                    sys.exit(f"postgres:{database}: {dropped.stderr.strip()[:300]}")
+                failed = pipe([*dump, "-Fc", "--create", database],
+                              [*restore, "-d", "postgres", "--create", "--exit-on-error"])
+                if failed:
+                    sys.exit(f"postgres:{database}: {failed}")
             expected, restored = pg_counts(pristine.name, database), pg_counts(engine.container, database)
             if expected != restored or not expected:
                 sys.exit(f"postgres:{database}: the restored tables differ from the image's: {sorted(set(expected.items()) ^ set(restored.items()))[:5]}")
@@ -250,25 +268,35 @@ def reset_postgres(engine, databases):
 
 
 def my(container, sql, database=None):
-    return sh("docker", "exec", container, "mysql", "-uroot", "-proot", "-N", "--batch",
-              *([database] if database else []), "-e", sql)
+    with client("mysql", container, "root", stack.passwords()["MYSQL_ROOT_PASSWORD"]) as command:
+        return sh(*command, "-N", "--batch", *([database] if database else []), "-e", sql)
 
 
 def my_counts(container, database):
     tables = my(container, "SELECT table_name FROM information_schema.tables WHERE table_schema = DATABASE() "
                            "AND table_type = 'BASE TABLE' ORDER BY 1", database)
-    return {t: my(container, f"SELECT COUNT(*) FROM `{t}`", database).stdout.strip() for t in tables.stdout.split()}
+    if tables.returncode:
+        sys.exit(f"mysql:{database}: could not list tables for row counts")
+    out = {}
+    for table in tables.stdout.splitlines():
+        counted = my(container, f"SELECT COUNT(*) FROM `{table}`", database)
+        if counted.returncode or not counted.stdout.strip().isdigit():
+            sys.exit(f"mysql:{database}: could not count a table")
+        out[table] = counted.stdout.strip()
+    return out
 
 
 def reset_mysql(engine, databases):
-    with Pristine(engine, lambda c: my(c, "SELECT 1").returncode == 0, ["-e", "MYSQL_ROOT_PASSWORD=root"]) as pristine:
+    password = stack.passwords()["MYSQL_ROOT_PASSWORD"]
+    with Pristine(engine, lambda c: my(c, "SELECT 1").returncode == 0) as pristine:
         for database in databases:
             print(f"  . mysql:{database}: restoring from the image")
-            failed = pipe(["docker", "exec", pristine.name, "mysqldump", "-uroot", "-proot", "--databases", database,
-                           "--add-drop-database", "--routines", "--triggers", "--events", "--single-transaction", "--set-gtid-purged=OFF"],
-                          ["docker", "exec", "-i", engine.container, "mysql", "-uroot", "-proot"])
-            if failed:
-                sys.exit(f"mysql:{database}: {failed}")
+            with client("mysql", pristine.name, "root", password, "mysqldump") as dump, \
+                 client("mysql", engine.container, "root", password) as restore:
+                failed = pipe([*dump, "--databases", database, "--add-drop-database", "--routines", "--triggers",
+                               "--events", "--single-transaction", "--set-gtid-purged=OFF"], restore)
+                if failed:
+                    sys.exit(f"mysql:{database}: {failed}")
             expected, restored = my_counts(pristine.name, database), my_counts(engine.container, database)
             if expected != restored or not expected:
                 sys.exit(f"mysql:{database}: the restored tables differ from the image's: {sorted(set(expected.items()) ^ set(restored.items()))[:5]}")
@@ -328,6 +356,7 @@ def sqlite_connections_closed():
 RESET_DATABASES = {"postgres": reset_postgres, "mysql": reset_mysql, "sqlite": reset_sqlite}
 
 
+@session()
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.strip().splitlines()[0],
                                  formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -338,9 +367,14 @@ def main(argv=None):
     a = ap.parse_args(argv)
     cfg = stack.load()
     chosen = plan(cfg, a.targets, a.engines, a.datasets)
-    if not os.path.exists(COMPOSE):
-        compose.main([])
-    with reset_locks(chosen), sqlite_connections_closed() if "sqlite" in chosen else nullcontext():
+    with reset_locks(chosen):
+        if compose.main([]):
+            return 2
+        return execute(chosen)
+
+
+def execute(chosen):
+    with sqlite_connections_closed() if "sqlite" in chosen else nullcontext():
         whole = [e for e, databases in chosen.items() if databases is None]
         if whole and reset_engines(whole):
             return 1

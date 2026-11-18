@@ -7,8 +7,8 @@ assert os.environ.get('COMPOSE_PROJECT_NAME')=='megasamples-upgrade'
 assert os.environ.get('DOCKER_HOST')=='unix:///home/rcc-vstudio/working/sql-megasamples-upgrade-env/podman.sock'
 store=subprocess.run(['docker','info','--format','{{.DockerRootDir}}'],capture_output=True,text=True,check=True).stdout.strip()
 assert store.startswith('/home/rcc-vstudio/working/sql-megasamples-upgrade-env/')
-root=Path.cwd();out=root/'build/lts-audit';cfg=config.load()
-secrets=dict(line.split('=',1) for line in (root/'.env').read_text().splitlines() if line and not line.startswith('#'))
+root=Path.cwd();out=root/os.environ.get('MEGASAMPLES_VALIDATION_OUT', 'build/lts-audit');cfg=config.load()
+secrets=__import__("megasamples.config", fromlist=["passwords"]).passwords()
 mysql.NAME='megasamples-mysql';mysql.PW=secrets['MYSQL_ROOT_PASSWORD'];pg.NAME='megasamples-postgres'
 def command(args):return subprocess.run(args,capture_output=True,text=True,check=True).stdout.strip()
 def sq(sql,directory='/data'):
@@ -113,9 +113,19 @@ with __import__('megasamples.reset',fromlist=['sqlite_connections_closed']).sqli
      command(['docker','exec','megasamples-sqlite','sqlite3',directory+'/'+database+'.sqlite','CREATE TABLE client_upgrade_reset_probe(i INT)'])
  selectors=[e+':'+name for e in cfg.engines for name in cfg.datasets(e)]
  start=time.monotonic()
- with (out/'reset-every-pair.log').open('w') as log:
-  rc=subprocess.run(['make','reset','PY='+sys.executable,'R='+' '.join(selectors)],stdout=log,stderr=subprocess.STDOUT).returncode
- assert rc==0,'Grouped pair reset failed; see log'
+ # Each engine's selectors share one pristine source. Independent engines can
+ # restore concurrently; the mixed-engine pair and all scopes ran above.
+ from concurrent.futures import ThreadPoolExecutor
+ def restore_engine(engine):
+  selected=[s for s in selectors if s.startswith(engine+':')]
+  command=['make','reset','PY='+sys.executable,'R='+' '.join(selected)]
+  with (out/f'reset-every-pair-{engine}.log').open('w') as log:
+   code=subprocess.run(command,stdout=log,stderr=subprocess.STDOUT).returncode
+  return engine,code
+ with ThreadPoolExecutor(max_workers=len(physical)) as pool:
+  codes=dict(pool.map(restore_engine, physical))
+ rc=max(codes.values())
+ assert rc==0,'Engine-grouped pair reset failed; see per-engine logs'
  restored(list(cfg.engines),False)
  check_foreign_keys(list(cfg.engines),'every-selector')
  for engine,databases in physical.items():
@@ -125,5 +135,5 @@ with __import__('megasamples.reset',fromlist=['sqlite_connections_closed']).sqli
    else:
     for directory in ['/data','/shared']:
      assert command(['docker','exec','megasamples-sqlite','sha256sum',directory+'/'+database+'.sqlite']).split()[0]==hashes_before[database][directory]
- result={'status':'Passed','returncode':rc,'seconds':round(time.monotonic()-start,2),'selectors':selectors,'physical_databases':physical,'all_markers_removed':True,'same_count_pubs_text_and_binary_restored':True,'every_sqlite_file_byte_identical':True}
+ result={'status':'Passed','returncode':rc,'seconds':round(time.monotonic()-start,2),'selectors':selectors,'physical_databases':physical,'per_engine_returncodes':codes,'all_markers_removed':True,'same_count_pubs_text_and_binary_restored':True,'every_sqlite_file_byte_identical':True}
  (out/'reset-every-pair-results.json').write_text(json.dumps(result,indent=2)+'\n');print('All configured pair selectors:',result['status'],result['seconds'],flush=True)

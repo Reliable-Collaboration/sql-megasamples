@@ -13,6 +13,7 @@ import argparse, os, sys
 import yaml
 
 from megasamples import datasets as inventory
+from megasamples.credentials import session
 from megasamples.engines.mysql import server as db
 from megasamples.paths import DATASETS
 from megasamples.port import ddl, model, record
@@ -60,6 +61,7 @@ def rendered_files(dataset, engines=("postgres", "sqlite")):
     return out
 
 
+@session()
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("datasets", nargs="*")

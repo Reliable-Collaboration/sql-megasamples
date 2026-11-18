@@ -27,6 +27,7 @@ import argparse, json, os, sys
 
 import yaml
 
+from megasamples.credentials import session
 from megasamples.paths import BUILD, ROOT
 
 
@@ -451,6 +452,7 @@ def adapter_for(engine, dataset):
     raise SystemExit(f"no verification adapter for engine {engine!r}")
 
 
+@session()
 def verify(dataset, stages=None, engine="mysql", pin=False):
     """Run the stages; returns the number of failures. Prints one line per note and failure."""
     d = dataset_dir(dataset)

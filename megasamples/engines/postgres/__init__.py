@@ -16,7 +16,8 @@ from megasamples.engines.base import Engine
 from megasamples.engines.mysql import server as mysql
 from megasamples.engines.postgres import image_test as tester, port, server
 from megasamples.paths import ROOT, engine_build_dir, engine_dir, rel
-from megasamples import container_engine
+from megasamples import container_engine, config as stack
+from megasamples.credentials import client
 
 
 class Postgres(Engine):
@@ -73,9 +74,10 @@ class Postgres(Engine):
             "mem_limit": "1g",
             "container_name": self.container,
             "ports": [f"127.0.0.1:{cfg.ports.get('postgres', self.port)}:5432"],
-            "environment": {"DEMO_PASSWORD": "${DEMO_PASSWORD:-demo}",
+            "environment": {"POSTGRES_PASSWORD": "${POSTGRES_PASSWORD:-root}",
+                            "DEMO_PASSWORD": "${DEMO_PASSWORD:-demo}",
                             "ADMIN_PASSWORD": "${ADMIN_PASSWORD:-admin}"},
-            "healthcheck": {"test": ["CMD-SHELL", "PGPASSWORD=\"$$DEMO_PASSWORD\" psql -h 127.0.0.1 -U demo -d megasamples -tAc 'SELECT 1'"],
+            "healthcheck": {"test": ["CMD-SHELL", "PGPASSFILE=/run/megasamples-health.pgpass psql -w -h 127.0.0.1 -U demo -d megasamples -tAc 'SELECT 1'"],
                             "interval": "5s", "timeout": "5s", "retries": 30},
             "restart": "unless-stopped",
         }
@@ -98,9 +100,11 @@ class Postgres(Engine):
             return {"DEMO_PASSWORD": demo, "ADMIN_PASSWORD": admin}
         return {}
 
-    def query(self, container, sql, database="megasamples", user="postgres", password="root"):
-        p = subprocess.run(["docker", "exec", "-e", f"PGPASSWORD={password}", container, "psql", "-h", "127.0.0.1",
-                            "-U", user, "-d", database, "-tAF", "\t", "-c", sql], capture_output=True, text=True)
+    def query(self, container, sql, database="megasamples", user="postgres", password=None):
+        if password is None:
+            password = stack.passwords()["POSTGRES_PASSWORD" if user == "postgres" else user.upper() + "_PASSWORD"]
+        with client("postgres", container, user, password) as command:
+            p = subprocess.run([*command, "-d", database, "-tAF", "\t", "-c", sql], capture_output=True, text=True)
         if p.returncode != 0:
             raise RuntimeError(f"{container}: {p.stderr.strip()[:200]}")
         return [line.split("\t") for line in p.stdout.splitlines() if line.strip()]
@@ -118,7 +122,7 @@ class Postgres(Engine):
 
     def connection_hint(self, cfg):
         from megasamples.engines import first_database
-        return f"PGPASSWORD=demo psql -h 127.0.0.1 -p {cfg.ports.get('postgres', self.port)} -U demo {first_database(cfg, 'postgres')}"
+        return f"psql -W -h 127.0.0.1 -p {cfg.ports.get('postgres', self.port)} -U demo {first_database(cfg, 'postgres')}"
 
 
 ENGINE = Postgres()

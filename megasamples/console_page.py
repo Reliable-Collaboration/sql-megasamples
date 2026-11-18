@@ -18,7 +18,7 @@ files and how to copy one out), then the consoles ordered by how many engines th
 beside it writes adminer.html, the page behind the Adminer card, with what its login form wants
 for each engine and links that fill it in.
 """
-import argparse, html, json, os, subprocess, sys
+import argparse, html, json, os, subprocess, sys, urllib.parse
 
 import yaml
 
@@ -28,17 +28,8 @@ from megasamples.paths import CONSOLES as CONSOLES_DIR, ROOT
 
 
 def passwords():
-    found = {}
-    env_file = os.path.join(ROOT, ".env")
-    if os.path.exists(env_file):
-        for line in open(env_file, encoding="utf-8"):
-            line = line.strip()
-            if line.startswith("#") or "=" not in line:
-                continue
-            k, v = line.split("=", 1)
-            found[k.strip()] = v.strip().strip('"\'')
-    return (found.get("DEMO_PASSWORD") or os.environ.get("DEMO_PASSWORD") or "demo",
-            found.get("ADMIN_PASSWORD") or os.environ.get("ADMIN_PASSWORD") or "admin")
+    values = stack.passwords()
+    return values["DEMO_PASSWORD"], values["ADMIN_PASSWORD"]
 
 
 def describe(record, blurb=""):
@@ -126,16 +117,16 @@ def connect_cards(cfg, data, demo_pw, admin_pw):
         rows = []
         if name == "mysql":
             rows = [("address", f"127.0.0.1 port {port}"),
-                    ("accounts", f"demo / {demo_pw} (read only) · admin / {admin_pw} (all privileges) · root / root"),
-                    ("client", f"mysql -h 127.0.0.1 -P {port} -u demo -p{demo_pw} {first}"),
-                    ("URL", f"mysql://demo:{demo_pw}@127.0.0.1:{port}/{first}"),
+                    ("accounts", f"demo / {demo_pw} (read only) · admin / {admin_pw} (all privileges) · root (superuser; private .env)"),
+                    ("client", f"mysql -h 127.0.0.1 -P {port} -u demo -p {first}"),
+                    ("URL", f"mysql://demo:{urllib.parse.quote(demo_pw, safe='')}@127.0.0.1:{port}/{first}"),
                     ("JDBC", f"jdbc:mysql://127.0.0.1:{port}/{first}"),
                     ("note", "MySQL 9 authenticates with caching_sha2_password: use a client or driver from the MySQL 8 era or newer.")]
         elif name == "postgres":
             rows = [("address", f"127.0.0.1 port {port}"),
-                    ("accounts", f"demo / {demo_pw} (read only) · admin / {admin_pw} (owns every sample table) · postgres / root (superuser)"),
-                    ("client", f"PGPASSWORD={demo_pw} psql -h 127.0.0.1 -p {port} -U demo {first}"),
-                    ("URL", f"postgresql://demo:{demo_pw}@127.0.0.1:{port}/{first}"),
+                    ("accounts", f"demo / {demo_pw} (read only) · admin / {admin_pw} (owns every sample table) · postgres (superuser; private .env)"),
+                    ("client", f"psql -h 127.0.0.1 -p {port} -U demo -W {first}"),
+                    ("URL", f"postgresql://demo:{urllib.parse.quote(demo_pw, safe='')}@127.0.0.1:{port}/{first}"),
                     ("JDBC", f"jdbc:postgresql://127.0.0.1:{port}/{first}"),
                     ("note", "one database per dataset; connect to the one you want, or to `megasamples` for the registry.")]
         elif name == "sqlite":
@@ -203,7 +194,8 @@ STYLE = """
 
 
 def render(cfg, data):
-    demo_pw, admin_pw = (html.escape(p) for p in passwords())
+    raw_demo, raw_admin = passwords()
+    demo_pw, admin_pw = (html.escape(p) for p in (raw_demo, raw_admin))
     engines = [engine_registry.get(n) for n in data]
     blurbs = {}
     for d in os.listdir(os.path.join(ROOT, "datasets")):
@@ -251,7 +243,7 @@ def render(cfg, data):
 <p>Every server engine listens on <code>127.0.0.1</code> of this machine, on the port below, with the same two accounts;
 DBeaver, DataGrip, TablePlus, VS Code, a language driver or the engine's own client all take these details as they are.</p>
 <div class="engines">
-{connect_cards(cfg, data, demo_pw, admin_pw)}
+{connect_cards(cfg, data, raw_demo, raw_admin)}
 </div>
 
 <h2>Or browse in the browser</h2>

@@ -7,7 +7,7 @@ from megasamples.engines import unique_databases
 from megasamples.console_test import passwords
 assert os.environ['COMPOSE_PROJECT_NAME']=='megasamples-upgrade'
 assert os.environ['DOCKER_HOST']=='unix:///home/rcc-vstudio/working/sql-megasamples-upgrade-env/podman.sock'
-out=Path(os.environ.get('MEGASAMPLES_VALIDATION_OUT', 'build/client-evidence'));out.mkdir(parents=True,exist_ok=True);cfg=config.load();demo,_=passwords();results={}
+out=Path(os.environ.get('MEGASAMPLES_VALIDATION_OUT', 'build/client-evidence'));out.mkdir(parents=True,exist_ok=True);cfg=config.load();demo,admin= passwords();results={}
 expected={e:set(unique_databases(cfg.datasets(e))) for e in cfg.engines}
 def save():
  (out/'console-deep-results.json').write_text(json.dumps(results,indent=2)+'\n')
@@ -26,7 +26,7 @@ def phpmyadmin():
 complete('phpmyadmin',phpmyadmin)
 def adminer():
  records={}
- for engine,driver in [('mysql','server'),('postgres','pgsql')]:
+ for engine,driver,account,password in [(e,d,a,p) for e,d in [('mysql','server'),('postgres','pgsql')] for a,p in [('demo',demo),('admin',admin)]]:
   op=opener();url=f'http://127.0.0.1:{cfg.ports["adminer"]}/'
   class Token(HTMLParser):
    def handle_starttag(self,t,a):
@@ -34,27 +34,34 @@ def adminer():
     if t=='input' and d.get('name')=='token':self.value=d.get('value','')
   with op.open(url,timeout=60) as response:html=response.read().decode()
   token=Token();token.feed(html)
-  data=urllib.parse.urlencode({'token':token.value,'auth[driver]':driver,'auth[server]':engine,'auth[username]':'demo','auth[password]':demo,'auth[db]':''}).encode()
+  data=urllib.parse.urlencode({'token':token.value,'auth[driver]':driver,'auth[server]':engine,'auth[username]':account,'auth[password]':password,'auth[db]':''}).encode()
   with op.open(urllib.request.Request(url,data=data),timeout=60) as r:body=r.read().decode()
   missing=[name for name in expected[engine] if name not in body];assert not missing,engine+' missing databases: '+str(missing)
-  records[engine]=sorted(expected[engine])
+  records[engine+'-'+account]=sorted(expected[engine])
  return {'authenticated_http_ui_database_lists':records}
 complete('adminer',adminer)
 def dbgate():
  script=r'''(async()=>{
- const e=process.env, my=await require('mysql2/promise').createConnection({host:e.SERVER_mysql_demo,port:+e.PORT_mysql_demo,user:e.USER_mysql_demo,password:e.PASSWORD_mysql_demo,database:'megasamples'});
- const [m]=await my.query('SELECT name FROM datasets ORDER BY name');await my.end();
- const {Client}=require('pg'),pg=new Client({host:e.SERVER_postgres_demo,port:+e.PORT_postgres_demo,user:e.USER_postgres_demo,password:e.PASSWORD_postgres_demo,database:'megasamples'});
- await pg.connect();const p=await pg.query('SELECT name FROM datasets ORDER BY name');await pg.end();
+ const e=process.env, accounts={};
+ for(const account of ['demo','admin']){
+  const mkey='mysql_'+account,pkey='postgres_'+account;
+  const my=await require('mysql2/promise').createConnection({host:e['SERVER_'+mkey],port:+e['PORT_'+mkey],user:e['USER_'+mkey],password:e['PASSWORD_'+mkey],database:'megasamples'});
+  const [m]=await my.query('SELECT name FROM datasets ORDER BY name');await my.end();
+  const {Client}=require('pg'),pg=new Client({host:e['SERVER_'+pkey],port:+e['PORT_'+pkey],user:e['USER_'+pkey],password:e['PASSWORD_'+pkey],database:'megasamples'});
+  await pg.connect();const p=await pg.query('SELECT name FROM datasets ORDER BY name');await pg.end();
+  accounts[account]={mysql:m.map(x=>x.name),postgres:p.rows.map(x=>x.name)};
+ }
  const D=require('better-sqlite3'),s=new D('/data/megasamples.sqlite',{readonly:true}),names=s.prepare('SELECT name FROM datasets ORDER BY name').all();
  const version=s.prepare('SELECT sqlite_version() v').get().v;s.close();
  for(const {name} of names){const db=new D('/data/'+name+'.sqlite',{readonly:true});if(!db.prepare("SELECT count(*) n FROM sqlite_master WHERE type='table'").get().n)throw new Error('No tables in '+name);db.close()}
- console.log(JSON.stringify({mysql:m.map(x=>x.name),postgres:p.rows.map(x=>x.name),sqlite:names.map(x=>x.name),versions:{mysql2:require('mysql2/package.json').version,pg:require('pg/package.json').version,better_sqlite3:require('better-sqlite3/package.json').version,sqlite_runtime:version}}));
+ console.log(JSON.stringify({accounts,mysql:accounts.demo.mysql,postgres:accounts.demo.postgres,sqlite:names.map(x=>x.name),versions:{mysql2:require('mysql2/package.json').version,pg:require('pg/package.json').version,better_sqlite3:require('better-sqlite3/package.json').version,sqlite_runtime:version}}));
  })().catch(()=>{console.error('Console driver probe failed');process.exit(1)})'''
  p=subprocess.run(['docker','exec','megasamples-dbgate','node','-e',script],capture_output=True,text=True)
  assert p.returncode==0,p.stderr[:200]
  r=json.loads(p.stdout)
  for e in expected:assert set(r[e])==expected[e],e+' registry mismatch'
+ for account in ['demo','admin']:
+  for e in ['mysql','postgres']:assert set(r['accounts'][account][e])==expected[e],e+' '+account+' registry mismatch'
  return r
 complete('dbgate',dbgate)
 def cloudbeaver():
