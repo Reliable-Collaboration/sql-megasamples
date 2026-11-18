@@ -163,9 +163,10 @@ with filesystem device, inode and mount root. The capture is private, exclusive,
 boot-bound, and saved outside container lifetime; `down`, partial removal and a
 fresh shell cannot erase it. Missing or incomplete capture **HOLDs before downtime**.
 The retained first-run backup has no such historical capture: never fabricate one.
-A new rollback captures the currently running candidates before stopping them.
-A missing historical capture cannot authorize copying; use unchanged originals
-for recovery where available, or keep clients paused for coordinator recovery.
+A new rollback always takes current evidence: ordinary while anything runs,
+or the DL-089 evidenced down capture for stopped candidates. Missing pre-stop
+history never substitutes for those records. Exact original containers can instead
+restart on their existing mounts after retained configuration restoration.
 
 | Observation after stop | Gate outcome |
 |---|---|
@@ -190,7 +191,8 @@ and before any stop, resolve its reason, then use fresh evidence paths below;
 never overwrite an incomplete capture or rerun an existing output path. A changed
 container requires a fresh snapshot as well. After stop/reboot, first use the
 unchanged-original restart route where eligible; do not present a post-stop
-snapshot as pre-stop history. The capture command itself holds if nothing runs.
+snapshot as pre-stop history. All-down original-stop capture still holds;
+candidate teardown has the distinct evidenced down-state route below.
 
 ```sh
 # BEGIN capture retry
@@ -206,7 +208,9 @@ save_context
 python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
   --phase "$CAPTURE_STATE_PHASE" \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
-python3 "$EVIDENCE_DIR/quiescence.py" capture "$TEARDOWN_SNAPSHOT" "$QUIESCENCE_CAPTURE" --data-only \
+set --
+if test "$CAPTURE_STATE_PHASE" = candidate-teardown; then set -- --allow-down; fi
+python3 "$EVIDENCE_DIR/quiescence.py" capture "$TEARDOWN_SNAPSHOT" "$QUIESCENCE_CAPTURE" --data-only "$@" \
   --source "$BACKUP_DIR/postgres" --source "$BACKUP_DIR/mysql" \
   --source "$BACKUP_DIR/sqlite" --source "$BACKUP_DIR/sqlite-shared"
 # END capture retry
@@ -651,9 +655,10 @@ rerun the preparation capture, or reinterpret the upgraded HEAD as the rollback 
 A crash/OOM refuses cold copy, but does not forbid restarting the **existing**
 original containers to obtain a clean shutdown. Keep clients paused and diagnose
 the crash first. Start a fresh Bash shell outside the source block; source the
-preparation `CONTEXT_FILE` and check the socket as in “Roll back”. No `.env` rotation
-or candidate recreation may have occurred. Run these checks for either an abort
-or a restart followed by clean stop:
+preparation `CONTEXT_FILE` and check the socket as in “Roll back”. Before rotation,
+run these checks for either an abort
+or a restart followed by clean stop. After rotation, use the DL-089 exact-original
+route under “Roll back” to restore retained configuration first:
 
 ```sh
 # BEGIN original recovery checks
@@ -799,7 +804,8 @@ fi
 `start` reuses the retained containers and their original anonymous volumes. If any original ID
 is missing or its data mount cannot be proved unchanged, stop for coordinator recovery; never
 substitute `up` to create a new empty volume. Verify original versions, accounts and counts before
-resuming clients. After password rotation or candidate creation, use the full guarded rollback.
+resuming clients. After password rotation, use the DL-089 route table: exact original
+containers restart with restored configuration; replaced originals use guarded rollback.
 A new preparation attempt needs original HEAD plus a new directory and approval window.
 
 ## Added dataset cost and scope
@@ -867,6 +873,9 @@ EXITED_RECEIPT=
 QUIESCENCE_CAPTURE="$EVIDENCE_DIR/stop-capture-$TEARDOWN_ATTEMPT.json"
 python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
+test ! -e "$BACKUP_DIR/original-stop.json"
+cp "$TEARDOWN_SNAPSHOT" "$BACKUP_DIR/original-stop.json"
+chmod 600 "$BACKUP_DIR/original-stop.json"
 save_context
 # Capture copy sources and targets before stop. A missing/incomplete capture
 # HOLDs here, before downtime; never manufacture a historical capture afterward.
@@ -1375,9 +1384,25 @@ if test -f "$BACKUP_DIR/original-ports.json"; then
 else
   PORTS_RECEIPT=${PORTS_RECEIPT:-"$REVIEWED_CHECKOUT/docs/validation/retained-backups/$UPGRADE_ID-ports.json"}
 fi
+BOOTSTRAP_ROUTE=ordinary-capture
+if test -f "$BACKUP_DIR/original-stop.json"; then
+  BOOTSTRAP_ROUTE=$(python3 "$REVIEWED_CHECKOUT/docs/validation/quiescence.py" rollback-route \
+    "$BACKUP_DIR/original-stop.json" --project sql-megasamples | \
+    python3 -c 'import json,sys; print(json.load(sys.stdin)["route"])'
+)
+fi
+set -- --services-file "$BACKUP_DIR/original-running-services.txt"
+if test "$BOOTSTRAP_ROUTE" = original-restart; then
+  # A held console must not block engines on the exact-original restart route.
+  set --
+  while IFS= read -r service; do
+    case "$service" in postgres|mysql|sqlite) set -- "$@" --service "$service";; esac
+  done < "$BACKUP_DIR/original-running-services.txt"
+  test "$#" -gt 0
+fi
 python3 "$REVIEWED_CHECKOUT/docs/validation/live-upgrade.py" ports \
   --retained-backup "$BACKUP_DIR" --port-config "$PORTS_RECEIPT" \
-  --allow-running-project sql-megasamples --services-file "$BACKUP_DIR/original-running-services.txt"
+  --allow-running-project sql-megasamples "$@"
 TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
 ATTEMPT_DIR="$BACKUP_DIR/rollback-$TEARDOWN_ATTEMPT"
 python3 "$REVIEWED_CHECKOUT/docs/validation/live-upgrade.py" prepare-rollback \
@@ -1389,8 +1414,10 @@ UPGRADE_HELPER="$ATTEMPT_DIR/live-upgrade.py"
 cp "$REVIEWED_CHECKOUT/docs/validation/live-upgrade.py" "$UPGRADE_HELPER"
 cp "$REVIEWED_CHECKOUT/docs/validation/quiescence.py" "$ATTEMPT_DIR/quiescence.py"
 chmod 600 "$UPGRADE_HELPER" "$ATTEMPT_DIR/quiescence.py"
-# This validates the complete replacement archive set, never the malformed aggregate.
-python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
+# Exact-existing-original restart needs no image load or cold-copy evidence.
+if test "$BOOTSTRAP_ROUTE" != original-restart; then
+  python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
+fi
 python3 - "$REVIEWED_CHECKOUT/docs/live-upgrade-runbook.md" "$ATTEMPT_DIR/recovery-functions.bash" <<'PY_RECOVERY_FUNCTIONS'
 import pathlib, re, sys
 text = pathlib.Path(sys.argv[1]).read_text()
@@ -1423,6 +1450,36 @@ retained root. Unavailable tooling is a refusal; reconstruct it in isolation fro
 reviewed inputs before proceeding. The corrected bootstrap/preparation have been
 executed only with synthetic backups and command stubs, never on retained live files.
 
+### Rollback routes when the project is already down (DL-089)
+
+Choose the route in order using freshly inspected state. No copy/restore gate
+blocks starting the exact retained original containers on their existing mounts.
+
+| State at rollback entry | Route |
+|---|---|
+| Any project container running | Ordinary capture; fresh down evidence for each stopped row |
+| All down; complete project listing equals every retained original ID | Restore retained configuration and start those originals, without capture or copy |
+| All down; candidates exist or were removed | Evidenced down capture for candidate teardown, then verify and restore normally |
+| Required state or cgroup evidence unreadable | HOLD; resolve evidence, retain the failed attempt |
+
+The cutover saves `original-stop.json` exclusively before stopping. Historical
+backups lacking that ID evidence cannot use the exact-original route. A down-state
+capture is distinct from pre-stop history: every listed container is freshly
+inspected as not running/PID 0 and searched by full ID across the cgroup tree.
+Absent groups after a completed search and present empty groups (threads included)
+are evidence; an error is HOLD, a live task REFUSE. Verification repeats these
+checks and refuses a container started since capture. Full/partial removal is
+supported. All-down `original-stop` still HOLDs; restart originals, then capture
+across their next stop before any cold copy.
+
+For down containers, positively associated `conmon`/helpers refuse: full container
+IDs in cgroups or readable cwd/descriptor paths, Podman's conmon record, the store
+helper PID file, or a recorded published listening port. An indicated association
+whose live evidence is unreadable HOLDs. No process arguments/environments are
+read. Unassociated helpers remain a limitation. **Down-state evidence does not
+establish complete teardown outside the identified cgroups.** Readable data holders
+still refuse; mandatory port checks remain before every start.
+
 ## Roll back
 
 If continuing an already prepared attempt after a failure, start
@@ -1449,6 +1506,69 @@ datasets; the pre-upgrade cold copies cannot contain those writes. Do not use `m
 rollback: it restores the new image contents, including the added datasets.
 
 ```sh
+# BEGIN rollback route dispatch
+ROLLBACK_ROUTE=$(python3 "$EVIDENCE_DIR/quiescence.py" rollback-route \
+  "$BACKUP_DIR/original-stop.json" --project sql-megasamples | \
+  python3 -c 'import json,sys; print(json.load(sys.stdin)["route"])'
+)
+if test "$ROLLBACK_ROUTE" = original-restart; then
+# BEGIN retained original restart
+# Recheck exact IDs and state before restoring configuration. No copy gate here.
+python3 "$EVIDENCE_DIR/quiescence.py" original-eligible \
+  "$BACKUP_DIR/original-stop.json" --project sql-megasamples
+RECOVERY_ID=$(date -u +%Y%m%dT%H%M%S%N)
+python3 "$UPGRADE_HELPER" exited "$BACKUP_DIR/original-stop.json" \
+  "$ATTEMPT_DIR/exact-original-restart-$RECOVERY_ID.json" --phase original-restart
+(cd "$BACKUP_DIR" && sha256sum -c original-configurations.sha256)
+# The bootstrap extraction was digest-checked; retain the rotated file privately.
+if test -f .env && ! test -e "$ATTEMPT_DIR/failed-candidate.env"; then
+  cp .env "$ATTEMPT_DIR/failed-candidate.env"
+  chmod 600 "$ATTEMPT_DIR/failed-candidate.env"
+fi
+ROLLBACK_BRANCH=$(cat "$BACKUP_DIR/rollback-branch.txt")
+git switch "$ROLLBACK_BRANCH"
+test "$(git rev-parse HEAD)" = "$(cat "$BACKUP_DIR/original-commit.txt")"
+# Preserve bound directory inodes while removing files absent from retained tree.
+python3 - "$CONFIG_DIR/consoles" consoles <<'PY_ORIGINAL_TREE'
+import pathlib, sys
+source, target = map(pathlib.Path, sys.argv[1:])
+for path in sorted(target.rglob('*'), key=lambda p: len(p.parts), reverse=True):
+    retained = source / path.relative_to(target)
+    if not retained.exists() and not retained.is_symlink():
+        if path.is_dir() and not path.is_symlink(): path.rmdir()
+        else: path.unlink()
+PY_ORIGINAL_TREE
+cp -a "$CONFIG_DIR/consoles/." ./consoles/
+cp "$CONFIG_DIR/compose.yaml" ./compose.yaml
+cp "$CONFIG_DIR/megasamples.yaml" ./megasamples.yaml
+if test -f "$CONFIG_DIR/.env"; then cp "$CONFIG_DIR/.env" .env; chmod 600 .env; else rm -f .env; fi
+# Engines have individual port checks; SQLite must rebuild /shared before consoles.
+for engine in postgres mysql sqlite; do
+  if ! test -z "$(sed -n "/^$engine$/p" "$BACKUP_DIR/original-running-services.txt")"; then
+    python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" --service "$engine"
+    docker compose -p sql-megasamples -f compose.yaml start "$engine"
+    python3 "$UPGRADE_HELPER" wait-healthy "$engine" --timeout 300
+  fi
+done
+: > "$ATTEMPT_DIR/original-consoles-held.txt"
+while IFS= read -r service; do
+  case "$service" in postgres|mysql|sqlite) continue;; esac
+  if python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" --service "$service"; then
+    docker compose -p sql-megasamples -f compose.yaml start "$service"
+  else
+    printf '%s\n' "$service" >> "$ATTEMPT_DIR/original-consoles-held.txt"
+    printf 'HOLD: console %s stays stopped; its port is occupied.\n' "$service"
+  fi
+done < "$BACKUP_DIR/original-running-services.txt"
+TEARDOWN_PHASE=originals-restarted
+save_context
+# END retained original restart
+  # Verify original accounts, mounts, IDs, fingerprints and consoles before clients.
+  # A later cold copy needs a fresh ordinary capture across another clean stop.
+  exit 0
+fi
+case "$ROLLBACK_ROUTE" in ordinary-capture|down-capture) :;; *) exit 2;; esac
+# END rollback route dispatch
 # Verify immutable rollback inputs before restoring anything.
 # BEGIN rollback input verification
 python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
@@ -1468,7 +1588,7 @@ python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasample
 save_context
 # Capture copy sources and targets before stop. A missing/incomplete capture
 # HOLDs here, before downtime; never manufacture a historical capture afterward.
-python3 "$EVIDENCE_DIR/quiescence.py" capture "$TEARDOWN_SNAPSHOT" "$QUIESCENCE_CAPTURE" --data-only \
+python3 "$EVIDENCE_DIR/quiescence.py" capture "$TEARDOWN_SNAPSHOT" "$QUIESCENCE_CAPTURE" --data-only --allow-down \
   --source "$BACKUP_DIR/postgres" --source "$BACKUP_DIR/mysql" \
   --source "$BACKUP_DIR/sqlite" --source "$BACKUP_DIR/sqlite-shared"
 date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"

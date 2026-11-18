@@ -257,7 +257,12 @@ def test_whole_rollback_preserves_frozen_retained_file_list_and_digests(tmp_path
     body=RUNBOOK.read_text().split('## Roll back\n',1)[1].split('### Partial original restart',1)[0]
     shell='\n'.join(re.findall(r'```sh\n(.*?)```',body,re.S))
     stubs=r'''
-python3() { cat >/dev/null; }
+python3() {
+ case "$2" in
+ rollback-route) printf '{"outcome":"PASS","route":"down-capture"}';;
+ *) if test "$1" = -c; then command python3 "$@"; else cat >/dev/null; fi;;
+ esac
+}
 podman() {
  case "$1 $2" in
  'volume exists') return 1;;

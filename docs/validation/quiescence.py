@@ -183,8 +183,139 @@ def network_refs(process):
 
 DATA_DESTINATIONS = {'/var/lib/postgresql', '/var/lib/mysql', '/data', '/shared', '/restore-target'}
 
+DOWN_ASSURANCE = ('Down-state candidate teardown evidence: freshly inspected container states, '
+                  'identified cgroups and positively associated helpers, plus readable data holders. '
+                  'This evidence does not establish complete teardown outside the identified cgroups, '
+                  'prove the host quiet or prevent new writers. It is not pre-stop history.')
 
-def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), extra_sources=(), data_only=False):
+
+def container_exists(identity):
+    try:
+        pod('container', 'exists', identity)
+        return True
+    except subprocess.CalledProcessError as error:
+        if error.returncode != 1:
+            raise
+        return False
+
+
+def original_eligible(snapshot, project):
+    saved = json.loads(snapshot.read_text())
+    ids = {r['id'] for r in saved['containers'] if r.get('id')}
+    listed = set(pod('ps', '-aq', '--no-trunc', '--filter', 'label=com.docker.compose.project='+project).split())
+    if not ids or any(not r.get('id') for r in saved['containers']) or listed != ids:
+        raise ValueError('original restart requires exactly the retained original IDs')
+    for identity in ids:
+        found, running, pid = pod('inspect', '-f', '{{.Id}}|{{.State.Running}}|{{.State.Pid}}', identity).split('|')
+        if found != identity or running != 'false' or int(pid) != 0:
+            raise ValueError('original restart requires stopped original containers')
+    if pod('ps', '-q', '--filter', 'label=com.docker.compose.project='+project):
+        raise ValueError('original restart refuses a running project container')
+
+
+def rollback_route(snapshot, project):
+    if pod('ps', '-q', '--filter', 'label=com.docker.compose.project='+project):
+        return dict(route='ordinary-capture')
+    if snapshot.exists():
+        try:
+            original_eligible(snapshot, project)
+            return dict(route='original-restart')
+        except ValueError:
+            pass
+    return dict(route='down-capture')
+
+
+def down_evidence(row, proc, cgroup_root):
+    """Per-container fresh state and completed full-ID cgroup search, never empty on error."""
+    identity = row.get('id')
+    evidence = dict(id=identity, cgroup_state='absent', cgroups=[], ports=[])
+    refusals, holds = [], []
+    if not identity:
+        holds.append(dict(reason='down missing container identifier evidence unavailable'))
+        return evidence, refusals, holds
+    try:
+        if identity and container_exists(identity):
+            found, running, pid = pod('inspect', '-f', '{{.Id}}|{{.State.Running}}|{{.State.Pid}}', identity).split('|')
+            if found != identity:
+                raise ValueError('container identity changed')
+            if running != 'false' or int(pid) != 0:
+                refusals.append(dict(reason='deployment container running'))
+                return evidence, refusals, holds
+            found, pid, conmon, mode, published, _ = pod('inspect', '-f', CAPTURE_FORMAT, identity).split('|')
+            if found != identity or int(pid) != 0:
+                raise ValueError('container identity changed')
+            evidence.update(conmon=int(conmon), mode=mode)
+            ports = json.loads(pod('inspect', '-f', '{{json .HostConfig.PortBindings}}', identity))
+            evidence['ports'] = sorted({int(p['HostPort']) for bindings in (ports or {}).values() for p in bindings or []})
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+        holds.append(dict(reason='down container state unreadable', error=type(error).__name__))
+    try:
+        # stat ensures a missing/unreadable root cannot silently mean no groups.
+        cgroup_root.stat()
+        if identity:
+            for directory, _, _ in os.walk(cgroup_root, onerror=lambda error: (_ for _ in ()).throw(error)):
+                path = Path(directory)
+                if not any(part in ('libpod-'+identity+'.scope', 'libpod-conmon-'+identity+'.scope') for part in path.parts):
+                    continue
+                evidence['cgroups'].append(dict(path=str(path.relative_to(cgroup_root)), **object_identity(path)))
+                evidence['cgroup_state'] = 'empty'
+                for pid in group_members(path):
+                    try:
+                        if task_alive(proc/pid):
+                            refusals.append(dict(reason='live deployment cgroup task', pid=int(pid)))
+                    except OSError:
+                        if (proc/pid).exists():
+                            holds.append(dict(reason='down cgroup evidence unreadable'))
+    except (OSError, ValueError) as error:
+        holds.append(dict(reason='down cgroup evidence unreadable', error=type(error).__name__))
+    return evidence, refusals, holds
+
+
+def down_helpers(rows, proc):
+    """Positive association only; arguments and environments are never inspected."""
+    refusals, holds = [], []
+    ids = {r['id'] for r in rows if r.get('id')}
+    conmons = {r['conmon'] for r in rows if r.get('conmon')}
+    ports = {port for r in rows for port in r.get('ports', [])}
+    sockets = set()
+    if ports:
+        try:
+            for name in ('tcp','tcp6'):
+                for line in (proc/'net'/name).read_text().splitlines()[1:]:
+                    fields = line.split()
+                    if fields[3] == '0A' and int(fields[1].split(':')[1],16) in ports:
+                        sockets.add('socket:['+fields[9]+']')
+        except (OSError, ValueError, IndexError):
+            holds.append(dict(reason='down published port association unreadable'))
+    for process in proc.iterdir():
+        if not process.name.isdigit():
+            continue
+        associated = int(process.name) in conmons
+        try:
+            comm = (process/'comm').read_text().strip()
+            if not associated and not (helper_names(comm) or comm == 'conmon'):
+                continue
+            if not task_alive(process):
+                continue
+            lines = (process/'cgroup').read_text()
+            associated |= any('/libpod-'+i+'.scope' in lines or '/libpod-conmon-'+i+'.scope' in lines for i in ids)
+            targets = [os.readlink(process/'cwd')]
+            for fd in (process/'fd').iterdir():
+                try:
+                    targets.append(os.readlink(fd))
+                except FileNotFoundError:
+                    continue
+            associated |= any(i in target.split('/') for i in ids for target in targets)
+            associated |= any(target in sockets for target in targets)
+            if associated:
+                refusals.append(dict(reason='positively associated down helper survives', **process_identity(process)))
+        except (OSError, ValueError) as error:
+            if associated and process.exists():
+                holds.append(dict(reason='down helper association unreadable', pid=int(process.name), error=type(error).__name__))
+    return refusals, holds
+
+
+def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), extra_sources=(), data_only=False, allow_down=False):
     if output.exists():
         raise FileExistsError(output)
     if caller_uid_mappings() != [(0,0,4294967295)]:
@@ -192,22 +323,32 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
         private_write(output, dict(schema=1, complete=False, holds=report['holds']))
         return report
     saved = dict(schema=1, complete=False, boot_id=boot_id(), store=store_identity(),
-                 containers=[], processes=[], cgroups=[], sources=[], shared_helper=None, holds=[])
+                 containers=[], processes=[], cgroups=[], sources=[], shared_helper=None, holds=[],
+                 kind='ordinary', down_evidence=[], refusals=[])
     def hold(reason, **detail):
         saved['holds'].append(dict(reason=reason, **detail))
     try:
         source = json.loads(snapshot.read_text())
         saved['project'] = source['project']
         saved['containers'] = source['containers']
+        down_allowed = allow_down and source.get('phase') == 'candidate-teardown'
+        if down_allowed and not any(r.get('running') for r in saved['containers']):
+            saved['kind'] = 'down-state'
         if not saved['containers']:
             hold('container capture missing')
         listed = set(pod('ps', '-aq', '--no-trunc', '--filter', 'label=com.docker.compose.project='+saved['project']).split())
-        recorded = {r['id'] for r in saved['containers'] if r.get('id')}
+        recorded = {r['id'] for r in saved['containers'] if r.get('id') and r.get('state') != 'missing'}
         if listed != recorded:
             hold('container capture incomplete')
         groups, identities, networks = {}, {}, {}
         bridge = False
         for row in saved['containers']:
+            if down_allowed and not row.get('running'):
+                evidence, refusals, holds = down_evidence(row, proc, cgroup_root)
+                saved['down_evidence'].append(evidence)
+                saved['refusals'] += refusals; saved['holds'] += holds
+                bridge |= evidence.get('mode') == 'bridge'
+                continue
             if not row.get('id'):
                 row['nothing_recorded'] = 'missing container, explicitly recorded'
                 continue
@@ -298,9 +439,17 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                 if pidfile.read_text().strip() != pid:
                     raise ValueError('store helper changed during capture')
                 saved['shared_helper'] = dict(shared, role='shared helper', pidfile=str(pidfile))
+            except FileNotFoundError as error:
+                if not down_allowed or pidfile.exists():
+                    hold('shared helper association unresolved; return to deciders', error=type(error).__name__)
+                else:
+                    saved['shared_helper_absence'] = dict(pidfile=str(pidfile), reason='absent store PID file; no helper recorded')
             except (OSError, ValueError) as error:
                 hold('shared helper association unresolved; return to deciders', error=type(error).__name__)
-        if not any(row.get('running') for row in saved['containers']) or not groups:
+        if saved['down_evidence']:
+            refusals, holds = down_helpers(saved['down_evidence'], proc)
+            saved['refusals'] += refusals; saved['holds'] += holds
+        if saved['kind'] != 'down-state' and (not any(row.get('running') for row in saved['containers']) or not groups):
             hold('deployment process capture missing; cannot capture after stop')
         saved['processes'] = list(identities.values())
         saved['cgroups'] = list(groups.values())
@@ -314,9 +463,9 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                 hold('source capture incomplete', error=type(error).__name__)
     except (OSError, KeyError, ValueError, subprocess.SubprocessError) as error:
         hold('required capture incomplete', error=type(error).__name__)
-    saved['complete'] = not saved['holds']
+    saved['complete'] = not saved['holds'] and not saved['refusals']
     write_capture(output, saved)
-    return dict(outcome='PASS' if saved['complete'] else 'HOLD', holds=saved['holds'])
+    return dict(outcome='REFUSE' if saved['refusals'] else 'PASS' if saved['complete'] else 'HOLD', holds=saved['holds'], refusals=saved['refusals'])
 
 
 def extend_capture(capture_path, output, snapshot=None, extra_sources=()):
@@ -533,7 +682,8 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
             raise ValueError('host initial user namespace required')
         saved = json.loads(capture_path.read_text())
         required = {'schema','complete','boot_id','store','containers','processes','cgroups','sources','shared_helper','holds','project'}
-        if not required <= saved.keys() or saved['schema'] != 1 or not saved['complete'] or not saved['containers'] or not saved['sources'] or not saved['processes'] or not saved['cgroups']:
+        down = saved.get('kind') == 'down-state'
+        if not required <= saved.keys() or saved['schema'] != 1 or not saved['complete'] or not saved['containers'] or not saved['sources'] or (not down and (not saved['processes'] or not saved['cgroups'])) or (down and not saved.get('down_evidence')):
             hold('capture missing or incomplete')
             return report
         if saved['boot_id'] != boot_id():
@@ -549,6 +699,25 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
         hold('required association unresolved', evidence=row)
     if not phase_eligible:
         hold('phase state ineligible')
+    if down:
+        report['assurance'] = DOWN_ASSURANCE
+    if saved.get('down_evidence'):
+        try:
+            listed = set(pod('ps','-aq','--no-trunc','--filter','label=com.docker.compose.project='+saved['project']).split())
+            if listed - {r['id'] for r in saved['containers'] if r.get('id')}:
+                hold('container capture incomplete')
+            evidence = []
+            for row in saved['down_evidence']:
+                fresh, refusals, holds = down_evidence(row, proc, cgroup_root)
+                report['refusals'] += refusals; report['holds'] += holds
+                # Retain the down container's known conmon and ports after removal.
+                fresh['ports'] = sorted(set(fresh['ports']) | set(row.get('ports',[])))
+                if not fresh.get('conmon'): fresh['conmon'] = row.get('conmon',0)
+                evidence.append(fresh)
+            refusals, holds = down_helpers(evidence, proc)
+            report['refusals'] += refusals; report['holds'] += holds
+        except (OSError, ValueError, subprocess.SubprocessError) as error:
+            hold('down container state unreadable', error=type(error).__name__)
     for source in saved['sources']:
         try:
             if source_identity(source['path']) != source:
@@ -693,6 +862,9 @@ def main():
     cap = sub.add_parser('capture'); cap.add_argument('snapshot', type=Path); cap.add_argument('output', type=Path)
     cap.add_argument('--source', action='append', default=[])
     cap.add_argument('--data-only', action='store_true')
+    cap.add_argument('--allow-down', action='store_true', help='Candidate teardown only; per-container fresh down evidence')
+    route = sub.add_parser('rollback-route'); route.add_argument('snapshot', type=Path); route.add_argument('--project', required=True)
+    eligible = sub.add_parser('original-eligible'); eligible.add_argument('snapshot', type=Path); eligible.add_argument('--project', required=True)
     ext = sub.add_parser('extend'); ext.add_argument('capture',type=Path); ext.add_argument('output',type=Path)
     ext.add_argument('--snapshot',type=Path); ext.add_argument('--source',action='append',default=[])
     original = sub.add_parser('original-override'); original.add_argument('capture',type=Path); original.add_argument('output',type=Path); original.add_argument('--upgrade-id',required=True); original.add_argument('--candidate-capture',type=Path,required=True)
@@ -702,7 +874,12 @@ def main():
     diagnostic = sub.add_parser('diagnostic'); diagnostic.add_argument('capture', type=Path)
     args = parser.parse_args()
     if args.command == 'capture':
-        report = capture(args.snapshot, args.output, extra_sources=args.source, data_only=args.data_only)
+        report = capture(args.snapshot, args.output, extra_sources=args.source, data_only=args.data_only, allow_down=args.allow_down)
+    elif args.command == 'rollback-route':
+        report = dict(outcome='PASS', **rollback_route(args.snapshot,args.project))
+    elif args.command == 'original-eligible':
+        original_eligible(args.snapshot,args.project)
+        report = dict(outcome='PASS', assurance='Exactly the stopped original container IDs exist; no copy authorized')
     elif args.command == 'extend':
         extend_capture(args.capture,args.output,args.snapshot,args.source)
         report = dict(outcome='PASS', assurance='Sources added; verify remains mandatory before use')

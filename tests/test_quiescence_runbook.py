@@ -33,7 +33,7 @@ def test_capture_is_saved_and_required_before_original_stop(tmp_path):
     assert setup.index('save_context') < setup.index(' capture ')
     server=context(tmp_path,'stop')
     try:
-        script='. "$CONTEXT"\npython3() { case "$2" in capture) return 2;; esac; }; podman() { :; }\n'+setup+'\necho UNSAFE_STOP\n'
+        script='. "$CONTEXT"\npython3() { case "$2" in snapshot) echo {} > "$3";; capture) return 2;; esac; }; podman() { :; }\n'+setup+'\necho UNSAFE_STOP\n'
         result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
         assert result.returncode==2 and 'UNSAFE_STOP' not in result.stdout
         fresh=subprocess.run(['bash','-eu','-c','. "$CONTEXT"; test -n "$QUIESCENCE_CAPTURE"'],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
@@ -113,4 +113,39 @@ podman() { :; }
         assert result.returncode==0,result.stderr
         order=(tmp_path/'evidence/order').read_text().splitlines()
         assert order.index('diagnostic') < order.index('verify')
+    finally:server.close()
+
+
+def test_original_restart_after_rotation_restores_config_then_engines_and_free_consoles(tmp_path):
+    import hashlib
+    server=context(tmp_path,'rollback-stop')
+    checkout=tmp_path/'checkout';checkout.mkdir();(checkout/'consoles').mkdir()
+    attempt=tmp_path/'attempt';config=attempt/'configuration';(config/'consoles').mkdir(parents=True)
+    (config/'consoles/original').write_text('original');(checkout/'consoles/extra').write_text('candidate')
+    for name in ('.env','compose.yaml','megasamples.yaml'):
+        (config/name).write_text('# retained fixture\n');(checkout/name).write_text('# rotated fixture\n')
+    (tmp_path/'retained/original-running-services.txt').write_text('postgres\nmysql\nsqlite\nlanding\nadminer\n')
+    (tmp_path/'retained/rollback-branch.txt').write_text('original')
+    (tmp_path/'retained/original-commit.txt').write_text('fixture')
+    try:
+        script='. "$CONTEXT"\ncd "$CHECKOUT"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"\n'+r'''
+python3() {
+  case "$2" in
+    ports) case " $* " in *' --service landing '*) return 37;; esac;;
+  esac
+  printf '%s\n' "$*" >> "$EVIDENCE_DIR/restart-calls"
+}
+git() { if test "$1" = rev-parse; then echo fixture; fi; }
+sha256sum() { :; }
+docker() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/restart-calls"; }
+'''
+        script+=block('# BEGIN retained original restart\n','# END retained original restart')
+        result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash'),CHECKOUT=str(checkout)),capture_output=True,text=True)
+        assert result.returncode==0,result.stderr
+        assert (checkout/'.env').read_bytes()==(config/'.env').read_bytes()
+        assert (attempt/'failed-candidate.env').read_text()=='# rotated fixture\n'
+        calls=(tmp_path/'evidence/restart-calls').read_text()
+        assert 'start landing' not in calls and 'start adminer' in calls
+        assert calls.index('wait-healthy sqlite') < calls.index('start adminer')
+        assert (attempt/'original-consoles-held.txt').read_text()=='landing\n'
     finally:server.close()

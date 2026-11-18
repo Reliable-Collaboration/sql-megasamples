@@ -1,0 +1,121 @@
+"""DL-089 down evidence and original restart routing, with reason reversals."""
+import json
+import shutil
+import subprocess
+from pathlib import Path
+
+import pytest
+from test_quiescence_capture import capture_fixture, process, gate
+
+
+@pytest.fixture
+def down(capture_fixture,monkeypatch):
+    snap,out,proc,cg,data=capture_fixture
+    for p in list(proc.iterdir()):shutil.rmtree(p)
+    for p in cg.iterdir():shutil.rmtree(p)
+    saved=json.loads(snap.read_text());saved['phase']='candidate-teardown'
+    saved['containers'][0].update(pid=0,running=False,state='exited',exit_code=0,oom=False)
+    snap.write_text(json.dumps(saved))
+    def pod(*args):
+        if args[0]=='ps':return '' if '-q' in args else 'test'
+        if args[0]=='container':return ''
+        if args[0]=='inspect':
+            if args[2]==gate.CAPTURE_FORMAT:return 'test|0|0|none|false|'
+            if args[2]=='{{json .HostConfig.PortBindings}}':return '{}'
+            return 'test|false|0'
+        raise AssertionError(args)
+    monkeypatch.setattr(gate,'pod',pod)
+    return snap,out,proc,cg,data
+
+
+@pytest.mark.parametrize('state,code,oom',[('created',0,False),('exited',0,False),('exited',137,False),('exited',23,False),('exited',1,True)])
+def test_down_capture_complete_and_reverified(down,state,code,oom):
+    snap,out,proc,cg,data=down
+    saved=json.loads(snap.read_text());saved['containers'][0].update(state=state,exit_code=code,oom=oom);snap.write_text(json.dumps(saved))
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
+    saved=json.loads(out.read_text());assert saved['kind']=='down-state'
+    assert saved['down_evidence'][0]['cgroup_state']=='absent'
+    report=gate.verify(out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='PASS' and 'outside the identified cgroups' in report['assurance']
+
+
+def test_original_stop_all_down_still_holds(down):
+    snap,out,proc,cg,data=down
+    saved=json.loads(snap.read_text());saved['phase']='original-stop';snap.write_text(json.dumps(saved))
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)
+    assert report['outcome']=='HOLD'
+    assert any(r['reason']=='deployment process capture missing; cannot capture after stop' for r in report['holds'])
+
+
+@pytest.mark.parametrize('mode',['live-task','unreadable-group','started','conmon','path-helper','port-helper','unreadable-conmon'])
+def test_down_live_evidence_blocks_with_reversal(down,monkeypatch,mode):
+    snap,out,proc,cg,data=down
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
+    original=gate.pod
+    reason='live deployment cgroup task';kind='refusals';expected='REFUSE'
+    if mode in ('live-task','unreadable-group'):
+        directory=cg/'libpod-test.scope';directory.mkdir()
+        for name in ('cgroup.procs','cgroup.threads'):(directory/name).write_text('12349' if mode=='live-task' else '')
+        if mode=='live-task':process(proc,12349)
+        else:
+            (directory/'cgroup.threads').unlink();reason='down cgroup evidence unreadable';kind='holds';expected='HOLD'
+    elif mode=='started':
+        monkeypatch.setattr(gate,'pod',lambda *a:'test|true|12349' if a[0]=='inspect' and a[2]!=gate.CAPTURE_FORMAT else original(*a))
+        reason='deployment container running'
+    else:
+        p=process(proc,12349,'conmon' if 'conmon' in mode else 'rootlessport','/shell')
+        reason='positively associated down helper survives'
+        if 'conmon' in mode:
+            monkeypatch.setattr(gate,'pod',lambda *a:'test|0|12349|none|false|' if a[0]=='inspect' and a[2]==gate.CAPTURE_FORMAT else original(*a))
+            if mode=='unreadable-conmon':
+                (p/'stat').unlink();reason='down helper association unreadable';kind='holds';expected='HOLD'
+        if mode=='path-helper':(p/'cwd').unlink();(p/'cwd').symlink_to('/store/overlay-containers/test/userdata')
+        if mode=='port-helper':
+            # Captured published host port, then a helper owning its listener inode.
+            saved=json.loads(out.read_text());saved['down_evidence'][0]['ports']=[48080];out.write_text(json.dumps(saved))
+            (proc/'net').mkdir();(proc/'net/tcp').write_text('header\n 0: 0100007F:BBD0 00000000:0000 0A 0:0 0:0 0 0 0 123\n');(proc/'net/tcp6').write_text('header\n')
+            (p/'fd/3').symlink_to('socket:[123]')
+    report=gate.verify(out,proc=proc,cgroup_root=cg)
+    assert report['outcome']==expected,report
+    assert any(r['reason']==reason for r in report[kind]),report
+    monkeypatch.setattr(gate,'pod',original)
+    for p in list(proc.iterdir()):
+        if p.is_dir():shutil.rmtree(p)
+    for p in list(cg.iterdir()):shutil.rmtree(p)
+    if mode=='port-helper':
+        (proc/'net').mkdir()
+        for name in ('tcp','tcp6'):(proc/'net'/name).write_text('header\n')
+    assert gate.verify(out,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+
+
+def test_empty_present_cgroup_and_missing_container_evidence(down,monkeypatch):
+    snap,out,proc,cg,data=down
+    directory=cg/'libpod-test.scope';directory.mkdir()
+    for name in ('cgroup.procs','cgroup.threads'):(directory/name).write_text('')
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
+    assert json.loads(out.read_text())['down_evidence'][0]['cgroup_state']=='empty'
+    original=gate.pod
+    def missing(*args):
+        if args[0]=='ps':return ''
+        if args[0] in ('inspect','container'):raise subprocess.CalledProcessError(1,args)
+        return original(*args)
+    monkeypatch.setattr(gate,'pod',missing)
+    assert gate.verify(out,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+
+
+@pytest.mark.parametrize('change',['none','running','missing','replaced','extra'])
+def test_exact_original_restart_eligibility_and_route(down,monkeypatch,change):
+    snap,out,proc,cg,data=down
+    original=gate.pod
+    def pod(*args):
+        if args[0]=='ps':
+            return {'missing':'','replaced':'other','extra':'test other'}.get(change,'test') if '-aq' in args else ('test' if change=='running' else '')
+        return original(*args)
+    monkeypatch.setattr(gate,'pod',pod)
+    if change=='none':
+        assert gate.rollback_route(snap,'project')['route']=='original-restart'
+        gate.original_eligible(snap,'project')
+    else:
+        with pytest.raises(ValueError,match='original restart'):
+            gate.original_eligible(snap,'project')
+        assert gate.rollback_route(snap,'project')['route']!= 'original-restart'
