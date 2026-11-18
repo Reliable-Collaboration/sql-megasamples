@@ -262,3 +262,39 @@ def test_forwarded_protocol_socket_fixture(engine, reply, expected):
         finally:
             worker.join(timeout=5)
             assert not worker.is_alive()
+
+
+def test_retained_helper_ports_needs_no_checkout(tmp_path):
+    helper = tmp_path / 'live-upgrade.py'
+    helper.write_bytes(Path(upgrade.__file__).read_bytes())
+    ports = tmp_path / 'ports.json'
+    ports.write_text(json.dumps({'engines': ['postgres'], 'consoles': ['landing'],
+                                 'ports': {'postgres': 0, 'landing': 0}}))
+    result = subprocess.run(['python3', '-I', str(helper), 'ports', '--port-config', str(ports)],
+                            cwd=tmp_path, capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+
+
+def test_port_selection_and_exemption(monkeypatch):
+    from megasamples import config
+    cfg = SimpleNamespace(engines=['postgres', 'sqlite'], consoles=['landing'],
+                          ports={'postgres': 5432, 'landing': 8080, 'sqlite': 999}, validate=lambda: [])
+    monkeypatch.setattr(config, 'load', lambda *a: cfg)
+    check = upgrade.check_ports
+    calls = []
+    monkeypatch.setattr(upgrade, 'check_ports', lambda endpoints, allowed: calls.append((endpoints, allowed)))
+    monkeypatch.setattr(upgrade, 'running_ports', lambda project: {('127.0.0.1', 8080)} if project == 'owned' else set())
+    monkeypatch.setattr('sys.argv', ['helper', 'ports', '--consoles-only', '--allow-running-project', 'owned'])
+    upgrade.main()
+    assert calls == [([('127.0.0.1', 8080)], {('127.0.0.1', 8080)})]
+    calls.clear()
+    monkeypatch.setattr('sys.argv', ['helper', 'ports'])
+    upgrade.main()
+    assert calls == [([('127.0.0.1', 5432), ('127.0.0.1', 8080)], ())]
+    with socket.socket() as listener:
+        listener.bind(('127.0.0.1', 0)); listener.listen()
+        endpoint = listener.getsockname()
+        # Test real refusal/exemption separately from selection's call recorder.
+        check([endpoint], {endpoint})
+        with pytest.raises(ValueError, match='occupied'):
+            check([endpoint], {('127.0.0.1', endpoint[1] + 1)})

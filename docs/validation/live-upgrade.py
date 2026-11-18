@@ -258,6 +258,11 @@ def main():
         p.add_argument('--root', type=Path, default=ROOT)
     p = sub.add_parser('ports')
     p.add_argument('--allow-running-project')
+    p.add_argument('--port-config', type=Path)
+    p = sub.add_parser('export-ports')
+    p.add_argument('output', type=Path)
+    p.add_argument('--config', type=Path)
+    p = sub.choices['ports']
     p.add_argument('--consoles-only', action='store_true')
     p = sub.add_parser('forwarded-protocol')
     p.add_argument('engine', choices=['postgres', 'mysql'])
@@ -268,16 +273,25 @@ def main():
         globals()[args.command.replace('-', '_')](args.backup)
     elif args.command.endswith('-metadata'):
         globals()[args.command.replace('-', '_')](args.root, args.bundle, required_metadata())
-    elif args.command == 'ports':
-        from megasamples import config
-        cfg = config.load()
-        problems = cfg.validate()
-        if problems:
-            raise ValueError('; '.join(problems))
-        services = cfg.consoles if args.consoles_only else [*cfg.engines, *cfg.consoles]
-        endpoints = [('127.0.0.1', int(cfg.ports[name])) for name in services if name in cfg.ports and name != 'sqlite']
-        allowed = running_ports(args.allow_running_project) if args.allow_running_project else ()
-        check_ports(endpoints, allowed)
+    elif args.command in ('ports', 'export-ports'):
+        if args.command == 'ports' and args.port_config:
+            raw = json.loads(args.port_config.read_text())
+        else:
+            from megasamples import config
+            cfg = config.load(args.config) if args.command == 'export-ports' else config.load()
+            problems = cfg.validate()
+            if problems:
+                raise ValueError('; '.join(problems))
+            raw = dict(engines=list(cfg.engines), consoles=cfg.consoles, ports=cfg.ports)
+        if args.command == 'export-ports':
+            with args.output.open('x') as out:
+                json.dump(raw, out, indent=2)
+        else:
+            services = raw['consoles'] if args.consoles_only else [*raw['engines'], *raw['consoles']]
+            endpoints = [('127.0.0.1', int(raw['ports'][name])) for name in services if name in raw['ports'] and name != 'sqlite']
+            allowed = running_ports(args.allow_running_project) if args.allow_running_project else ()
+            check_ports(endpoints, allowed)
+
     else:
         print(forwarded_protocol(args.engine, args.host, args.port))
     print('Passed: ' + args.command)
