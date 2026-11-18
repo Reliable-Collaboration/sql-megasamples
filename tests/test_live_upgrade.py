@@ -546,3 +546,17 @@ print('healthy' if stage == 'health' else 'megasamples-postgres|id|running|true|
         try: os.killpg(proc.pid, signal.SIGKILL)
         except ProcessLookupError: pass
         proc.wait()
+
+
+def test_port_precheck_allows_closed_server_time_wait_but_refuses_listener():
+    import socket
+    server=socket.socket();server.setsockopt(socket.SOL_SOCKET,socket.SO_REUSEADDR,1)
+    server.bind(('127.0.0.1',0));server.listen()
+    endpoint=server.getsockname()
+    peer=socket.create_connection(endpoint);accepted,_=server.accept()
+    with pytest.raises(ValueError,match='occupied or unavailable port'):
+        upgrade.check_ports([endpoint])
+    accepted.shutdown(socket.SHUT_WR);accepted.close()
+    assert peer.recv(1)==b''
+    peer.close();server.close()
+    upgrade.check_ports([endpoint])

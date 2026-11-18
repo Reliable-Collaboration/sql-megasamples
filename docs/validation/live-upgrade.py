@@ -391,7 +391,11 @@ def check_ports(endpoints, allowed=()):
     for host, port in endpoints:
         try:
             with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as probe:
+                # Match server rebinding after normal disconnects. TIME_WAIT is
+                # not an active listener; listen still rejects an occupied port.
+                probe.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
                 probe.bind((host, port))
+                probe.listen(1)
         except OSError as error:
             if (host, port) not in allowed:
                 raise ValueError(f'occupied or unavailable port: {host}:{port}') from error
