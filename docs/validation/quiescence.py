@@ -179,7 +179,7 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
         saved['containers'] = source['containers']
         if not saved['containers']:
             hold('container capture missing')
-        listed = set(pod('ps', '-aq', '--filter', 'label=com.docker.compose.project='+saved['project']).split())
+        listed = set(pod('ps', '-aq', '--no-trunc', '--filter', 'label=com.docker.compose.project='+saved['project']).split())
         recorded = {r['id'] for r in saved['containers'] if r.get('id')}
         if listed != recorded:
             hold('container capture incomplete')
@@ -203,8 +203,11 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                         p.update(role=role, container=identity)
                         identities[p['pid']] = p
                         for line in p['cgroups']:
-                            if not any('/libpod-'+identity+'.scope' in line or '/libpod-conmon-'+identity+'.scope' in line
-                                       for identity in recorded) and cgroup_root == Path('/sys/fs/cgroup'):
+                            specific = any('/libpod-'+identity+'.scope' in line or '/libpod-conmon-'+identity+'.scope' in line
+                                           for identity in recorded)
+                            if role == 'conmon' and not specific:
+                                continue  # Inspect identifies conmon; shared shell is not deployment scope.
+                            if not specific and cgroup_root == Path('/sys/fs/cgroup'):
                                 raise ValueError('container-specific cgroup association unresolved')
                             try:
                                 groups[line] = group_capture(line, cgroup_root)
@@ -255,6 +258,8 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                 saved['shared_helper'] = dict(shared, role='shared helper', pidfile=str(pidfile))
             except (OSError, ValueError) as error:
                 hold('shared helper association unresolved; return to deciders', error=type(error).__name__)
+        if not any(row.get('running') for row in saved['containers']) or not groups:
+            hold('deployment process capture missing; cannot capture after stop')
         saved['processes'] = list(identities.values())
         saved['cgroups'] = list(groups.values())
         paths = {p for r in saved['containers'] for p, dest in r.get('mounts', []) if not data_only or dest in DATA_DESTINATIONS} | set(map(str, extra_sources))

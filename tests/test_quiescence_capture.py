@@ -125,3 +125,32 @@ def test_copy_paths_must_match_retained_canonical_identity(capture_fixture):
     original=data.parent/'retained-data'; data.rename(original);data.mkdir()
     with pytest.raises(ValueError,match='copy path differs from captured source'):
         gate.check_source(out,data)
+
+
+def test_full_container_ids_required_for_capture_completeness(capture_fixture,monkeypatch):
+    snap,out,proc,cg,data=capture_fixture
+    saved=json.loads(snap.read_text()); saved['containers'][0]['id']='a'*64;snap.write_text(json.dumps(saved))
+    def pod(*args):
+        if args[0]=='ps':return 'a'*64 if '--no-trunc' in args else 'a'*12
+        return 'a'*64+'|12345|12346|none|false|'
+    monkeypatch.setattr(gate,'pod',pod)
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+
+
+def test_conmon_from_inspect_does_not_attribute_shared_shell_cgroup(capture_fixture):
+    snap,out,proc,cg,data=capture_fixture
+    (proc/'12346/cgroup').write_text('0::/shared-shell')
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='PASS'
+    saved=json.loads(out.read_text())
+    assert any(r['role']=='conmon' for r in saved['processes'])
+    assert not any(r['line']=='0::/shared-shell' for r in saved['cgroups'])
+
+
+def test_capture_after_stop_cannot_manufacture_historical_evidence(capture_fixture,monkeypatch):
+    snap,out,proc,cg,data=capture_fixture
+    saved=json.loads(snap.read_text());saved['containers'][0].update(pid=0,running=False,state='exited');snap.write_text(json.dumps(saved))
+    monkeypatch.setattr(gate,'pod',lambda *args:'test' if args[0]=='ps' else 'test|0|0|none|false|')
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='HOLD'
+    assert any(r['reason']=='deployment process capture missing; cannot capture after stop' for r in report['holds'])
