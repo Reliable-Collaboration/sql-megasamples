@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Read-only, owner-scoped /proc quiescence evidence. No arguments or environments.
 
-Run in podman unshare for visibility into rootless descendants. Other owners are
-counted, never implicitly certified. An unresolved own process refuses quiescence.
+Walk from the host initial user namespace. Other owners and unreadable operations
+are reported separately; decide over inspectable evidence, never certify that scope.
 """
 import argparse
 import array
@@ -153,58 +153,134 @@ def resolve_roots(device, root, mounts):
     raise ValueError('cannot resolve mount root to host path: ' + device + ' ' + root)
 
 
+def source_roots(sources, mounts):
+    """Map each recorded host source onto its filesystem device and root."""
+    result = []
+    for source in sources:
+        matches = [(len(point), dev, root, point) for dev, root, point in mounts if under(source, point)]
+        if not matches:
+            raise ValueError('recorded source has no host mount: ' + source)
+        _, dev, root, point = max(matches)
+        result.append((dev, root.rstrip('/') + source[len(point.rstrip('/')):], source))
+    return result
+
+
+def process_state(process):
+    return (process / 'stat').read_text().rsplit(') ', 1)[1].split()[0]
+
+
 def evidence(snapshot, proc=Path('/proc'), owners=None):
+    if caller_uid_mappings() != [(0, 0, 4294967295)]:
+        raise ValueError('scan must run in host initial user namespace, never podman unshare')
     saved = json.loads(snapshot.read_text())
     sources = {src for row in saved['containers'] for src, _ in row.get('mounts', [])}
-    counts = dict(own=0, **{'owned-user-namespace': 0, 'other-owner': 0, 'unresolved-owner': 0})
-    holders, helpers, unreadable = [], [], []
-    other_owner_records = {}
     mounts = host_mounts(proc)
+    roots = source_roots(sources, mounts)
+    devices = {dev for dev, _, _ in roots}
+    host_net = os.readlink('/proc/self/ns/net')
+    networks = {row.get('network_namespace') for row in saved['containers']} - {None, '', host_net}
+    # Only container-specific cgroups count, never shared shell/API service cgroups.
+    groups = {g for row in saved['containers'] for g in row.get('cgroups', []) if '/libpod-' in g}
+    identities = {row.get('id') for row in saved['containers']} - {None, ''}
+    counts = dict(own=0, **{'owned-user-namespace': 0, 'other-owner': 0,
+                          'unresolved-owner': 0, 'zombie': 0, 'exited': 0, 'vanished': 0})
+    holders, helpers, unreadable, refusals = [], [], [], []
     for process in proc.iterdir():
         if not process.name.isdigit() or int(process.name) == os.getpid():
             continue
         pid = int(process.name)
-        try:
-            owner = classify_owner(process, os.getuid(), owners)
-            counts[owner] += 1
-            if owner == 'other-owner':
-                if owners is not None:
-                    other_owner_records[process.name] = owners[process.name]
+        row = dict(pid=pid, comm='<unreadable>', owner='unresolved-owner')
+        def read(operation, action):
+            try:
+                return action()
+            except (FileNotFoundError, ProcessLookupError):
+                # Descriptor close and process exit are normal scan races.
+                if not process.exists() or operation.startswith('fd/'):
+                    return None
+                unreadable.append(dict(row, operation=operation, error='FileNotFoundError'))
+            except (OSError, ValueError) as error:
+                unreadable.append(dict(row, operation=operation, error=type(error).__name__))
+            return None
+        owner = read('owner', lambda: classify_owner(process, os.getuid()))
+        row['owner'] = owner or 'unresolved-owner'
+        counts[row['owner']] += 1
+        if owner == 'other-owner':
+            continue
+        comm = read('comm', lambda: (process / 'comm').read_text().strip())
+        if comm is not None:
+            row['comm'] = comm
+        state = read('stat', lambda: process_state(process))
+        if state in ('Z', 'X', 'x'):
+            counts['zombie' if state == 'Z' else 'exited'] += 1
+            continue  # No address space, descriptors or network namespace remain.
+        if not process.exists():
+            counts['vanished'] += 1
+            continue
+        if owner not in ('own', 'owned-user-namespace'):
+            unreadable.append(dict(row, operation='owner', error='OwnershipUnresolved'))
+            continue  # Named inspection limit, not a claim about inaccessible data.
+        network = read('ns/net', lambda: os.readlink(process / 'ns/net'))
+        cgroup = read('cgroup', lambda: (process / 'cgroup').read_text().splitlines()) or []
+        paths = []
+        for key in ('root', 'cwd'):
+            target = read(key, lambda key=key: os.readlink(process / key))
+            if target is not None:
+                paths.append((key, target))
+        fds = read('fd', lambda: list((process / 'fd').iterdir())) or []
+        for fd in fds:
+            target = read('fd/' + fd.name, lambda fd=fd: os.readlink(fd))
+            if target is not None:
+                paths.append(('fd/' + fd.name, target))
+        if row['comm'].startswith(('pasta', 'slirp4netns', 'rootlessport')):
+            net_refs = {network} | {target for _, target in paths if target.startswith('net:[')}
+            by_network = bool(networks & net_refs)
+            by_group = bool(groups & set(cgroup)) or any(
+                '/libpod-' + identity + '.scope' in group for identity in identities for group in cgroup)
+            belongs = by_network or by_group
+            helpers.append(dict(row, network=network, cgroups=cgroup, deployment=belongs,
+                                attribution='recorded network namespace' if by_network else
+                                'recorded container cgroup' if by_group else 'outside recorded deployment'))
+            if belongs:
+                refusals.append(dict(row, reason='deployment network helper',
+                                     holds=sorted(networks & net_refs) if by_network else cgroup))
+        process_mounts = read('mountinfo', lambda: mount_rows(process / 'mountinfo')) or []
+        for device, root, _ in process_mounts:
+            if device not in devices:
+                continue  # e.g. retained /asound on private /proc devices.
+            try:
+                targets = resolve_roots(device, root, mounts)
+            except ValueError:
+                refusals.append(dict(row, reason='unresolvable mount on recorded source device',
+                                     holds=dict(device=device, root=root)))
                 continue
-            if owner == 'unresolved-owner':
-                unreadable.append(dict(pid=pid, error='OwnershipUnresolved',
-                                       reason='cannot prove this process belongs to another owner'))
-                continue
-            comm = (process / 'comm').read_text().strip()
-            network = os.readlink(process / 'ns/net')
-            if comm.startswith(('pasta', 'slirp4netns', 'rootlessport')):
-                helpers.append(dict(pid=pid, owner=owner, comm=comm, network=network,
-                                    cgroup=(process / 'cgroup').read_text().strip()))
-            paths = [(key, os.readlink(process / key)) for key in ('root', 'cwd')]
-            paths += [('fd/' + fd.name, os.readlink(fd)) for fd in (process / 'fd').iterdir()]
-            for device, root, _ in mount_rows(process / 'mountinfo'):
-                paths += [('mount-root', target) for target in resolve_roots(device, root, mounts)]
-            # A shared mmap can retain a writable data file after its FD is closed.
-            for line in (process / 'maps').read_text().splitlines():
-                fields = line.split(maxsplit=5)
-                if len(fields) == 6 and fields[5].startswith('/'):
-                    paths.append(('mapping', fields[5]))
-            matched = [(kind, target) for kind, target in paths
-                       if any(under(target.removesuffix(' (deleted)'), src) for src in sources)]
-            if matched:
-                holders.append(dict(pid=pid, owner=owner, paths=matched))
-        except (FileNotFoundError, ProcessLookupError) as error:
-            if process.exists():
-                unreadable.append(dict(pid=pid, error=type(error).__name__))
-        except (PermissionError, OSError, ValueError) as error:
-            item = dict(pid=pid, error=type(error).__name__)
-            if isinstance(error, ValueError):
-                item['reason'] = str(error)
-            unreadable.append(item)
+            paths += [('mount-root', target) for target in targets]
+        maps = read('maps', lambda: (process / 'maps').read_text()) or ''
+        for line in maps.splitlines():
+            fields = line.split(maxsplit=5)
+            if len(fields) == 6 and fields[5].startswith('/'):
+                paths.append(('mapping', fields[5]))
+        matched = []
+        for kind, target in paths:
+            clean = target.removesuffix(' (deleted)')
+            direct = any(under(clean, src) for src in sources)
+            # Resolve namespace paths too (e.g. /data/file), by device and root.
+            candidates = [(len(point), dev, root, point) for dev, root, point in process_mounts
+                          if under(clean, point)]
+            translated = False
+            if candidates:
+                _, dev, root, point = max(candidates)
+                resolved = root.rstrip('/') + clean[len(point.rstrip('/')):]
+                translated = any(dev == source_dev and under(resolved, source_root)
+                                 for source_dev, source_root, _ in roots)
+            if direct or translated:
+                matched.append((kind, target))
+        if matched:
+            holders.append(dict(row, paths=matched))
+            refusals.append(dict(row, reason='recorded data source held', holds=matched))
     return dict(scope='own and owned-user-namespace processes only', counts=counts,
+                decision_scope='inspectable operations only; unreadable rows are not certified',
                 other_owner_inspection='Not run: requires privilege',
-                other_owner_records=other_owner_records,
-                holders=holders, helpers=helpers, unreadable=unreadable)
+                holders=holders, helpers=helpers, unreadable=unreadable, refusals=refusals)
 
 
 def main():
@@ -226,7 +302,7 @@ def main():
         owners = data['processes']
     report = evidence(args.snapshot, owners=owners)
     print(json.dumps(report, indent=2))
-    if report['holders'] or report['helpers'] or report['unreadable']:
+    if report['refusals']:
         sys.exit(1)
 
 

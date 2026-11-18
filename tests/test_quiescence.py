@@ -11,6 +11,7 @@ scanner = importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(scanner
 
 
 def fixture(tmp_path, monkeypatch, comm='server'):
+    monkeypatch.setattr(scanner, 'caller_uid_mappings', lambda: [(0,0,4294967295)])
     snapshot = tmp_path / 'snapshot.json'
     snapshot.write_text(json.dumps({'containers':[{'mounts':[['/store/data','/data']]}]}))
     proc = tmp_path / 'proc'; process = proc / '123456789'
@@ -18,6 +19,7 @@ def fixture(tmp_path, monkeypatch, comm='server'):
     for name,target in [('root','/'),('cwd','/unrelated'),('ns/net','net:[fixture]')]:
         os.symlink(target, process / name)
     (process / 'comm').write_text(comm)
+    (process / 'stat').write_text('123 (fixture) S ' + ' '.join(['0']*19))
     (process / 'cgroup').write_text('fixture')
     (process / 'maps').write_text('')
     (process / 'mountinfo').write_text('10 1 8:2 / / rw - ext4 /dev/fixture rw\n')
@@ -63,11 +65,12 @@ def test_nonroot_filesystem_mount_root_resolves_host_path(tmp_path,monkeypatch):
     assert result['unreadable'] == []
 
 
-def test_unknown_mount_root_refuses_with_reason(tmp_path,monkeypatch):
+def test_unknown_unrelated_mount_device_is_skipped(tmp_path,monkeypatch):
     snapshot,proc,process = fixture(tmp_path,monkeypatch)
     (process / 'mountinfo').write_text('10 1 8:9 /private/store/data /data rw - ext4 /dev/fixture rw\n')
     result = scanner.evidence(snapshot,proc)
-    assert result['unreadable'][0]['reason'] == 'cannot resolve mount root to host path: 8:9 /private/store/data'
+    assert result['unreadable'] == []
+    assert result['refusals'] == []
 
 
 def test_unreadable_own_or_racing_live_process_refuses(tmp_path,monkeypatch):
@@ -196,3 +199,83 @@ def test_native_final_owner_check_refuses_credential_transition(tmp_path,monkeyp
         scanner.verify_owners(report,proc)
     (process/'status').write_text('Uid:\t0\t0\t0\t0\n')
     scanner.verify_owners(report,proc)
+
+# Round-three shapes: persistent zombies, private /asound mounts, inaccessible
+# descriptors and helpers in a different store. No retained arguments/environments.
+def test_private_asound_device_is_unrelated(tmp_path, monkeypatch):
+    snap, proc, p = fixture(tmp_path, monkeypatch)
+    (p/'mountinfo').write_text('10 1 0:203 /asound /proc/asound ro - tmpfs tmpfs ro\n')
+    report = scanner.evidence(snap, proc)
+    assert report['unreadable'] == []
+    assert report['refusals'] == []
+
+
+@pytest.mark.parametrize('state,klass', [('Z','zombie'),('X','exited'),('x','exited')])
+def test_dead_process_has_class_before_namespace_read(tmp_path, monkeypatch, state, klass):
+    snap, proc, p = fixture(tmp_path, monkeypatch)
+    (p/'stat').write_text('123 (python) ' + state + ' ' + ' '.join(['0']*19))
+    (p/'ns/net').unlink()
+    report = scanner.evidence(snap, proc)
+    assert report['counts'][klass] == 1
+    assert report['refusals'] == []
+
+
+def test_named_unreadable_operation_is_reported_not_whole_host_refusal(tmp_path, monkeypatch):
+    snap, proc, p = fixture(tmp_path, monkeypatch, 'ssh-agent')
+    original = os.readlink
+    def denied(path):
+        if Path(path) == p/'ns/net': raise PermissionError('fixture')
+        return original(path)
+    monkeypatch.setattr(os, 'readlink', denied)
+    report = scanner.evidence(snap, proc)
+    assert any(r['comm']=='ssh-agent' and r['operation']=='ns/net' for r in report['unreadable'])
+    assert report['refusals'] == []
+
+
+@pytest.mark.parametrize('belongs', [False, True])
+def test_helper_requires_recorded_network_or_container_cgroup(tmp_path, monkeypatch, belongs):
+    snap, proc, p = fixture(tmp_path, monkeypatch, 'pasta.avx2')
+    saved=json.loads(snap.read_text()); saved['containers'][0]['network_namespace']='net:[deployment]'
+    snap.write_text(json.dumps(saved))
+    (p/'ns/net').unlink(); os.symlink('net:[deployment]' if belongs else 'net:[tools]', p/'ns/net')
+    report=scanner.evidence(snap, proc)
+    assert report['helpers'][0]['deployment'] == belongs
+    assert [r['reason'] for r in report['refusals']] == (['deployment network helper'] if belongs else [])
+
+
+def test_mount_resolution_only_refuses_source_device(tmp_path,monkeypatch):
+    snap,proc,p=fixture(tmp_path,monkeypatch)
+    monkeypatch.setattr(scanner,'host_mounts',lambda _: [('8:9','/private/store','/store')])
+    (p/'mountinfo').write_text('10 1 8:9 /unknown /data rw - ext4 /dev/fixture rw\n')
+    report=scanner.evidence(snap,proc)
+    assert report['refusals'][0]['reason'] == 'unresolvable mount on recorded source device'
+    assert report['refusals'][0]['comm'] == 'server'
+
+@pytest.mark.parametrize('via', ['cgroup','namespace-fd'])
+def test_deployment_helper_attribution_alternatives(tmp_path,monkeypatch,via):
+    snap,proc,p=fixture(tmp_path,monkeypatch,'rootlessport')
+    saved=json.loads(snap.read_text()); saved['containers'][0].update(id='a'*64,network_namespace='net:[deployment]')
+    snap.write_text(json.dumps(saved))
+    if via=='cgroup': (p/'cgroup').write_text('0::/user.slice/libpod-'+ 'a'*64 + '.scope')
+    else: os.symlink('net:[deployment]', p/'fd/5')
+    report=scanner.evidence(snap,proc)
+    assert report['helpers'][0]['deployment'] is True
+    assert report['refusals'][0]['reason']=='deployment network helper'
+
+
+def test_container_namespace_path_holds_recorded_source(tmp_path,monkeypatch):
+    snap,proc,p=fixture(tmp_path,monkeypatch)
+    (p/'cwd').unlink(); os.symlink('/data/subdir',p/'cwd')
+    (p/'mountinfo').write_text('10 1 8:2 /store/data /data rw - ext4 /dev/fixture rw\n')
+    report=scanner.evidence(snap,proc)
+    assert ('cwd','/data/subdir') in report['holders'][0]['paths']
+    assert report['refusals'][0]['reason']=='recorded data source held'
+    assert report['refusals'][0]['comm']=='server'
+    assert report['refusals'][0]['owner']=='own'
+
+
+def test_scan_rejects_child_user_namespace(tmp_path,monkeypatch):
+    snap,proc,p=fixture(tmp_path,monkeypatch)
+    monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,1000,1)])
+    with pytest.raises(ValueError,match='scan must run in host initial user namespace'):
+        scanner.evidence(snap,proc)

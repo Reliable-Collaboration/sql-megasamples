@@ -210,6 +210,15 @@ def snapshot(output, project, engines, phase='original-stop'):
         row = container_state(identity)
         mounts = pod('inspect', '-f', r'{{range .Mounts}}{{printf "%s\t%s\n" .Source .Destination}}{{end}}', identity)
         row['mounts'] = [line.split('\t') for line in mounts.splitlines() if line]
+        row['network_namespace'] = ''
+        row['cgroups'] = []
+        if row['pid'] > 0:
+            process = Path('/proc') / str(row['pid'])
+            try:
+                row['network_namespace'] = os.readlink(process / 'ns/net')
+                row['cgroups'] = (process / 'cgroup').read_text().splitlines()
+            except OSError as error:
+                raise ValueError('cannot record running container network/cgroup: ' + row['name']) from error
         rows.append(row)
     missing = set(engines) - {row['name'] for row in rows}
     if missing and phase == 'original-stop':

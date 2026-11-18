@@ -136,9 +136,9 @@ and a clean database shutdown before cold copy; never relax that gate for a cras
 
 Before cold copying or restoring, all four checks below must pass over inspectable
 processes: state eligibility, no project containers running, no recorded data-mount
-holders, and no unresolved own/rootless-user network helpers. Other owners' processes
+holders, and no attributed deployment network helpers. Other owners' processes
 are counted separately; their descriptors/namespaces cannot be certified without
-privilege. Unresolved inspection of this user's processes refuses. Capture scanner
+privilege. Unreadable own operations are named, reported and not certified. Capture scanner
 status without exiting the shell, inspect evidence, and repeat checks before continuation.
 A missing candidate is valid and recorded; teardown must never depend on its continued
 existence after `down`.
@@ -676,11 +676,7 @@ save_context
 # BEGIN cold-copy process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" inventory "$EVIDENCE_DIR/owners-$CHECK_ID.json"; then
-  if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
-    --owners "$EVIDENCE_DIR/owners-$CHECK_ID.json" > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.json"; then
-    if python3 "$EVIDENCE_DIR/quiescence.py" verify-owners "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
-  else PROCESS_RC=$?; fi
+if python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.exit-code"
 if test "$PROCESS_RC" != 0; then
@@ -817,35 +813,51 @@ python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
   "$EVIDENCE_DIR/four-check-exited-$CHECK_ID.json" --phase "$GATE_PHASE" "$@"
 # 2. Expected: EMPTY. The helper also refuses if project containers are running.
 podman ps --filter label=com.docker.compose.project=sql-megasamples -q
-# 3/4. Capture status even under set -e. Expected own-scope arrays empty, status 0.
+# 3/4. Capture status even under set -e. Expected refusals empty, status 0; review unreadable limits and helper attribution.
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" inventory "$EVIDENCE_DIR/owners-$CHECK_ID.json"; then
-  if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
-    --owners "$EVIDENCE_DIR/owners-$CHECK_ID.json" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.json"; then
-    if python3 "$EVIDENCE_DIR/quiescence.py" verify-owners "$EVIDENCE_DIR/process-evidence-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
-  else PROCESS_RC=$?; fi
+if python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.exit-code"
 # END four checks
 
 ```
 
-The scanner first records native-host UIDs and process start times without privilege,
-then verifies those start times inside rootless unshare. This distinguishes host
-root/other users from mapped subordinate IDs that share the numeric overflow UID.
-Current mapped UIDs always stay in scope. A second native-host UID/start-time
-check brackets every assumed-other owner before a successful gate. A changed or
-missing ownership record refuses; it is never an exemption. These are point-in-time
-observations; repeat all checks immediately before continuing.
-The scanner classifies this user's own processes and processes in user namespaces
-owned by this user separately from other owners. It reads no arguments or environments.
-Its quiescence decision covers only the inspectable owner scope, stated in the JSON.
-Other-owner counts are informational; their descriptors/namespaces require privilege.
-Any holder, unresolved own process, mount-path resolution failure, or own network helper
-blocks continuation. This gate has no helper exclusion override: even positively attributed helpers for
-another store keep it refused. This limits readiness on shared rootless hosts; record
-the refusal and stop. Never blanket-kill helpers or alter forwarders.
-Inspect the evidence even after status 0 and repeat immediately before continuation.
+The scanner walks `/proc` **from the host initial user namespace**, never inside
+`podman unshare`. It refuses a child-namespace invocation. Snapshot running containers
+before stop: mount source/destination, network namespace inode and container cgroups
+survive removal in that retained snapshot. No arguments or environments are read.
+
+Its decision is explicitly over inspectable operations. Other owners are counted
+separately, without descriptor inspection. Every unreadable own operation names
+`comm`, PID, owner and operation; these rows are **not certified**, and do not alone
+refuse. On this host some native non-dumpable processes and rootless descriptors
+remain unreadable even natively. Review and retain these limits at every gate;
+status 0 does not certify those operations or other owners. Zombies and exited tasks
+have their own counts and no surviving file descriptors or network namespace.
+Processes that disappear are scan races. Repeat immediately for a newly born process
+or changed ownership; repetition is not a remedy for a persistent permission denial.
+
+Mounts are compared only on the device and filesystem root of a recorded source.
+Private `/proc` and `/asound` devices are skipped when no source lives there. Path
+checks include root, cwd, open files, mappings and bind roots, including namespace
+path translations. Helpers match `pasta*`, `slirp4netns*` and `rootlessport*`. Only a
+recorded non-host network namespace (including an open namespace FD) or a specific
+container cgroup attributes one to this deployment. Shared host namespaces and
+shell/API cgroups never prove that ownership. Outside-deployment helpers, including
+the isolated store's and tools container's, are reported and do not refuse.
+
+Each `refusals` row names `comm`, PID, owner, `holds` and a specific `reason`:
+
+| Reason | Maintainer action before repeating the gate |
+|---|---|
+| recorded data source held | Identify the recorded file/mount and its deployment process. Stop that deployment process through its normal command; retain evidence and repeat the scan. |
+| deployment network helper | Compare its retained namespace/cgroup attribution with the stopped project. Diagnose and complete only that project's teardown; never kill unrelated helpers or alter forwarders. |
+| unresolvable mount on recorded source device | Resolve that device/root against the retained source and host mount table. Correct the evidence/path resolution before continuation; never exempt the source device. |
+
+Inspect `unreadable` and outside-deployment helper rows as well as `refusals` even
+after status 0. Keep clients paused while diagnosing a deployment-related inspection
+limit. Take a new snapshot if the deployment changes, and repeat all four checks
+immediately before cold copy, restoration or original startup.
 
 Capture available kernel/AppArmor diagnostics for the failure's timestamp, without host changes:
 
@@ -1189,11 +1201,7 @@ python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
 # BEGIN restore process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" inventory "$EVIDENCE_DIR/owners-$CHECK_ID.json"; then
-  if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
-    --owners "$EVIDENCE_DIR/owners-$CHECK_ID.json" > "$EVIDENCE_DIR/process-restore-$CHECK_ID.json"; then
-    if python3 "$EVIDENCE_DIR/quiescence.py" verify-owners "$EVIDENCE_DIR/process-restore-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
-  else PROCESS_RC=$?; fi
+if python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" > "$EVIDENCE_DIR/process-restore-$CHECK_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-restore-$CHECK_ID.exit-code"
 if test "$PROCESS_RC" != 0; then
@@ -1310,11 +1318,7 @@ python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/restart-before-$CHECK_ID.json" \
 # BEGIN pre-up process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" inventory "$EVIDENCE_DIR/owners-$CHECK_ID.json"; then
-  if podman unshare python3 "$EVIDENCE_DIR/quiescence.py" "$ATTEMPT_DIR/restart-mounts.json" \
-    --owners "$EVIDENCE_DIR/owners-$CHECK_ID.json" > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.json"; then
-    if python3 "$EVIDENCE_DIR/quiescence.py" verify-owners "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.json"; then :; else PROCESS_RC=$?; fi
-  else PROCESS_RC=$?; fi
+if python3 "$EVIDENCE_DIR/quiescence.py" "$ATTEMPT_DIR/restart-mounts.json" > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.exit-code"
 if test "$PROCESS_RC" != 0; then
