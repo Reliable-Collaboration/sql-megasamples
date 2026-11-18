@@ -460,3 +460,14 @@ def test_rollback_ports_select_only_services_being_started(tmp_path, monkeypatch
     monkeypatch.setattr('sys.argv', ['helper','ports','--port-config',str(cfg),'--service','cloudbeaver'])
     upgrade.main()
     assert calls == [[('127.0.0.1',8084)]]
+
+
+def test_rollback_down_retry_appends_original_log_and_status(tmp_path):
+    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
+    guard = re.search(r'if docker compose[^\n]* down >>? .*?^fi', text, re.M | re.S)[0]
+    for _ in range(2):
+        result = subprocess.run(['bash','-c','docker() { echo attempt-failed; return 37; }\n' + guard],
+                                env=dict(os.environ,BACKUP_DIR=str(tmp_path)),capture_output=True,text=True)
+        assert result.returncode == 37
+    assert (tmp_path / 'rollback-down.log').read_text() == 'attempt-failed\nattempt-failed\n'
+    assert (tmp_path / 'rollback-down.log.exit-code').read_text() == '37\n37\n'
