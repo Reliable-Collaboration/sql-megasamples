@@ -154,3 +154,17 @@ def test_capture_after_stop_cannot_manufacture_historical_evidence(capture_fixtu
     report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
     assert report['outcome']=='HOLD'
     assert any(r['reason']=='deployment process capture missing; cannot capture after stop' for r in report['holds'])
+
+
+def test_capture_namespace_object_comes_from_live_process_not_host_placeholder(capture_fixture,monkeypatch):
+    snap,out,proc,cg,data=capture_fixture
+    (proc/'12345/ns/net').unlink();(proc/'12345/ns/net').symlink_to('/proc/self/ns/net')
+    helper=process(proc,12348,'rootlessport','/shell')
+    (helper/'ns/net').unlink();(helper/'ns/net').symlink_to('/proc/self/ns/net')
+    run=Path(gate.store_identity()['run']);shared=run/'networks/rootless-netns';shared.mkdir(parents=True)
+    (shared/'rootless-netns-conn.pid').write_text('12347');process(proc,12347,'slirp4netns','/rootless-netns-test.scope')
+    placeholder=data.parent/'netns-placeholder';placeholder.touch()
+    monkeypatch.setattr(gate,'pod',lambda *a:'test' if a[0]=='ps' else 'test|12345|12346|bridge|true|'+str(placeholder))
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='PASS'
+    assert any(r['pid']==12348 and r['role']=='dedicated helper' for r in json.loads(out.read_text())['processes'])

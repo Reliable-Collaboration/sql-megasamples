@@ -216,7 +216,12 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                     except (OSError, ValueError) as error:
                         hold(role+' capture incomplete', container=identity, error=type(error).__name__)
                 if published == 'true' and mode == 'bridge':
-                    st = Path(net).stat()
+                    # SandboxKey may be a host-visible placeholder whose bind
+                    # exists only inside the rootless namespace. Inspect the
+                    # current container process's actual namespace object.
+                    st = (proc/pid/'ns/net').stat()
+                    if start_time(proc/pid) != identities[int(pid)]['start']:
+                        raise ValueError('process identity changed during namespace capture')
                     networks[identity] = (st.st_dev, st.st_ino)
             except (OSError, ValueError, subprocess.SubprocessError) as error:
                 hold('container capture incomplete', container=row['id'], error=type(error).__name__)
