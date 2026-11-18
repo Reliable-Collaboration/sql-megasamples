@@ -306,12 +306,17 @@ podman run -d --name "$UPGRADE_TOOLS_CONTAINER" --network host --memory 18g \
   -v "$METADATA_BUNDLE:$METADATA_BUNDLE:ro" \
   -v "$DOCKER_CLIENT:/usr/local/bin/docker:ro" -w "$PWD" "$TOOLS_IMAGE" sleep infinity
 ms_tool() {
-  podman exec -e "DOCKER_HOST=$DOCKER_HOST" -e COMPOSE_PROJECT_NAME=sql-megasamples \
+  podman exec -i -e "DOCKER_HOST=$DOCKER_HOST" -e COMPOSE_PROJECT_NAME=sql-megasamples \
     -e PYTHONPATH=. -w "$PWD" "$UPGRADE_TOOLS_CONTAINER" "$@"
 }
 # Keep the old environment for rollback; run tooling only in this container.
 ms_tool /opt/venv/bin/uv sync --locked --python /usr/local/bin/python3
 MEGASAMPLES_PY="$PWD/.venv/bin/python"
+# Prove heredoc delivery before trusting a zero exit status from Python reading stdin.
+ms_tool "$MEGASAMPLES_PY" - <<'PY_STDIN_CHECK' > "$BACKUP_DIR/stdin-check.txt"
+print("stdin-executed")
+PY_STDIN_CHECK
+test "$(cat "$BACKUP_DIR/stdin-check.txt")" = stdin-executed
 # Import the exact compared images, checking the committed receipt before any load/tag operation.
 # Image import/tagging leaves the existing containers and their volumes running unchanged.
 ms_tool "$MEGASAMPLES_PY" - "$CANDIDATE_ARCHIVE" <<'PY_IMPORT_CANDIDATE'
@@ -415,6 +420,8 @@ for engine, user, key, program, flags in [
         with (backup / (engine + ".sql")).open("w") as output:
             subprocess.run([*command, *flags], stdout=output, stderr=subprocess.PIPE, check=True)
 PY_LOGICAL_BACKUP
+test -s "$BACKUP_DIR/postgres.sql"
+test -s "$BACKUP_DIR/mysql.sql"
 chmod 600 "$BACKUP_DIR/"*.sql
 
 # Repeat the preparation gates immediately before downtime; any failure aborts here.

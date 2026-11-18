@@ -3,8 +3,11 @@ import hashlib
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
+import re
 import socket
+import subprocess
 import tarfile
 from types import SimpleNamespace
 
@@ -146,3 +149,17 @@ def test_runbook_prepares_before_downtime(gate):
     text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
     preparation, _ = text.split('# Downtime starts here.', 1)
     assert gate in preparation, f'missing pre-downtime gate: {gate}'
+
+
+def test_runbook_ms_tool_executes_heredoc(tmp_path):
+    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
+    function = re.search(r'^ms_tool\(\) \{\n.*?^\}', text, re.M | re.S)[0]
+    # Emulate exec's documented stdin behavior without requiring a container daemon.
+    fake = tmp_path / 'podman'
+    fake.write_text('#!/bin/sh\nif [ "$2" = "-i" ]; then exec python3 -; fi\n')
+    fake.chmod(0o755)
+    env = dict(os.environ, PATH=str(tmp_path) + os.pathsep + os.environ['PATH'],
+               DOCKER_HOST='unix:///unused-test-socket', UPGRADE_TOOLS_CONTAINER='fixture')
+    result = subprocess.run(['bash', '-c', function + "\nms_tool python3 - <<'PY'\nprint('stdin-executed')\nPY\n"],
+                            env=env, capture_output=True, text=True, check=True)
+    assert result.stdout == 'stdin-executed\n'
