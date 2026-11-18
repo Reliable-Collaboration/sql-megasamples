@@ -1,0 +1,101 @@
+"""DL-088 pre-stop capture: no arguments, environments or retained secrets."""
+import importlib.util
+import json
+import os
+from pathlib import Path
+
+import pytest
+
+SPEC = importlib.util.spec_from_file_location('gate_capture', Path(__file__).parents[1]/'docs/validation/quiescence.py')
+gate = importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(gate)
+
+
+def process(proc, pid=12345, comm='server', group='/libpod-test.scope', start='42', state='S'):
+    p=proc/str(pid); (p/'task'/str(pid)).mkdir(parents=True)
+    stat=f'{pid} ({comm}) {state} ' + ' '.join(['0']*18+[start])
+    (p/'stat').write_text(stat); (p/'task'/str(pid)/'stat').write_text(stat)
+    (p/'cgroup').write_text('0::'+group+'\n'); (p/'comm').write_text(comm)
+    (p/'fd').mkdir(); (p/'ns').mkdir()
+    (p/'mountinfo').write_text('1 0 0:1 / / rw - tmpfs tmpfs rw\n')
+    (p/'maps').write_text('')
+    os.symlink('/',p/'cwd'); os.symlink('/',p/'root')
+    os.symlink('net:[fixture]',p/'ns/net')
+    return p
+
+
+@pytest.fixture
+def capture_fixture(tmp_path, monkeypatch):
+    proc=tmp_path/'proc'; proc.mkdir(); cg=tmp_path/'cgroup'; cg.mkdir()
+    group=cg/'libpod-test.scope'; group.mkdir(); (group/'cgroup.procs').write_text('12345\n')
+    (group/'cgroup.threads').write_text('12345\n')
+    process(proc); process(proc,12346,'conmon','/libpod-conmon-test.scope')
+    mon=cg/'libpod-conmon-test.scope'; mon.mkdir(); (mon/'cgroup.procs').write_text('12346\n'); (mon/'cgroup.threads').write_text('12346\n')
+    data=tmp_path/'data'; data.mkdir()
+    run=tmp_path/'run'; run.mkdir()
+    snapshot=tmp_path/'snapshot.json'
+    row=dict(name='engine',id='test',pid=12345,running=True,state='running',mounts=[[str(data),'/data']])
+    snapshot.write_text(json.dumps(dict(project='project',containers=[row])))
+    monkeypatch.setattr(gate,'boot_id',lambda:'boot')
+    monkeypatch.setattr(gate,'store_identity',lambda:dict(graph=str(tmp_path/'graph'),run=str(run)))
+    def pod(*args):
+        if args[0]=='ps': return 'test'
+        if args[0]=='inspect':
+            if args[2]==gate.CAPTURE_FORMAT: return 'test|12345|12346|none|false|'
+        raise AssertionError(args)
+    monkeypatch.setattr(gate,'pod',pod)
+    return snapshot,tmp_path/'capture.json',proc,cg,data
+
+
+def test_capture_is_exclusive_private_complete_and_retains_sources(capture_fixture):
+    snap,out,proc,cg,data=capture_fixture
+    gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    saved=json.loads(out.read_text())
+    assert saved['schema']==1 and saved['complete'] and saved['boot_id']=='boot'
+    assert {r['role'] for r in saved['processes']}=={'process','conmon'}
+    assert {r['start'] for r in saved['processes']}=={'42'}
+    assert saved['sources'][0]['canonical']==str(data.resolve())
+    assert saved['sources'][0]['inode']==data.stat().st_ino
+    assert out.stat().st_mode & 0o777==0o600
+    snap.unlink()  # Capture is independent of snapshot/container retention.
+    assert json.loads(out.read_text())['containers'][0]['id']=='test'
+    with pytest.raises(FileExistsError): gate.capture(snap,out,proc=proc,cgroup_root=cg)
+
+
+def test_capture_canonicalises_cross_filesystem_alias(tmp_path):
+    alias=tmp_path/'alias'; alias.symlink_to('/dev/shm',target_is_directory=True)
+    source=gate.source_identity(alias)
+    assert source['canonical']=='/dev/shm'
+    assert source['device']==f'{os.major(alias.stat().st_dev)}:{os.minor(alias.stat().st_dev)}'
+
+
+@pytest.mark.parametrize('failure,reason', [('missing-cgroup','cgroup'),('missing-process','process'),('missing-conmon','conmon'),('missing-source','source'),('empty-project','container')])
+def test_incomplete_capture_holds(capture_fixture,monkeypatch,failure,reason):
+    snap,out,proc,cg,data=capture_fixture
+    if failure=='missing-cgroup': (cg/'libpod-test.scope/cgroup.procs').unlink()
+    if failure=='missing-process': (proc/'12345/stat').unlink()
+    if failure=='missing-conmon': (proc/'12346/stat').unlink()
+    if failure=='missing-source': data.rmdir()
+    if failure=='empty-project': snap.write_text('{"project":"project","containers":[]}')
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='HOLD'
+    assert any(reason in r['reason'] for r in report['holds'])
+    assert not json.loads(out.read_text())['complete']
+
+
+def test_shared_helper_uses_store_pid_file_not_arguments(capture_fixture,monkeypatch):
+    snap,out,proc,cg,data=capture_fixture
+    run=Path(gate.store_identity()['run']); helper=run/'networks/rootless-netns'; helper.mkdir(parents=True)
+    (helper/'rootless-netns-conn.pid').write_text('12347')
+    process(proc,12347,'slirp4netns','/rootless-netns-test.scope')
+    monkeypatch.setattr(gate,'pod',lambda *a:'test' if a[0]=='ps' else 'test|12345|12346|bridge|false|')
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='PASS'
+    assert json.loads(out.read_text())['shared_helper']['pid']==12347
+
+
+def test_missing_shared_helper_stops_for_deciders(capture_fixture,monkeypatch):
+    snap,out,proc,cg,data=capture_fixture
+    monkeypatch.setattr(gate,'pod',lambda *a:'test' if a[0]=='ps' else 'test|12345|12346|bridge|false|')
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='HOLD'
+    assert any(r['reason']=='shared helper association unresolved; return to deciders' for r in report['holds'])

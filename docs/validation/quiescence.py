@@ -280,6 +280,202 @@ def evidence(snapshot, proc=Path('/proc'), owners=None):
                 holders=holders, helpers=helpers, unreadable=unreadable, refusals=refusals)
 
 
+# DL-088 capture is independent of container lifetime and never reads cmdline/environ.
+CAPTURE_FORMAT = '{{.Id}}|{{.State.Pid}}|{{.State.ConmonPid}}|{{.HostConfig.NetworkMode}}|{{if .NetworkSettings.Ports}}true{{else}}false{{end}}|{{.NetworkSettings.SandboxKey}}'
+
+
+def pod(*args):
+    import subprocess
+    return subprocess.check_output(['podman', *args], text=True, timeout=30).strip()
+
+
+def boot_id():
+    return Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+
+
+def store_identity():
+    graph, run = pod('info', '--format', '{{.Store.GraphRoot}}|{{.Store.RunRoot}}').split('|')
+    return dict(graph=str(Path(graph).resolve(strict=True)), run=str(Path(run).resolve(strict=True)))
+
+
+def object_identity(path):
+    st = path.stat()
+    return dict(device=f'{os.major(st.st_dev)}:{os.minor(st.st_dev)}', inode=st.st_ino)
+
+
+def source_identity(path):
+    original = str(Path(path).absolute())
+    canonical = Path(original).resolve(strict=True)
+    identity = object_identity(canonical)
+    mounts = mount_rows(Path('/proc/self/mountinfo'))
+    candidates = [(len(point), root, point) for dev, root, point in mounts
+                  if dev == identity['device'] and under(str(canonical), point)]
+    if not candidates:
+        raise ValueError('source filesystem root unresolved')
+    _, root, point = max(candidates)
+    return dict(path=original, canonical=str(canonical),
+                root=root.rstrip('/') + str(canonical)[len(point.rstrip('/')):], **identity)
+
+
+def process_identity(process):
+    start = start_time(process)
+    row = dict(pid=int(process.name), start=start, comm=(process/'comm').read_text().strip(),
+               cgroups=(process/'cgroup').read_text().splitlines())
+    if start != start_time(process):
+        raise ValueError('process identity reused during inspection')
+    return row
+
+
+def cgroup_path(line):
+    fields = line.split(':', 2)
+    if len(fields) != 3 or fields[:2] != ['0', ''] or not fields[2].startswith('/'):
+        raise ValueError('required cgroup v2 membership unresolved')
+    return fields[2]
+
+
+def in_groups(lines, groups):
+    return any(under(cgroup_path(line), cgroup_path(group)) for line in lines for group in groups)
+
+
+def group_capture(line, cgroup_root):
+    path = cgroup_root / cgroup_path(line).lstrip('/')
+    identity = object_identity(path)
+    # Both files are required, including threaded cgroups; no empty-on-error fallback.
+    (path/'cgroup.procs').read_text(); (path/'cgroup.threads').read_text()
+    return dict(line=line, **identity)
+
+
+def private_write(path, data):
+    with path.open('x') as stream:
+        os.fchmod(stream.fileno(), 0o600)
+        json.dump(data, stream, indent=2)
+        stream.write('\n')
+
+
+def helper_names(comm):
+    return comm.startswith(('pasta', 'slirp4netns', 'rootlessport'))
+
+
+def network_refs(process):
+    refs = set()
+    for entry in [process/'ns/net', *list((process/'fd').iterdir())]:
+        try:
+            target = os.readlink(entry)
+            if entry.name == 'net' or target.startswith('net:[') or '/netns/' in target:
+                stat = entry.stat()
+                refs.add((stat.st_dev, stat.st_ino))
+        except FileNotFoundError:
+            if entry == process/'ns/net':
+                raise
+    return refs
+
+
+def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), extra_sources=()):
+    if output.exists():
+        raise FileExistsError(output)
+    saved = dict(schema=1, complete=False, boot_id=boot_id(), store=store_identity(),
+                 containers=[], processes=[], cgroups=[], sources=[], shared_helper=None, holds=[])
+    def hold(reason, **detail):
+        saved['holds'].append(dict(reason=reason, **detail))
+    try:
+        source = json.loads(snapshot.read_text())
+        saved['project'] = source['project']
+        saved['containers'] = source['containers']
+        if not saved['containers']:
+            hold('container capture missing')
+        listed = set(pod('ps', '-aq', '--filter', 'label=com.docker.compose.project='+saved['project']).split())
+        recorded = {r['id'] for r in saved['containers'] if r.get('id')}
+        if listed != recorded:
+            hold('container capture incomplete')
+        groups, identities, networks = {}, {}, {}
+        bridge = False
+        for row in saved['containers']:
+            if not row.get('id'):
+                row['nothing_recorded'] = 'missing container, explicitly recorded'
+                continue
+            try:
+                identity, pid, conmon, mode, published, net = pod('inspect', '-f', CAPTURE_FORMAT, row['id']).split('|')
+                if identity != row['id'] or int(pid) != row['pid']:
+                    raise ValueError('container identity changed during capture')
+                if not row['running']:
+                    row['nothing_recorded'] = 'not running before stop'
+                    continue
+                bridge |= mode == 'bridge'
+                for value, role in [(pid, 'process'), (conmon, 'conmon')]:
+                    try:
+                        p = process_identity(proc/value)
+                        p.update(role=role, container=identity)
+                        identities[p['pid']] = p
+                        for line in p['cgroups']:
+                            if not any('/libpod-'+identity+'.scope' in line or '/libpod-conmon-'+identity+'.scope' in line
+                                       for identity in recorded) and cgroup_root == Path('/sys/fs/cgroup'):
+                                raise ValueError('container-specific cgroup association unresolved')
+                            try:
+                                groups[line] = group_capture(line, cgroup_root)
+                            except (OSError, ValueError) as error:
+                                hold('cgroup capture incomplete', error=type(error).__name__)
+                    except (OSError, ValueError) as error:
+                        hold(role+' capture incomplete', container=identity, error=type(error).__name__)
+                if published == 'true' and mode == 'bridge':
+                    st = Path(net).stat()
+                    networks[identity] = (st.st_dev, st.st_ino)
+            except (OSError, ValueError) as error:
+                hold('container capture incomplete', container=row['id'], error=type(error).__name__)
+        # Capture all current cgroup members and dedicated helpers, not only PID 1.
+        found_networks = set()
+        for process in proc.iterdir():
+            if not process.name.isdigit():
+                continue
+            try:
+                lines = (process/'cgroup').read_text().splitlines()
+                comm = (process/'comm').read_text().strip()
+                belongs = in_groups(lines, groups)
+                if belongs:
+                    identities.setdefault(int(process.name), dict(process_identity(process), role='process'))
+                if helper_names(comm):
+                    try:
+                        matched = {i for i, ns in networks.items() if ns in network_refs(process)}
+                        if matched or belongs:
+                            found_networks |= matched
+                            identities[int(process.name)] = dict(process_identity(process), role='dedicated helper')
+                    except OSError:
+                        if belongs:
+                            hold('dedicated helper association unresolved', pid=int(process.name))
+            except (OSError, ValueError) as error:
+                # Missing global evidence is diagnostic unless scope is established.
+                if int(process.name) in identities:
+                    hold('process capture incomplete', pid=int(process.name), error=type(error).__name__)
+        if set(networks) != found_networks:
+            hold('dedicated helper association unresolved')
+        if bridge:
+            try:
+                pidfile = Path(saved['store']['run'])/'networks/rootless-netns/rootless-netns-conn.pid'
+                pid = pidfile.read_text().strip()
+                shared = process_identity(proc/pid)
+                if not helper_names(shared['comm']) or not any('/rootless-netns-' in g for g in shared['cgroups']):
+                    raise ValueError('store PID does not identify a rootless helper')
+                if pidfile.read_text().strip() != pid:
+                    raise ValueError('store helper changed during capture')
+                saved['shared_helper'] = dict(shared, role='shared helper', pidfile=str(pidfile))
+            except (OSError, ValueError) as error:
+                hold('shared helper association unresolved; return to deciders', error=type(error).__name__)
+        saved['processes'] = list(identities.values())
+        saved['cgroups'] = list(groups.values())
+        paths = {p for r in saved['containers'] for p, _ in r.get('mounts', [])} | set(map(str, extra_sources))
+        if not paths:
+            hold('source capture missing')
+        for path in sorted(paths):
+            try:
+                saved['sources'].append(source_identity(path))
+            except (OSError, ValueError) as error:
+                hold('source capture incomplete', error=type(error).__name__)
+    except (OSError, KeyError, ValueError) as error:
+        hold('required capture incomplete', error=type(error).__name__)
+    saved['complete'] = not saved['holds']
+    private_write(output, saved)
+    return dict(outcome='PASS' if saved['complete'] else 'HOLD', holds=saved['holds'])
+
+
 def main():
     if len(sys.argv) == 3 and sys.argv[1] == 'verify-owners':
         verify_owners(Path(sys.argv[2]))
