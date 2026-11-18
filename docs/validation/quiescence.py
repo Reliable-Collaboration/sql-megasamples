@@ -218,7 +218,7 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                 if published == 'true' and mode == 'bridge':
                     st = Path(net).stat()
                     networks[identity] = (st.st_dev, st.st_ino)
-            except (OSError, ValueError) as error:
+            except (OSError, ValueError, subprocess.SubprocessError) as error:
                 hold('container capture incomplete', container=row['id'], error=type(error).__name__)
         # Capture all current cgroup members and dedicated helpers, not only PID 1.
         found_networks = set()
@@ -270,7 +270,7 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                 saved['sources'].append(source_identity(path))
             except (OSError, ValueError) as error:
                 hold('source capture incomplete', error=type(error).__name__)
-    except (OSError, KeyError, ValueError) as error:
+    except (OSError, KeyError, ValueError, subprocess.SubprocessError) as error:
         hold('required capture incomplete', error=type(error).__name__)
     saved['complete'] = not saved['holds']
     private_write(output, saved)
@@ -444,7 +444,7 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
             raise ValueError('host initial user namespace required')
         saved = json.loads(capture_path.read_text())
         required = {'schema','complete','boot_id','store','containers','processes','cgroups','sources','shared_helper','holds','project'}
-        if not required <= saved.keys() or saved['schema'] != 1 or not saved['complete'] or not saved['containers'] or not saved['sources']:
+        if not required <= saved.keys() or saved['schema'] != 1 or not saved['complete'] or not saved['containers'] or not saved['sources'] or not saved['processes'] or not saved['cgroups']:
             hold('capture missing or incomplete')
             return report
         if saved['boot_id'] != boot_id():
@@ -578,4 +578,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except (OSError, ValueError, KeyError, IndexError, subprocess.SubprocessError) as error:
+        print(json.dumps(dict(outcome='HOLD', holds=[dict(reason='required deployment inspection unreadable', error=type(error).__name__)])))
+        sys.exit(2)

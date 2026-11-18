@@ -19,7 +19,8 @@ def fixture(tmp_path,monkeypatch):
     data=tmp_path/'data'; data.mkdir()
     saved=dict(schema=1,complete=True,boot_id='boot',project='project',store=dict(graph='graph',run='run'),
                containers=[dict(id='test',name='engine',pid=0,running=False,state='exited')],
-               processes=[],cgroups=[],sources=[gate.source_identity(data)],shared_helper=None,holds=[])
+               processes=[dict(pid=999999999,start='42',comm='exited-server',cgroups=['0::/libpod-original.scope'],role='process')],
+               cgroups=[dict(line='0::/libpod-original.scope',device='0:1',inode=1)],sources=[gate.source_identity(data)],shared_helper=None,holds=[])
     monkeypatch.setattr(gate,'boot_id',lambda:'boot')
     monkeypatch.setattr(gate,'store_identity',lambda:dict(graph='graph',run='run'))
     monkeypatch.setattr(gate,'caller_uid_mappings',lambda:[(0,0,4294967295)])
@@ -158,3 +159,13 @@ def test_reused_cgroup_does_not_attribute_its_new_members(fixture):
     assert report['outcome']=='HOLD'
     assert 'recorded cgroup identifier reused' in reasons(report,'holds')
     assert 'live deployment cgroup task' not in reasons(report,'refusals')
+
+
+@pytest.mark.parametrize('field',['processes','cgroups'])
+def test_empty_required_capture_is_never_pass(fixture,field):
+    saved,proc,cg,data,path,verify=fixture
+    old=saved[field];saved[field]=[]
+    report=verify()
+    assert report['outcome']=='HOLD'
+    assert 'capture missing or incomplete' in reasons(report,'holds')
+    saved[field]=old;assert verify()['outcome']=='PASS'
