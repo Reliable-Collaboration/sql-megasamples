@@ -93,6 +93,11 @@
       "url": "https://www.sqlite.org/omitted.html",
       "read_at": "2026-11-18T10:56:21Z",
       "use": "SQLite has file permissions rather than server GRANT/REVOKE account enforcement"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/refman/9.7/en/stored-objects-security.html",
+      "read_at": "2026-11-18T11:29:48Z",
+      "use": "Definer-context views execute with owner privileges; direct EXECUTE denial does not prove their helpers cannot change session state"
     }
   ]
 }

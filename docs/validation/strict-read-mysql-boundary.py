@@ -70,3 +70,5 @@ receipt = {
                 'https://dev.mysql.com/doc/refman/9.7/en/privileges-provided.html']}
 Path('build/strict-read/mysql-boundary.json').write_text(json.dumps(receipt, indent=2) + '\n')
 print('Passed: native write denials; Failed: strict named-lock denial; Unsupported: enforcing it using stored-routine grants')
+
+raise SystemExit(1 if receipt['strict_read_builtin_denial']['status']=='Failed' else 0)

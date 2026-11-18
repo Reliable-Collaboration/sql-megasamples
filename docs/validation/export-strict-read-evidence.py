@@ -44,6 +44,8 @@ for name in expected:
             'all_complete_table_fingerprints_equal_baseline':True,'receipt':file_record(path)}
 steps=read('final-validation-steps.json')
 assert steps and all(row['status']=='Passed' for row in steps.values())
+control_checks={name:read(name+'.json') for name in ['api-process-stop','literal-password-log-audit']}
+assert all(v['status']=='Passed' for v in control_checks.values())
 restoration=read('restoration.json')
 assert restoration['status']=='Passed'
 isolation=read('isolation.json')
@@ -99,6 +101,12 @@ mysql_boundary=read('mysql-boundary.json')
 assert mysql_boundary['write_denials']['status']=='Passed'
 assert mysql_boundary['strict_read_builtin_denial']['status']=='Failed'
 assert mysql_boundary['builtin_function_read_only_enforcement']['status']=='Unsupported'
+boundary_commands=read('final-boundary-probes.json')
+assert all(v['status']=='Failed' and v['returncode']==1 for v in boundary_commands.values())
+mysql_view_state=read('mysql-view-state.json')
+assert mysql_view_state['strict_read_view_session_state']['status']=='Failed'
+extra_reads={key:read(filename) for key,filename in [('parent_primary_index','parent-index-read.json'),('foreign_key_primary_index','foreign-key-primary-index.json')]}
+assert all(row['status']=='Passed' for row in extra_reads.values())
 generated=read('generated-routines.json')
 assert generated['status']=='Passed'
 assert all(v['status']=='Passed' and v['demo_executable']==0 for v in generated['results'].values())
@@ -123,9 +131,11 @@ receipt={
     'repository_gate':{'status':'Passed','summary':repository_summary.group(0),'log':file_record(repository_log)},
     'canonical_matrices':matrices,'native_read_fingerprints':native_reads,'checkpoints':checkpoints,'final_validation_steps':steps,
     'writer_scenarios':writers,'image_checks':images,'rotation':read('rotation-results.json'),
-    'mysql_builtin_boundary':mysql_boundary,
+    'boundary_probe_commands':boundary_commands,'mysql_candidate_boundary':read('mysql-boundary-candidate.json'),'mysql_candidate_view_session_state':read('mysql-view-state-candidate.json'),
+    'mysql_builtin_boundary':mysql_boundary,'mysql_read_view_session_state':mysql_view_state,
+    'additional_read_diagnostics':{'reads':extra_reads,'original_mysql_foreign_key_plan':read('long-read-plan-complete.json')},
     'generated_routine_checks':generated,
-    'restoration':restoration,'restoration_harness':read('restore-harness.json'),'restoration_transition':read('restore-transition.json'),
+    'control_and_log_checks':control_checks,'restoration':restoration,'restoration_harness':read('restore-harness.json'),'restoration_transition':read('restore-transition.json'),
     'isolation':isolation,'canaries':canaries,'container_log_canaries':log_canaries,
     'credential_output_rule':{'status':'Failed','reason':'Repository SQL and Dockerfile source inspections displayed published bootstrap credentials; no values are repeated here.'},
     'scope':{'live_cutover':'Not run','DataIntent_suites':'Not run','Docker_BuildKit_and_other_architectures':'Not run',
