@@ -670,6 +670,7 @@ fi
 EXITED_RECEIPT="$EVIDENCE_DIR/stop-exited-$TEARDOWN_ATTEMPT.json"
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" "$EXITED_RECEIPT"
 save_context
+# BEGIN cold-copy continuation
 # Retain the final quiesced UI workspace too, including changes made during preparation.
 if podman container exists megasamples-cloudbeaver; then
   podman cp megasamples-cloudbeaver:/opt/cloudbeaver/workspace "$BACKUP_DIR/cloudbeaver-workspace-final"
@@ -695,6 +696,7 @@ bash -c 'set -o pipefail; podman unshare tar --sort=name --numeric-owner --forma
 # Record and retain old anonymous volumes. Do not run down -v, reset, prune or clean-all.
 podman volume ls --format json > "$BACKUP_DIR/volumes.json"
 
+# END cold-copy continuation
 # Set all four NEW passwords only after old-server backups are complete.
 # The original .env stays private in BACKUP_DIR; no secret value is printed or exported.
 umask 077
@@ -768,8 +770,8 @@ pass, with a dated receipt. A failed or inconclusive check keeps the procedure s
 
 The guards save the actual Compose status beside each log as `*.log.exit-code` before exiting.
 To perform the four checks after that shell exits, start a fresh Bash maintenance shell, set
-`BACKUP_DIR` to the exact retained directory from the receipt, then run
-`. "$BACKUP_DIR/resume-context.bash"`. This restores the original directory, selected socket,
+`CONTEXT_FILE` to the exact saved context path from the receipt, then run
+`. "$CONTEXT_FILE"` and the resume socket gate in “Roll back”. This restores the original directory, selected socket,
 tooling function and non-secret paths/IDs without rerunning preparation or password generation.
 It does not start, stop or restore a container. Inspect the saved exit status/log and carry out
 all four checks before resuming at the specified block. Never source `.env` for recovery.
@@ -1124,6 +1126,7 @@ else
 fi
 EXITED_RECEIPT="$ATTEMPT_DIR/rollback-stop-exited-$TEARDOWN_ATTEMPT.json"
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" "$EXITED_RECEIPT" --phase candidate-teardown
+# BEGIN pre-down continuation
 # Snapshot again immediately before down, with stopped PIDs/exit codes and mounts.
 TEARDOWN_PHASE=rollback-down
 TEARDOWN_SNAPSHOT="$ATTEMPT_DIR/rollback-down-before-$TEARDOWN_ATTEMPT.json"
@@ -1143,6 +1146,8 @@ else
 fi
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
   "$ATTEMPT_DIR/rollback-down-exited-$TEARDOWN_ATTEMPT.json" --phase candidate-teardown --removed-with "$EXITED_RECEIPT"
+# END pre-down continuation
+# BEGIN restore continuation
 ROLLBACK_BRANCH=$(cat "$BACKUP_DIR/rollback-branch.txt")
 git switch "$ROLLBACK_BRANCH"
 test "$(git rev-parse HEAD)" = "$(cat "$BACKUP_DIR/original-commit.txt")"
@@ -1170,6 +1175,7 @@ while read -r reference saved; do
     *) podman image tag "$saved" "$reference" ;;
   esac
 done < "$BACKUP_DIR/original-tool-images.txt"
+# END restore continuation
 ```
 
 For exact preservation of application writes, create four **new** named rollback volumes (the three engine data directories and SQLite shared files), populate them from the cold copies while no database has them open, and attach them to the original image IDs. The backup loop resolves the actual source of each stopped data mount and copies it without changing ownership. Both backup and restore run `cp -a` inside the native rootless user namespace ([unshare reference](https://docs.podman.io/en/latest/markdown/podman-unshare.1.html), read 2026-11-16 21:05 UTC); this command is unavailable through a remote Podman client. The cold files may require `podman unshare` to inspect because their subordinate UID/GID ownership is retained. Use a Compose override, leaving original volumes untouched:

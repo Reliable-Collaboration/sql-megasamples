@@ -120,3 +120,42 @@ def test_scanner_failure_is_saved_without_exiting_strict_shell(tmp_path):
         assert next(tmp_path.glob('process-evidence-*.exit-code')).read_text() == '1\n'
     finally:
         server.close()
+
+
+@pytest.mark.parametrize('phase', ['stop', 'rollback-stop', 'rollback-down'])
+def test_actual_continuation_in_fresh_strict_shell(tmp_path,phase):
+    server = context(tmp_path,phase)
+    (tmp_path/'rollback-branch.txt').write_text('fixture-branch\n')
+    (tmp_path/'original-commit.txt').write_text('fixture-commit\n')
+    (tmp_path/'rollback-image-ids.txt').write_text('')
+    (tmp_path/'original-tool-images.txt').write_text('')
+    point = {'stop':'cold-copy','rollback-stop':'pre-down','rollback-down':'restore'}[phase]
+    stubs = r'''
+python3() { printf 'python %s\n' "$*" >> "$EVIDENCE_DIR/continuation-calls"; }
+podman() {
+ printf 'podman %s\n' "$*" >> "$EVIDENCE_DIR/continuation-calls"
+ case "$1 $2" in
+ 'container exists') return 1;;
+ 'inspect -f') printf /fixture/mount;;
+ esac
+}
+docker() { printf 'docker %s\n' "$*" >> "$EVIDENCE_DIR/continuation-calls"; }
+git() { printf 'git %s\n' "$*" >> "$EVIDENCE_DIR/continuation-calls"; if test "$1" = rev-parse; then echo fixture-commit; fi; }
+cp() { printf 'cp %s\n' "$*" >> "$EVIDENCE_DIR/continuation-calls"; }
+mv() { printf 'mv %s\n' "$*" >> "$EVIDENCE_DIR/continuation-calls"; }
+bash() { printf 'bash digest\n' >> "$EVIDENCE_DIR/continuation-calls"; }
+'''
+    try:
+        script = '. "$CONTEXT"\n' + stubs
+        script += block('# BEGIN resume socket gate\n','# END resume socket gate')
+        script += block('# BEGIN four checks\n','# END four checks')
+        script += block('# BEGIN continuation dispatch\n','# END continuation dispatch')
+        script += '\nCONFIG_DIR="$ATTEMPT_DIR/configuration"\n'
+        script += block('# BEGIN ' + point + ' continuation\n','# END ' + point + ' continuation')
+        result = subprocess.run(['bash','-eu','-c',script],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},capture_output=True,text=True)
+        assert result.returncode == 0, result.stderr
+        calls = (tmp_path/'continuation-calls').read_text()
+        assert {'stop':'unshare cp -a','rollback-stop':'docker compose -p sql-megasamples -f compose.yaml down',
+                'rollback-down':'git switch fixture-branch'}[phase] in calls
+    finally:
+        server.close()
