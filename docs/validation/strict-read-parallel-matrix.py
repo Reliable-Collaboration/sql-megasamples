@@ -31,6 +31,10 @@ CFG=config.load()
 SECRETS=config.passwords()
 
 
+def container(engine):
+    return os.environ.get('STRICT_READ_'+engine.upper()+'_CONTAINER','megasamples-'+engine)
+
+
 def command(*args):
     p=subprocess.run(['docker',*args],text=True,capture_output=True)
     assert p.returncode==0, p.stderr[:300]
@@ -38,7 +42,7 @@ def command(*args):
 
 
 def pg_query(sql, database='postgres', binary=False):
-    with client('postgres','megasamples-postgres','demo',SECRETS['DEMO_PASSWORD']) as cmd:
+    with client('postgres',container('postgres'),'demo',SECRETS['DEMO_PASSWORD']) as cmd:
         p=subprocess.run([*cmd,'-X','-d',database,'-v','ON_ERROR_STOP=1','-qAt','-F','\t'],
             input=sql.encode() if binary else sql,capture_output=True,text=not binary)
     if p.returncode:
@@ -47,7 +51,7 @@ def pg_query(sql, database='postgres', binary=False):
 
 
 def my_query(sql, database=None, raw=True, **kw):
-    with client('mysql','megasamples-mysql','demo',SECRETS['DEMO_PASSWORD']) as cmd:
+    with client('mysql',container('mysql'),'demo',SECRETS['DEMO_PASSWORD']) as cmd:
         p=subprocess.run([*cmd,'--batch','-N',*(['--raw'] if raw else []),*(['-D',database] if database else [])],
             input=sql,text=True,capture_output=True)
     if p.returncode:
@@ -104,7 +108,7 @@ def worker(engine,name):
 def main():
     engine=sys.argv[1]
     assert command('info','--format','{{.DockerRootDir}}').startswith(str(ROOT.parent/'sql-megasamples-upgrade-env/'))
-    image=command('inspect','--format','{{.Image}}','megasamples-'+engine)
+    image=command('inspect','--format','{{.Image}}',container(engine))
     sqlite_hashes={}
     with session():
         if engine=='postgres':
