@@ -1529,7 +1529,12 @@ candidate capture. The command below independently rechecks each original data
 object and writes explicit bind overrides with `create_host_path: false`; it
 cannot create an empty replacement at a missing path. It ignores process/boot
 quiescence because this operation is an original restart, while requiring exact
-current canonical data identity. A changed restoration target, surviving helper,
+current canonical data identity. Candidate mount evidence must independently
+show no overlap with those original data roots; a reused SQLite shared volume,
+for example, is ineligible for this unchanged-data route. Directory identity alone
+does not prove unchanged contents. Keep all other writers prevented and retain the
+candidate mount history; unavailable mount evidence needs coordinator verification.
+A changed restoration target, surviving helper,
 or unreadable copy evidence does not bar this route. Changed original data must
 be resolved independently; never start an old binary on candidate data.
 
@@ -1538,7 +1543,8 @@ be resolved independently; never start an old binary on candidate data.
 : "${ORIGINAL_CAPTURE:?Set retained original pre-upgrade data capture}"
 RECOVERY_ID=$(date -u +%Y%m%dT%H%M%S%N)
 python3 "$EVIDENCE_DIR/quiescence.py" original-override "$ORIGINAL_CAPTURE" \
-  "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" --upgrade-id "$UPGRADE_ID"
+  "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" --upgrade-id "$UPGRADE_ID" \
+  --candidate-capture "$QUIESCENCE_CAPTURE"
 python3 "$UPGRADE_HELPER" snapshot "$ATTEMPT_DIR/unchanged-before-$RECOVERY_ID.json" \
   --project sql-megasamples --phase restart-before \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite

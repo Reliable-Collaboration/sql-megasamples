@@ -187,13 +187,18 @@ def test_original_volume_restart_override_does_not_require_copy_quiescence(captu
           dict(name='megasamples-mysql',id='my',mounts=[[str(dirs['my']),'/var/lib/mysql']]),
           dict(name='megasamples-sqlite',id='sq',mounts=[[str(dirs['sq']),'/data'],[str(dirs['shared']),'/shared']])]
     out.write_text(json.dumps(dict(complete=True,boot_id='before-reboot',containers=rows,sources=[gate.source_identity(p) for p in dirs.values()])))
+    candidate=data.parent/'candidate.json';candidate.write_text(json.dumps(dict(containers=[dict(mounts=[])])))
     override=data.parent/'unchanged.json'
-    gate.original_override(out,override,'fixture')
+    gate.original_override(out,override,'fixture',candidate)
     saved=json.loads(override.read_text())
     assert saved['services']['postgres']['volumes'][0]['source']==str(dirs['pg'])
     assert saved['services']['sqlite']['volumes'][1]['source']==str(dirs['shared'])
     assert saved['services']['mysql']['image']=='localhost/sql-megasamples-mysql:rollback-fixture'
     assert all(not v['bind']['create_host_path'] for row in saved['services'].values() for v in row['volumes'])
+    candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(dirs['pg']),'/candidate-data']])])))
+    with pytest.raises(ValueError,match='candidate used original data'):
+        gate.original_override(out,data.parent/'used-by-candidate.json','fixture',candidate)
+    candidate.write_text(json.dumps(dict(containers=[dict(mounts=[])])))
     dirs['pg'].rename(data.parent/'retained-pg');dirs['pg'].mkdir()
     with pytest.raises(ValueError,match='unchanged original data identity'):
-        gate.original_override(out,data.parent/'wrong.json','fixture')
+        gate.original_override(out,data.parent/'wrong.json','fixture',candidate)

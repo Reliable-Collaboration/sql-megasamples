@@ -307,7 +307,7 @@ def extend_capture(capture_path, output, snapshot=None, extra_sources=()):
     private_write(output, saved)
 
 
-def original_override(capture_path, output, upgrade_id):
+def original_override(capture_path, output, upgrade_id, candidate_capture):
     """Restart only unchanged original data; this is not a copy/restore gate.
 
     Process/boot quiescence is deliberately inapplicable. Each actual original
@@ -319,6 +319,10 @@ def original_override(capture_path, output, upgrade_id):
     saved = json.loads(capture_path.read_text())
     if not saved.get('complete'):
         raise ValueError('unchanged original data identity requires complete original evidence')
+    candidates = json.loads(candidate_capture.read_text()).get('containers')
+    if not candidates:
+        raise ValueError('independent candidate mount evidence required for unchanged originals')
+    candidate_sources = [source_identity(src) for row in candidates for src, _ in row.get('mounts', [])]
     services = {}
     for service, destinations in [('postgres', ['/var/lib/postgresql']), ('mysql', ['/var/lib/mysql']), ('sqlite', ['/data','/shared'])]:
         rows = [r for r in saved['containers'] if r['name'] == 'megasamples-'+service]
@@ -332,6 +336,10 @@ def original_override(capture_path, output, upgrade_id):
             identity = source_identity(sources[0])
             if not any(identity == row for row in saved['sources']):
                 raise ValueError('unchanged original data identity differs from retained evidence')
+            if any(row['device'] == identity['device'] and
+                   (under(row['root'],identity['root']) or under(identity['root'],row['root']))
+                   for row in candidate_sources):
+                raise ValueError('candidate used original data; unchanged-data recovery unavailable for that source')
             volumes.append(dict(type='bind',source=identity['canonical'],target=destination,
                                 bind=dict(create_host_path=False)))
         services[service] = dict(image='localhost/sql-megasamples-'+service+':rollback-'+upgrade_id,
@@ -595,7 +603,7 @@ def main():
     cap.add_argument('--data-only', action='store_true')
     ext = sub.add_parser('extend'); ext.add_argument('capture',type=Path); ext.add_argument('output',type=Path)
     ext.add_argument('--snapshot',type=Path); ext.add_argument('--source',action='append',default=[])
-    original = sub.add_parser('original-override'); original.add_argument('capture',type=Path); original.add_argument('output',type=Path); original.add_argument('--upgrade-id',required=True)
+    original = sub.add_parser('original-override'); original.add_argument('capture',type=Path); original.add_argument('output',type=Path); original.add_argument('--upgrade-id',required=True); original.add_argument('--candidate-capture',type=Path,required=True)
     source = sub.add_parser('check-source'); source.add_argument('capture',type=Path); source.add_argument('path',type=Path)
     check = sub.add_parser('verify'); check.add_argument('capture', type=Path)
     diagnostic = sub.add_parser('diagnostic'); diagnostic.add_argument('capture', type=Path)
@@ -606,7 +614,7 @@ def main():
         extend_capture(args.capture,args.output,args.snapshot,args.source)
         report = dict(outcome='PASS', assurance='Sources added; verify remains mandatory before use')
     elif args.command == 'original-override':
-        original_override(args.capture,args.output,args.upgrade_id)
+        original_override(args.capture,args.output,args.upgrade_id,args.candidate_capture)
         report = dict(outcome='PASS', assurance='Original data identities match; no copy or restoration authorized')
     elif args.command == 'check-source':
         check_source(args.capture,args.path)
