@@ -119,3 +119,36 @@ def test_exact_original_restart_eligibility_and_route(down,monkeypatch,change):
         with pytest.raises(ValueError,match='original restart'):
             gate.original_eligible(snap,'project')
         assert gate.rollback_route(snap,'project')['route']!= 'original-restart'
+
+
+def test_down_missing_identifier_is_not_empty_evidence(down):
+    snap,out,proc,cg,data=down
+    saved=json.loads(snap.read_text());saved['containers'][0].update(id=None,state='missing');snap.write_text(json.dumps(saved))
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)
+    assert report['outcome']=='HOLD'
+    assert any(r['reason']=='down missing container identifier evidence unavailable' for r in report['holds'])
+
+
+def test_down_shared_helper_appearing_after_absent_pidfile_is_checked(down,monkeypatch):
+    snap,out,proc,cg,data=down
+    original=gate.pod
+    monkeypatch.setattr(gate,'pod',lambda *a:'test|0|0|bridge|false|' if a[0]=='inspect' and a[2]==gate.CAPTURE_FORMAT else original(*a))
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
+    pidfile=Path(gate.store_identity()['run'])/'networks/rootless-netns/rootless-netns-conn.pid';pidfile.parent.mkdir(parents=True)
+    pidfile.write_text('12349');process(proc,12349,'pasta.avx2','/rootless-netns-store.scope')
+    monkeypatch.setattr(gate,'remaining_consumers',lambda *a:[])
+    report=gate.verify(out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='REFUSE'
+    assert any(r['reason']=='shared helper without verified consumer' for r in report['refusals'])
+    monkeypatch.setattr(gate,'remaining_consumers',lambda *a:['other'])
+    assert gate.verify(out,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+
+
+def test_down_capture_requires_one_evidence_row_per_container(down):
+    snap,out,proc,cg,data=down
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
+    saved=json.loads(out.read_text());saved['containers'].append(dict(saved['containers'][0],id='second'))
+    out.write_text(json.dumps(saved))
+    report=gate.verify(out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='HOLD'
+    assert any(r['reason']=='capture missing or incomplete' for r in report['holds'])

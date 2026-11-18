@@ -672,6 +672,17 @@ def remaining_consumers(saved, proc):
     return result
 
 
+def complete_capture(saved):
+    required = {'schema','complete','boot_id','store','containers','processes','cgroups','sources','shared_helper','holds','project'}
+    if not required <= saved.keys() or saved['schema'] != 1 or not saved['complete'] or not saved['containers'] or not saved['sources']:
+        return False
+    if saved.get('kind') == 'down-state':
+        expected = [row.get('id') for row in saved['containers']]
+        recorded = [row.get('id') for row in saved.get('down_evidence', [])]
+        return None not in expected and len(expected) == len(set(expected)) and sorted(expected) == sorted(recorded)
+    return bool(saved['processes'] and saved['cgroups'])
+
+
 def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), phase_eligible=True):
     report = dict(outcome='HOLD', assurance='The recorded deployment stopped using the exact recorded data; bounded by readable required evidence. This does not prove the host quiet or prevent new writers.',
                   refusals=[], holds=[], limitations=[], shared_consumers=[], counts={})
@@ -681,9 +692,8 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
         if caller_uid_mappings() != [(0,0,4294967295)]:
             raise ValueError('host initial user namespace required')
         saved = json.loads(capture_path.read_text())
-        required = {'schema','complete','boot_id','store','containers','processes','cgroups','sources','shared_helper','holds','project'}
         down = saved.get('kind') == 'down-state'
-        if not required <= saved.keys() or saved['schema'] != 1 or not saved['complete'] or not saved['containers'] or not saved['sources'] or (not down and (not saved['processes'] or not saved['cgroups'])) or (down and not saved.get('down_evidence')):
+        if not complete_capture(saved):
             hold('capture missing or incomplete')
             return report
         if saved['boot_id'] != boot_id():
@@ -724,7 +734,22 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
                 hold('source identity changed')
         except (OSError, ValueError):
             hold('source identity changed')
-    for row in saved['processes'] + ([saved['shared_helper']] if saved['shared_helper'] else []):
+    shared = saved['shared_helper']
+    if not shared and saved.get('shared_helper_absence'):
+        pidfile = Path(saved['shared_helper_absence']['pidfile'])
+        try:
+            pid = pidfile.read_text().strip()
+            shared = process_identity(proc/pid)
+            if not helper_names(shared['comm']) or not any('/rootless-netns-' in g for g in shared['cgroups']):
+                raise ValueError('store helper association unresolved')
+            if pidfile.read_text().strip() != pid:
+                raise ValueError('store helper changed')
+            shared['role'] = 'shared helper'
+        except FileNotFoundError:
+            if pidfile.exists(): hold('required association unresolved')
+        except (OSError, ValueError):
+            hold('required association unresolved')
+    for row in saved['processes'] + ([shared] if shared else []):
         p = proc/str(row['pid'])
         try:
             current = process_identity(p)
@@ -806,7 +831,7 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
 
 def historical_applicability(saved, current, proc, cgroup_root):
     """DL-089: history cannot replace the current record or recycle identities."""
-    if not saved.get('complete') or saved.get('boot_id') != boot_id() or saved.get('store') != store_identity():
+    if not complete_capture(saved) or saved.get('boot_id') != boot_id() or saved.get('store') != store_identity():
         return False
     ids = {r['id'] for r in current['containers'] if r.get('id')}
     generation = any(r.get('id') in ids for r in saved.get('containers', []))
