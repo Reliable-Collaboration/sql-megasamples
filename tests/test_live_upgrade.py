@@ -56,26 +56,66 @@ def test_archive_checks_configuration_bytes_and_single_image(tmp_path):
 def test_save_load_retags_and_checks_ids(tmp_path, monkeypatch):
     ids = {tag: hashlib.sha256(content).hexdigest() for tag, content in [('localhost/a:old', b'a'), ('localhost/b:old', b'b')]}
     (tmp_path / 'rollback-image-ids.txt').write_text(''.join(f'{tag} sha256:{digest} []\n' for tag, digest in ids.items()))
+    store = {}  # Loading must establish image identity; tagging must preserve it.
     calls = []
     def pod(*args):
         calls.append(args)
         if args[0] == 'save':
             archive(Path(args[args.index('-o') + 1]), [b'a' if args[-1].removeprefix('sha256:') == ids['localhost/a:old'] else b'b'])
-        if args[:2] == ('image', 'inspect'):
-            return 'sha256:' + ids[args[-1]]
+        elif args[0] == 'load':
+            with tarfile.open(args[-1]) as src:
+                for entry in json.load(src.extractfile('manifest.json')):
+                    image = hashlib.sha256(src.extractfile(entry['Config']).read()).hexdigest()
+                    store[image] = image
+                    for tag in entry['RepoTags']:
+                        store[tag] = image
+        elif args[:2] == ('image', 'tag'):
+            store[args[-1]] = store[args[-2].removeprefix('sha256:')]
+        elif args[:2] == ('image', 'inspect'):
+            return 'sha256:' + store[args[-1]]
         return ''
     monkeypatch.setattr(upgrade, 'pod', pod)
     upgrade.save_images(tmp_path)
     upgrade.load_images(tmp_path)
+    assert {tag: store[tag] for tag in ids} == ids
     assert len([c for c in calls if c[0] == 'save']) == 2
-    assert len([c for c in calls if c[0] == 'load']) == 2
-    assert {c[-1] for c in calls if c[:2] == ('image', 'tag')} == set(ids)
-    # Corruption must refuse the entire set before loading even its first image.
-    next(tmp_path.glob('rollback-image-*.tar')).write_bytes(b'corrupt')
+    # A wrong restoration must be detected, even if both tags exist.
+    def wrong(*args):
+        if args[:2] == ('image', 'tag'):
+            return pod('image', 'tag', next(iter(ids.values())), args[-1])
+        return pod(*args)
+    monkeypatch.setattr(upgrade, 'pod', wrong)
+    with pytest.raises(ValueError, match='tag-to-ID'):
+        upgrade.load_images(tmp_path)
+    # Corrupt the LATER archive: even the first must not be loaded.
+    (tmp_path / upgrade.archive_name(list(ids.values())[1])).write_bytes(b'corrupt')
     calls.clear()
     with pytest.raises(ValueError, match='digest'):
         upgrade.load_images(tmp_path)
     assert not calls
+
+
+def test_retained_live_phase_a_layout(tmp_path, monkeypatch):
+    layout = json.loads((Path(__file__).parent / 'fixtures/live-phase-a-layout.json').read_text())
+    rows, saved = [], []
+    for entry in layout['archives']:
+        path = tmp_path / entry['archive']
+        image, = archive(path, [entry['service'].encode()])
+        tag = 'localhost/sql-megasamples-' + entry['service'] + ':rollback-20261118T133807Z'
+        rows.append(f'{tag} sha256:{image} []')
+        saved.append(dict(entry, image_id='sha256:' + image, original_tag=tag,
+                          sha256=upgrade.sha(path)))
+    (tmp_path / 'rollback-image-ids.txt').write_text('\n'.join(rows) + '\n')
+    (tmp_path / 'rollback-images.sha256').write_text(layout['checksum_file'])
+    (tmp_path / 'phase-a-resume-receipt.json').write_text(json.dumps({'saved_images': saved}))
+    before = {p.name: p.read_bytes() for p in tmp_path.iterdir()}
+    assert len(upgrade.check_images(tmp_path)) == len(saved)
+    assert before == {p.name: p.read_bytes() for p in tmp_path.iterdir()}
+    # Receipt cannot silently substitute another tag or an unchecked archive.
+    saved[-1]['original_tag'] = saved[0]['original_tag']
+    (tmp_path / 'phase-a-resume-receipt.json').write_text(json.dumps({'saved_images': saved}))
+    with pytest.raises(ValueError):
+        upgrade.check_images(tmp_path)
 
 
 def test_port_precheck_refuses_own_listener():
@@ -191,3 +231,34 @@ def test_runbook_context_restores_fresh_maintenance_shell(tmp_path):
                             capture_output=True, text=True, check=True)
     assert result.stdout == env['UPGRADE_ID']
     assert (tmp_path / 'resume-context.bash').stat().st_mode & 0o777 == 0o600
+
+
+@pytest.mark.parametrize('engine,reply,expected', [
+    ('postgres', b'S', 'PostgreSQL'), ('postgres', b'N', 'PostgreSQL'),
+    ('mysql', b'\x0a\x00\x00\x00\x0ascratch\x00x', 'scratch'),
+    ('postgres', b'X', None), ('postgres', b'', None),
+    ('mysql', b'\x0a\x00', None),
+    ('mysql', b'\x03\x00\x00\x00\xffxx', None),
+    ('mysql', b'\x03\x00\x00\x00\x09x\x00', None),
+])
+def test_forwarded_protocol_socket_fixture(engine, reply, expected):
+    import threading
+    with socket.socket() as listener:
+        listener.bind(('127.0.0.1', 0))
+        listener.listen()
+        def serve():
+            with listener.accept()[0] as stream:
+                if engine == 'postgres':
+                    assert upgrade.receive(stream, 8) == bytes.fromhex('0000000804d2162f')
+                stream.sendall(reply)
+        worker = threading.Thread(target=serve)
+        worker.start()
+        try:
+            if expected:
+                assert expected in upgrade.forwarded_protocol(engine, *listener.getsockname())
+            else:
+                with pytest.raises(ValueError):
+                    upgrade.forwarded_protocol(engine, *listener.getsockname())
+        finally:
+            worker.join(timeout=5)
+            assert not worker.is_alive()

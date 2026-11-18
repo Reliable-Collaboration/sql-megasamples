@@ -74,20 +74,45 @@ def save_images(backup):
     check_images(backup)
 
 
-def check_images(backup):
-    rows = image_rows(backup)
-    expected_files = {archive_name(image) for _, image in rows}
+def image_archives(backup, rows):
+    """Return verified mapping inputs without rewriting retained backup receipts."""
     checksums = {}
     for line in (backup / 'rollback-images.sha256').read_text().splitlines():
         digest, name = line.split()
-        if name in checksums or name not in expected_files:
-            raise ValueError('archive digest list differs from image mapping')
+        if name in checksums or not re.fullmatch('[0-9a-f]{64}', digest):
+            raise ValueError('invalid or duplicate archive digest')
         checksums[name] = digest
-    if checksums.keys() != expected_files:
-        raise ValueError('missing archive digest')
-    for _, image in rows:
-        path = backup / archive_name(image)
-        if sha(path) != checksums[path.name]:
+    if set(checksums) == {'rollback-images.tar'}:
+        # First live run: aggregate is malformed. Its checksum is NEVER used to
+        # authorize a load. The phase-A correction receipt pins each replacement.
+        saved = json.loads((backup / 'phase-a-resume-receipt.json').read_text())['saved_images']
+        mapped, archives = [], {}
+        for entry in saved:
+            tag, image = entry['original_tag'], entry['image_id'].removeprefix('sha256:')
+            service = entry['service']
+            if not re.fullmatch('[a-z0-9-]+', service):
+                raise ValueError('invalid service in phase-A receipt')
+            name = 'rollback-image-' + service + '.tar'
+            if Path(entry['archive']).name != name or name in archives:
+                raise ValueError('invalid or duplicate phase-A archive')
+            if not re.fullmatch('[0-9a-f]{64}', entry['sha256']):
+                raise ValueError('invalid phase-A digest')
+            mapped.append((tag, image))
+            archives[name] = (image, entry['sha256'])
+        if len(mapped) != len(rows) or set(mapped) != set(rows):
+            raise ValueError('phase-A receipt differs from rollback mapping')
+        return archives
+    expected = {archive_name(image): image for _, image in rows}
+    if checksums.keys() != expected.keys():
+        raise ValueError('archive digest list differs from image mapping')
+    return {name: (image, checksums[name]) for name, image in expected.items()}
+
+
+def check_images(backup):
+    rows = image_rows(backup)
+    for name, (image, digest) in image_archives(backup, rows).items():
+        path = backup / name
+        if sha(path) != digest:
             raise ValueError('archive digest mismatch: ' + path.name)
         check_archive(path, image)
     return rows
@@ -95,8 +120,8 @@ def check_images(backup):
 
 def load_images(backup):
     rows = check_images(backup)  # Validate the WHOLE set before the first load.
-    for image in dict.fromkeys(image for _, image in rows):
-        pod('load', '-i', str(backup / archive_name(image)))
+    for name in image_archives(backup, rows):
+        pod('load', '-i', str(backup / name))
     for tag, image in rows:
         pod('image', 'tag', 'sha256:' + image, tag)
     for tag, image in rows:
