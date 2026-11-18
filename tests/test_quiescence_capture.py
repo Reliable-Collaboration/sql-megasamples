@@ -113,3 +113,15 @@ def test_extend_preserves_prestop_processes_and_adds_only_new_sources(capture_fi
     assert after['sources']==before['sources']+[gate.source_identity(source)]
     assert json.loads(out.read_text())==before
     assert extended.stat().st_mode & 0o777==0o600
+
+
+def test_copy_paths_must_match_retained_canonical_identity(capture_fixture):
+    snap,out,proc,cg,data=capture_fixture
+    gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    gate.check_source(out,data)
+    other=data.parent/'other';other.mkdir()
+    with pytest.raises(ValueError,match='copy path differs from captured source'):
+        gate.check_source(out,other)
+    original=data.parent/'retained-data'; data.rename(original);data.mkdir()
+    with pytest.raises(ValueError,match='copy path differs from captured source'):
+        gate.check_source(out,data)

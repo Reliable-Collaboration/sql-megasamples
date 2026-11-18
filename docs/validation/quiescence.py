@@ -293,6 +293,16 @@ def extend_capture(capture_path, output, snapshot=None, extra_sources=()):
     private_write(output, saved)
 
 
+def check_source(capture_path, path):
+    saved = json.loads(capture_path.read_text())
+    if not saved.get('complete') or saved['boot_id'] != boot_id() or saved['store'] != store_identity():
+        raise ValueError('HOLD: missing, incomplete or stale pre-stop capture')
+    identity = source_identity(path)
+    if not any(all(identity[k] == source[k] for k in ('canonical', 'device', 'inode', 'root'))
+               for source in saved['sources']):
+        raise ValueError('HOLD: copy path differs from captured source')
+
+
 def task_alive(process):
     """A zombie leader may still have live threads; inspect every task."""
     fields = (process/'stat').read_text().rsplit(') ', 1)[1].split()
@@ -538,6 +548,7 @@ def main():
     cap.add_argument('--data-only', action='store_true')
     ext = sub.add_parser('extend'); ext.add_argument('capture',type=Path); ext.add_argument('output',type=Path)
     ext.add_argument('--snapshot',type=Path); ext.add_argument('--source',action='append',default=[])
+    source = sub.add_parser('check-source'); source.add_argument('capture',type=Path); source.add_argument('path',type=Path)
     check = sub.add_parser('verify'); check.add_argument('capture', type=Path)
     diagnostic = sub.add_parser('diagnostic'); diagnostic.add_argument('capture', type=Path)
     args = parser.parse_args()
@@ -546,6 +557,9 @@ def main():
     elif args.command == 'extend':
         extend_capture(args.capture,args.output,args.snapshot,args.source)
         report = dict(outcome='PASS', assurance='Sources added; verify remains mandatory before use')
+    elif args.command == 'check-source':
+        check_source(args.capture,args.path)
+        report = dict(outcome='PASS', assurance='Copy path matches retained identity')
     elif args.command == 'verify':
         report = verify(args.capture)
     else:

@@ -871,6 +871,8 @@ while read -r label container destination; do
   test -n "$source"
   podman unshare test -d "$source"
   mkdir -p "$BACKUP_DIR/$label"
+  python3 "$EVIDENCE_DIR/quiescence.py" check-source "$QUIESCENCE_CAPTURE" "$source"
+  python3 "$EVIDENCE_DIR/quiescence.py" check-source "$QUIESCENCE_CAPTURE" "$BACKUP_DIR/$label"
   podman unshare cp -a "$source/." "$BACKUP_DIR/$label/"
 done <<'DATA_MOUNTS'
 postgres megasamples-postgres /var/lib/postgresql
@@ -1549,6 +1551,8 @@ test "$PROCESS_RC" = 0
 # Do not resume this phase after any original startup. Preserve partial copies.
 for engine in postgres mysql sqlite sqlite-shared; do
   target=$(podman volume inspect -f '{{.Mountpoint}}' "megasamples-rollback-$engine-$TEARDOWN_ATTEMPT")
+  python3 "$EVIDENCE_DIR/quiescence.py" check-source "$QUIESCENCE_CAPTURE" "$BACKUP_DIR/$engine"
+  python3 "$EVIDENCE_DIR/quiescence.py" check-source "$QUIESCENCE_CAPTURE" "$target"
   podman unshare cp -a "$BACKUP_DIR/$engine/." "$target/"
 done
 # END rollback population
