@@ -3,8 +3,8 @@
 **2026-11-18 follow-up:** this page records the earlier isolated prerequisite. The
 [first live-run evidence](live-upgrade-evidence.md) records the subsequent execution,
 the corrected per-image rollback archives, metadata/port gates and host forward checks.
-The deployment now uses its private mode-0600 `.env`; acceptance remains held by
-DataIntent. Historical Not run statements below describe this prerequisite's scope.
+As of **2026-11-18**, the deployment used its private mode-0600 `.env` and acceptance
+was held; the acceptance record is DataIntent’s. Historical Not run statements below describe this prerequisite's scope.
 
 The configured-credential reset, password propagation and full corrected-build rehearsal
 **Passed** in the isolated stack. The [machine-readable receipt](validation/credential-prerequisite-2026-11-18.json)

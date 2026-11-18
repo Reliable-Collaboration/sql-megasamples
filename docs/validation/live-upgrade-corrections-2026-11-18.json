@@ -1,6 +1,6 @@
 {
   "scope": "DL-086 documentation and replayable preparation helpers",
-  "acceptance": "Held by DataIntent (DL-087); draft PR; no merge authorized",
+  "acceptance": "As of 2026-11-18, held by DataIntent (DL-087); the acceptance record is DataIntent\u2019s",
   "source_receipts": [
     {
       "path": "phase-a-resume-receipt.json",
@@ -368,7 +368,7 @@
     "Forward protocol fixtures do not prove authentication or TLS",
     "External DataIntent suites not run here",
     "No full 95-pair fingerprint rerun in this documentation task; full configured image checks are separate",
-    "Fable model unavailable in this session; review left pending for coordinator. Astra final review tracked on PR handoff."
+    "As of 2026-11-18, independent review remained pending; authoring-session review was not independent approval"
   ],
   "artifacts": {
     "check-reviewed.log": "5818422b752b231927ec3984af717f5389086b706bcf75f94edbf1159dfa151d",

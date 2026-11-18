@@ -1,10 +1,10 @@
 # First live upgrade and runbook corrections (DL-086)
 
 The coordinator executed the runbook at `2cf1f3e9` on **2026-11-18**. The upgraded
-service was verified as described below. **Acceptance is held** for a DataIntent test
-failure outside this service. DL-087 holds this documentation PR in draft. Fable and
-Astra review and the coordinator's release are required before merging it; this task
-does not authorize a merge or another live cutover.
+service was verified as described below. As of **2026-11-18**, acceptance was held for a
+DataIntent test failure outside this service; the acceptance record is DataIntent’s.
+Independent review of these corrections remained pending as of that date.
+
 
 The private maintenance record is `build/live-upgrade-backups/20261118T133807Z/` in
 the deployment checkout. Only its defect records and receipts were read for this
@@ -25,7 +25,8 @@ certificate validation or a complete live rollback restoration.
 The forwarded checks were **host protocol proofs**: PostgreSQL answered an SSLRequest;
 MySQL sent the upgraded server greeting. Forwarded authenticated SQL was **Not run**.
 Local authenticated account tests do not close that gap. The corrected procedure
-requires host client sign-ins after protocol checks. Host `psql` and `mysql` are absent
+requires client sign-ins from the host network after protocol checks (host clients or a
+prepared tools container with `--network host`). Host `psql` and `mysql` are absent
 in this documentation environment; no host installation or live connection was attempted.
 
 | Runtime recorded after cutover | Release source | Source read (UTC) |
@@ -61,12 +62,12 @@ A separate red test caught using native Podman in the tools-container port inspe
 that inspection now uses the selected Docker socket, while the bind probes run in
 the tools container's host network namespace.
 
-Astra's review found that the inherited `ms_tool` function omitted interactive stdin.
+The authoring session's own review found that the inherited `ms_tool` function omitted interactive stdin.
 A regression and an actual harmless heredoc in the isolated tools container both
 **Failed (expected red)** before `podman exec -i` was added; both then **Passed**.
 The runbook now checks a stdin execution marker and requires nonempty logical dumps.
 Podman's [exec reference](https://docs.podman.io/en/latest/markdown/podman-exec.1.html),
-read 2026-11-18 17:27:30 UTC, confirms that stdin is otherwise closed. Review also
+read 2026-11-18 17:27:30 UTC, confirms that stdin is otherwise closed. The authoring session also
 caught discarded teardown exit codes and missing shell recovery instructions.
 Both status regressions and the fresh-shell recovery regression Failed before the
 fix and Passed afterwards. Actual Compose exit codes are retained beside the logs;
@@ -86,11 +87,14 @@ python3 docs/validation/rehearse-live-upgrade.py
 It asserts the graphroot, reads two existing isolated console images, seeds fresh
 scratch stores and runs both old and corrected commands there. It starts no engine
 and uses no database volume. It preserves the malformed fixture and successful
-receipts under `build/dl086/rehearsal-*/`. The two-image regression is deliberately
-small; the runbook separately requires rehearsal of the **complete actual rollback
+receipts under `build/dl086/rehearsal-*/`. The corrected runbook and helper have run only in scratch, never on the live store or the engine-size images.
+The two-image regression is deliberately small; the runbook separately requires rehearsal of the **complete actual rollback
 set** before downtime. That future live rehearsal was **Not run** by this task.
 The first live run's full-set scratch rehearsal is recorded in the private phase-A
-and rollback-load receipts. A complete live restoration remains unverified.
+and rollback-load receipts. Live rollback reached the failed candidate Compose `down`;
+branch/configuration restore, corrected live image load, new rollback volume creation and
+cold-volume restoration were **Not run**. The coordinator subsequently continued cutover.
+A complete live restoration remains unverified.
 
 Podman's [save reference](https://docs.podman.io/en/latest/markdown/podman-save.1.html),
 read 2026-11-18 17:06:28 UTC, explains that additional positional names are tags
@@ -138,3 +142,11 @@ The strict password-output rule **Failed** during source inspection: repository
 factory defaults and fixture credentials were displayed. No private credential value
 was displayed or copied. The receipt
 records this process failure without repeating any value.
+
+The narrowed PostgreSQL account guidance was checked against `engines/postgres/init/`,
+`megasamples/engines/postgres/image_test.py` and PostgreSQL's
+[privilege definitions](https://www.postgresql.org/docs/18/ddl-priv.html) and
+[large-object interface](https://www.postgresql.org/docs/18/largeobjects.html), read
+**2026-11-18 18:03:54 UTC**. Sample-table write refusal does not revoke `TEMPORARY`,
+large-object creation or routine execution. This change documents those limits;
+it does not claim account hardening has been deployed.

@@ -16,10 +16,12 @@ choice and one command builds it.
 The maintained deployment ran the upgrade to these versions on **2026-11-18**, including new
 passwords. MySQL uses the 9.7 LTS line; PostgreSQL uses supported major 18. Release/support sources,
 read times and the executed checks are in the [live-upgrade evidence](docs/live-upgrade-evidence.md).
-Acceptance remains held for a DataIntent test failure outside this service.
+As of **2026-11-18**, acceptance was held for a DataIntent test failure outside this service;
+the acceptance record is DataIntent’s.
 
-Every dataset is built and verified on all three engines. PostgreSQL and SQLite are **ports of the
-MySQL corpus**: the same rows, proved by the same per-table content digests, foreign-key checks and
+Datasets are built and verified on their supported engines; see the
+[supported matrix](docs/dataset-upgrade-evidence.md). BTS and WideWorldImporters OLTP are
+**Unsupported on PostgreSQL and SQLite**. PostgreSQL and SQLite are **ports of the MySQL corpus**: the same rows, proved by the same per-table content digests, foreign-key checks and
 index parity that MySQL is checked against — and produced by one deterministic program, never by hand.
 
 Every dataset keeps its own upstream licence — this project never places a single licence over the
@@ -117,7 +119,7 @@ Two accounts are offered from every console, and both are usable from any client
 
 | account | factory password (without overrides) | privileges |
 |---|---|---|
-| `demo` | `demo` | `SELECT`, `SHOW VIEW`. Cannot write anything, anywhere |
+| `demo` | `demo` | `SELECT`, `SHOW VIEW` on the sample data |
 | `admin` | `admin` | `ALL PRIVILEGES WITH GRANT OPTION` |
 
 Each console opens on `demo`, because the safe account should be the one you get without choosing.
@@ -141,7 +143,7 @@ catalogue, the landing page and the image tests all read it, so none can drift f
 ### PostgreSQL
 
 `sql-megasamples-postgres:dev` is `postgres:18.7-trixie` with one database per dataset already in
-its cluster, the same `demo` (read-only) and `admin` accounts, the superuser `postgres` with
+its cluster, the same `demo` (sample-table reads) and `admin` accounts, the superuser `postgres` with
 factory password `root` (overridden by the private `.env`), and a `megasamples` database holding the registry. `POSTGRES_PASSWORD`,
 `DEMO_PASSWORD` and `ADMIN_PASSWORD` override the passwords at start. Tables, data, primary and
 unique keys, secondary indexes, foreign keys, check constraints, stored generated columns, views,
@@ -156,6 +158,11 @@ on the other.
 ```sh
 psql -W -h 127.0.0.1 -p 5432 -U demo sakila
 ```
+
+PostgreSQL `demo` cannot modify the persistent sample tables in the tested DML/DDL paths.
+As of **2026-11-18**, it still has `TEMPORARY`, can create large objects and can execute granted
+routines. Treat it as a sample-data reader, not a general sandbox account; see the
+[account limits](docs/live-upgrade-evidence.md#documentation-checks).
 
 ### SQLite
 
@@ -221,7 +228,7 @@ connection examples prompt for the password. For a cutover, verify every new pas
 every previous password to be refused; see the [live runbook](docs/live-upgrade-runbook.md).
 Rotate all four values together, keep the previous file privately for rollback, run `make up`
 to apply them, then verify new-password sign-ins and authentication refusal of every old password
-with `python3 docs/validation/verify-configured-passwords.py --previous-dir <private-backup-directory>`.
+with `PYTHONPATH=. .venv/bin/python docs/validation/verify-configured-passwords.py --previous-dir <private-backup-directory>`.
 Run that verifier with the repository environment and the same container socket/project as the
 stack; do not put password values on the command line or in receipts.
 

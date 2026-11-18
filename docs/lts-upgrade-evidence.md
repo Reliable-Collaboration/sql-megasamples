@@ -1,8 +1,8 @@
 # DL-074: correct the upgrade to supported LTS targets
 
 **2026-11-18 follow-up:** the [first live-run evidence](live-upgrade-evidence.md) records
-the later cutover to this candidate and the resulting runbook corrections. Acceptance
-is held by DataIntent. This page and its unchanged receipt describe the earlier
+the later cutover to this candidate and the resulting runbook corrections. As of **2026-11-18**, acceptance
+was held; the acceptance record is DataIntent’s. This page and its unchanged receipt describe the earlier
 isolated audit; statements below about the live deployment refer to that audit's scope.
 
 This supersedes the release-selection decisions in the four historical engine, client, dataset and cold-readiness reports; their receipts remain intact. The branch starts at `ab75c45a82cee444d2652581d6db151e1d5a3b98`, after fetching `origin`. The live deployment has not been changed. The corrected candidate has passed the required isolated validation; the [complete receipt](validation/lts-upgrade-2026-11-17.json) retains every dataset result, command, timing, image ID and isolation comparison. [PR 12](https://github.com/Reliable-Collaboration/sql-megasamples/pull/12) records delivery and merge status.
