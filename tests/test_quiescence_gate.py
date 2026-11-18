@@ -198,3 +198,14 @@ def test_history_applicability_is_mechanical_with_reversal(fixture,change):
     if change=='unrelated':saved['containers']=[dict(id='other')];saved['sources'][0]['root']='/other-data'
     assert not gate.historical_applicability(saved,current,proc,cg)
     assert gate.historical_applicability(current,current,proc,cg)
+
+
+def test_exited_zombie_with_deleted_cgroup_is_not_unresolved(fixture):
+    saved,proc,cg,data,path,verify=fixture
+    p=process(proc,state='Z');saved['processes']=[dict(gate.process_identity(p),role='process')]
+    (p/'cgroup').write_text('0::/ (deleted)')
+    assert verify()['outcome']=='PASS'
+    thread=p/'task/12346';thread.mkdir();(thread/'stat').write_text('12346 (thread) S '+' '.join(['0']*18+['43']))
+    report=verify()
+    assert 'required association unresolved' in reasons(report,'holds')
+    assert 'recorded process survives' in reasons(report,'refusals')

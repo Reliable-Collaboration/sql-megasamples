@@ -149,3 +149,17 @@ docker() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/restart-calls"; }
         assert calls.index('wait-healthy sqlite') < calls.index('start adminer')
         assert (attempt/'original-consoles-held.txt').read_text()=='landing\n'
     finally:server.close()
+
+
+def test_partial_stop_retry_keeps_capture_and_reruns_guarded_stop(tmp_path):
+    server=context(tmp_path,'stop')
+    try:
+        script='. "$CONTEXT"\n'+r'''
+ORIGINAL_CAPTURE="$QUIESCENCE_CAPTURE"
+stop_project() { echo stopped >> "$EVIDENCE_DIR/calls"; }
+python3() { case "$2" in capture) exit 47;; esac; }
+'''+block('# BEGIN partial stop retry\n','# END partial stop retry')+'\ntest "$QUIESCENCE_CAPTURE" = "$ORIGINAL_CAPTURE"'
+        result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
+        assert result.returncode==0,result.stderr
+        assert (tmp_path/'evidence/calls').read_text()=='stopped\n'
+    finally:server.close()

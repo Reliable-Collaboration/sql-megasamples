@@ -142,7 +142,7 @@ def main():
         # deliberately denied open in the native interpreter, never chmod /proc.
         original_read=Path.read_text
         # The shared helper exited at last stop: use a currently alive recorded
-        # process owned by this harness for an actual native inspection denial.
+        # process owned by this harness for fault injection, not a native denial.
         probe=dict(saved);probe['processes']=[dict(gate.process_identity(Path('/proc')/str(os.getpid())),role='process')]
         denied_pid=os.getpid()
         def denied(path,*a,**k):
@@ -186,6 +186,7 @@ def main():
         assert (Path('/proc')/str(subpid)).stat().st_uid!=os.getuid()
         report=gate.verify(sub_capture)
         assert report['outcome'] in ('REFUSE','HOLD')
+        assert any(r['reason']=='required holder inspection unreadable' and r.get('operation')=='fd' and r.get('error')=='PermissionError' for r in report['holds']), report
         record('subordinate-uid-descriptor-only',report,report['outcome'])
         pod('stop','--time','2',subname)
         record('subordinate-uid-holder-stopped',gate.verify(sub_capture),'PASS')

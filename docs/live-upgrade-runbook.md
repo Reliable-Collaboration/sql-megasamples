@@ -4,9 +4,9 @@ This coordinator procedure was **executed live once, on 2026-11-18**, at `2cf1f3
 
 The revised cutover/rollback sequence has been tested in scratch with synthetic
 backups and two small console-image archives, never end to end on the live store
-or with engine-size image archives. The native scanner has separately run read-only
-on this host with existing stacks up and deliberate scratch holders; its results
-and inspection limits are recorded in the round-three correction receipt.
+or with engine-size image archives. The historical round-three discovery scanner
+ran read-only on this host; its policy was superseded by DL-088/DL-089's capture
+and verification gate. Its results remain in the round-three receipt as history.
 The subsequent [DL-088 native proof](validation/live-upgrade-review-r4-part3-2026-11-18.json)
 ran a separate published-bridge Compose project in the isolated store: stop,
 partial removal and fresh-shell verification Passed, as did a dedicated-helper
@@ -155,6 +155,35 @@ data, over readable required evidence. It does **not** prove the host quiet or
 exclude inaccessible unrelated writers. Keep clients paused, disable deployment
 restart automation for the maintenance interval, and prevent new writers until
 copy/restoration finishes. A point-in-time gate cannot enforce that interval.
+
+Pause all deployment restart actors before capture: clients, scheduled jobs,
+health-remediation jobs, Compose watchers and coordinator/agent automation that
+can issue `start`, `up`, reset or a database write. **DataIntent's standing
+permission to start stopped sample services is suspended for this maintenance
+interval**; record the coordinator's maintenance hold in the private receipt.
+Leave the LAN socket-proxy services running. Never stop an unidentified host unit.
+The Compose services declare `restart: unless-stopped`; prevent automatic restarts
+on only the complete recorded project list, and repeat this scoped step after any
+candidate/original recreation before another capture/copy:
+
+```sh
+# Coordinator maintenance only; never apply this to unrelated containers.
+AUTOMATION_ID=$(date -u +%Y%m%dT%H%M%S%N)
+for id in $(podman ps -aq --no-trunc --filter label=com.docker.compose.project=sql-megasamples); do
+  podman inspect -f '{{.Id}}|{{.Name}}|{{.HostConfig.RestartPolicy.Name}}' "$id" \
+    >> "$EVIDENCE_DIR/restart-policy-$AUTOMATION_ID.txt"
+  podman update --restart=no "$id"
+done
+```
+
+After all copies/restorations and post-start verification finish, restore each
+selected service's recorded restart policy on its current verified ID with
+`podman update --restart=unless-stopped "$id"` (the policy declared here), then
+have the coordinator explicitly release the maintenance hold before clients or
+DataIntent's standing start permission resume. The
+[Podman update reference](https://docs.podman.io/en/latest/markdown/podman-update.1.html)
+was read 2026-11-18 23:26:34 UTC; the isolated host's `update --help`
+also lists `--restart`. These commands are procedure, not an executed live change.
 
 Before each stop, capture container IDs, processes with start times and cgroups,
 `conmon`, positively associated dedicated helpers and the store's shared
@@ -649,6 +678,33 @@ An existing complete checksum receipt is verified without rewriting it. A damage
 refuses; record its path/digest and move only that damaged file to a unique `.partial` name in the
 same private backup directory before rerunning this gate. Never replace a verified archive. Never overwrite original configuration/image mappings,
 rerun the preparation capture, or reinterpret the upgraded HEAD as the rollback source.
+
+### Partial stop: rerun the guarded stop on the same capture
+
+If the console or SQLite stop fails, another engine may still run. Neither the
+four-check continuation nor original-restart can pass yet. Source the saved
+context in a fresh shell and check the socket. Diagnose the failed group, then
+rerun the guarded whole-project stop with **the same capture**; do not replace it
+with a snapshot of the partly stopped project. This route also applies to a
+partial rollback stop. All captures remain required at the later copy gate.
+
+```sh
+# BEGIN partial stop retry
+case "$TEARDOWN_PHASE" in stop|rollback-stop) :;; *) exit 2;; esac
+PARTIAL_ID=$(date -u +%Y%m%dT%H%M%S%N)
+if stop_project >> "$EVIDENCE_DIR/partial-stop-$PARTIAL_ID.log" 2>&1; then
+  printf '0\n' > "$EVIDENCE_DIR/partial-stop-$PARTIAL_ID.exit-code"
+else
+  PARTIAL_RC=$?
+  printf '%s\n' "$PARTIAL_RC" > "$EVIDENCE_DIR/partial-stop-$PARTIAL_ID.exit-code"
+  exit "$PARTIAL_RC"
+fi
+# END partial stop retry
+```
+
+Then run the four checks and their phase-specific continuation from the saved
+context. A crashed PostgreSQL/MySQL now uses clean-stop recovery; SQLite 137 is
+expected. A port/helper/holder refusal still blocks copying, with the routes below.
 
 ### Refused original stop: restart on unchanged original volumes
 
@@ -1605,7 +1661,7 @@ fi
 EXITED_RECEIPT="$ATTEMPT_DIR/rollback-stop-exited-$TEARDOWN_ATTEMPT.json"
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" "$EXITED_RECEIPT" --phase candidate-teardown
 # BEGIN pre-down continuation
-# Snapshot again immediately before down; retain pre-stop helper attribution.
+# Snapshot state again before down. Helper attribution remains in the retained captures.
 PRIOR_SNAPSHOT="$TEARDOWN_SNAPSHOT"
 TEARDOWN_PHASE=rollback-down
 TEARDOWN_SNAPSHOT="$ATTEMPT_DIR/rollback-down-before-$TEARDOWN_ATTEMPT.json"

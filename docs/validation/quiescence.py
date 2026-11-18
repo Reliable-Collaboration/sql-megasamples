@@ -731,10 +731,10 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
             if current['start'] != row['start']:
                 hold('recorded process identifier reused', pid=row['pid'])
                 continue
-            if current['cgroups'] != row['cgroups']:
-                hold('required association unresolved', pid=row['pid'])
             if not task_alive(p):
                 continue
+            if current['cgroups'] != row['cgroups']:
+                hold('required association unresolved', pid=row['pid'])
             if row['role'] == 'shared helper':
                 try:
                     report['shared_consumers'] = remaining_consumers(saved, proc)

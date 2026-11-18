@@ -290,8 +290,9 @@ records this session's tests, decision-rule removal controls and native outcomes
 The running isolated deployment's capture identified its shared helper and seven
 dedicated helpers without process arguments. Scratch network-independent checks
 proved process/exec survivors, partial removal and fresh-shell continuation,
-subordinate-UID descriptor-only inspection, an unreadable required inspection,
-cross-filesystem aliases, equal path text on different filesystems, source
+subordinate-UID descriptor-only inspection (a real required `fd` PermissionError/HOLD),
+a fault-injected unreadable required `stat` inspection (patched `Path.read_text`,
+not a native operating-system denial), cross-filesystem aliases, equal path text on different filesystems, source
 replacement and a zombie leader with a live worker. Expected REFUSE and HOLD
 outcomes are successful tests, not cold-copy authorization.
 
