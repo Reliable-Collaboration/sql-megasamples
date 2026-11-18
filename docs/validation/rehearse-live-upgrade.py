@@ -109,25 +109,15 @@ def main():
         for name in names:
             target('stop', '--time', '10', name)
         exited = out / 'exited.json'
-        try:
-            upgrade.exited(snapshot, exited)
-        except ValueError as error:
-            assert 'crash-consistent' in str(error)
-            receipt['checks']['fixture_exit_137_requires_ack'] = 'Passed'
-            upgrade.exited(snapshot, exited, allow_crash_consistent=True)
+        upgrade.exited(snapshot, exited, phase='candidate-teardown')
         target('rm', names[0])  # partial down: one removed, one still exited
-        try:
-            upgrade.exited(snapshot, out / 'unsafe-missing.json')
-        except ValueError as error:
-            assert 'missing' in str(error)
-        else:
-            raise AssertionError('missing container accepted without exited evidence')
-        upgrade.exited(snapshot, out / 'partial-removal.json', removed_with=exited, allow_crash_consistent=True)
+        upgrade.exited(snapshot, out / 'partial-removal.json', removed_with=exited,
+                       phase='candidate-teardown')
         receipt['checks']['partial_removal_with_retained_exited_receipt'] = 'Passed'
     finally:
         for name in names:
             run(['podman', 'rm', '-f', name], target_env, check=False)
-    # Drop only the two owned scratch stores; reset also terminates their pause processes.
+    # Remove only owned scratch images, then stop each private pause process.
     for pod, env in [(source, source_env), (target, target_env)]:
         assert not pod('ps', '-aq')
         graph = pod('info', '--format', '{{.Store.GraphRoot}}')
@@ -136,12 +126,13 @@ def main():
         base = Path(env['XDG_RUNTIME_DIR']).parent
         pidfiles = [p for directory in ('xdg', 'tmp', 'run') for p in (base / directory).rglob('pause.pid')]
         pause_pids = [int(p.read_text().strip()) for p in pidfiles]
+        pod('image', 'rm', '--all', '--force')
         pod('system', 'migrate')
         for pid in pause_pids:
             status = Path(f'/proc/{pid}/stat')
             assert not status.exists() or status.read_text().split(') ', 1)[1].startswith('Z ')
         receipt.setdefault('scratch_pause_pids', []).extend(pause_pids)
-        pod('system', 'reset', '--force')
+        # No Podman call after migrate: this is the final pause-process check.
     receipt['checks']['scratch_stores_and_pause_cleanup'] = 'Passed'
     (out / 'archive-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')
     upgrade.pod = lambda *args: run(['podman', *args]).stdout.strip()

@@ -392,8 +392,7 @@ python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
 # END archive gates
 # Rehearse the COMPLETE rollback set in a fresh store before downtime. No containers are started.
 (
-  SCRATCH_DIR="$BACKUP_DIR/rollback-load-rehearsal"
-  mkdir "$SCRATCH_DIR"
+  SCRATCH_DIR=$(mktemp -d "$BACKUP_DIR/rollback-load-rehearsal-XXXXXXXX")
   printf '[storage]\ndriver="overlay"\ngraphroot="%s/graph"\nrunroot="%s/run"\n' \
     "$SCRATCH_DIR" "$SCRATCH_DIR" > "$SCRATCH_DIR/storage.conf"
   printf '[engine]\ntmp_dir="%s/tmp"\n' "$SCRATCH_DIR" > "$SCRATCH_DIR/containers.conf"
@@ -409,9 +408,26 @@ python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
   # Keep logs/configuration under BACKUP_DIR. Never run this in the default/isolated store.
   test "$CONTAINERS_STORAGE_CONF" = "$SCRATCH_DIR/storage.conf"
   test "$(podman info --format '{{.Store.GraphRoot}}')" = "$SCRATCH_DIR/graph"
-  # No containers remain; stop the pause process in the private runtime first.
+  # Never use system reset: its documented scope includes machines outside this store.
+  # Capture the private pause PID before cleanup; no Podman calls follow migrate.
+  python3 - "$SCRATCH_DIR" <<'PY_PAUSE_CAPTURE'
+import json, pathlib, sys
+base = pathlib.Path(sys.argv[1])
+pids = [int(p.read_text().strip()) for name in ('xdg','tmp','run')
+        for p in (base / name).rglob('pause.pid')]
+(base / 'pause-pids.json').write_text(json.dumps(pids))
+PY_PAUSE_CAPTURE
+  podman image rm --all --force >> "$SCRATCH_DIR/cleanup.log" 2>&1
   podman system migrate >> "$SCRATCH_DIR/cleanup.log" 2>&1
-  podman system reset --force >> "$SCRATCH_DIR/cleanup.log" 2>&1
+  # Check after the FINAL cleanup command; leave only empty store metadata/logs.
+  python3 - "$SCRATCH_DIR" <<'PY_PAUSE_CHECK'
+import json, pathlib, sys
+base = pathlib.Path(sys.argv[1])
+for pid in json.loads((base / 'pause-pids.json').read_text()):
+    status = pathlib.Path(f'/proc/{pid}/stat')
+    if status.exists() and not status.read_text().split(') ', 1)[1].startswith('Z '):
+        raise SystemExit('STOP: scratch pause process survived cleanup')
+PY_PAUSE_CHECK
 )
 # Back in the original maintenance shell/store. Retain the rehearsal log with the backup.
 # The reviewed tools snapshot is a PRIVATE local artifact, not a public image.
@@ -508,12 +524,15 @@ repository image reference while the original live containers are still running;
 rollback tags, per-image archives and cold copies. A pinned vendor manifest may need fetching when its
 RepoDigest was not retained by Docker archive transport, but its resulting image ID must be identical.
 
-The scratch cleanup follows [Podman's reset reference](https://docs.podman.io/en/latest/markdown/podman-system-reset.1.html),
-read **2026-11-18 18:03:54 UTC**. It deletes the selected store's resources and graph/run roots;
-the graphroot assertions above restrict it to the freshly created rehearsal store.
-The preceding [migrate command](https://docs.podman.io/en/latest/markdown/podman-system-migrate.1.html),
-read **2026-11-18 18:10:46 UTC**, stops the rootless pause process. The private `XDG_RUNTIME_DIR`
-keeps that process separate from the maintenance and isolated stores.
+[Podman's reset reference](https://docs.podman.io/en/latest/markdown/podman-system-reset.1.html),
+read **2026-11-18 18:48:03 UTC**, includes machines in its deletion scope.
+A graphroot guard alone cannot confine that command, so this procedure does **not**
+run `podman system reset`. Only the asserted empty scratch store's images are removed,
+then [migrate](https://docs.podman.io/en/latest/markdown/podman-system-migrate.1.html)
+(read **2026-11-18 18:48:03 UTC**) stops its private rootless pause process.
+The final PID check runs after cleanup without another Podman invocation that could
+restart a pause process. Each rehearsal allocates a fresh directory, so reruns retain
+previous logs and do not collide. Keep the small empty store metadata as evidence.
 
 ### Resume or abort preparation
 
