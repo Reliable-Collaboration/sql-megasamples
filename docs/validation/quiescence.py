@@ -74,7 +74,9 @@ def mount_rows(path):
 
 
 # DL-088 capture is independent of container lifetime and never reads cmdline/environ.
-CAPTURE_FORMAT = '{{.Id}}|{{.State.Pid}}|{{.State.ConmonPid}}|{{.HostConfig.NetworkMode}}|{{if .NetworkSettings.Ports}}true{{else}}false{{end}}|{{.NetworkSettings.SandboxKey}}'
+# NetworkSettings.Ports also lists image EXPOSE entries with null bindings.
+# Only actual host bindings require a dedicated publishing helper.
+CAPTURE_FORMAT = '{{.Id}}|{{.State.Pid}}|{{.State.ConmonPid}}|{{.HostConfig.NetworkMode}}|{{if .HostConfig.PortBindings}}true{{else}}false{{end}}|{{.NetworkSettings.SandboxKey}}'
 
 
 def pod(*args):
