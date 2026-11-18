@@ -224,7 +224,7 @@ The scanner's field interpretation follows Linux's
 **2026-11-18 18:58:17 UTC**. Inspection refusals remain refusals; these sources
 cannot prove that the host is quiescent. The UID-map fallback follows
 [user namespace mapping rules](https://man7.org/linux/man-pages/man7/user_namespaces.7.html)
-(read **2026-11-18 19:03:41 UTC**): mapped subordinate IDs remain in scope. A native-host UID/start-time inventory
+(read **2026-11-18 19:03:41 UTC**): mapped subordinate IDs remain in scope. Historical, superseded by DL-088: a native-host UID/start-time inventory
 distinguishes other owners before unshare translates their UIDs to overflow. Assumed-other owners get a second native credential check before a successful gate;
 changed credentials refuse. Current mapped UIDs take precedence over inventory. Without
 that independent evidence, an ambiguous overflow UID remains unresolved; a mapping
@@ -236,16 +236,16 @@ kernel/AppArmor capture and the DataIntent acceptance suite remain Not run here.
 The netns root cause remains unknown. As of 2026-11-18, acceptance remained held;
 DataIntent owns its acceptance record.
 
-## Round-three scanner correction, 2026-11-18
+## Round-three scanner correction, 2026-11-18 (historical)
 
 The previous scanner policy is historical, not a recovery instruction. Use the
 current [state table](live-upgrade-runbook.md#teardown-and-rollback-states-and-gates)
 and the native scanner procedure in the runbook's teardown-error section. The
-scanner now walks the host initial namespace, compares mounts only on recorded
+historical scanner walked the host initial namespace, compares mounts only on recorded
 source devices/roots, classifies zombies/exited tasks, names unreadable operations,
 and attributes helpers by recorded namespace or specific container cgroup. It
 refuses evidence of deployment holders/helpers or unresolved mounts on a source's
-device. It reports other owners, unreadable operations and outside-deployment
+device. It reports other owners, unreadable operations and unattributed
 helpers without certifying them. Review those limits even after status 0.
 
 The native scratch proof kept all existing stacks up. An unheld directory passed;
@@ -267,3 +267,19 @@ records S1–S8, T1–T5, reason-specific reds/greens and commits, the native sc
 proof, all-engine image checks, the repository gate and exact container isolation
 comparison. The full original restoration and forwarded live sign-ins remain
 unverified; no independent blessing is claimed by the authoring session.
+
+
+## DL-088 bounded gate, 2026-11-18
+
+The round-two inventory and round-three discovery policies above are historical.
+DL-088 governs the current [record/verify gate and recovery routes](live-upgrade-runbook.md#teardown-and-rollback-states-and-gates).
+Capture belongs before stop, survives container removal and a fresh shell, and
+binds process start times, cgroups, helpers and canonical data identities to one
+boot. Required inspection gaps HOLD; confirmed deployment survivors and readable
+holders REFUSE. Shared helpers with independently verified remaining consumers
+are reported. PASS states a bounded deployment claim, never host-wide quiescence.
+Exhaustive discovery is separately diagnostic and its exit status cannot gate.
+The netns root cause remains unknown. Native acceptance and test results for this
+revision are recorded separately; prior scanner receipts do not prove DL-088.
+As of 2026-11-18, DataIntent acceptance remains held; no independent blessing or
+live restoration is claimed by this correction.

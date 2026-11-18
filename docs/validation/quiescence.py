@@ -45,7 +45,7 @@ def classify_owner(process, uid):
         pass
     # When native ptrace rules deny ns/user, uid_map remains readable. The single
     # primary mapping to our UID identifies rootless namespaces rooted in our UID.
-    # Run in podman unshare so subordinate processes can then be fully inspected.
+    # Descriptor permission failures remain required HOLDs in deployment scope.
     try:
         mappings = [tuple(map(int, line.split())) for line in (process / 'uid_map').read_text().splitlines()]
         if any(inside == 0 and outside == uid and size == 1 for inside, outside, size in mappings):
@@ -163,7 +163,10 @@ def network_refs(process):
     return refs
 
 
-def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), extra_sources=()):
+DATA_DESTINATIONS = {'/var/lib/postgresql', '/var/lib/mysql', '/data', '/shared', '/restore-target'}
+
+
+def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), extra_sources=(), data_only=False):
     if output.exists():
         raise FileExistsError(output)
     saved = dict(schema=1, complete=False, boot_id=boot_id(), store=store_identity(),
@@ -254,7 +257,7 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                 hold('shared helper association unresolved; return to deciders', error=type(error).__name__)
         saved['processes'] = list(identities.values())
         saved['cgroups'] = list(groups.values())
-        paths = {p for r in saved['containers'] for p, _ in r.get('mounts', [])} | set(map(str, extra_sources))
+        paths = {p for r in saved['containers'] for p, dest in r.get('mounts', []) if not data_only or dest in DATA_DESTINATIONS} | set(map(str, extra_sources))
         if not paths:
             hold('source capture missing')
         for path in sorted(paths):
@@ -267,6 +270,27 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
     saved['complete'] = not saved['holds']
     private_write(output, saved)
     return dict(outcome='PASS' if saved['complete'] else 'HOLD', holds=saved['holds'])
+
+
+def extend_capture(capture_path, output, snapshot=None, extra_sources=()):
+    """Retain pre-stop evidence; add never-started restoration sources/targets.
+
+    This cannot repair missing historical capture or substitute new processes.
+    The resulting capture must still pass verify before any copy or restoration.
+    """
+    saved = json.loads(capture_path.read_text())
+    if not saved.get('complete') or saved['boot_id'] != boot_id() or saved['store'] != store_identity():
+        raise ValueError('HOLD: missing, incomplete or stale pre-stop capture')
+    for source in saved['sources']:
+        if source_identity(source['path']) != source:
+            raise ValueError('HOLD: source identity changed')
+    paths = set(map(str, extra_sources))
+    if snapshot:
+        paths |= {src for row in json.loads(snapshot.read_text())['containers']
+                  for src, dest in row.get('mounts', []) if dest in DATA_DESTINATIONS}
+    existing = {source['path'] for source in saved['sources']}
+    saved['sources'] += [source_identity(path) for path in sorted(paths - existing)]
+    private_write(output, saved)
 
 
 def task_alive(process):
@@ -308,8 +332,8 @@ def holder_scan(sources, groups, proc=Path('/proc')):
             row['owner'] = classify_owner(leader, os.getuid())
             if not required and row['owner'] not in ('own', 'owned-user-namespace'):
                 counts['other_owner'] += 1
-                limitations.append(dict(row, operation='ownership', reason='unattributed inspection limit'))
-                continue
+                # Positive readable evidence counts for any owner. Inaccessible
+                # unrelated evidence remains a diagnostic limitation below.
             if not task_alive(leader):
                 counts['zombie_or_exited'] += 1
                 continue
@@ -511,11 +535,17 @@ def main():
     sub = parser.add_subparsers(dest='command', required=True)
     cap = sub.add_parser('capture'); cap.add_argument('snapshot', type=Path); cap.add_argument('output', type=Path)
     cap.add_argument('--source', action='append', default=[])
+    cap.add_argument('--data-only', action='store_true')
+    ext = sub.add_parser('extend'); ext.add_argument('capture',type=Path); ext.add_argument('output',type=Path)
+    ext.add_argument('--snapshot',type=Path); ext.add_argument('--source',action='append',default=[])
     check = sub.add_parser('verify'); check.add_argument('capture', type=Path)
     diagnostic = sub.add_parser('diagnostic'); diagnostic.add_argument('capture', type=Path)
     args = parser.parse_args()
     if args.command == 'capture':
-        report = capture(args.snapshot, args.output, extra_sources=args.source)
+        report = capture(args.snapshot, args.output, extra_sources=args.source, data_only=args.data_only)
+    elif args.command == 'extend':
+        extend_capture(args.capture,args.output,args.snapshot,args.source)
+        report = dict(outcome='PASS', assurance='Sources added; verify remains mandatory before use')
     elif args.command == 'verify':
         report = verify(args.capture)
     else:

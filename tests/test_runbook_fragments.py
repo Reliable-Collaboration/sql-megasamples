@@ -53,7 +53,7 @@ def test_failure_fresh_shell_checks_then_continuation(tmp_path, phase):
         script = '. "$CONTEXT"\n' + block('# BEGIN resume socket gate\n', '# END resume socket gate')
         script += '''
 python3() { printf '%s\\n' "$*" >> "$EVIDENCE_DIR/calls"; }
-podman() { if test "$1" = unshare; then printf '{"holders":[],"helpers":[],"unreadable":[]}'; fi; }
+podman() { :; }
 '''
         script += block('# BEGIN four checks\n', '# END four checks')
         script += block('# BEGIN continuation dispatch\n', '# END continuation dispatch')
@@ -271,7 +271,7 @@ def test_pre_up_checkpoint_resumes_without_restoring_again(tmp_path):
         (tmp_path/'retained/original-running-services.txt').write_text('')
         script='. "$CONTEXT"\n' + r'''
 python3() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/calls"; cat >/dev/null; }
-podman() { if test "$1" = unshare; then grep -q /new/rollback-data "$TEARDOWN_SNAPSHOT"; fi; }
+podman() { :; }
 '''
 
         script+=block('# BEGIN four checks\n','# END four checks')

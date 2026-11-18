@@ -99,3 +99,17 @@ def test_missing_shared_helper_stops_for_deciders(capture_fixture,monkeypatch):
     report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
     assert report['outcome']=='HOLD'
     assert any(r['reason']=='shared helper association unresolved; return to deciders' for r in report['holds'])
+
+
+def test_extend_preserves_prestop_processes_and_adds_only_new_sources(capture_fixture):
+    snap,out,proc,cg,data=capture_fixture
+    gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    before=json.loads(out.read_text()); source=data.parent/'target';source.mkdir()
+    snap.write_text(json.dumps(dict(containers=[dict(mounts=[[str(source),'/restore-target']])])) )
+    extended=data.parent/'extended.json'
+    gate.extend_capture(out,extended,snap)
+    after=json.loads(extended.read_text())
+    assert after['processes']==before['processes'] and after['cgroups']==before['cgroups']
+    assert after['sources']==before['sources']+[gate.source_identity(source)]
+    assert json.loads(out.read_text())==before
+    assert extended.stat().st_mode & 0o777==0o600

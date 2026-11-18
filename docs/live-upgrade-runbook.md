@@ -143,14 +143,41 @@ only name/status/exit_code/running fields are retained in the fixture.
 recorded service, including 137 plus OOM. A refused original stop requires diagnosis
 and a clean database shutdown before cold copy; never relax that gate for a crashed database.
 
-Before cold copying or restoring, all four checks below must pass over inspectable
-processes: state eligibility, no project containers running, no recorded data-mount
-holders, and no attributed deployment network helpers. Other owners' processes
-are counted separately; their descriptors/namespaces cannot be certified without
-privilege. Unreadable own operations are named, reported and not certified. Capture scanner
-status without exiting the shell, inspect evidence, and repeat checks before continuation.
-A missing candidate is valid and recorded; teardown must never depend on its continued
-existence after `down`.
+DL-088 replaces the historical discovery scanner with a **record, then verify**
+gate. PASS means the recorded deployment has stopped using the exact recorded
+data, over readable required evidence. It does **not** prove the host quiet or
+exclude inaccessible unrelated writers. Keep clients paused, disable deployment
+restart automation for the maintenance interval, and prevent new writers until
+copy/restoration finishes. A point-in-time gate cannot enforce that interval.
+
+Before each stop, capture container IDs, processes with start times and cgroups,
+`conmon`, positively associated dedicated helpers and the store's shared
+rootless-netns helper. Canonicalise the four data sources and copy/restore targets
+with filesystem device, inode and mount root. The capture is private, exclusive,
+boot-bound, and saved outside container lifetime; `down`, partial removal and a
+fresh shell cannot erase it. Missing or incomplete capture **HOLDs before downtime**.
+The retained first-run backup has no such historical capture: never fabricate one.
+A new rollback captures the currently running candidates before stopping them.
+A missing historical capture cannot authorize copying; use unchanged originals
+for recovery where available, or keep clients paused for coordinator recovery.
+
+| Observation after stop | Gate outcome |
+|---|---|
+| Recorded process, `conmon` or dedicated helper survives with matching identity | REFUSE |
+| Live task in a captured deployment cgroup, descendants included | REFUSE |
+| Captured shared helper survives without independently verified remaining bridge consumers in the same store | REFUSE |
+| Shared helper has verified remaining consumers | Report consumer IDs; survival alone permits continuation |
+| Readable evidence positively identifies a holder of recorded data, even previously unrelated | REFUSE |
+| Required inspection unreadable, association unresolved, capture missing/incomplete, reboot, reused identifier, changed source identity | HOLD |
+| Unreadable or unattributed evidence beyond the established deployment scope | Report limitation; no automatic refusal |
+| Complete required checks, eligible phase state, no REFUSE or HOLD | PASS with the bounded assurance above |
+
+The phase-specific state table remains mandatory. A confirmed refusal takes
+precedence in reporting when a HOLD is also present; both sets of reasons remain
+in the receipt and both must be resolved before copying. Required inspection is
+never converted to an empty list on error. A HOLD on holder evidence clears only
+by evidence that the match is false, or by removal of the confirmed holder;
+coordinator acknowledgement alone is insufficient. No bypass flag is provided.
 
 Before original `up`: verified archives and tag/ID mappings, configuration digest and
 attempt extraction, unchanged cold-copy digest, populated **new** rollback volumes,
@@ -220,7 +247,7 @@ UPGRADE_HELPER="$BACKUP_DIR/live-upgrade.py"
 git show "$APPROVED_UPGRADE_MERGE:docs/validation/live-upgrade.py" > "$UPGRADE_HELPER"
 git show "$APPROVED_UPGRADE_MERGE:docs/validation/quiescence.py" > "$BACKUP_DIR/quiescence.py"
 chmod 600 "$UPGRADE_HELPER" "$BACKUP_DIR/quiescence.py"
-TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE= TEARDOWN_ATTEMPT=
+TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE= TEARDOWN_ATTEMPT= QUIESCENCE_CAPTURE=
 ATTEMPT_DIR= CONFIG_DIR= CANDIDATE_SNAPSHOT=
 EVIDENCE_DIR="$BACKUP_DIR"
 CONTEXT_FILE="$BACKUP_DIR/resume-context.bash"
@@ -269,7 +296,7 @@ umask 077
     'unset DEMO_PASSWORD ADMIN_PASSWORD MYSQL_ROOT_PASSWORD POSTGRES_PASSWORD'
   declare -p BACKUP_DIR UPGRADE_ID UPGRADE_HELPER UPGRADE_TOOLS_CONTAINER MEGASAMPLES_PY \
     METADATA_BUNDLE DOCKER_HOST MEGASAMPLES_LIVE_API_PID APPROVED_UPGRADE_MERGE PREPARATION_STAGE \
-    TEARDOWN_SNAPSHOT EXITED_RECEIPT TEARDOWN_PHASE TEARDOWN_ATTEMPT EXTRA_RESERVE_BYTES \
+    TEARDOWN_SNAPSHOT EXITED_RECEIPT TEARDOWN_PHASE TEARDOWN_ATTEMPT QUIESCENCE_CAPTURE EXTRA_RESERVE_BYTES \
     ATTEMPT_DIR CONFIG_DIR EVIDENCE_DIR CONTEXT_FILE XDG_RUNTIME_DIR CANDIDATE_SNAPSHOT \
     APPROVED_ENGINE_MERGE APPROVED_CLIENTS_MERGE APPROVED_DATASET_MERGE \
     APPROVED_LTS_MERGE APPROVED_CREDENTIAL_MERGE TOOLS_ARCHIVE TOOLS_IMAGE CANDIDATE_ARCHIVE DOCKER_CLIENT
@@ -601,12 +628,9 @@ RECOVERY_ID=$(date -u +%Y%m%dT%H%M%S%N)
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
   "$EVIDENCE_DIR/original-restart-$RECOVERY_ID.json" --phase original-restart
 # State gate also proves no project container running. Original IDs must exist.
-PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" \
-  > "$EVIDENCE_DIR/original-restart-process-$RECOVERY_ID.json"; then :;
-else PROCESS_RC=$?; fi
-printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/original-restart-process-$RECOVERY_ID.exit-code"
-test "$PROCESS_RC" = 0
+# The copy/restore quiescence outcome is inapplicable to starting originals on
+# unchanged volumes. Diagnose the recorded REFUSE/HOLD; retain it, never bypass
+# it to copy. Restart only these existing original IDs after the state/port gates.
 # END original recovery checks
 ```
 
@@ -638,10 +662,16 @@ TEARDOWN_PHASE=stop
 PRIOR_SNAPSHOT="$TEARDOWN_SNAPSHOT"
 TEARDOWN_SNAPSHOT="$EVIDENCE_DIR/clean-stop-before-$TEARDOWN_ATTEMPT.json"
 EXITED_RECEIPT=
+QUIESCENCE_CAPTURE="$EVIDENCE_DIR/clean-stop-capture-$TEARDOWN_ATTEMPT.json"
 python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
   --prior "$PRIOR_SNAPSHOT" \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
+# Capture copy sources and targets before stop. A missing/incomplete capture
+# HOLDs here, before downtime; never manufacture a historical capture afterward.
+python3 "$EVIDENCE_DIR/quiescence.py" capture "$TEARDOWN_SNAPSHOT" "$QUIESCENCE_CAPTURE" --data-only \
+  --source "$BACKUP_DIR/postgres" --source "$BACKUP_DIR/mysql" \
+  --source "$BACKUP_DIR/sqlite" --source "$BACKUP_DIR/sqlite-shared"
 date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/clean-stop.log.timestamps"
 if docker compose -p sql-megasamples -f compose.yaml stop --timeout 300 "$RECOVER_ENGINE" \
   >> "$EVIDENCE_DIR/clean-stop.log" 2>&1; then
@@ -793,9 +823,16 @@ TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
 TEARDOWN_PHASE=stop
 TEARDOWN_SNAPSHOT="$EVIDENCE_DIR/stop-before-$TEARDOWN_ATTEMPT.json"
 EXITED_RECEIPT=
+QUIESCENCE_CAPTURE="$EVIDENCE_DIR/stop-capture-$TEARDOWN_ATTEMPT.json"
 python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
+# Capture copy sources and targets before stop. A missing/incomplete capture
+# HOLDs here, before downtime; never manufacture a historical capture afterward.
+for engine in postgres mysql sqlite sqlite-shared; do mkdir -p "$BACKUP_DIR/$engine"; done
+python3 "$EVIDENCE_DIR/quiescence.py" capture "$TEARDOWN_SNAPSHOT" "$QUIESCENCE_CAPTURE" --data-only \
+  --source "$BACKUP_DIR/postgres" --source "$BACKUP_DIR/mysql" \
+  --source "$BACKUP_DIR/sqlite" --source "$BACKUP_DIR/sqlite-shared"
 date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/stop.log.timestamps"
 if stop_project >> "$EVIDENCE_DIR/stop.log" 2>&1; then
   date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/stop.log.timestamps"
@@ -813,11 +850,11 @@ save_context
 # BEGIN cold-copy process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.json"; then :;
+if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-cold-copy-$CHECK_ID.exit-code"
 if test "$PROCESS_RC" != 0; then
-  echo 'STOP: process evidence refuses cold-copy; inspect it and apply the four checks.'
+  echo 'HOLD/REFUSE: deployment evidence blocks cold-copy; inspect it and apply the four checks.'
   exit 1
 fi
 # END cold-copy process gate
@@ -952,53 +989,72 @@ python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
   "$EVIDENCE_DIR/four-check-exited-$CHECK_ID.json" --phase "$GATE_PHASE" "$@"
 # 2. Expected: EMPTY. The helper also refuses if project containers are running.
 podman ps --filter label=com.docker.compose.project=sql-megasamples -q
-# 3/4. Capture status even under set -e. Expected refusals empty, status 0; review unreadable limits and helper attribution.
+# 3/4. Verify saved pre-stop identities/data. Expected PASS (0); REFUSE (1) and HOLD (2) both block copying.
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.json"; then :;
+if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-evidence-$CHECK_ID.exit-code"
+DIAGNOSTIC_RC=0
+if python3 "$EVIDENCE_DIR/quiescence.py" diagnostic "$QUIESCENCE_CAPTURE" \
+  > "$EVIDENCE_DIR/diagnostic-$CHECK_ID.json"; then :;
+else DIAGNOSTIC_RC=$?; fi
+printf '%s\n' "$DIAGNOSTIC_RC" > "$EVIDENCE_DIR/diagnostic-$CHECK_ID.exit-code"
+# Diagnostic status cannot alter PROCESS_RC or end this strict shell.
 # END four checks
 
 ```
 
-The scanner walks `/proc` **from the host initial user namespace**, never inside
-`podman unshare`. It refuses a child-namespace invocation. Snapshot running containers
-before stop: mount source/destination, network namespace inode and container cgroups
-survive removal in that retained snapshot. No arguments or environments are read.
+The gate walks `/proc` from the **host initial user namespace**, never inside
+`podman unshare`. It reads no process arguments or environments. PID continuity
+requires start time and the same boot; cgroup identity includes device/inode.
+Bare PID or network-namespace numbers are insufficient. A shared namespace never
+makes all its members part of this deployment. A zombie leader with live threads
+is alive; all task states are inspected.
 
-Its decision is explicitly over inspectable operations. Other owners are counted
-separately, without descriptor inspection. Every unreadable own operation names
-`comm`, PID, owner and operation; these rows are **not certified**, and do not alone
-refuse. On this host some native processes and rootless descriptors
-remain unreadable even natively. Review and retain these limits at every gate;
-status 0 does not certify those operations or other owners. Descriptor link access is governed by
-[ptrace access checks](https://man7.org/linux/man-pages/man5/proc_pid_fd.5.html)
-(read 2026-11-18 19:50:17 UTC); this correction does not establish each denial's cause. Zombies and exited tasks
-have their own counts and no surviving file descriptors or network namespace.
-Processes that disappear are scan races. Repeat immediately for a newly born process
-or changed ownership; repetition is not a remedy for a persistent permission denial.
+For this supported rootless netavark layout, the store's
+`runroot/networks/rootless-netns/rootless-netns-conn.pid` identifies the shared
+helper before stop, corroborated by `comm`, start time and its `rootless-netns`
+cgroup. Dedicated port helpers are positively associated **during capture** by
+current namespace objects (including namespace path descriptors) or deployment
+cgroups, then checked by retained process identity. Post-stop namespace-number
+reuse cannot attribute a new helper. If the shared helper cannot be identified
+without process arguments, **stop before downtime and return to the deciders**.
+Do not infer that an unattributed helper belongs elsewhere.
 
-Mounts are compared only on the device and filesystem root of a recorded source.
-Private `/proc` and `/asound` devices are skipped when no source lives there. Path
-checks include root, cwd, open files, mappings and bind roots, including namespace
-path translations. Helpers match `pasta*`, `slirp4netns*` and `rootlessport*`. Only a
-recorded non-host network namespace (including an open namespace FD) or a specific
-container cgroup attributes one to this deployment. Shared host namespaces and
-shell/API cgroups never prove that ownership. Outside-deployment helpers, including
-the isolated store's and tools container's, are reported and do not refuse.
+Readable holders are compared by filesystem device and mount-root translation,
+never pathname text alone. Resolve source aliases before stop and recheck their
+identities before each operation. Another filesystem with the same pathname is
+not a match. Private `/proc` devices are irrelevant unless a recorded source lives
+there. Required deployment descriptor/mapping/mount evidence that cannot be read
+HOLDs; unrelated unreadable evidence is labelled a limitation. New rollback volume
+targets are added with `extend`, preserving all original pre-stop process evidence;
+this cannot repair a missing or stale capture. The extended capture must verify
+before copying to those targets.
 
-Each `refusals` row names `comm`, PID, owner, `holds` and a specific `reason`:
+`verify` exits **0 PASS, 1 REFUSE, 2 HOLD**. Retain JSON and status in the private
+attempt (mode 0600 under umask 077). The separate exhaustive-discovery diagnostic
+always has its own guarded status; that status never changes the gate or ends the
+shell. Its findings are diagnostic; the gate independently requires readable
+positive holder evidence and required deployment inspection.
 
-| Reason | Maintainer action before repeating the gate |
+| REFUSE / HOLD reason | Route, without requiring that same gate to pass |
 |---|---|
-| recorded data source held | Identify the recorded file/mount and its deployment process. Stop that deployment process through its normal command; retain evidence and repeat the scan. |
-| deployment network helper | Compare its retained namespace/cgroup attribution with the stopped project. Diagnose and complete only that project's teardown; never kill unrelated helpers or alter forwarders. |
-| unresolvable mount on recorded source device | Resolve that device/root against the retained source and host mount table. Correct the evidence/path resolution before continuation; never exempt the source device. |
+| Recorded process / dedicated helper survives; live cgroup task; running deployment container | Diagnose the identified deployment object and finish only its normal stop. Retain evidence and verify again. Never signal unrelated stacks or forwarders. |
+| Shared helper without verified consumer | Diagnose that store's teardown. If another consumer exists, resolve its independently inspected identity; otherwise complete only this project's cleanup. Original restart on unchanged volumes remains available. |
+| Confirmed recorded data holder | Remove that confirmed holder through its normal owner-controlled operation; repeat verification. If it belongs to another application, arrange its release; never kill an unknown process. |
+| Required inspection unreadable / association unresolved | Keep data unchanged; collect readable evidence in the proper owning namespace through a reviewed method. Resolve identity/association, or take the unchanged-original restart route. Do not acknowledge away a HOLD. |
+| Capture missing/incomplete, crosses reboot, store changed or identifier reused | Before downtime, retain the failed evidence and take a new complete capture while the deployment runs. After downtime, restart existing originals on unchanged volumes where available, then capture before a new stop. Otherwise hold for coordinator recovery. Never recapture stopped objects as historical proof. |
+| Source identity changed | Restore the exact retained object/path if possible and verify it, or restart originals on unchanged volumes and prepare a new capture. A changed backup is not a substitute for the verified input. |
+| Phase state ineligible | Use the state table's engine-specific clean-stop recovery; restart eligible existing originals on unchanged volumes. Never copy an unclean database. |
+| Holder match unresolved | Retain the HOLD until evidence disproves the match or confirms and removes the holder. Repeat checks; permission denials require evidence, not repetition alone. |
 
-Inspect `unreadable` and outside-deployment helper rows as well as `refusals` even
-after status 0. Keep clients paused while diagnosing a deployment-related inspection
-limit. Take a new snapshot if the deployment changes, and repeat all four checks
-immediately before cold copy, restoration or original startup.
+Every copy/restore REFUSE or HOLD leaves the **unchanged-original restart** route
+open: use “Refused original stop: restart on unchanged original volumes”. That route
+checks original IDs/state and ports, then `start` and bounded health; it does not
+require copy/restore quiescence. This does not authorize copying, restoring over an
+active mount, recreating a missing original, or resuming clients without health
+and data checks. After candidate creation use guarded rollback for restoration;
+if no unchanged originals remain, coordinator recovery is required.
 
 Capture available kernel/AppArmor diagnostics for the command-time start/end UTC
 window in the appended timestamps, not the attempt ID, without host changes:
@@ -1303,7 +1359,7 @@ METADATA_BUNDLE= MEGASAMPLES_LIVE_API_PID= APPROVED_UPGRADE_MERGE= EXTRA_RESERVE
 APPROVED_ENGINE_MERGE= APPROVED_CLIENTS_MERGE= APPROVED_DATASET_MERGE=
 APPROVED_LTS_MERGE= APPROVED_CREDENTIAL_MERGE=
 TOOLS_ARCHIVE= TOOLS_IMAGE= CANDIDATE_ARCHIVE= DOCKER_CLIENT=
-TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE= CANDIDATE_SNAPSHOT=
+TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE= CANDIDATE_SNAPSHOT= QUIESCENCE_CAPTURE=
 PREPARATION_STAGE=rollback-prepared
 # Freeze only the service/port fields into this attempt; no candidate package used.
 python3 "$UPGRADE_HELPER" export-ports "$ATTEMPT_DIR/original-ports.json" \
@@ -1358,10 +1414,16 @@ test -d "$CONFIG_DIR"
 TEARDOWN_PHASE=rollback-stop
 TEARDOWN_SNAPSHOT="$ATTEMPT_DIR/rollback-stop-before-$TEARDOWN_ATTEMPT.json"
 EXITED_RECEIPT=
+QUIESCENCE_CAPTURE="$EVIDENCE_DIR/rollback-stop-capture-$TEARDOWN_ATTEMPT.json"
 python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
   --phase candidate-teardown \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
+# Capture copy sources and targets before stop. A missing/incomplete capture
+# HOLDs here, before downtime; never manufacture a historical capture afterward.
+python3 "$EVIDENCE_DIR/quiescence.py" capture "$TEARDOWN_SNAPSHOT" "$QUIESCENCE_CAPTURE" --data-only \
+  --source "$BACKUP_DIR/postgres" --source "$BACKUP_DIR/mysql" \
+  --source "$BACKUP_DIR/sqlite" --source "$BACKUP_DIR/sqlite-shared"
 date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"
 if stop_project >> "$EVIDENCE_DIR/rollback-stop.log" 2>&1; then
   date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"
@@ -1402,11 +1464,11 @@ python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
 # BEGIN restore process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" "$TEARDOWN_SNAPSHOT" > "$EVIDENCE_DIR/process-restore-$CHECK_ID.json"; then :;
+if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" > "$EVIDENCE_DIR/process-restore-$CHECK_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-restore-$CHECK_ID.exit-code"
 if test "$PROCESS_RC" != 0; then
-  echo 'STOP: process evidence refuses restore; inspect it and apply the four checks.'
+  echo 'HOLD/REFUSE: deployment evidence blocks restore; inspect it and apply the four checks.'
   exit 1
 fi
 # END restore process gate
@@ -1473,8 +1535,12 @@ python3 "$UPGRADE_HELPER" restart-mounts "$TEARDOWN_SNAPSHOT" \
   "$POPULATE_SNAPSHOT" --attempt "$TEARDOWN_ATTEMPT"
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
   "$ATTEMPT_DIR/populate-state-$POPULATE_ID.json" --phase candidate-teardown
+NEXT_CAPTURE="$ATTEMPT_DIR/populate-capture-$POPULATE_ID.json"
+python3 "$EVIDENCE_DIR/quiescence.py" extend "$QUIESCENCE_CAPTURE" "$NEXT_CAPTURE" --snapshot "$POPULATE_SNAPSHOT"
+QUIESCENCE_CAPTURE="$NEXT_CAPTURE"
+save_context
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" "$POPULATE_SNAPSHOT" \
+if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" \
   > "$EVIDENCE_DIR/populate-process-$POPULATE_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/populate-process-$POPULATE_ID.exit-code"
@@ -1553,11 +1619,11 @@ python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/restart-before-$CHECK_ID.json" \
 # BEGIN pre-up process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
-if python3 "$EVIDENCE_DIR/quiescence.py" "$ATTEMPT_DIR/restart-mounts.json" > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.json"; then :;
+if python3 "$EVIDENCE_DIR/quiescence.py" verify "$QUIESCENCE_CAPTURE" > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.json"; then :;
 else PROCESS_RC=$?; fi
 printf '%s\n' "$PROCESS_RC" > "$EVIDENCE_DIR/process-pre-up-$CHECK_ID.exit-code"
 if test "$PROCESS_RC" != 0; then
-  echo 'STOP: process evidence refuses pre-up; inspect it and apply the four checks.'
+  echo 'HOLD/REFUSE: deployment evidence blocks pre-up; inspect it and apply the four checks.'
   exit 1
 fi
 # END pre-up process gate

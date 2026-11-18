@@ -64,3 +64,10 @@ def test_diagnostic_does_not_read_arguments_or_environments(tmp_path,monkeypatch
         return original(path,*args,**kwargs)
     monkeypatch.setattr(Path,'open',guarded)
     gate.holder_scan([source],[],proc)
+
+
+def test_accessible_other_owner_holder_is_still_positive_evidence(tmp_path,monkeypatch):
+    proc,p,source=scan(tmp_path,monkeypatch)
+    monkeypatch.setattr(gate,'classify_owner',lambda *args:'other-owner')
+    report=gate.holder_scan([source],[],proc)
+    assert report['holders'] and report['holders'][0]['owner']=='other-owner'
