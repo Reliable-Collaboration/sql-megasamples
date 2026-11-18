@@ -44,8 +44,10 @@ def evidence(snapshot, proc=Path('/proc')):
                        if any(under(target.removesuffix(' (deleted)'), src) for src in sources)]
             if matched:
                 holders.append(dict(pid=pid, paths=matched))
-        except (FileNotFoundError, ProcessLookupError):
-            continue  # process exited during enumeration; rerun before continuation
+        except (FileNotFoundError, ProcessLookupError) as error:
+            if process.exists():
+                unreadable.append(dict(pid=pid, error=type(error).__name__))
+            # If /proc/PID itself vanished, the process exited during enumeration.
         except (PermissionError, OSError) as error:
             unreadable.append(dict(pid=pid, error=type(error).__name__))
     return dict(holders=holders, helpers=helpers, unreadable=unreadable)

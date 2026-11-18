@@ -26,3 +26,21 @@ def test_mount_root_and_deleted_fd_are_detected(tmp_path):
     (process / 'fd/3').unlink()
     (process / 'mountinfo').write_text('10 1 0:1 /other /other rw - overlay overlay rw\n')
     assert module.evidence(snapshot, proc) == dict(holders=[], helpers=[], unreadable=[])
+
+
+def test_unreadable_or_racing_live_process_is_not_silently_excluded(tmp_path, monkeypatch):
+    spec = importlib.util.spec_from_file_location('quiescence', Path(__file__).parents[1] / 'docs/validation/quiescence.py')
+    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
+    snapshot = tmp_path / 'snapshot.json'
+    snapshot.write_text(json.dumps({'containers': []}))
+    proc = tmp_path / 'proc'; process = proc / '123456789'; process.mkdir(parents=True)
+    # The process still exists, but an entry disappeared or is unreadable mid-scan.
+    result = module.evidence(snapshot, proc)
+    assert result['unreadable'] == [{'pid': 123456789, 'error': 'FileNotFoundError'}]
+    original = Path.read_text
+    def read(path, *args, **kwargs):
+        if path.name == 'comm':
+            raise PermissionError('fixture')
+        return original(path, *args, **kwargs)
+    monkeypatch.setattr(Path, 'read_text', read)
+    assert module.evidence(snapshot, proc)['unreadable'] == [{'pid': 123456789, 'error': 'PermissionError'}]
