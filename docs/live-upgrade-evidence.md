@@ -193,6 +193,8 @@ permission to add the new attempt directory is required. Bootstrap, early abort,
 strict fresh-shell checks and continuation are executed through command stubs.
 Python heredocs and `-c` bodies compile; every shell block passes `bash -n`.
 The populated-volume checkpoint survives a pre-start refusal without repeating restore.
+Once original startup begins, a separate saved phase holds any partial restart for
+coordinator diagnosis; it cannot dispatch back into teardown/restoration.
 
 The owner-scoped scanner reports other owners separately and refuses ambiguous
 ownership, unreadable own processes, unresolvable mount roots and all remaining
@@ -215,7 +217,10 @@ The scanner's field interpretation follows Linux's
 [mountinfo](https://man7.org/linux/man-pages/man5/proc_pid_mountinfo.5.html) and
 [file mappings](https://man7.org/linux/man-pages/man5/proc_pid_maps.5.html), all read
 **2026-11-18 18:58:17 UTC**. Inspection refusals remain refusals; these sources
-cannot prove that the host is quiescent.
+cannot prove that the host is quiescent. The UID-map fallback follows
+[user namespace mapping rules](https://man7.org/linux/man-pages/man7/user_namespaces.7.html)
+(read **2026-11-18 19:03:41 UTC**): mapped subordinate IDs remain in scope; an
+overflow owner is excluded only when every target mapping is affirmatively unmapped.
 
 The revised procedure still has not run end to end on the live store or with
 engine-size archives. Full live restoration, forwarded authentication/TLS,

@@ -21,6 +21,10 @@ def caller_uid_mappings():
     return [tuple(map(int, line.split())) for line in Path('/proc/self/uid_map').read_text().splitlines()]
 
 
+def overflow_uid():
+    return int(Path('/proc/sys/kernel/overflowuid').read_text())
+
+
 def classify_owner(process, uid):
     process_uid = process.stat().st_uid
     if process_uid == uid:
@@ -30,7 +34,7 @@ def classify_owner(process, uid):
     # own host UID or allocated subordinate range. uid_map's outside IDs are in
     # the parent namespace, so comparing them with caller UID 0 is not sufficient.
     rootless = mappings != [(0, 0, 4294967295)]
-    if rootless and process_uid != 65534 and any(start <= process_uid < start + size for start, _, size in mappings):
+    if rootless and process_uid != overflow_uid() and any(start <= process_uid < start + size for start, _, size in mappings):
         return 'owned-user-namespace'
     # Linux NS_GET_OWNER_UID: owner of a user namespace, translated to caller's UID space.
     # Opening namespace entries of other owners may be denied: do not inspect their FDs.
@@ -51,6 +55,8 @@ def classify_owner(process, uid):
             return 'owned-user-namespace'
     except (PermissionError, OSError, ValueError):
         return 'unresolved-owner'
+    if process_uid == overflow_uid() and mappings and all(outside == 4294967295 for _, outside, _ in mappings):
+        return 'other-owner'  # Every ID is affirmatively outside the caller's UID space.
     # A full identity map proves the initial/privileged namespace, outside our
     # rootless ownership scope. Any other unproved relationship remains unresolved.
     return 'other-owner' if mappings == [(0, 0, 4294967295)] else 'unresolved-owner'

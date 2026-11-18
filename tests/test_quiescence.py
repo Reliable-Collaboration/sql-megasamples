@@ -136,3 +136,13 @@ def test_mapped_subordinate_uid_is_inspected_even_when_namespace_denied(tmp_path
     monkeypatch.setattr(Path,'stat',lambda p,*a,**k: SimpleNamespace(st_uid=27) if p==process else original_stat(p,*a,**k))
     monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,1000,1),(1,100000,65536)])
     assert scanner.classify_owner(process,0) == 'owned-user-namespace'
+
+
+def test_overflow_owner_with_all_ids_unmapped_is_other_owner(tmp_path,monkeypatch):
+    from types import SimpleNamespace
+    process=tmp_path/'process'; (process/'ns').mkdir(parents=True)
+    (process/'uid_map').write_text('0 4294967295 4294967295\n')
+    original_stat=Path.stat
+    monkeypatch.setattr(Path,'stat',lambda p,*a,**k: SimpleNamespace(st_uid=65534) if p==process else original_stat(p,*a,**k))
+    monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,1000,1),(1,100000,65536)])
+    assert scanner.classify_owner(process,0) == 'other-owner'
