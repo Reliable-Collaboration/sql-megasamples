@@ -306,7 +306,7 @@ def test_snapshot_retains_nonsecret_evidence_and_partial_removal(tmp_path, monke
     def pod(*args):
         calls.append(args)
         if args[0] == 'ps':
-            return 'engine-id'
+            return 'engine-id' if '-aq' in args else ''
         if args[0] == 'inspect':
             if '.Mounts' in args[2]:
                 return '/fixture/data\t/data'
