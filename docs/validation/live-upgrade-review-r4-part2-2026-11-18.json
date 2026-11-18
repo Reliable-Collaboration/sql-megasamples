@@ -1,6 +1,6 @@
 {
-  "at": "2026-11-18T22:02:10.463849+00:00",
-  "code_head": "3761cbb102b8b8c4388ea25f0494eac925af74fb",
+  "at": "2026-11-18T22:05:35.697813+00:00",
+  "code_head": "9d97fa388472dfef2dbf15903c4f880c83d9dacb",
   "scope": "DL-086 round 4 part 2: DL-088 bounded quiescence",
   "acceptance": "As of 2026-11-18, DataIntent acceptance held. No independent blessing or merge claimed.",
   "artifacts_directory": "build/dl086/dl088",
@@ -88,7 +88,8 @@
         "2260f725feb6c030de9a70321374ac1d2def3252",
         "15ef8c85a01fdcb601003850c45cef165d093f18",
         "4924396dc3ac4f962a9dd6df4e6f2f1017367249",
-        "c706e569e224fea8a8298afd1d276ec9f226c5b0"
+        "c706e569e224fea8a8298afd1d276ec9f226c5b0",
+        "9d97fa388472dfef2dbf15903c4f880c83d9dacb"
       ]
     },
     {
@@ -514,7 +515,7 @@
       "rules": 22
     },
     "isolation": {
-      "at": "2026-11-18T22:02:02.432890+00:00",
+      "at": "2026-11-18T22:05:35.662333+00:00",
       "status": "Passed",
       "comparison": "Exact isolated container list/ID/image/state before and after; exact live ID/image/state/start time against retained cutover evidence",
       "isolated": {
@@ -581,6 +582,13 @@
       ],
       "live_baseline": "/home/rcc-vstudio/working/sql-megasamples/build/live-upgrade-backups/20261118T133807Z/phase-b-6/live-end-state.json",
       "scope": "Default store read-only identity inspection only; no live deployment mutation"
+    },
+    "final_unit_suite": {
+      "status": "Passed",
+      "tests_passed": 779,
+      "exit_code": 0,
+      "log": "unit-final.log",
+      "scope": "Final suite after diagnostic-before-verify ordering regression; generated-record checks previously Passed"
     }
   },
   "expected_failed_controls": "Initial missing-feature reds retained; each decision removal/inversion failed its focused reason assertion before restoration. See rule-removals receipt.",
@@ -628,8 +636,8 @@
       "read_at": "2026-11-18T21:34:50Z"
     },
     {
-      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/3761cbb102b8b8c4388ea25f0494eac925af74fb/docs/validation/quiescence.py",
-      "read_at": "2026-11-18T22:02:10.463849+00:00"
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d97fa388472dfef2dbf15903c4f880c83d9dacb/docs/validation/quiescence.py",
+      "read_at": "2026-11-18T22:05:35.697813+00:00"
     },
     {
       "url": "https://docs.docker.com/reference/compose-file/services/#long-syntax",
@@ -638,7 +646,7 @@
   ],
   "checked_code_sha256": {
     "docs/validation/quiescence.py": "06fbcccb0cde7044da6ee4dabd436881da8bf2baac76b9b74769f35e8c6af0f3",
-    "docs/live-upgrade-runbook.md": "ca59db22cc0e57de3e615dbcad992a77120bdce139c2e7c7f95b10e964c6f6af",
+    "docs/live-upgrade-runbook.md": "ae90b09bcf76df9ffcac121da90b5a41b92cad01105680bf577c69ffa1d31dbb",
     "docs/validation/rehearse-quiescence.py": "a2bafd96f66a93937f75f4503c4e70b3f8c0e898c7d50c9b50cc41c00e6cd2f9",
     "docs/validation/rehearse-quiescence-rules.py": "4bac3a9c4c51f1c741fb35ee2b4c8c7ca1924a7206ccda7766f73eaca7a00014"
   },
@@ -656,6 +664,8 @@
     "build/dl086/dl088/gate-green.log": "1e8aebeca5fc16a05f0430c959c8913ad1d7a1bed19ec1b4af3a2f5db4253172",
     "build/dl086/dl088/reused-original-data-green.log": "7732d4b51b9b9c84cf220160549184ba2a1838ddf625ff8a58c2dbef11408d02",
     "build/dl086/dl088/rule-reversals-final.log": "f4af8e0ef420d6b091562ee7c9b9c957fc58897334daab7a45dc59510145e735",
+    "build/dl086/dl088/diagnostic-order-red.log": "98639726fabda743f8c5a27a8992f3f718a5e70a02f5ef86dd0a790592968e0a",
+    "build/dl086/dl088/unit-final.log": "64c510dcbb8e5ba771cd1da4c5246b1c82fb8b1a6f3ee06ab239396e463c5866",
     "build/dl086/dl088/isolated-native-before-2.json": "c0e78f10cbe5e599ddfb339ef5a46bf5a66505efb44d5d4598061b4fc3e57d15",
     "build/dl086/dl088/alternative-route-placement-red.log": "3be516b89f9247beea2bdf23a7d048379996c0fe98e013255d13e43672327409",
     "build/dl086/dl088/isolated-native-capture-2.json": "bd43deafba57949094a7c900ec33f1c0d0b0e0ca45d1fe4f82a64843229e225f",
@@ -663,7 +673,7 @@
     "build/dl086/dl088/extensions-green.log": "a3db4d27122711e4952c14b0a65925f8db713d3e19123089194bc87b7fec0af9",
     "build/dl086/dl088/image-sqlite.log": "741849a54f8501aac004c78a045250d8633833da4b2b0a64c979bf34a6d993d2",
     "build/dl086/dl088/isolated-api.log": "9e350ca87bae3df38f5e75a3d016261f7ead055da045047712e398fe206c9eaa",
-    "build/dl086/dl088/write-receipt.py": "439bd223d183d7062b0b3987cfd5e64be5127d5bc16ee97489504f6b91922291",
+    "build/dl086/dl088/write-receipt.py": "158d07f86af31c5a8df1acc890e3b38f7cb3895d0d1f476103947dace1393271",
     "build/dl086/dl088/host-namespace-green.log": "6443d3b1b75487326853acbb213d6303bd08678e426bb422bb3d179bcb81d5aa",
     "build/dl086/dl088/isolated-before.txt": "087c3f4d7338e7e11d0531794dc3f02ac11fa6412b461d957126f4dfb5f03372",
     "build/dl086/dl088/host-namespace-red.log": "e11e40489ed2cc3ae34cea1d6c704ca729e8f9e8c60e54f46b53de384b4ae6c6",
@@ -685,7 +695,7 @@
     "build/dl086/dl088/isolation.log": "adc8832d29cfc0beb5bbe7488b19b6bb2b4c732518b0d000a17a94b7772c57f2",
     "build/dl086/dl088/isolated-api-cleanup.json": "fc583eb8d5f562e905e75690adbf04c9692e4c6ebc1ead3be185f2b0030cb203",
     "build/dl086/dl088/reused-original-data-red.log": "68934356bc5ac06819c3c43eed5694cde92a3ab981345d844ae4011e43cf1ce3",
-    "build/dl086/dl088/isolation.json": "d36a5cdc97d53501dbdc6bf6df5ff5d881722a0ac72ba1c62462b14b866b8d04",
+    "build/dl086/dl088/isolation.json": "24ce1d034259b858e1d7b2c6569db56c35a1efffcc998f4d43f06a3c24854c00",
     "build/dl086/dl088/native-capture-red.log": "ab858c407c7ff04ab64dda50d78e3ef91d235c118c2ffdf5228bacdbb611c67a",
     "build/dl086/dl088/isolated-capture-2.log": "1c086c055c58cb28047a558a332d1b2a2fcf1910d34b962197eef7ccd75a690b",
     "build/dl086/dl088/native-cases.log": "12475a03406675f9d94aa2c632e16087b6315dfa1e997f1fa05746461ffa01ef",
@@ -699,6 +709,7 @@
     "build/dl086/dl088/isolated-after.txt": "087c3f4d7338e7e11d0531794dc3f02ac11fa6412b461d957126f4dfb5f03372",
     "build/dl086/dl088/native-cases-third.log": "46b3c699e56c61a99c9abd927bf92df3ee2b8f9af630ebdae373386f5d8fbe12",
     "build/dl086/dl088/extensions-red.log": "19b8f638061912f5fd88d12eb40e93779e41e2cf0fe2ef1d3e2ebca3c724268f",
+    "build/dl086/dl088/diagnostic-order-green.log": "577017a618e1ce92a89e82dae5198f68026abeede59ac7ff308c7ff047f9bc5b",
     "build/dl086/dl088/isolated-native-capture-receipt.json": "b432f95d3967dcf4f35054fa5c548a25d26c35ec10fbfb5ec386ec61a99bcc42",
     "build/dl086/dl088/cgroup-reuse-red.log": "2849282346e5939fec90ab34654fcf03b3115fc2406a004af2863bcecda44179",
     "build/dl086/dl088/private-green.log": "6656eba2a61abf0556cda20f4cb661a28e40e098217239f0814fc08b4b20a1d3",
@@ -706,6 +717,7 @@
     "build/dl086/dl088/gate-red.log": "5a9fc3a3f4219ff61a5d5acf370584e9d2759b9863354760c23b5f8a6f08c171",
     "build/dl086/dl088/capture-running-isolated.py": "fa864fa025c75697f285275d8c64c513413d8fefc0706a25228799d81143114c",
     "build/dl086/dl088/isolated-api-final.log": "97aa8d57f5a42959d345aa1e28639c2133c7a8ec94df3722081c8eaf9a74e528",
+    "build/dl086/dl088/unit-final.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
     "build/dl086/dl088/runbook-red.log": "0194a05c2443bb89da3477c3672757211bf674f5ff377dc2f0ec79b893aa565a",
     "build/dl086/dl088/rule-reversals.log": "0fcba617e9cd3850807dc39f094a3f105608cc54c7e4e8acf44a629d796f68f0",
     "build/dl086/dl088/namespace-object-green.log": "aab22d039fd0e6d49eb81310d11623a71a520c02f90da1e8b8d2d8917810f9f8",
