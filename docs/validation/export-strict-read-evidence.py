@@ -79,6 +79,7 @@ for db,old in before['postgres'].items():
             for label,row in [('before',old),('candidate',new)]}}
 assert before['mysql']['demo']['grants']==after['mysql']['demo']['grants']
 assert before['mysql']['admin']['grants']==after['mysql']['admin']['grants']
+assert before['mysql']['root']['grants']==after['mysql']['root']['grants']
 images={}
 for engine in ['mysql','postgres','sqlite']:
     text=(BASE/('test-image-'+engine+('-final' if engine=='postgres' else '')+'.log')).read_text()
