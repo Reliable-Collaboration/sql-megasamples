@@ -38,7 +38,7 @@ def classify_owner(process, uid):
         if any(inside == 0 and outside == uid and size == 1 for inside, outside, size in mappings):
             return 'owned-user-namespace'
     except (PermissionError, OSError, ValueError):
-        pass
+        return 'unresolved-owner'
     return 'other-owner'
 
 
@@ -74,7 +74,7 @@ def resolve_roots(device, root, mounts):
 def evidence(snapshot, proc=Path('/proc')):
     saved = json.loads(snapshot.read_text())
     sources = {src for row in saved['containers'] for src, _ in row.get('mounts', [])}
-    counts = dict(own=0, **{'owned-user-namespace': 0, 'other-owner': 0})
+    counts = dict(own=0, **{'owned-user-namespace': 0, 'other-owner': 0, 'unresolved-owner': 0})
     holders, helpers, unreadable = [], [], []
     mounts = host_mounts(proc)
     for process in proc.iterdir():
@@ -85,6 +85,10 @@ def evidence(snapshot, proc=Path('/proc')):
             owner = classify_owner(process, os.getuid())
             counts[owner] += 1
             if owner == 'other-owner':
+                continue
+            if owner == 'unresolved-owner':
+                unreadable.append(dict(pid=pid, error='OwnershipUnresolved',
+                                       reason='cannot prove this process belongs to another owner'))
                 continue
             comm = (process / 'comm').read_text().strip()
             network = os.readlink(process / 'ns/net')

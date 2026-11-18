@@ -112,3 +112,15 @@ def test_closed_fd_shared_mapping_is_a_holder(tmp_path,monkeypatch):
     (process/'maps').write_text('1000-2000 rw-s 0000 08:02 123 /store/data/pages (deleted)\n')
     report=scanner.evidence(snapshot,proc)
     assert report['holders'][0]['paths'] == [('mapping','/store/data/pages (deleted)')]
+
+
+def test_unresolved_namespace_ownership_never_becomes_other_owner(tmp_path,monkeypatch):
+    process=tmp_path/'process'; (process/'ns').mkdir(parents=True)
+    # stat UID is mapped subordinate relative to a synthetic caller UID.
+    uid=os.getuid()+123
+    original=Path.open
+    def denied(path,*args,**kwargs):
+        if path.name in ('user','uid_map'): raise PermissionError('fixture')
+        return original(path,*args,**kwargs)
+    monkeypatch.setattr(Path,'open',denied)
+    assert scanner.classify_owner(process,uid) == 'unresolved-owner'

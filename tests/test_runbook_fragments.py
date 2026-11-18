@@ -195,7 +195,7 @@ def test_original_startup_never_adds_dependencies(tmp_path,services):
     (tmp_path/'original-running-services.txt').write_text(''.join(n+'\n' for n in services))
     text=RUNBOOK.read_text()
     start='set --\nRESTORE_CLOUDBEAVER=0'
-    body=start+text.split(start,1)[1].split('# Check only originally selected services',1)[0]
+    body=start+text.split(start,1)[1].split('# Check only originally selected services',1)[0].split('```',1)[0]
     stubs=r'''
 python3() { :; }
 podman() { :; }
@@ -213,6 +213,38 @@ docker() {
         calls=(tmp_path/'starts').read_text()
         assert '--no-deps' in calls
         if services==['cloudbeaver']:
-            assert calls.count(' up ') == 1
+            assert sum(' up ' in line and '--no-start' not in line for line in calls.splitlines()) == 1
+            assert 'up --no-start --no-deps' in calls
     else:
         assert not (tmp_path/'starts').exists()
+
+
+def test_pre_up_checkpoint_resumes_without_restoring_again(tmp_path):
+    server=context(tmp_path,'rollback-pre-up')
+    try:
+        # Represents the saved combined inventory, including newly populated targets.
+        (tmp_path/'before.json').write_text(json.dumps({'containers':[{'mounts':[['/new/rollback-data','/restore-target']]}]}))
+        env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')}
+        failed=subprocess.run(['bash','-eu','-c','. "$CONTEXT"\npodman() { return 1; }\n'+block('# BEGIN pre-up process gate\n','# END pre-up process gate')],env=env,capture_output=True,text=True)
+        assert failed.returncode == 1
+        (tmp_path/'original-running-services.txt').write_text('')
+        script='. "$CONTEXT"\n' + r'''
+python3() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/calls"; cat >/dev/null; }
+podman() { if test "$1" = unshare; then grep -q /new/rollback-data "$TEARDOWN_SNAPSHOT"; fi; }
+'''
+
+        script+=block('# BEGIN four checks\n','# END four checks')
+        script+=block('# BEGIN continuation dispatch\n','# END continuation dispatch')
+        script+='\ntest "$RESUME_AT" = pre-up\ntest "$TEARDOWN_SNAPSHOT" = "$EVIDENCE_DIR/before.json"\n'
+        script+=block('# BEGIN pre-up continuation\n','# END pre-up continuation')
+        result=subprocess.run(['bash','-eu','-c',script],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},capture_output=True,text=True)
+        assert result.returncode == 0,result.stderr
+        assert '--phase restart-before' in (tmp_path/'calls').read_text()
+    finally:
+        server.close()
+
+
+def test_cloudbeaver_creation_uses_supported_up_flags():
+    text=RUNBOOK.read_text()
+    assert 'create --no-deps' not in text
+    assert 'up --no-start --no-deps --force-recreate --no-build cloudbeaver' in text

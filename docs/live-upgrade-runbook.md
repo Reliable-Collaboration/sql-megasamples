@@ -713,7 +713,6 @@ podman volume ls --format json > "$BACKUP_DIR/volumes.json"
 # END cold-copy continuation
 # Set all four NEW passwords only after old-server backups are complete.
 # The original .env stays private in BACKUP_DIR; no secret value is printed or exported.
-umask 077
 ms_tool "$MEGASAMPLES_PY" - <<'PY_ROTATE_PASSWORDS'
 import os, pathlib, secrets
 from megasamples import config
@@ -802,6 +801,7 @@ CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 # 1. Apply the saved phase's state table. Expected: Passed: exited.
 GATE_PHASE=candidate-teardown
 if test "$TEARDOWN_PHASE" = stop; then GATE_PHASE=original-stop; fi
+if test "$TEARDOWN_PHASE" = rollback-pre-up; then GATE_PHASE=restart-before; fi
 set --
 if test -n "$EXITED_RECEIPT"; then set -- --removed-with "$EXITED_RECEIPT"; fi
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
@@ -822,8 +822,9 @@ owned by this user separately from other owners. It reads no arguments or enviro
 Its quiescence decision covers only the inspectable owner scope, stated in the JSON.
 Other-owner counts are informational; their descriptors/namespaces require privilege.
 Any holder, unresolved own process, mount-path resolution failure, or own network helper
-blocks continuation. Helpers for an unrelated isolated store may be excluded only with
-recorded namespace/cgroup attribution; never blanket-kill helpers or alter forwarders.
+blocks continuation. This gate has no helper exclusion override: even positively attributed helpers for
+another store keep it refused. This limits readiness on shared rootless hosts; record
+the refusal and stop. Never blanket-kill helpers or alter forwarders.
 Inspect the evidence even after status 0 and repeat immediately before continuation.
 
 Capture available kernel/AppArmor diagnostics for the failure's timestamp, without host changes:
@@ -856,6 +857,7 @@ case "$TEARDOWN_PHASE" in
   stop) RESUME_AT=cold-copy ;;
   rollback-stop) RESUME_AT=pre-down ;;
   rollback-down) RESUME_AT=restore ;;
+  rollback-pre-up) RESUME_AT=pre-up ;;
   *) echo 'STOP: unknown teardown phase'; exit 1 ;;
 esac
 save_context
@@ -867,7 +869,10 @@ run `save_context`, and resume at final workspace/cold-copy collection. For **ro
 do the same and resume at the pre-down snapshot, then the guarded down. For **rollback-down**,
 resume at branch/configuration restoration after all four checks; if exited containers remain,
 retry only the same scoped guarded down (append logs, retain the prior exited receipt), then
-repeat the four checks. Never use `down -v`, force-remove an active mount, repeat preparation,
+repeat the four checks. For **rollback-pre-up**, keep the saved combined snapshot
+(including all four new volume targets), repeat the four checks and resume at
+`# BEGIN pre-up continuation`; never repeat branch/configuration restoration or volume
+creation. Recheck original ports there before starting. Never use `down -v`, force-remove an active mount, repeat preparation,
 regenerate passwords or restart candidates implicitly. Preserve original volumes and inputs.
 
 In the isolated 30-dataset rehearsal, replacing all three engine containers and restoring SQLite's shared files took 121.65 seconds. Individual whole-engine resets took 23.07 seconds (MySQL), 26.4 seconds (PostgreSQL) and 92.4 seconds (SQLite). A stop/start of the existing eight-service stack, without replacing data volumes, took 38.66 seconds and preserved every recorded count, SQLite hash and inserted probe row. These measurements exclude cold-backup time and the coordinator's DataIntent checks and predate this follow-up; the added datasets have separate measurements in “Added dataset cost and scope”. Initial stack startup took 328.32 seconds while this custom store waited for health scheduling; real probes then completed successfully through the isolated-only runner. These are observed preparation/outage components, not a full-manifest downtime guarantee. The complete full-Contoso repository check against the shipped MySQL configuration took 1,736.02 seconds in this rehearsal, dominated by an indexed nested-loop constraint query. If the maintenance window includes that full integrity audit, budget its verification time as well as startup, cold copies and DataIntent tests.
@@ -1268,6 +1273,14 @@ python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/restart-before.json" \
 # Include old candidate mounts AND the new cold-restore targets, even before containers exist.
 python3 "$UPGRADE_HELPER" restart-mounts "$TEARDOWN_SNAPSHOT" \
   "$ATTEMPT_DIR/restart-mounts.json" --attempt "$TEARDOWN_ATTEMPT"
+# Persist the populated-volume checkpoint before a process/port gate can refuse.
+TEARDOWN_PHASE=rollback-pre-up
+TEARDOWN_SNAPSHOT="$ATTEMPT_DIR/restart-mounts.json"
+EXITED_RECEIPT=
+save_context
+# BEGIN pre-up continuation
+python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" \
+  --services-file "$BACKUP_DIR/original-running-services.txt"
 # BEGIN pre-up process gate
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 PROCESS_RC=0
@@ -1292,7 +1305,7 @@ if test "$RESTORE_CLOUDBEAVER" = 1; then
   python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" --service cloudbeaver
   # Populate a stopped fresh container before its first initialization, retaining original UI state.
   docker compose -p sql-megasamples -f compose.yaml -f "$ATTEMPT_DIR/rollback.override.yaml" \
-    -f "$ATTEMPT_DIR/rollback-consoles.override.json" create --no-deps --force-recreate --no-build cloudbeaver
+    -f "$ATTEMPT_DIR/rollback-consoles.override.json" up --no-start --no-deps --force-recreate --no-build cloudbeaver
   CB_WORKSPACE_BACKUP="$BACKUP_DIR/cloudbeaver-workspace-final"
   if ! test -d "$CB_WORKSPACE_BACKUP"; then CB_WORKSPACE_BACKUP="$BACKUP_DIR/cloudbeaver-workspace"; fi
   if test -d "$CB_WORKSPACE_BACKUP"; then
@@ -1323,7 +1336,12 @@ for service in selected:
 u.write_receipt(attempt / 'restart-after.json', dict(project='sql-megasamples', engines=[], containers=rows))
 u.exited(attempt / 'restart-after.json', attempt / 'restart-after-gate.json', phase='restart-after')
 PY_RESTART
+# END pre-up continuation
 ```
+
+[Compose up](https://docs.docker.com/reference/cli/docker/compose/up/) documents
+`--no-deps` and `--no-start`; [create](https://docs.docker.com/reference/cli/docker/compose/create/)
+does not provide `--no-deps` (both read **2026-11-18 18:55:55 UTC**; local client help checked).
 
 If that default socket is absent, start a Podman API service for the **default** store in the coordinator's session before the Compose command. This is separate from the isolated build's service. The override also maps the original shared-volume name to the restored cold copy for every SQLite consumer. The SQLite service's original startup command republishes `/data` into that restored shared console volume; keep SQLite consoles stopped until that copy finishes. Repeat version, actual row-count, account and DataIntent endpoint checks against the restored stack, including the forwarded endpoints. Verify only the originally running consoles, using their restored image IDs, login flows and dataset lists. Keep the original tool invocation/environment for old-release build checks; do not run its converters under the upgraded dependency lock. Resume clients only after rollback validation succeeds. Record the failed upgrade and retain its data directories separately for diagnosis.
 
