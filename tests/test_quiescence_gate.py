@@ -169,3 +169,15 @@ def test_empty_required_capture_is_never_pass(fixture,field):
     assert report['outcome']=='HOLD'
     assert 'capture missing or incomplete' in reasons(report,'holds')
     saved[field]=old;assert verify()['outcome']=='PASS'
+
+
+@pytest.mark.parametrize('mode,expected',[('bridge',['other']),('host',[]),('none',[])])
+def test_remaining_consumers_inspects_live_store_objects(fixture,monkeypatch,mode,expected):
+    saved,proc,cg,data,path,verify=fixture
+    process(proc,group='/user.slice/libpod-other.scope')
+    monkeypatch.setattr(gate,'pod',lambda *args:'other' if args[0]=='ps' else 'other|12345|0|'+mode+'|false|')
+    assert gate.remaining_consumers(saved,proc)==expected
+    if mode=='bridge':
+        (proc/'12345/cgroup').write_text('0::/unattributed')
+        with pytest.raises(ValueError,match='consumer association unresolved'):
+            gate.remaining_consumers(saved,proc)
