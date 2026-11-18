@@ -113,7 +113,7 @@ receipt={
     'writer_scenarios':writers,'image_checks':images,'rotation':read('rotation-results.json'),
     'mysql_builtin_boundary':mysql_boundary,
     'restoration':restoration,'isolation':isolation,'canaries':canaries,'container_log_canaries':log_canaries,
-    'credential_output_rule':{'status':'Failed','reason':'Published bootstrap credentials appeared in initial repository source inspection; no values are repeated here.'},
+    'credential_output_rule':{'status':'Failed','reason':'Repository SQL and Dockerfile source inspections displayed published bootstrap credentials; no values are repeated here.'},
     'scope':{'live_cutover':'Not run','DataIntent_suites':'Not run','Docker_BuildKit_and_other_architectures':'Not run',
              'unconfigured_generated_benchmarks':'Not run','SQLite_server_accounts':'Unsupported',
              'MySQL_builtin_function_ACLs':'Unsupported; stored-routine ACLs do not control builtin functions'},
