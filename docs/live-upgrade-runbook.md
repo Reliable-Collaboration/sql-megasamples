@@ -133,10 +133,44 @@ unset DEMO_PASSWORD ADMIN_PASSWORD MYSQL_ROOT_PASSWORD POSTGRES_PASSWORD
 export COMPOSE_PROJECT_NAME=sql-megasamples
 export DOCKER_HOST="unix://$XDG_RUNTIME_DIR/podman/podman.sock"
 cd /home/rcc-vstudio/working/sql-megasamples
+# Coordinator supplies the reviewed main merge before ANY backup/configuration change.
+: "${APPROVED_UPGRADE_MERGE:?Set the reviewed main merge containing DL-086}"
+git fetch origin main
+# BEGIN original-head guard
+if git merge-base --is-ancestor "$APPROVED_UPGRADE_MERGE" HEAD; then
+  echo 'STOP: HEAD already contains the upgrade. Restore the retained context; do not repeat preparation.'
+  exit 1
+fi
+# END original-head guard
 UPGRADE_ID=$(date -u +%Y%m%dT%H%M%SZ)
 BACKUP_DIR="$PWD/build/live-upgrade-backups/$UPGRADE_ID"
 mkdir -p "$BACKUP_DIR"
 chmod 700 "$BACKUP_DIR"
+# Initialize recoverable paths before any operation that can refuse preparation.
+UPGRADE_HELPER= UPGRADE_TOOLS_CONTAINER= MEGASAMPLES_PY= MEGASAMPLES_LIVE_API_PID=
+: "${METADATA_BUNDLE:?Set the unique verified metadata bundle directory}"
+PREPARATION_STAGE=original-inputs
+ms_tool() {
+  podman exec -i -e "DOCKER_HOST=$DOCKER_HOST" -e COMPOSE_PROJECT_NAME=sql-megasamples \
+    -e PYTHONPATH=. -w "$PWD" "$UPGRADE_TOOLS_CONTAINER" "$@"
+}
+save_context() {
+# Save non-secret maintenance context.
+umask 077
+{
+  printf '%s\n' 'set -eu' \
+    'unset CONTAINERS_STORAGE_CONF CONTAINERS_CONF CONTAINERS_CONF_OVERRIDE' \
+    'unset DEMO_PASSWORD ADMIN_PASSWORD MYSQL_ROOT_PASSWORD POSTGRES_PASSWORD'
+  declare -p BACKUP_DIR UPGRADE_ID UPGRADE_HELPER UPGRADE_TOOLS_CONTAINER MEGASAMPLES_PY \
+    METADATA_BUNDLE DOCKER_HOST MEGASAMPLES_LIVE_API_PID APPROVED_UPGRADE_MERGE PREPARATION_STAGE
+  printf '%s\n' 'export DOCKER_HOST COMPOSE_PROJECT_NAME=sql-megasamples'
+  printf 'cd -- %q\n' "$PWD"
+  declare -f ms_tool save_context
+} > "$BACKUP_DIR/resume-context.bash"
+chmod 600 "$BACKUP_DIR/resume-context.bash"
+# End saved context.
+}
+save_context
 # Older branches tracked this generated credential page. Back it up privately, never commit it.
 if test -f consoles/landing/adminer.html; then
   cp consoles/landing/adminer.html "$BACKUP_DIR/adminer.generated.html"
@@ -246,7 +280,6 @@ APPROVED_CREDENTIAL_MERGE=$(gh pr list --repo Reliable-Collaboration/sql-megasam
   --json mergeCommit --jq '.[0].mergeCommit.oid // empty')
 test -n "$APPROVED_CREDENTIAL_MERGE"
 # Coordinator supplies the reviewed main merge containing DL-086 after its merge hold is released.
-: "${APPROVED_UPGRADE_MERGE:?Set the reviewed main merge containing DL-086}"
 git fetch origin
 if git ls-files --error-unmatch consoles/landing/adminer.html >/dev/null 2>&1; then
   git restore -- consoles/landing/adminer.html
@@ -269,9 +302,13 @@ git rev-parse HEAD > "$BACKUP_DIR/upgrade-commit.txt"
 cp docs/validation/live-upgrade.py "$BACKUP_DIR/live-upgrade.py"
 UPGRADE_HELPER="$BACKUP_DIR/live-upgrade.py"
 chmod 600 "$UPGRADE_HELPER"
+PREPARATION_STAGE=archive-gates
+save_context
 # Native host Python + Podman; no package installation, one docker archive per full image ID.
+# BEGIN archive gates
 python3 "$UPGRADE_HELPER" save-images "$BACKUP_DIR"
 python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
+# END archive gates
 # Rehearse the COMPLETE rollback set in a fresh store before downtime. No containers are started.
 (
   SCRATCH_DIR="$BACKUP_DIR/rollback-load-rehearsal"
@@ -295,7 +332,6 @@ TOOLS_IMAGE=localhost/megasamples-upgrade-tools:clients-20261117-libpq18.7
 test "$(podman image inspect -f '{{.Id}}' "$TOOLS_IMAGE" | sed 's/^sha256://')" = '9cfca77f5b88e23f25e76429d70f0c72959ff13a6d933610c58ae74da67cd710'
 CANDIDATE_ARCHIVE=/home/rcc-vstudio/working/sql-megasamples-upgrade/build/credential-upgrade/candidate-images.tar
 test -f "$CANDIDATE_ARCHIVE"
-METADATA_BUNDLE=/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl086/verification-metadata
 test -f "$METADATA_BUNDLE/metadata.json"
 UPGRADE_TOOLS_CONTAINER="megasamples-live-upgrade-tools-$UPGRADE_ID"
 # The existing Docker CLI is mounted read-only; no host package installation.
@@ -307,18 +343,19 @@ podman run -d --name "$UPGRADE_TOOLS_CONTAINER" --network host --memory 18g \
   -v "$CANDIDATE_ARCHIVE:$CANDIDATE_ARCHIVE:ro" \
   -v "$METADATA_BUNDLE:$METADATA_BUNDLE:ro" \
   -v "$DOCKER_CLIENT:/usr/local/bin/docker:ro" -w "$PWD" "$TOOLS_IMAGE" sleep infinity
-ms_tool() {
-  podman exec -i -e "DOCKER_HOST=$DOCKER_HOST" -e COMPOSE_PROJECT_NAME=sql-megasamples \
-    -e PYTHONPATH=. -w "$PWD" "$UPGRADE_TOOLS_CONTAINER" "$@"
-}
+
 # Keep the old environment for rollback; run tooling only in this container.
-ms_tool /opt/venv/bin/uv sync --locked --python /usr/local/bin/python3
+ms_tool /opt/venv/bin/uv sync --locked --python /usr/local/bin/python3 </dev/null
 MEGASAMPLES_PY="$PWD/.venv/bin/python"
+PREPARATION_STAGE=candidate-gates
+save_context
 # Prove heredoc delivery before trusting a zero exit status from Python reading stdin.
 ms_tool "$MEGASAMPLES_PY" - <<'PY_STDIN_CHECK' > "$BACKUP_DIR/stdin-check.txt"
 print("stdin-executed")
 PY_STDIN_CHECK
 test "$(cat "$BACKUP_DIR/stdin-check.txt")" = stdin-executed
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py export-ports \
+  "$BACKUP_DIR/original-ports.json" --config "$BACKUP_DIR/megasamples.yaml" </dev/null
 # Import the exact compared images, checking the committed receipt before any load/tag operation.
 # Image import/tagging leaves the existing containers and their volumes running unchanged.
 ms_tool "$MEGASAMPLES_PY" - "$CANDIDATE_ARCHIVE" <<'PY_IMPORT_CANDIDATE'
@@ -357,13 +394,13 @@ raw["consoles"] = candidate["consoles"]
 config.write(raw)
 print("Passed: candidate archive, software tree, every image ID and dataset selection")
 PY_IMPORT_CANDIDATE
-ms_tool "$MEGASAMPLES_PY" -m pytest -q
-ms_tool make compose PY="$MEGASAMPLES_PY"
-ms_tool "$MEGASAMPLES_PY" -m megasamples console-config
-ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py install-metadata "$METADATA_BUNDLE"
-ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py check-metadata "$METADATA_BUNDLE"
+ms_tool "$MEGASAMPLES_PY" -m pytest -q </dev/null
+ms_tool make compose PY="$MEGASAMPLES_PY" </dev/null
+ms_tool "$MEGASAMPLES_PY" -m megasamples console-config </dev/null
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py install-metadata "$METADATA_BUNDLE" </dev/null
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py check-metadata "$METADATA_BUNDLE" </dev/null
 # Host-side port inspection/bind probes. Exempt only ports owned by this running Compose project.
-ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports --allow-running-project sql-megasamples
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports --allow-running-project sql-megasamples </dev/null
 
 ```
 
@@ -405,20 +442,9 @@ The files in `containers.json` include environment credentials: restrict access,
 
 ```sh
 # BACKUP_DIR and UPGRADE_ID are the values from the preparation shell.
-# Save non-secret maintenance context.
-umask 077
-{
-  printf '%s\n' 'set -eu' \
-    'unset CONTAINERS_STORAGE_CONF CONTAINERS_CONF CONTAINERS_CONF_OVERRIDE' \
-    'unset DEMO_PASSWORD ADMIN_PASSWORD MYSQL_ROOT_PASSWORD POSTGRES_PASSWORD'
-  declare -p BACKUP_DIR UPGRADE_ID UPGRADE_HELPER UPGRADE_TOOLS_CONTAINER MEGASAMPLES_PY \
-    METADATA_BUNDLE DOCKER_HOST MEGASAMPLES_LIVE_API_PID
-  printf '%s\n' 'export DOCKER_HOST COMPOSE_PROJECT_NAME=sql-megasamples'
-  printf 'cd -- %q\n' "$PWD"
-  declare -f ms_tool
-} > "$BACKUP_DIR/resume-context.bash"
-chmod 600 "$BACKUP_DIR/resume-context.bash"
-# End saved context.
+PREPARATION_STAGE=final-backups
+save_context
+
 # Keep logical backups for inspection/recovery; only private pass/option files reach clients.
 ms_tool "$MEGASAMPLES_PY" - "$BACKUP_DIR" <<'PY_LOGICAL_BACKUP'
 import pathlib, subprocess, sys
@@ -442,8 +468,8 @@ chmod 600 "$BACKUP_DIR/"*.sql
 
 # Repeat the preparation gates immediately before downtime; any failure aborts here.
 python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
-ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py check-metadata "$METADATA_BUNDLE"
-ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports --allow-running-project sql-megasamples
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py check-metadata "$METADATA_BUNDLE" </dev/null
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports --allow-running-project sql-megasamples </dev/null
 # Downtime starts here. SQLite consumers must be stopped before copying its files.
 # Stop every configured console as well as all engines; keep the proxy services running.
 if docker compose -p sql-megasamples -f compose.yaml stop > "$BACKUP_DIR/stop.log" 2>&1; then
@@ -496,20 +522,20 @@ with path.open("w") as stream:
 PY_ROTATE_PASSWORDS
 chmod 600 .env
 # Render the corrected credential wiring; all consoles and engines are still stopped.
-ms_tool make compose PY="$MEGASAMPLES_PY"
+ms_tool make compose PY="$MEGASAMPLES_PY" </dev/null
 # Clear the shared SQLite copy only after its verified cold backup. Retain old anonymous volumes.
 docker compose -p sql-megasamples -f compose.yaml run --rm --no-deps -T --entrypoint sh sqlite -c \
   'rm -f /shared/*.sqlite /shared/*.sqlite-wal /shared/*.sqlite-shm /shared/*.sqlite-journal'
 # Use the imported images with fresh anonymous data copies. Never rebuild in this cutover step.
 # No exemptions after stop: check again before engines, then consoles are started.
-ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports </dev/null
 docker compose -p sql-megasamples -f compose.yaml up -d --force-recreate --renew-anon-volumes \
   --no-deps --wait mysql postgres sqlite
 # Fresh console containers apply the new passwords and reseed CloudBeaver from the backed-up state.
-ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports --consoles-only
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports --consoles-only </dev/null
 docker compose -p sql-megasamples -f compose.yaml up -d --force-recreate --wait \
   landing phpmyadmin adminer dbgate cloudbeaver
-ms_tool make console-page PY="$MEGASAMPLES_PY"
+ms_tool make console-page PY="$MEGASAMPLES_PY" </dev/null
 # Require the running image IDs to remain exactly the compared candidate IDs.
 ms_tool "$MEGASAMPLES_PY" - <<'PY_CHECK_CANDIDATE_IDS'
 import json, pathlib, subprocess
@@ -519,8 +545,8 @@ for service, entry in candidate["services"].items():
     assert actual.removeprefix("sha256:") == entry["image_id"].removeprefix("sha256:"), service + " differs from compared image"
 PY_CHECK_CANDIDATE_IDS
 # Require every new password to work and every old one to be refused by authentication.
-ms_tool "$MEGASAMPLES_PY" docs/validation/verify-configured-passwords.py --previous-dir "$BACKUP_DIR"
-ms_tool make test-console PY="$MEGASAMPLES_PY"
+ms_tool "$MEGASAMPLES_PY" docs/validation/verify-configured-passwords.py --previous-dir "$BACKUP_DIR" </dev/null
+ms_tool make test-console PY="$MEGASAMPLES_PY" </dev/null
 ```
 
 If `make up` waits with no health-log entries, the isolated rehearsal observed the same scheduling issue. In a second **coordinator maintenance shell**, run the real configured probes once for this project's engines; do not edit health status or change proxy services:
@@ -631,15 +657,15 @@ download/conversion time in the outage.
 ```sh
 podman ps --format '{{.Names}} {{.Status}} {{.Ports}}'
 podman exec megasamples-postgres psql -U postgres -Atc 'SHOW server_version'
-ms_tool "$MEGASAMPLES_PY" -c 'from megasamples.engines import get; print(get("mysql").query("megasamples-mysql", "SELECT VERSION()"))'
+ms_tool "$MEGASAMPLES_PY" -c 'from megasamples.engines import get; print(get("mysql").query("megasamples-mysql", "SELECT VERSION()"))' </dev/null
 podman exec megasamples-sqlite sqlite3 :memory: 'SELECT sqlite_version()'
 podman exec megasamples-postgres psql -U postgres -d megasamples -Atc \
   'SELECT name,row_counts FROM datasets ORDER BY name'
-ms_tool "$MEGASAMPLES_PY" -c 'from megasamples.engines import get; print(get("mysql").registry_rows("megasamples-mysql"))'
+ms_tool "$MEGASAMPLES_PY" -c 'from megasamples.engines import get; print(get("mysql").registry_rows("megasamples-mysql"))' </dev/null
 podman exec megasamples-sqlite sqlite3 /data/megasamples.sqlite \
   'SELECT name,row_counts FROM datasets ORDER BY name'
 # Actual added-dataset fingerprints against the replacement containers, without pinning fixtures.
-ms_tool "$MEGASAMPLES_PY" -c '
+ms_tool "$MEGASAMPLES_PY" -c ' </dev/null
 import json, pathlib, shutil, subprocess
 from megasamples import config, verify
 from megasamples.engines.mysql import server as mysql
@@ -713,6 +739,13 @@ ports, including the new SQLite connection in CloudBeaver and DbGate. Unsupporte
 be presented as available. Preserve the result logs with the maintenance receipt.
 
 ## Roll back
+
+```sh
+# Fresh Bash maintenance shell, also when the failed cutover shell exited.
+# Set BACKUP_DIR to the exact private directory in the maintenance receipt.
+: "${BACKUP_DIR:?Set the retained backup directory}"
+. "$BACKUP_DIR/resume-context.bash"
+```
 
 Keep clients paused. Do not remove any backup, original image tag, original branch, original anonymous volume, or proxy service.
 
@@ -821,6 +854,8 @@ for line in (backup/'rollback-image-tags.txt').read_text().splitlines():
     if name in names: services[name]={"image":line,"pull_policy":"never"}
 (backup/'rollback-consoles.override.json').write_text(json.dumps({"services":services},indent=2)+'\n')
 PY_CONSOLE_ROLLBACK
+# Standalone retained helper reads the original port selection, even on the old branch.
+python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json"
 set --
 RESTORE_CLOUDBEAVER=0
 while IFS= read -r service; do
@@ -830,6 +865,7 @@ test "$#" -gt 0
 docker compose -p sql-megasamples -f compose.yaml -f "$BACKUP_DIR/rollback.override.yaml" \
   -f "$BACKUP_DIR/rollback-consoles.override.json" up -d --wait "$@"
 if test "$RESTORE_CLOUDBEAVER" = 1; then
+  python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" --consoles-only
   # Populate a stopped fresh container before its first initialization, retaining original UI state.
   docker compose -p sql-megasamples -f compose.yaml -f "$BACKUP_DIR/rollback.override.yaml" \
     -f "$BACKUP_DIR/rollback-consoles.override.json" create --force-recreate --no-build cloudbeaver

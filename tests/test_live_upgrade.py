@@ -223,7 +223,7 @@ def test_runbook_context_restores_fresh_maintenance_shell(tmp_path):
     assert snapshot, 'missing recoverable maintenance shell context'
     function = re.search(r'^ms_tool\(\) \{\n.*?^\}', text, re.M | re.S)[0]
     names = ['UPGRADE_ID', 'UPGRADE_HELPER', 'UPGRADE_TOOLS_CONTAINER', 'MEGASAMPLES_PY',
-             'METADATA_BUNDLE', 'DOCKER_HOST', 'MEGASAMPLES_LIVE_API_PID']
+             'METADATA_BUNDLE', 'DOCKER_HOST', 'MEGASAMPLES_LIVE_API_PID', 'APPROVED_UPGRADE_MERGE', 'PREPARATION_STAGE']
     env = dict(os.environ, **{name: "fixture 'with spaces' $" for name in names}, BACKUP_DIR=str(tmp_path))
     subprocess.run(['bash', '-c', function + '\n' + snapshot[1]], env=env, cwd=tmp_path, check=True)
     result = subprocess.run(['bash', '-c', '. "$CONTEXT"; type ms_tool >/dev/null; printf "%s" "$UPGRADE_ID"'],
@@ -347,3 +347,51 @@ def test_exited_refuses_running_and_requires_crash_acknowledgment(tmp_path, monk
     state[3] = '9'
     with pytest.raises(ValueError, match='exit code'):
         upgrade.exited(before, tmp_path / 'bad-code.json', allow_crash_consistent=True)
+
+
+@pytest.mark.parametrize('failed_gate', ['save-images', 'check-images', 'check-metadata', 'ports'])
+def test_preparation_failure_blocks_teardown(tmp_path, failed_gate):
+    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
+    archive_gates = re.search(r'# BEGIN archive gates\n(.*?)# END archive gates', text, re.S)
+    assert archive_gates, 'archive commands must be executable gates'
+    cutover = text.split('# Repeat the preparation gates immediately before downtime;', 1)[1].split('\n', 1)[1]
+    cutover = cutover.split('# Retain the final quiesced UI workspace', 1)[0]
+    # Run the actual documented sequence: commented commands never reach the stubs.
+    stubs = '''
+python3() { printf '%s\\n' "$*" >> "$CALLS"; case " $* " in *" $FAIL "*) return 41;; esac; }
+ms_tool() { python3 "$@"; }
+docker() { printf 'TEARDOWN\\n' >> "$CALLS"; }
+'''
+    env = dict(os.environ, CALLS=str(tmp_path / 'calls'), FAIL=failed_gate,
+               UPGRADE_HELPER='helper', BACKUP_DIR=str(tmp_path), METADATA_BUNDLE='metadata', MEGASAMPLES_PY='python')
+    result = subprocess.run(['bash', '-ec', stubs + archive_gates[1] + cutover], env=env,
+                            capture_output=True, text=True)
+    assert result.returncode == 41, result.stderr
+    assert 'TEARDOWN' not in (tmp_path / 'calls').read_text()
+
+
+def test_preparation_refuses_already_upgraded_head(tmp_path):
+    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
+    guard = re.search(r'# BEGIN original-head guard\n(.*?)# END original-head guard', text, re.S)
+    assert guard, 'preparation must refuse overwriting original rollback inputs'
+    result = subprocess.run(['bash', '-ec', 'git() { return 0; }\n' + guard[1] + '\necho UNSAFE'],
+                            env=dict(os.environ, APPROVED_UPGRADE_MERGE='fixture'), capture_output=True, text=True)
+    assert result.returncode != 0
+    assert 'UNSAFE' not in result.stdout
+    assert text.index('# Save non-secret maintenance context.') < text.index('save-images "$BACKUP_DIR"')
+
+
+def test_plain_ms_tool_call_preserves_next_piped_command(tmp_path):
+    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
+    line = next(line for line in text.splitlines() if line.startswith('ms_tool /opt/venv/bin/uv sync'))
+    script = 'ms_tool() { cat >/dev/null; }; ' + line + '\nIFS= read -r next; test "$next" = next-command\n'
+    result = subprocess.run(['bash', '-c', script], input='next-command\n', capture_output=True, text=True)
+    assert result.returncode == 0
+
+
+def test_rollback_opens_with_fresh_shell_and_checks_ports():
+    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text().split('## Roll back\n', 1)[1]
+    first_block = re.search(r'```sh\n(.*?)```', text, re.S)[1]
+    assert first_block.lstrip().startswith('# Fresh Bash maintenance shell')
+    assert '. "$BACKUP_DIR/resume-context.bash"' in first_block
+    assert text.index('ports --port-config') < text.index(' up -d --wait')
