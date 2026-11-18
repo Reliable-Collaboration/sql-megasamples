@@ -487,15 +487,16 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
             else:
                 refuse('dedicated helper survives' if row['role'] == 'dedicated helper' else 'recorded process survives', **current)
         except (OSError, ValueError) as error:
-            if p.exists():
+            if not isinstance(error, FileNotFoundError) or p.exists():
                 hold('required process inspection unreadable', pid=row['pid'], error=type(error).__name__)
-    groups = [r['line'] for r in saved['cgroups']]
+    groups = []  # Only continuous cgroup objects establish deployment scope.
     for row in saved['cgroups']:
         path = cgroup_root/cgroup_path(row['line']).lstrip('/')
         try:
             if object_identity(path) != {k:row[k] for k in ('device','inode')}:
                 hold('recorded cgroup identifier reused')
                 continue
+            groups.append(row['line'])
             for group in [path, *(p for p in path.rglob('*') if p.is_dir())]:
                 for name in ('cgroup.procs','cgroup.threads'):
                     for pid in (group/name).read_text().split():
@@ -506,8 +507,8 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
                         except OSError:
                             if p.exists():
                                 hold('required cgroup inspection unreadable')
-        except (OSError, ValueError):
-            if path.exists():
+        except (OSError, ValueError) as error:
+            if not isinstance(error, FileNotFoundError) or path.exists():
                 hold('required cgroup inspection unreadable')
     try:
         for p in proc.iterdir():

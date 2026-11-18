@@ -146,3 +146,15 @@ def test_container_running_refuses_with_reversal(fixture,monkeypatch):
     assert 'deployment container running' in reasons(verify(),'refusals')
     monkeypatch.setattr(gate,'pod',lambda *a:'' if a[0]=='ps' else 'test|false|0')
     assert verify()['outcome']=='PASS'
+
+
+def test_reused_cgroup_does_not_attribute_its_new_members(fixture):
+    saved,proc,cg,data,path,verify=fixture
+    group=cg/'libpod-test.scope';group.mkdir();(group/'cgroup.procs').write_text('12345');(group/'cgroup.threads').write_text('12345')
+    saved['cgroups']=[dict(line='0::/libpod-test.scope',**gate.object_identity(group))]
+    saved['cgroups'][0]['inode']+=1
+    process(proc)
+    report=verify()
+    assert report['outcome']=='HOLD'
+    assert 'recorded cgroup identifier reused' in reasons(report,'holds')
+    assert 'live deployment cgroup task' not in reasons(report,'refusals')
