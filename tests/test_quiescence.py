@@ -53,6 +53,7 @@ def test_unreadable_required_descriptor_holds(tmp_path,monkeypatch):
         return original(path)
     monkeypatch.setattr(Path,'iterdir',denied)
     report=gate.holder_scan([source],['0::/libpod-test.scope'],proc)
+    assert report['holds'], 'required holder inspection unreadable must HOLD'
     assert report['holds'][0]['reason']=='required holder inspection unreadable'
     assert report['holds'][0]['operation']=='fd'
 

@@ -55,6 +55,24 @@ def main():
         (out/f'rule-{index}.log').write_text(result.stdout+result.stderr)
         assert result.returncode==1 and 'AssertionError' in result.stdout,(reason,result.stdout,result.stderr)
         results.append(dict(rule=reason,status='Passed',control='Failed as required after rule removal'))
+    # Non-refusing branches need reversals too: make a verified shared consumer
+    # refuse, promote unrelated limits to HOLD, and ignore live zombie threads.
+    controls=[
+      ('verified shared consumer', "if not report['shared_consumers']:", "if True:", 'tests/test_quiescence_gate.py::test_shared_helper_consumer_rule_with_reversal[True]'),
+      ('unattributed evidence remains diagnostic', "report['limitations'] += scan['limitations']", "report['holds'] += scan['limitations']", 'tests/test_quiescence_gate.py::test_unreadable_unattributed_is_diagnostic_not_outside'),
+      ('live thread under zombie leader', "if (task/'stat').read_text().rsplit(') ', 1)[1].split()[0] not in ('Z', 'X', 'x'):", "if False:", 'tests/test_quiescence_gate.py::test_zombie_leader_with_live_thread_is_alive'),
+      ('source filesystem identity', "device == s['device'] and under(root, s['root'])", "under(root, s['root'])", 'tests/test_quiescence.py::test_same_path_on_different_filesystem_is_not_holder'),
+      ('required holder unreadable', "holds if required else limitations", "limitations", 'tests/test_quiescence.py::test_unreadable_required_descriptor_holds'),
+      ('complete required checks PASS', "report['outcome'] = 'REFUSE' if report['refusals'] else 'HOLD' if report['holds'] else 'PASS'", "report['outcome'] = 'HOLD'", 'tests/test_quiescence_gate.py::test_missing_capture_is_hold'),
+    ]
+    for index,(name,before,after,test) in enumerate(controls):
+        assert before in original,name
+        mutated=out/f'branch-{index}.py';mutated.write_text(original.replace(before,after))
+        result=subprocess.run([sys.executable,'-m','pytest','-q',test],cwd=ROOT,
+            env=dict(os.environ,DL088_GATE_SOURCE=str(mutated)),capture_output=True,text=True,timeout=30)
+        (out/f'branch-{index}.log').write_text(result.stdout+result.stderr)
+        assert result.returncode==1 and 'AssertionError' in result.stdout,(name,result.stdout,result.stderr)
+        results.append(dict(rule=name,status='Passed',control='Failed as required after rule removal'))
     (out/'receipt.json').write_text(json.dumps(dict(results=results),indent=2)+'\n')
     print(json.dumps(dict(artifacts=str(out.relative_to(ROOT)),rules=len(results),status='Passed')))
 
