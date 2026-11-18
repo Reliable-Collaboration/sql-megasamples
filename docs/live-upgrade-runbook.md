@@ -799,6 +799,11 @@ Original cold-copy checks always refuse missing containers.
 # BEGIN four checks
 CHECK_ID=$(date -u +%Y%m%dT%H%M%S%N)
 # 1. Apply the saved phase's state table. Expected: Passed: exited.
+case "$TEARDOWN_PHASE" in
+  rollback-starting|rollback-restored)
+    echo 'HOLD: originals may be running; use the partial-restart procedure, never teardown dispatch.'
+    exit 1 ;;
+esac
 GATE_PHASE=candidate-teardown
 if test "$TEARDOWN_PHASE" = stop; then GATE_PHASE=original-stop; fi
 if test "$TEARDOWN_PHASE" = rollback-pre-up; then GATE_PHASE=restart-before; fi
@@ -1299,6 +1304,11 @@ RESTORE_CLOUDBEAVER=0
 while IFS= read -r service; do
   if test "$service" = cloudbeaver; then RESTORE_CLOUDBEAVER=1; else set -- "$@" "$service"; fi
 done < "$BACKUP_DIR/original-running-services.txt"
+# BEGIN original start boundary
+# After this checkpoint, a failure is a partial-original-restart HOLD, not pre-up.
+TEARDOWN_PHASE=rollback-starting
+save_context
+# END original start boundary
 if test "$#" -gt 0; then
   docker compose -p sql-megasamples -f compose.yaml -f "$ATTEMPT_DIR/rollback.override.yaml" \
     -f "$ATTEMPT_DIR/rollback-consoles.override.json" up -d --no-deps --wait "$@"
@@ -1338,6 +1348,8 @@ for service in selected:
 u.write_receipt(attempt / 'restart-after.json', dict(project='sql-megasamples', engines=[], containers=rows))
 u.exited(attempt / 'restart-after.json', attempt / 'restart-after-gate.json', phase='restart-after')
 PY_RESTART
+TEARDOWN_PHASE=rollback-restored
+save_context
 # END pre-up continuation
 ```
 
@@ -1346,6 +1358,33 @@ PY_RESTART
 does not provide `--no-deps` (both read **2026-11-18 18:55:55 UTC**; local client help checked).
 
 If that default socket is absent, start a Podman API service for the **default** store in the coordinator's session before the Compose command. This is separate from the isolated build's service. The override also maps the original shared-volume name to the restored cold copy for every SQLite consumer. The SQLite service's original startup command republishes `/data` into that restored shared console volume; keep SQLite consoles stopped until that copy finishes. Repeat version, actual row-count, account and DataIntent endpoint checks against the restored stack, including the forwarded endpoints. Verify only the originally running consoles, using their restored image IDs, login flows and dataset lists. Keep the original tool invocation/environment for old-release build checks; do not run its converters under the upgraded dependency lock. Resume clients only after rollback validation succeeds. Record the failed upgrade and retain its data directories separately for diagnosis.
+
+### Partial original restart: coordinator hold
+
+The pre-up continuation ends as soon as the first original service startup begins.
+The saved `rollback-starting` phase means some originals may already be running.
+A later port, CloudBeaver workspace copy, health or validation failure is a **hold**;
+do not use teardown dispatch, rerun configuration restoration, repopulate volumes,
+or repeat the whole startup block. Running originals correctly fail the pre-up table.
+
+Start a fresh Bash shell outside the source block, restore the attempt's exact
+`CONTEXT_FILE`, and check its Podman socket as above. Capture a new non-secret
+snapshot before diagnosis:
+
+```sh
+PARTIAL_ID=$(date -u +%Y%m%dT%H%M%S%N)
+python3 "$UPGRADE_HELPER" snapshot "$ATTEMPT_DIR/partial-start-$PARTIAL_ID.json" \
+  --project sql-megasamples --phase restart-after \
+  --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
+```
+
+Keep clients paused. The coordinator must compare each selected service's state,
+image ID, mounts and readiness with the retained selection and receipt, then resume
+only the diagnosed failed original-service command, preserving the new rollback
+volumes and restored credentials. Complete the post-up image/running-set, health,
+account, dataset and console/workspace checks before resuming clients. Automated
+partial-original-restart recovery has **not** been rehearsed; this hold is an explicit
+limit, not permission to stop or remove the restored stack.
 
 ## Client and console verification and rollback details
 

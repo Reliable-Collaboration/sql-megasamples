@@ -197,6 +197,7 @@ def test_original_startup_never_adds_dependencies(tmp_path,services):
     start='set --\nRESTORE_CLOUDBEAVER=0'
     body=start+text.split(start,1)[1].split('# Check only originally selected services',1)[0].split('```',1)[0]
     stubs=r'''
+save_context() { :; }
 python3() { :; }
 podman() { :; }
 docker() {
@@ -270,5 +271,17 @@ podman() { :; }
         assert result.returncode == 44,result.stderr
         fresh=subprocess.run(['bash','-eu','-c','. "$CONTEXT"; test "$TEARDOWN_PHASE" = rollback-pre-up; grep -q /new/target "$TEARDOWN_SNAPSHOT"'],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},capture_output=True,text=True)
         assert fresh.returncode == 0,fresh.stderr
+    finally:
+        server.close()
+
+
+def test_start_boundary_saves_partial_restart_hold(tmp_path):
+    server=context(tmp_path,'rollback-pre-up')
+    try:
+        script='. "$CONTEXT"\n'+block('# BEGIN original start boundary\n','# END original start boundary')
+        script+='\nexit 37\n'
+        result=subprocess.run(['bash','-eu','-c',script],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')})
+        assert result.returncode == 37
+        subprocess.run(['bash','-eu','-c','. "$CONTEXT"; test "$TEARDOWN_PHASE" = rollback-starting'],env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},check=True)
     finally:
         server.close()
