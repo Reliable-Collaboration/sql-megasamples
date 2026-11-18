@@ -1540,72 +1540,6 @@ done < "$BACKUP_DIR/original-tool-images.txt"
 # END restore continuation
 ```
 
-### Recovery without a cold restore: retained unchanged original data
-
-If a copy/restore gate refuses after the original container IDs were replaced,
-unchanged original anonymous volumes may still be retained. Their restart does
-not require that copy/restore gate. Keep clients paused and stop the current
-project with its saved state receipt; no running project container is eligible.
-From the verified bootstrap extraction, run `# BEGIN restore continuation`
-through `# END restore continuation` above to restore configuration/images only.
-Do **not** run rollback population, cold-copy digest verification or a process
-copy gate for this route: it does not use cold copies or write new data targets.
-
-Set `ORIGINAL_CAPTURE` to the retained **original pre-upgrade** capture, never the
-candidate capture. The command below independently rechecks each original data
-object and writes explicit bind overrides with `create_host_path: false`; it
-cannot create an empty replacement at a missing path. It ignores process/boot
-quiescence because this operation is an original restart, while requiring exact
-current canonical data identity. Candidate mount evidence must independently
-show no overlap with those original data roots; a reused SQLite shared volume,
-for example, is ineligible for this unchanged-data route. Directory identity alone
-does not prove unchanged contents. Keep all other writers prevented and retain the
-candidate mount history; unavailable mount evidence needs coordinator verification.
-A changed restoration target, surviving helper,
-or unreadable copy evidence does not bar this route. Changed original data must
-be resolved independently; never start an old binary on candidate data.
-
-```sh
-# BEGIN unchanged volume recovery
-: "${ORIGINAL_CAPTURE:?Set retained original pre-upgrade data capture}"
-RECOVERY_ID=$(date -u +%Y%m%dT%H%M%S%N)
-python3 "$EVIDENCE_DIR/quiescence.py" original-override "$ORIGINAL_CAPTURE" \
-  "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" --upgrade-id "$UPGRADE_ID" \
-  --candidate-capture "$QUIESCENCE_CAPTURE"
-python3 "$UPGRADE_HELPER" snapshot "$ATTEMPT_DIR/unchanged-before-$RECOVERY_ID.json" \
-  --project sql-megasamples --phase restart-before \
-  --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
-python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/unchanged-before-$RECOVERY_ID.json" \
-  "$ATTEMPT_DIR/unchanged-state-$RECOVERY_ID.json" --phase restart-before
-python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" \
-  --services-file "$BACKUP_DIR/original-running-services.txt"
-set --
-while IFS= read -r service; do set -- "$@" "$service"; done < "$BACKUP_DIR/original-running-services.txt"
-test "$#" -gt 0
-TEARDOWN_PHASE=rollback-starting
-save_context
-# Record this exact override path in the maintenance receipt before starting.
-docker compose -p sql-megasamples -f compose.yaml \
-  -f "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" up --no-deps --force-recreate --no-build -d "$@"
-for engine in postgres mysql sqlite; do
-  case " $* " in
-    *" $engine "*) python3 "$UPGRADE_HELPER" wait-healthy "$engine" --timeout 300 ;;
-  esac
-done
-# END unchanged volume recovery
-```
-
-Verify selected images, mounts, accounts, counts, fingerprints and consoles before
-resuming clients, using the normal post-start checks. A startup failure uses the
-partial-original-restart hold below, with this recorded unchanged-data override;
-never substitute the cold-restoration override. This route is fixture-tested;
-recreating engines on retained original data has **Not run** natively here.
-If original mount identity evidence is missing (including the first live backup's
-missing DL-088 capture), do not manufacture it: existing original containers can
-still use the earlier `start` route; recreating removed originals requires separate
-coordinator verification of retained volume mappings. That recovery remains an
-explicit limit; no copy/restore refusal is its prerequisite.
-
 Configuration extraction restores safe recorded directory modes even under umask 077;
 the extraction parent stays private. Check console bind-tree readability before start.
 
@@ -1791,6 +1725,73 @@ volumes and restored credentials. Complete the post-up image/running-set, health
 account, dataset and console/workspace checks before resuming clients. Automated
 partial-original-restart recovery has **not** been rehearsed; this hold is an explicit
 limit, not permission to stop or remove the restored stack.
+
+## Recovery without a cold restore: retained unchanged original data
+
+If a copy/restore gate refuses after the original container IDs were replaced,
+unchanged original anonymous volumes may still be retained. Their restart does
+not require that copy/restore gate. Keep clients paused and stop the current
+project with its saved state receipt; no running project container is eligible.
+From the verified bootstrap extraction, run `# BEGIN restore continuation`
+through `# END restore continuation` above to restore configuration/images only.
+Do **not** run rollback population, cold-copy digest verification or a process
+copy gate for this route: it does not use cold copies or write new data targets.
+
+Set `ORIGINAL_CAPTURE` to the retained **original pre-upgrade** capture, never the
+candidate capture. The command below independently rechecks each original data
+object and writes explicit bind overrides with `create_host_path: false`; it
+cannot create an empty replacement at a missing path. It ignores process/boot
+quiescence because this operation is an original restart, while requiring exact
+current canonical data identity. Candidate mount evidence must independently
+show no overlap with those original data roots; a reused SQLite shared volume,
+for example, is ineligible for this unchanged-data route. Directory identity alone
+does not prove unchanged contents. Keep all other writers prevented and retain the
+candidate mount history; unavailable mount evidence needs coordinator verification.
+A changed restoration target, surviving helper,
+or unreadable copy evidence does not bar this route. Changed original data must
+be resolved independently; never start an old binary on candidate data.
+
+```sh
+# BEGIN unchanged volume recovery
+: "${ORIGINAL_CAPTURE:?Set retained original pre-upgrade data capture}"
+RECOVERY_ID=$(date -u +%Y%m%dT%H%M%S%N)
+python3 "$EVIDENCE_DIR/quiescence.py" original-override "$ORIGINAL_CAPTURE" \
+  "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" --upgrade-id "$UPGRADE_ID" \
+  --candidate-capture "$QUIESCENCE_CAPTURE"
+python3 "$UPGRADE_HELPER" snapshot "$ATTEMPT_DIR/unchanged-before-$RECOVERY_ID.json" \
+  --project sql-megasamples --phase restart-before \
+  --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
+python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/unchanged-before-$RECOVERY_ID.json" \
+  "$ATTEMPT_DIR/unchanged-state-$RECOVERY_ID.json" --phase restart-before
+python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" \
+  --services-file "$BACKUP_DIR/original-running-services.txt"
+set --
+while IFS= read -r service; do set -- "$@" "$service"; done < "$BACKUP_DIR/original-running-services.txt"
+test "$#" -gt 0
+TEARDOWN_PHASE=rollback-starting
+save_context
+# Record this exact override path in the maintenance receipt before starting.
+docker compose -p sql-megasamples -f compose.yaml \
+  -f "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" up --no-deps --force-recreate --no-build -d "$@"
+for engine in postgres mysql sqlite; do
+  case " $* " in
+    *" $engine "*) python3 "$UPGRADE_HELPER" wait-healthy "$engine" --timeout 300 ;;
+  esac
+done
+# END unchanged volume recovery
+```
+
+Verify selected images, mounts, accounts, counts, fingerprints and consoles before
+resuming clients, using the normal post-start checks. A startup failure uses the
+partial-original-restart hold below, with this recorded unchanged-data override;
+never substitute the cold-restoration override. This route is fixture-tested;
+recreating engines on retained original data has **Not run** natively here.
+If original mount identity evidence is missing (including the first live backup's
+missing DL-088 capture), do not manufacture it: existing original containers can
+still use the earlier `start` route; recreating removed originals requires separate
+coordinator verification of retained volume mappings. That recovery remains an
+explicit limit; no copy/restore refusal is its prerequisite.
+
 
 ## Client and console verification and rollback details
 
