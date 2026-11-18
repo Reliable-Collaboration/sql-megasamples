@@ -89,3 +89,14 @@ docker() { printf 'recreated %s\n' "$*"; }
         assert result.returncode==0,result.stderr
         assert 'unchanged-original-data-' in result.stdout and 'up --no-deps' in result.stdout
     finally:server.close()
+
+
+def test_failed_capture_has_exclusive_retry_route_before_downtime(tmp_path):
+    server=context(tmp_path,'stop')
+    try:
+        script='. "$CONTEXT"\npython3() { case "$2" in capture) return 2;; esac; }\n'+block('# BEGIN capture retry\n','# END capture retry')+'\necho UNSAFE\n'
+        result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
+        assert result.returncode==2 and 'UNSAFE' not in result.stdout
+        fresh=subprocess.run(['bash','-eu','-c','. "$CONTEXT"; case "$QUIESCENCE_CAPTURE" in */capture-retry-*) :;; *) exit 43;; esac'],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
+        assert fresh.returncode==0,fresh.stderr
+    finally:server.close()

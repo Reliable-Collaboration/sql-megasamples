@@ -179,6 +179,33 @@ never converted to an empty list on error. A HOLD on holder evidence clears only
 by evidence that the match is false, or by removal of the confirmed holder;
 coordinator acknowledgement alone is insufficient. No bypass flag is provided.
 
+A failed capture is retained exclusively. While the deployment is still running
+and before any stop, resolve its reason, then use fresh evidence paths below;
+never overwrite an incomplete capture or rerun an existing output path. A changed
+container requires a fresh snapshot as well. After stop/reboot, first use the
+unchanged-original restart route where eligible; do not present a post-stop
+snapshot as pre-stop history. The capture command itself holds if nothing runs.
+
+```sh
+# BEGIN capture retry
+case "$TEARDOWN_PHASE" in
+  stop) CAPTURE_STATE_PHASE=original-stop ;;
+  rollback-stop) CAPTURE_STATE_PHASE=candidate-teardown ;;
+  *) echo 'HOLD: restart eligible unchanged originals before a new pre-stop capture'; exit 2 ;;
+esac
+CAPTURE_RETRY=$(date -u +%Y%m%dT%H%M%S%N)
+TEARDOWN_SNAPSHOT="$EVIDENCE_DIR/capture-retry-before-$CAPTURE_RETRY.json"
+QUIESCENCE_CAPTURE="$EVIDENCE_DIR/capture-retry-$CAPTURE_RETRY.json"
+save_context
+python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
+  --phase "$CAPTURE_STATE_PHASE" \
+  --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
+python3 "$EVIDENCE_DIR/quiescence.py" capture "$TEARDOWN_SNAPSHOT" "$QUIESCENCE_CAPTURE" --data-only \
+  --source "$BACKUP_DIR/postgres" --source "$BACKUP_DIR/mysql" \
+  --source "$BACKUP_DIR/sqlite" --source "$BACKUP_DIR/sqlite-shared"
+# END capture retry
+```
+
 Before original `up`: verified archives and tag/ID mappings, configuration digest and
 attempt extraction, unchanged cold-copy digest, populated **new** rollback volumes,
 original-only service selection, available ports and quiescence must all pass. After
