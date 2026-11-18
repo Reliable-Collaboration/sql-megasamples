@@ -2,8 +2,11 @@
 
 This coordinator procedure was **executed live once, on 2026-11-18**, at `2cf1f3e9`, with seven defects and coordinator-pinned corrections. This revision incorporates those corrections as preparation, verification and rollback gates. The [first-run evidence](live-upgrade-evidence.md) separates what was executed from what remains unverified. As of **2026-11-18**, acceptance was held for a DataIntent test failure outside this service; the acceptance record is DataIntent’s. Clients and acceptance remain coordinator-controlled. DL-077 templates/copies and their CLI remain a later task and second rollout. Keep the two existing socket-proxy services unchanged. The owner authorized the BTS refresh and accepted the SQL Server Developer EULA for the isolated WWI export on 2026-11-17. Oracle native verification remains **Not run, pending the owner's decision on Oracle's Free Use Terms**; do not accept those terms.
 
-The revised runbook and helper have run only in scratch with two small console
-images, never end to end on the live store or with engine-size image archives.
+The revised cutover/rollback sequence has been tested in scratch with synthetic
+backups and two small console-image archives, never end to end on the live store
+or with engine-size image archives. The native scanner has separately run read-only
+on this host with existing stacks up and deliberate scratch holders; its results
+and inspection limits are recorded in the round-three correction receipt.
 
 The isolated build uses `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/env.sh`. The live commands below deliberately use the default rootless Podman store instead. Run them only in the coordinator's live maintenance session. Never run them from the isolated validation shell.
 
@@ -598,8 +601,15 @@ python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasample
 save_context
 date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/clean-stop.log.timestamps"
 if docker compose -p sql-megasamples -f compose.yaml stop --timeout 300 "$RECOVER_ENGINE" \
-  >> "$EVIDENCE_DIR/clean-stop.log" 2>&1; then :;
-else STOP_RC=$?; printf '%s\n' "$STOP_RC" >> "$EVIDENCE_DIR/clean-stop.log.exit-code"; exit "$STOP_RC"; fi
+  >> "$EVIDENCE_DIR/clean-stop.log" 2>&1; then
+  date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/clean-stop.log.timestamps"
+  printf '0\n' >> "$EVIDENCE_DIR/clean-stop.log.exit-code"
+else
+  STOP_RC=$?
+  date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/clean-stop.log.timestamps"
+  printf '%s\n' "$STOP_RC" >> "$EVIDENCE_DIR/clean-stop.log.exit-code"
+  exit "$STOP_RC"
+fi
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
   "$EVIDENCE_DIR/clean-stop-exited-$TEARDOWN_ATTEMPT.json" --phase original-stop
 # END original clean stop

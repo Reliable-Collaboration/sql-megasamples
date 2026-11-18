@@ -253,3 +253,11 @@ a deliberate host file holder and a scratch rootless bind holder each refused wi
 the named process, then passed after that owned process/container stopped. These
 are scanner proofs, not an end-to-end live rollback or acceptance. DataIntent owns
 the acceptance record; acceptance remained held as of 2026-11-18.
+
+The eighteen persistent `FileNotFoundError` entries in the retained round-two
+scan were checked read-only against their process state on 2026-11-18: all were
+zombies (sixteen `python`, one `docker`, one `dpkg-preconfigu`). The current scanner
+classifies these before attempting namespace or descriptor inspection. Native
+inspection still encounters denied operations; its receipt records these by
+process name, operation and error class, and status 0 certifies only inspectable
+evidence. The original netns teardown cause remains unknown.
