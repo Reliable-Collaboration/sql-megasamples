@@ -67,7 +67,7 @@ SH
 # Apply security policy after loading so policy changes reuse the bulk-load layer.
 COPY --from=policy-build /usr/lib/postgresql/18/lib/read_policy.so /usr/lib/postgresql/18/lib/read_policy.so
 COPY --from=policy-build /usr/share/postgresql/18/extension/read_policy* /usr/share/postgresql/18/extension/
-COPY engines/postgres/init/10-read-profile.sql engines/postgres/init/read-routine-names.sql /build/init/
+COPY engines/postgres/init/10-read-profile.sql engines/postgres/init/15-read-views.sql engines/postgres/init/read-routine-names.sql /build/init/
 RUN <<'SH'
 #!/bin/bash
 set -euo pipefail
@@ -77,6 +77,7 @@ pg_ctl -w -o "-c listen_addresses=''" start >/dev/null
 psql -v ON_ERROR_STOP=1 -q -c 'ALTER DATABASE template0 ALLOW_CONNECTIONS true' postgres
 while IFS= read -r db; do
   psql -v ON_ERROR_STOP=1 -q -f /build/init/10-read-profile.sql "$db"
+  psql -v ON_ERROR_STOP=1 -q -f /build/init/15-read-views.sql "$db"
 done < <(psql -At -c 'SELECT datname FROM pg_database ORDER BY datname' postgres)
 psql -v ON_ERROR_STOP=1 -q -c 'ALTER DATABASE template0 ALLOW_CONNECTIONS false' postgres
 printf "shared_preload_libraries = 'read_policy'\n" >> "$PGDATA/postgresql.conf"

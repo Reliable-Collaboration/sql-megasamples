@@ -183,3 +183,14 @@ def test_postgres_demo_exact_routine_allowlist():
 def test_postgres_demo_reads_column_and_constraint_metadata(database):
     accepted('postgres', database, "SELECT column_name,data_type FROM information_schema.columns WHERE table_schema='public'")
     accepted('postgres', database, "SELECT constraint_name,column_name FROM information_schema.key_column_usage WHERE table_schema='public'")
+
+
+def test_postgres_employee_views_do_not_require_mutating_helpers():
+    values = accepted('postgres', 'employees',
+        "SELECT current_setting('megasamples.max_date',true) IS NULL; "
+        "SELECT md5(manager) FROM v_full_departments LIMIT 1; "
+        "SELECT md5(department) FROM v_full_employees LIMIT 1; "
+        "SELECT current_setting('megasamples.max_date',true) IS NULL")
+    assert values.splitlines()[0] == values.splitlines()[-1] == 't'
+    assert accepted('postgres', 'employees',
+        "SELECT has_function_privilege('current_manager(character)','EXECUTE')") == 'f'

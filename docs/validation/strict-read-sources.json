@@ -58,6 +58,11 @@
       "url": "https://www.postgresql.org/docs/release/18.7/",
       "use": "Release source for the unchanged engine version measured natively",
       "read_at": "2026-11-18T07:11:18Z"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/functions-binarystring.html",
+      "use": "Encoding conversion reads supplied byte/text values",
+      "read_at": "2026-11-18T07:19:19Z"
     }
   ]
 }

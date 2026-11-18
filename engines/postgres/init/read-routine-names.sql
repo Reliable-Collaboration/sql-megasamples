@@ -375,3 +375,8 @@ INSERT INTO read_routine_names (namespace,name,reason) VALUES
 INSERT INTO read_routine_names (name,reason) VALUES
 ('xpath','Reads a supplied XML value with an XPath expression; required by AdventureWorks read views'),
 ('xpath_exists','Tests an XPath expression against a supplied XML value without changing stored state');
+
+INSERT INTO read_routine_names (name,reason) VALUES
+('convert','Converts supplied bytes between character encodings without changing stored state'),
+('convert_from','Decodes supplied bytes as text; required by Wikipedia read views'),
+('convert_to','Encodes supplied text as bytes without changing stored state');

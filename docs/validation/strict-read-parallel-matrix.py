@@ -95,7 +95,7 @@ def worker(engine,name):
     try:
         with (OUT/f'runtime-{engine}-{name}.log').open('w') as log, contextlib.redirect_stdout(log),contextlib.redirect_stderr(log),session():
             try:
-                failures=verify.verify(name,stages=['counts','digests','views'],engine=engine)
+                failures=verify.verify(name,stages=['counts','digests','fks','indexes','views'],engine=engine)
             except (Exception,SystemExit) as exc:
                 print(type(exc).__name__,str(exc))
                 failures=1
