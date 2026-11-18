@@ -99,6 +99,9 @@ mysql_boundary=read('mysql-boundary.json')
 assert mysql_boundary['write_denials']['status']=='Passed'
 assert mysql_boundary['strict_read_builtin_denial']['status']=='Failed'
 assert mysql_boundary['builtin_function_read_only_enforcement']['status']=='Unsupported'
+generated=read('generated-routines.json')
+assert generated['status']=='Passed'
+assert all(v['status']=='Passed' and v['demo_executable']==0 for v in generated['results'].values())
 red_log=BASE/'native-before-connected.log'
 red_summary=re.search(r'^94 failed, 94 passed in .+$',red_log.read_text(),re.M)
 assert red_summary,'missing connected failing baseline'
@@ -121,6 +124,7 @@ receipt={
     'canonical_matrices':matrices,'native_read_fingerprints':native_reads,'checkpoints':checkpoints,'final_validation_steps':steps,
     'writer_scenarios':writers,'image_checks':images,'rotation':read('rotation-results.json'),
     'mysql_builtin_boundary':mysql_boundary,
+    'generated_routine_checks':generated,
     'restoration':restoration,'restoration_harness':read('restore-harness.json'),'restoration_transition':read('restore-transition.json'),
     'isolation':isolation,'canaries':canaries,'container_log_canaries':log_canaries,
     'credential_output_rule':{'status':'Failed','reason':'Repository SQL and Dockerfile source inspections displayed published bootstrap credentials; no values are repeated here.'},
