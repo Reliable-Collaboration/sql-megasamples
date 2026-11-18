@@ -1,6 +1,6 @@
 # Live engines, clients and consoles upgrade (coordinator only)
 
-This procedure is written for the coordinator. It has **not been executed** against the live deployment. Do not execute until the engine, client, owner-approved dataset, DL-074 and DL-079 credential-prerequisite PRs have merged with merge commits, their corrected evidence covers the configured datasets, and DataIntent's interim PostgreSQL comparison passes against this exact isolated revision. DL-077 templates/copies and their CLI belong to a later task and second rollout. Keep the two existing socket-proxy services unchanged. The owner authorized the BTS refresh and accepted the SQL Server Developer EULA for the isolated WWI export on 2026-11-17. Loading these three datasets is part of this upgrade, on the engines that passed the dataset receipt. Oracle native verification remains **Not run, pending the owner's decision on Oracle's Free Use Terms**; do not accept those terms.
+This coordinator procedure was **executed live once, on 2026-11-18**, at `2cf1f3e9`, with seven defects and coordinator-pinned corrections. This revision incorporates those corrections as preparation, verification and rollback gates. The [first-run evidence](live-upgrade-evidence.md) separates what was executed from what remains unverified. **Acceptance is held** for a DataIntent test failure outside this service; clients and acceptance remain coordinator-controlled. This documentation PR stays draft until the coordinator releases DL-087; Fable and Astra reviews precede any merge. DL-077 templates/copies and their CLI remain a later task and second rollout. Keep the two existing socket-proxy services unchanged. The owner authorized the BTS refresh and accepted the SQL Server Developer EULA for the isolated WWI export on 2026-11-17. Oracle native verification remains **Not run, pending the owner's decision on Oracle's Free Use Terms**; do not accept those terms.
 
 The isolated build uses `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/env.sh`. The live commands below deliberately use the default rootless Podman store instead. Run them only in the coordinator's live maintenance session. Never run them from the isolated validation shell.
 
@@ -19,14 +19,14 @@ The engine transition itself is an LTS patch. This procedure also packages the p
 
 The corrected client changes include the loader CLI/C API at 9.7.4 (source-built sysbench), Shell 9.7.1 with Python 3.13.18 and embedded SQLite 3.54.1, Connector/J 9.7.0, DbGate on the newest tested compatible Node 24 LTS patch, NGINX 1.31.8 under the no-LTS current-major rule, SQLGlot 30.33.0, and PHP 8.5.12 for phpMyAdmin/Adminer with rebuilt matching extensions. DuckDB 2.0.0 and Java 25.0.5+8 are already on their newest eligible LTS lines. Preserve the unchanged memory limits used by the successful corrected full-corpus workload; this task does not infer a smaller MySQL allocation from the version number.
 
-The DL-074 PR must be merged with a merge commit and all corrected validation must pass before live execution. Historical timing numbers below remain useful context, not measurements of the corrected candidate. The DL-074 preparation and sizing subsection below separates measured preparation and startup from reset, verification and rollback costs. No live outage or rollback duration is verified.
+For a future replay, require the reviewed main merge containing these corrections, the same compared candidate, and a fresh coordinator-approved maintenance window. Historical isolated timing numbers below remain planning inputs. The live attempt required stops and recovery steps; it does not establish a repeatable outage or rollback duration.
 
 ## Credential prerequisite and DataIntent handoff (DL-079)
 
 The [credential evidence](credential-prerequisite-evidence.md) and its receipt cover the reset
 with configured credentials and native password rotation. The isolated rehearsal's canonical
 credential file is `/home/rcc-vstudio/working/sql-megasamples-upgrade/.env`, mode 0600. The live
-canonical file will be `/home/rcc-vstudio/working/sql-megasamples/.env`, also mode 0600. DataIntent's
+canonical file is `/home/rcc-vstudio/working/sql-megasamples/.env`, also mode 0600. DataIntent's
 interim note should give these locations, the isolated endpoints and the merged revision; obtain
 values privately from the owner-readable file. Do not paste values into that note or a receipt.
 
@@ -51,8 +51,8 @@ from screenshots and evidence. Container/daemon owners can inspect their own con
 Native verification runs each configured account against network authentication, plus MySQL's
 local root account, and requires every previous password to fail specifically with an authentication
 error. A connection failure does not count as password refusal. SQLite has no server accounts;
-password verification there is **Unsupported**. These commands are preparation for the coordinator;
-this task has not executed a live cutover or rollback.
+password verification there is **Unsupported**. The first-run receipt records native rotation and
+local account checks; forwarded authenticated SQL and a complete live rollback remain unverified.
 
 Implementation sources read **2026-11-18 00:55:49 UTC**:
 [MySQL option files](https://dev.mysql.com/doc/refman/9.7/en/option-files.html),
@@ -101,6 +101,28 @@ Plan several hours of offline source preparation and exhaustive verification, in
 ## Prepare while the live servers are still running
 
 Quiesce DataIntent writers before the final backups and cutover. Keep its clients paused through verification. Building from upstream can take much longer than the outage; finish it before stopping the live servers. The previous core build documented in README took approximately twenty minutes; the full manifest includes much larger datasets. No full-manifest outage duration has been established.
+
+First, in the **isolated validation shell**, export verification metadata from the exact compared
+build. Image transport does not include these checkout files. Never regenerate or pin expectations
+from the live target. The bundle includes every selected PostgreSQL/SQLite physical database's
+`build/<engine>/<database>/model.json`, optional SQLite `dropped.txt`, and selected live-feed
+`build/live/<dataset>.observed.yaml` files. Verification also reads tracked `datasets/*/dataset.yaml`,
+`datasets/*/tests/*` and port records from the compared revision; SQLite checks copy the running
+database files into a separate check directory. Registry checks read the running registries.
+
+```sh
+. /home/rcc-vstudio/working/sql-megasamples-upgrade-env/env.sh
+test "$CONTAINERS_STORAGE_CONF" = /home/rcc-vstudio/working/sql-megasamples-upgrade-env/storage.conf
+test "$(podman info --format '{{.Store.GraphRoot}}')" = /home/rcc-vstudio/working/sql-megasamples-upgrade-env/graph
+cd /home/rcc-vstudio/working/sql-megasamples-upgrade
+# Use a new bundle directory for each candidate. Existing bundles are refused.
+podman exec -e PYTHONPATH=. megasamples-upgrade-tools /opt/venv/bin/python \
+  docs/validation/live-upgrade.py export-metadata build/dl086/verification-metadata
+podman exec -e PYTHONPATH=. megasamples-upgrade-tools /opt/venv/bin/python \
+  docs/validation/live-upgrade.py check-metadata build/dl086/verification-metadata
+```
+
+Return to a separate **coordinator live maintenance shell** for the remaining procedure.
 
 ```sh
 set -eu
@@ -181,17 +203,16 @@ done <<TOOL_IMAGES
 loader sql-megasamples-loader:dev
 oracle-source ${ORACLE_IMAGE:-gvenzl/oracle-free:23}
 TOOL_IMAGES
-# Save exact engine AND console images, including any locally extended driver image.
+# Record exact engine AND console images, including any locally extended driver image.
 set --
 while IFS= read -r tag; do set -- "$@" "$tag"; done < "$BACKUP_DIR/rollback-image-tags.txt"
-podman save -o "$BACKUP_DIR/rollback-images.tar" "$@"
 # Tags are convenient handles; SHA-256 image IDs and archive/config digests are the rollback inputs.
 : > "$BACKUP_DIR/rollback-image-ids.txt"
 for tag in "$@"; do
   printf '%s ' "$tag" >> "$BACKUP_DIR/rollback-image-ids.txt"
   podman image inspect -f '{{.Id}} {{json .RepoDigests}}' "$tag" >> "$BACKUP_DIR/rollback-image-ids.txt"
 done
-(cd "$BACKUP_DIR" && sha256sum rollback-images.tar > rollback-images.sha256)
+# Save/check each image after switching to the reviewed corrected helper below, before downtime.
 # The complete original configuration archive includes private pages and the original .env.
 bash -c 'set -o pipefail; cd "$1"; tar --sort=name --numeric-owner --format=gnu --atime-preserve=system -cf - consoles compose.yaml megasamples.yaml pyproject.toml uv.lock > original-configurations.tar' sh "$BACKUP_DIR"
 if test -f "$BACKUP_DIR/.env"; then
@@ -218,10 +239,12 @@ APPROVED_LTS_MERGE=$(gh pr list --repo Reliable-Collaboration/sql-megasamples \
   --state merged --head upgrade/dl074-lts-correction --limit 1 \
   --json mergeCommit --jq '.[0].mergeCommit.oid // empty')
 test -n "$APPROVED_LTS_MERGE"
-APPROVED_UPGRADE_MERGE=$(gh pr list --repo Reliable-Collaboration/sql-megasamples \
+APPROVED_CREDENTIAL_MERGE=$(gh pr list --repo Reliable-Collaboration/sql-megasamples \
   --state merged --head fix/dl079-configured-reset-credentials --limit 1 \
   --json mergeCommit --jq '.[0].mergeCommit.oid // empty')
-test -n "$APPROVED_UPGRADE_MERGE"
+test -n "$APPROVED_CREDENTIAL_MERGE"
+# Coordinator supplies the reviewed main merge containing DL-086 after its merge hold is released.
+: "${APPROVED_UPGRADE_MERGE:?Set the reviewed main merge containing DL-086}"
 git fetch origin
 if git ls-files --error-unmatch consoles/landing/adminer.html >/dev/null 2>&1; then
   git restore -- consoles/landing/adminer.html
@@ -233,12 +256,34 @@ git merge-base --is-ancestor "$APPROVED_ENGINE_MERGE" HEAD
 git merge-base --is-ancestor "$APPROVED_CLIENTS_MERGE" HEAD
 git merge-base --is-ancestor "$APPROVED_DATASET_MERGE" HEAD
 git merge-base --is-ancestor "$APPROVED_LTS_MERGE" HEAD
+git merge-base --is-ancestor "$APPROVED_CREDENTIAL_MERGE" HEAD
 # Keep the existing console page available until make up regenerates it from the same credentials.
 if test -f "$BACKUP_DIR/adminer.generated.html"; then
   cp "$BACKUP_DIR/adminer.generated.html" consoles/landing/adminer.html
   chmod 644 consoles/landing/adminer.html  # readable by the local web-server worker
 fi
 git rev-parse HEAD > "$BACKUP_DIR/upgrade-commit.txt"
+# Retain the helper outside the checkout: rollback switches to a branch predating it.
+cp docs/validation/live-upgrade.py "$BACKUP_DIR/live-upgrade.py"
+UPGRADE_HELPER="$BACKUP_DIR/live-upgrade.py"
+chmod 600 "$UPGRADE_HELPER"
+# Native host Python + Podman; no package installation, one docker archive per full image ID.
+python3 "$UPGRADE_HELPER" save-images "$BACKUP_DIR"
+python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
+# Rehearse the COMPLETE rollback set in a fresh store before downtime. No containers are started.
+(
+  SCRATCH_DIR="$BACKUP_DIR/rollback-load-rehearsal"
+  mkdir "$SCRATCH_DIR"
+  printf '[storage]\ndriver="overlay"\ngraphroot="%s/graph"\nrunroot="%s/run"\n' \
+    "$SCRATCH_DIR" "$SCRATCH_DIR" > "$SCRATCH_DIR/storage.conf"
+  printf '[engine]\ntmp_dir="%s/tmp"\n' "$SCRATCH_DIR" > "$SCRATCH_DIR/containers.conf"
+  export CONTAINERS_STORAGE_CONF="$SCRATCH_DIR/storage.conf" CONTAINERS_CONF="$SCRATCH_DIR/containers.conf"
+  unset CONTAINERS_CONF_OVERRIDE
+  test "$(podman info --format '{{.Store.GraphRoot}}')" = "$SCRATCH_DIR/graph"
+  python3 "$UPGRADE_HELPER" load-images "$BACKUP_DIR" > "$SCRATCH_DIR/load.log" 2>&1
+  test -z "$(podman ps -aq)"
+)
+# Back in the original maintenance shell/store. Retain the rehearsal log with the backup.
 # The reviewed tools snapshot is a PRIVATE local artifact, not a public image.
 # It contains the tested Python/uv/SQLite runtime; install dependencies only inside this container.
 TOOLS_ARCHIVE=/home/rcc-vstudio/working/sql-megasamples-upgrade/build/client-evidence/current-validated-tools-image.tar
@@ -248,6 +293,8 @@ TOOLS_IMAGE=localhost/megasamples-upgrade-tools:clients-20261117-libpq18.7
 test "$(podman image inspect -f '{{.Id}}' "$TOOLS_IMAGE" | sed 's/^sha256://')" = '9cfca77f5b88e23f25e76429d70f0c72959ff13a6d933610c58ae74da67cd710'
 CANDIDATE_ARCHIVE=/home/rcc-vstudio/working/sql-megasamples-upgrade/build/credential-upgrade/candidate-images.tar
 test -f "$CANDIDATE_ARCHIVE"
+METADATA_BUNDLE=/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl086/verification-metadata
+test -f "$METADATA_BUNDLE/metadata.json"
 UPGRADE_TOOLS_CONTAINER="megasamples-live-upgrade-tools-$UPGRADE_ID"
 # The existing Docker CLI is mounted read-only; no host package installation.
 DOCKER_CLIENT=$(command -v docker)
@@ -256,6 +303,7 @@ podman run -d --name "$UPGRADE_TOOLS_CONTAINER" --network host --memory 18g \
   -e "DOCKER_HOST=$DOCKER_HOST" -e COMPOSE_PROJECT_NAME=sql-megasamples \
   -v "$PWD:$PWD" -v "$XDG_RUNTIME_DIR/podman:$XDG_RUNTIME_DIR/podman" \
   -v "$CANDIDATE_ARCHIVE:$CANDIDATE_ARCHIVE:ro" \
+  -v "$METADATA_BUNDLE:$METADATA_BUNDLE:ro" \
   -v "$DOCKER_CLIENT:/usr/local/bin/docker:ro" -w "$PWD" "$TOOLS_IMAGE" sleep infinity
 ms_tool() {
   podman exec -e "DOCKER_HOST=$DOCKER_HOST" -e COMPOSE_PROJECT_NAME=sql-megasamples \
@@ -305,6 +353,10 @@ PY_IMPORT_CANDIDATE
 ms_tool "$MEGASAMPLES_PY" -m pytest -q
 ms_tool make compose PY="$MEGASAMPLES_PY"
 ms_tool "$MEGASAMPLES_PY" -m megasamples console-config
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py install-metadata "$METADATA_BUNDLE"
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py check-metadata "$METADATA_BUNDLE"
+# Host-side port inspection/bind probes. Exempt only ports owned by this running Compose project.
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports --allow-running-project sql-megasamples
 
 ```
 
@@ -365,9 +417,16 @@ for engine, user, key, program, flags in [
 PY_LOGICAL_BACKUP
 chmod 600 "$BACKUP_DIR/"*.sql
 
+# Repeat the preparation gates immediately before downtime; any failure aborts here.
+python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py check-metadata "$METADATA_BUNDLE"
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports --allow-running-project sql-megasamples
 # Downtime starts here. SQLite consumers must be stopped before copying its files.
 # Stop every configured console as well as all engines; keep the proxy services running.
-docker compose -p sql-megasamples -f compose.yaml stop
+if ! docker compose -p sql-megasamples -f compose.yaml stop > "$BACKUP_DIR/stop.log" 2>&1; then
+  echo 'STOP: inspect stop.log and apply the four-check teardown procedure below.'
+  exit 1
+fi
 # Retain the final quiesced UI workspace too, including changes made during preparation.
 if podman container exists megasamples-cloudbeaver; then
   podman cp megasamples-cloudbeaver:/opt/cloudbeaver/workspace "$BACKUP_DIR/cloudbeaver-workspace-final"
@@ -415,9 +474,12 @@ ms_tool make compose PY="$MEGASAMPLES_PY"
 docker compose -p sql-megasamples -f compose.yaml run --rm --no-deps -T --entrypoint sh sqlite -c \
   'rm -f /shared/*.sqlite /shared/*.sqlite-wal /shared/*.sqlite-shm /shared/*.sqlite-journal'
 # Use the imported images with fresh anonymous data copies. Never rebuild in this cutover step.
+# No exemptions after stop: check again before engines, then consoles are started.
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports
 docker compose -p sql-megasamples -f compose.yaml up -d --force-recreate --renew-anon-volumes \
   --no-deps --wait mysql postgres sqlite
 # Fresh console containers apply the new passwords and reseed CloudBeaver from the backed-up state.
+ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports --consoles-only
 docker compose -p sql-megasamples -f compose.yaml up -d --force-recreate --wait \
   landing phpmyadmin adminer dbgate cloudbeaver
 ms_tool make console-page PY="$MEGASAMPLES_PY"
@@ -449,6 +511,45 @@ done
 This is a conditional manual-probe fallback; automatic scheduling in the live store has not been verified by this task. If a configured probe fails, inspect that engine and roll back if the failure cannot be resolved within the maintenance window.
 
 The Compose stop above includes every configured console, so SQLite consumers are closed before either copy. The cutover commands recreate the configured consoles and regenerate their local help pages. The new containers receive the freshly generated `.env` credentials. Keep this file mode 0600 and do not print or source it. No password belongs in a process argument, diagnostic log, screenshot or validation receipt.
+
+### Conditional rootless network teardown failure (stop AND rollback down)
+
+The first live run saw `kill network process: permission denied` during Compose stop (SQLite)
+and rollback down (MySQL). **The root cause is unknown.** The isolated attempts are recorded in
+the [first-run evidence](live-upgrade-evidence.md); a networking startup failure is not proof of
+the teardown cause. Do not suppress arbitrary Compose errors or add a sudo/host-network workaround.
+
+Both guarded commands stop the shell on failure. Preserve the exit code and private log. If the
+only failure is this teardown error, the coordinator may resume **after** all four checks below
+pass, with a dated receipt. A failed or inconclusive check keeps the procedure stopped.
+
+1. Every engine has exited: inspect only `{{.State.Status}} {{.State.Running}} {{.State.Pid}}`
+   for `megasamples-postgres`, `megasamples-mysql`, `megasamples-sqlite`. Require `exited false 0`.
+   During down, a removed container is acceptable only with a retained exited-state/event receipt;
+   absence alone does not prove that its process exited. Record exit codes too.
+2. No deployment container is running: require empty output from
+   `podman ps --filter label=com.docker.compose.project=sql-megasamples -q`, and cross-check the
+   recorded engine/console IDs (including any missing that label). The separate upgrade-tools
+   container must not have a data mount; it is not a database consumer.
+3. No process holds a data mount: record `.Mounts` source/destination pairs before teardown,
+   including `/var/lib/postgresql`, `/var/lib/mysql`, `/data` and `/shared`. Examine `/proc/*/mountinfo`,
+   `/proc/*/fd/*`, `/proc/*/cwd` and `/proc/*/root` for paths at or below those sources, using
+   `podman unshare` where subordinate ownership requires it. Inspect mount roots as well as mount
+   points. Any matching process, or an unreadable relevant process that cannot be excluded by
+   namespace/mount ownership, blocks cold-copy or restore. Keep only PID/path findings, no process
+   environments or configuration values. Do not kill an unrelated process to satisfy this gate.
+4. No leftover `pasta`, `slirp4netns` or `rootlessport` belongs to the stopped deployment. List
+   helper PIDs/commands, then attribute each through its namespace paths, open descriptors,
+   parent/cgroup and the recorded container network namespaces. Helpers for a separate isolated
+   store or unrelated deployment may remain only with recorded attribution. An unattributed helper
+   blocks continuation; never use a blanket kill. The existing LAN proxy services stay running.
+
+For **stop**, resume at the final CloudBeaver workspace/cold-copy block only after these checks;
+no cold copy exists merely because stop returned. For **rollback down**, resume at original
+branch/configuration restoration after these same checks. If exited containers remain, retry
+the same scoped down and recheck; never force-remove an active mount or use `down -v`. Do not
+rerun password generation or candidate startup as an implicit recovery. Recheck ports immediately
+before each subsequent startup. Preserve original volumes and all rollback inputs until release.
 
 In the isolated 30-dataset rehearsal, replacing all three engine containers and restoring SQLite's shared files took 121.65 seconds. Individual whole-engine resets took 23.07 seconds (MySQL), 26.4 seconds (PostgreSQL) and 92.4 seconds (SQLite). A stop/start of the existing eight-service stack, without replacing data volumes, took 38.66 seconds and preserved every recorded count, SQLite hash and inserted probe row. These measurements exclude cold-backup time and the coordinator's DataIntent checks and predate this follow-up; the added datasets have separate measurements in “Added dataset cost and scope”. Initial stack startup took 328.32 seconds while this custom store waited for health scheduling; real probes then completed successfully through the isolated-only runner. These are observed preparation/outage components, not a full-manifest downtime guarantee. The complete full-Contoso repository check against the shipped MySQL configuration took 1,736.02 seconds in this rehearsal, dominated by an indexed nested-loop constraint query. If the maintenance window includes that full integrity audit, budget its verification time as well as startup, cold copies and DataIntent tests.
 
@@ -537,24 +638,37 @@ assert joins == [["539747", "0", "0"]], joins
 '
 ```
 
-Verify both existing forwarded endpoints with the containers' installed clients (credentials stay inside each container):
+Verify the forwards **from the host**, first at the protocol level and then with host clients.
+Rootless engine containers cannot reliably connect to their own host's LAN address. The tools
+container and `credentials.client()` run clients in containers, so do not use them for this check.
+Before downtime, confirm both host clients are already available (`command -v psql` and
+`command -v mysql`); otherwise record **Not run** and arrange coordinator-side host verification.
+Do not install packages on the host as a cutover workaround.
 
 ```sh
-ms_tool "$MEGASAMPLES_PY" - <<'PY_FORWARDED_CHECKS'
-import subprocess
-from megasamples import config
-from megasamples.credentials import client
-secret = config.passwords()
-for engine, port in [("postgres", 5432), ("mysql", 3306)]:
-    with client(engine, "megasamples-" + engine, "demo", secret["DEMO_PASSWORD"], host="10.0.0.172", port=port) as command:
-        flags = ["-N", "-e", "SELECT VERSION(); SELECT count(*) FROM megasamples.datasets"] if engine == "mysql" else ["-d", "megasamples", "-tAc", "SELECT version(); SELECT count(*) FROM datasets"]
-        subprocess.run([*command, *flags], check=True)
-PY_FORWARDED_CHECKS
+# Host maintenance shell. Obtain these endpoints from private forwarder configuration or
+# the listening sockets (ss -ltn); never hard-code this deployment's LAN address in Git.
+: "${FORWARD_HOST:?Set the configured LAN listener address}"
+: "${PG_FORWARD_PORT:?Set the configured PostgreSQL forward port}"
+: "${MYSQL_FORWARD_PORT:?Set the configured MySQL forward port}"
+python3 "$UPGRADE_HELPER" forwarded-protocol postgres "$FORWARD_HOST" "$PG_FORWARD_PORT"
+python3 "$UPGRADE_HELPER" forwarded-protocol mysql "$FORWARD_HOST" "$MYSQL_FORWARD_PORT"
+# Host client sign-ins: enter DEMO_PASSWORD privately from .env at each prompt.
+# PostgreSQL SSLRequest and a MySQL greeting alone do not establish authentication.
+psql -X -W -h "$FORWARD_HOST" -p "$PG_FORWARD_PORT" -U demo -d megasamples \
+  -v ON_ERROR_STOP=1 -tAc 'SELECT current_user, version(); SELECT count(*) FROM datasets'
+mysql --no-defaults --host="$FORWARD_HOST" --port="$MYSQL_FORWARD_PORT" --user=demo --password \
+  --batch --skip-column-names --execute='SELECT CURRENT_USER(), VERSION(); SELECT count(*) FROM megasamples.datasets'
 ```
+
+Require the `demo` identity, expected runtime versions and complete expected registry counts.
+The first live run proved the two protocols from the host; forwarded client sign-ins were
+**Not run**, so do not describe the first run as authenticated forwarded-SQL verification.
+TLS certificate validation was also **Not run**. The protocol probe does not validate a certificate.
 
 Compare the complete registry sets and each table's actual row counts with the validated configuration and catalogue. Registry text alone is not an actual count check. Run the repository's image tests before cutover and the same validation queries against the replacement servers afterwards. Live-feed counts/checksums must match the hub snapshot built with these images; historical manifest counts are floors for those feeds. Verify `demo` remains read-only and `admin` can write using disposable probe tables, then remove the probes.
 
-Confirm PostgreSQL binds to `127.0.0.1:5432` and MySQL to `127.0.0.1:3306`. Run the coordinator's DataIntent server-bound suites against both the local endpoints and the existing forwarded endpoints `10.0.0.172:5432` and `10.0.0.172:3306`. The proxies continue forwarding to the same local ports and require no changes. Resume clients only after these checks pass.
+Confirm PostgreSQL binds to `127.0.0.1:5432` and MySQL to `127.0.0.1:3306`. Run the coordinator's DataIntent server-bound suites against both the local endpoints and the configured forwarded endpoints from the host. The proxies continue forwarding to the same local ports and require no changes. Resume clients only after these checks pass.
 
 The added-dataset check above uses actual server tables and a fresh copy of the shipped SQLite file.
 It must pass exact counts and applicable canonical fingerprints, foreign keys, indexes and views.
@@ -575,12 +689,16 @@ rollback: it restores the new image contents, including the added datasets.
 
 ```sh
 # Verify immutable rollback inputs before restoring anything.
-(cd "$BACKUP_DIR" && sha256sum -c rollback-images.sha256 original-configurations.sha256)
+python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
+(cd "$BACKUP_DIR" && sha256sum -c original-configurations.sha256)
 bash -c 'set -o pipefail; actual=$(podman unshare tar --sort=name --numeric-owner --format=gnu --atime-preserve=system -C "$1" -cf - postgres mysql sqlite sqlite-shared | sha256sum); test "$actual" = "$(cat "$1/cold-copies.stream.sha256")"' sh "$BACKUP_DIR"
 if test -f .env; then cp .env "$BACKUP_DIR/failed-candidate.env"; chmod 600 "$BACKUP_DIR/failed-candidate.env"; fi
 tar -xf "$BACKUP_DIR/original-configurations.tar" -C "$BACKUP_DIR"
 # Restore original configuration and its original branch (never reset a pushed branch).
-docker compose -p sql-megasamples -f compose.yaml down  # no -v: retained volumes remain available
+if ! docker compose -p sql-megasamples -f compose.yaml down > "$BACKUP_DIR/rollback-down.log" 2>&1; then
+  echo 'STOP: inspect rollback-down.log and apply the four-check teardown procedure below.'
+  exit 1
+fi
 ROLLBACK_BRANCH=$(cat "$BACKUP_DIR/rollback-branch.txt")
 git switch "$ROLLBACK_BRANCH"
 test "$(git rev-parse HEAD)" = "$(cat "$BACKUP_DIR/original-commit.txt")"
@@ -596,7 +714,8 @@ if test -d "$BACKUP_DIR/python-venv"; then cp -a "$BACKUP_DIR/python-venv" ./.ve
 cp "$BACKUP_DIR/megasamples.yaml" ./megasamples.yaml
 cp "$BACKUP_DIR/compose.yaml" ./compose.yaml
 if test -f "$BACKUP_DIR/.env"; then cp "$BACKUP_DIR/.env" ./.env; chmod 600 .env; else rm -f .env; fi
-podman load -i "$BACKUP_DIR/rollback-images.tar"
+# Validate all per-image digests/configuration IDs before loading, then explicitly restore tags.
+python3 "$UPGRADE_HELPER" load-images "$BACKUP_DIR"
 while read -r tag expected repo_digests; do
   actual=$(podman image inspect -f '{{.Id}}' "$tag")
   test "${actual#sha256:}" = "${expected#sha256:}"
@@ -706,7 +825,7 @@ console container for rollback as above. No engine data volume is renewed by thi
 After cutover, run `ms_tool make test-console PY="$MEGASAMPLES_PY"`. In addition, open the landing page and every configured console through their actual live localhost ports. In phpMyAdmin, list the MySQL datasets for both configured accounts. In Adminer, sign in for MySQL and PostgreSQL and list their databases. In DbGate, open each engine, including a SQLite file; in CloudBeaver, open both server accounts and every SQLite connection and list the databases. Confirm each shows the complete configured registry, test read-only denial and admin writes on a disposable table, then remove the probe. The isolated receipt records the automated HTTP/GraphQL/installed-driver probes; repeat those checks against live ports without substituting HTTP 200 for a database connection.
 
 Rollback uses the retained pre-upgrade MySQL image identified in `rollback-image-ids.txt`, the
-SHA-256-checked `rollback-images.tar` and `original-configurations.tar`, and the unchanged cold
+SHA-256-checked `rollback-image-<full-image-id>.tar` and `original-configurations.tar`, and the unchanged cold
 copies whose deterministic tar stream (contents, ownership, permissions and symlink targets) must
 match `cold-copies.stream.sha256`. Keep the three digest receipts with the private maintenance
 receipt and verify them before restore. A local image may have no registry RepoDigest; its SHA-256
