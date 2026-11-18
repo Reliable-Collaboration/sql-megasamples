@@ -477,7 +477,7 @@ def test_original_health_wait_is_bounded_and_state_checked(monkeypatch,outcome):
     clock=[0]; polls=[]
     monkeypatch.setattr(upgrade.time,'monotonic',lambda:clock[0])
     monkeypatch.setattr(upgrade.time,'sleep',lambda seconds:clock.__setitem__(0,clock[0]+seconds))
-    def pod(*args):
+    def pod(*args, **kwargs):
         polls.append(args)
         if args[2]=='{{.State.Health.Status}}': return 'healthy' if outcome=='healthy' and clock[0]>=2 else 'starting'
         state='exited|false|0' if outcome=='stopped' else 'running|true|22'
@@ -491,3 +491,57 @@ def test_original_health_wait_is_bounded_and_state_checked(monkeypatch,outcome):
             upgrade.wait_healthy('postgres',3)
         assert clock[0]<=3
     assert polls
+
+
+@pytest.mark.parametrize('stage', ['state', 'health'])
+def test_health_wait_rejects_late_inspection_success(monkeypatch, stage):
+    clock = [0.0]; calls = []
+    monkeypatch.setattr(upgrade.time, 'monotonic', lambda: clock[0])
+    def command(args, **kwargs):
+        current = 'health' if args[3] == '{{.State.Health.Status}}' else 'state'
+        calls.append((current, kwargs.get('timeout')))
+        clock[0] += 4 if current == stage else 0.25
+        return 'healthy' if current == 'health' else 'megasamples-postgres|id|running|true|22|0|false|'
+    monkeypatch.setattr(upgrade.subprocess, 'check_output', command)
+    with pytest.raises(ValueError, match='health wait timed out: postgres'):
+        upgrade.wait_healthy('postgres', 3)
+    assert calls[0] == ('state', 3)
+    if stage == 'health':
+        assert calls[1] == ('health', 2.75)
+    else:
+        assert len(calls) == 1
+
+
+@pytest.mark.parametrize('stage', ['state', 'health'])
+def test_health_wait_bounds_nonreturning_inspection_command(tmp_path, stage):
+    import signal
+    import sys
+    import time
+    binary = tmp_path / 'podman'
+    binary.write_text('#!' + sys.executable + '\n' + r'''
+import os, sys, time
+from pathlib import Path
+stage = 'health' if sys.argv[3] == '{{.State.Health.Status}}' else 'state'
+if stage == os.environ['BLOCK_STAGE']:
+    Path(os.environ['MARKER']).write_text(stage)
+    time.sleep(30)
+print('healthy' if stage == 'health' else 'megasamples-postgres|id|running|true|22|0|false|')
+''')
+    binary.chmod(0o755)
+    env = dict(os.environ, PATH=str(tmp_path) + os.pathsep + os.environ['PATH'],
+               BLOCK_STAGE=stage, MARKER=str(tmp_path/'blocked'))
+    started = time.monotonic()
+    # Own process group also contains the deliberately blocked fake inspection;
+    # clean it up even when the pre-fix helper hangs beyond our outer test bound.
+    proc = subprocess.Popen([sys.executable, str(upgrade.__file__), 'wait-healthy', 'postgres', '--timeout', '1'],
+                            env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, start_new_session=True)
+    try:
+        stdout, stderr = proc.communicate(timeout=4)
+        assert proc.returncode != 0, stdout
+        assert 'health wait timed out: postgres' in stderr
+        assert time.monotonic() - started < 3
+        assert (tmp_path/'blocked').read_text() == stage
+    finally:
+        try: os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError: pass
+        proc.wait()

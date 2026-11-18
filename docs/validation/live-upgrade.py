@@ -27,8 +27,8 @@ def sha(path):
         return hashlib.file_digest(stream, 'sha256').hexdigest()
 
 
-def pod(*args):
-    return subprocess.check_output(['podman', *args], text=True).strip()
+def pod(*args, timeout=None):
+    return subprocess.check_output(['podman', *args], text=True, timeout=timeout).strip()
 
 
 def image_rows(backup):
@@ -215,8 +215,9 @@ def load_images(backup):
 STATE_FORMAT = '{{.Name}}|{{.Id}}|{{.State.Status}}|{{.State.Running}}|{{.State.Pid}}|{{.State.ExitCode}}|{{.State.OOMKilled}}|{{.NetworkSettings.SandboxKey}}'
 
 
-def container_state(container):
-    name, identity, status, running, pid, code, oom, network = pod('inspect', '-f', STATE_FORMAT, container).split('|')
+def container_state(container, *, timeout=None):
+    options = {} if timeout is None else dict(timeout=timeout)
+    name, identity, status, running, pid, code, oom, network = pod('inspect', '-f', STATE_FORMAT, container, **options).split('|')
     return dict(name=name.lstrip('/'), id=identity, state=status, running=running == 'true',
                 pid=int(pid), exit_code=int(code), oom=oom == 'true', network=network)
 
@@ -326,17 +327,26 @@ def wait_healthy(service, timeout):
     if service not in ('postgres', 'mysql', 'sqlite') or timeout <= 0:
         raise ValueError('health wait requires an engine and positive timeout')
     deadline = time.monotonic() + timeout
-    while True:
-        row = container_state('megasamples-' + service)
-        if row['oom']:
-            raise ValueError('OOM during health wait: ' + service)
-        if not row['running'] or row['pid'] <= 0 or row['state'] != 'running':
-            raise ValueError('engine stopped during health wait: ' + service)
-        if pod('inspect', '-f', '{{.State.Health.Status}}', row['id']) == 'healthy':
-            return
-        if time.monotonic() >= deadline:
+    def remaining():
+        seconds = deadline - time.monotonic()
+        if seconds <= 0:
             raise ValueError('health wait timed out: ' + service)
-        time.sleep(min(1, max(0, deadline - time.monotonic())))
+        return seconds
+    while True:
+        try:
+            row = container_state('megasamples-' + service, timeout=remaining())
+            remaining()  # A late response must never be accepted.
+            if row['oom']:
+                raise ValueError('OOM during health wait: ' + service)
+            if not row['running'] or row['pid'] <= 0 or row['state'] != 'running':
+                raise ValueError('engine stopped during health wait: ' + service)
+            health = pod('inspect', '-f', '{{.State.Health.Status}}', row['id'], timeout=remaining())
+            remaining()
+        except subprocess.TimeoutExpired as error:
+            raise ValueError('health wait timed out: ' + service) from error
+        if health == 'healthy':
+            return
+        time.sleep(min(1, remaining()))
 
 
 def check_restored(backup, attempt, check_id):

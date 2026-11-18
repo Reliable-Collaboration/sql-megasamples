@@ -660,7 +660,9 @@ The current [Compose start reference](https://docs.docker.com/reference/cli/dock
 lists wait flags, but this host's existing client's `start --help` does not. These
 commands therefore use plain `start` followed by a bounded native health-status
 poll. A stopped engine, OOM or timeout refuses and keeps clients paused. No health
-status is edited. [Compose stop](https://docs.docker.com/reference/cli/docker/compose/stop/)
+status is edited. Each native inspection is bounded by the remaining poll deadline;
+a healthy response arriving at or after that deadline also refuses.
+[Compose stop](https://docs.docker.com/reference/cli/docker/compose/stop/)
 and the existing client both provide `--timeout` (references read
 2026-11-18 19:50:17 UTC; local help checked 2026-11-18 20:02 UTC).
 
