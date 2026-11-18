@@ -207,3 +207,16 @@ def test_configuration_modes_survive_private_umask(tmp_path):
     assert (target/'configuration/consoles').stat().st_mode & 0o777 == 0o755
     assert (target/'configuration/consoles/fixture').stat().st_mode & 0o777 == 0o644
     assert target.stat().st_mode & 0o777 == 0o700
+
+
+def test_explicit_archived_directory_modes_restored(tmp_path):
+    backup=retained(tmp_path)
+    with tarfile.open(backup/'original-configurations.tar','w') as archive:
+        for name,mode in [('consoles',0o755),('consoles/workspace',0o775),('consoles/private',0o700)]:
+            member=tarfile.TarInfo(name);member.type=tarfile.DIRTYPE;member.mode=mode;archive.addfile(member)
+    (backup/'original-configurations.sha256').write_text(upgrade.sha(backup/'original-configurations.tar')+'  original-configurations.tar\n')
+    mask=os.umask(0o077)
+    try: target=upgrade.prepare_rollback(backup,'directory-modes',tmp_path)
+    finally: os.umask(mask)
+    assert (target/'configuration/consoles/workspace').stat().st_mode & 0o777 == 0o775
+    assert (target/'configuration/consoles/private').stat().st_mode & 0o777 == 0o700

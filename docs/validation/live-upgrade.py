@@ -75,7 +75,7 @@ def prepare_rollback(backup, attempt, checkout):
         archive.extractall(config, filter='data')
         # tar's data filter intentionally leaves directory modes to the caller's
         # umask. Restore safe recorded traversal modes, inside the private parent.
-        modes = {m.name.rstrip('/'): m.mode & 0o755 for m in archive.getmembers() if m.isdir()}
+        modes = {m.name.rstrip('/'): m.mode & 0o777 for m in archive.getmembers() if m.isdir()}
         for directory in sorted(config.rglob('*'), key=lambda p: len(p.parts), reverse=True):
             if directory.is_dir() and not directory.is_symlink():
                 directory.chmod(modes.get(directory.relative_to(config).as_posix(), 0o755))

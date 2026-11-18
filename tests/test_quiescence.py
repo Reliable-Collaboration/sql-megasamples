@@ -279,3 +279,33 @@ def test_scan_rejects_child_user_namespace(tmp_path,monkeypatch):
     monkeypatch.setattr(scanner,'caller_uid_mappings',lambda:[(0,1000,1)])
     with pytest.raises(ValueError,match='scan must run in host initial user namespace'):
         scanner.evidence(snap,proc)
+
+
+def test_unresolved_owner_is_named_without_certifying_it(tmp_path,monkeypatch):
+    snap,proc,p=fixture(tmp_path,monkeypatch,'new-task')
+    monkeypatch.setattr(scanner,'classify_owner',lambda *args:'unresolved-owner')
+    report=scanner.evidence(snap,proc)
+    assert report['counts']['unresolved-owner']==1
+    assert report['unreadable']==[dict(pid=int(p.name),comm='new-task',owner='unresolved-owner',
+                                       operation='owner',error='OwnershipUnresolved')]
+    assert report['refusals']==[]
+
+
+def test_vanished_task_is_classified(tmp_path,monkeypatch):
+    snap,proc,p=fixture(tmp_path,monkeypatch,'gone')
+    original=Path.exists
+    monkeypatch.setattr(Path,'exists',lambda path: False if path==p else original(path))
+    report=scanner.evidence(snap,proc)
+    assert report['counts']['vanished']==1
+    assert report['refusals']==[]
+
+
+def test_shared_host_network_and_service_cgroup_do_not_attribute_helper(tmp_path,monkeypatch):
+    snap,proc,p=fixture(tmp_path,monkeypatch,'pasta.avx2')
+    host=os.readlink('/proc/self/ns/net')
+    saved=json.loads(snap.read_text());saved['containers'][0].update(network_namespace=host,cgroups=['0::/podman.service'])
+    snap.write_text(json.dumps(saved))
+    (p/'ns/net').unlink();os.symlink(host,p/'ns/net');(p/'cgroup').write_text('0::/podman.service')
+    report=scanner.evidence(snap,proc)
+    assert report['helpers'][0]['deployment'] is False
+    assert report['refusals']==[]
