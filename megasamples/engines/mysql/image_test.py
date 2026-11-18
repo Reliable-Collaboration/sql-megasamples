@@ -138,6 +138,14 @@ def main(argv=None):
                 c.expect(not orphaned, f"{schema}: {len(external)} cross-database foreign key(s) "
                                        f"present with no orphans" + (f" -- {orphaned}" if orphaned else ""))
 
+        grants = q("SHOW GRANTS", user="demo", pw="demo")
+        c.expect(grants.returncode == 0 and grants.stdout.strip() ==
+                 "GRANT SELECT, SHOW VIEW ON *.* TO `demo`@`%`", "demo holds exactly SELECT and SHOW VIEW")
+        for database in [*unique_databases(datasets), "megasamples"]:
+            result = q("CREATE TEMPORARY TABLE read_probe(i int)", user="demo", pw="demo", database=database)
+            c.expect(result.returncode != 0 and "denied" in result.stderr.lower(),
+                     f"{database}: demo cannot create temporary objects")
+
         first_counts = image_counts(datasets[0])
         read_table = sorted(first_counts)[0]
         account_checks(c, unique_databases(datasets)[0], read_table, first_counts[read_table])

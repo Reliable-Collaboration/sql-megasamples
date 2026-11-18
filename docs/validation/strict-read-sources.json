@@ -1,0 +1,43 @@
+{
+  "read_at": "2026-11-18T06:32:51Z",
+  "sources": [
+    {
+      "url": "https://www.postgresql.org/docs/18/ddl-priv.html",
+      "use": "PUBLIC default TEMPORARY and EXECUTE; explicit writer grants"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/sql-createdatabase.html",
+      "use": "Database ACLs are not copied from templates"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/sql-alterdefaultprivileges.html",
+      "use": "Global routine defaults; defaults do not follow role memberships"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/xfunc-volatility.html",
+      "use": "Volatility is a promise, not a user-routine audit"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/postgres/postgres/REL_18_STABLE/src/include/tcop/utility.h",
+      "use": "ProcessUtility hook API"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/postgres/postgres/REL_18_STABLE/src/backend/commands/dbcommands.c",
+      "use": "Database creation resets datacl instead of copying it"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/refman/9.7/en/privileges-provided.html",
+      "use": "SELECT/SHOW VIEW versus CREATE TEMPORARY TABLES, EXECUTE and administrative privileges"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/postgres/postgres/REL_18_STABLE/src/backend/catalog/information_schema.sql",
+      "use": "Pure type/index helpers needed for column metadata",
+      "read_at": "2026-11-18T06:42:31Z"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/sql-createextension.html",
+      "use": "Track template-resident policy objects as extension members",
+      "read_at": "2026-11-18T06:42:31Z"
+    }
+  ]
+}

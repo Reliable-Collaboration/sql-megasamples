@@ -74,7 +74,7 @@ def test_postgres_demo_has_no_unapproved_routines(database):
     # User promises of volatility never qualify a user routine for this profile.
     unsafe = accepted('postgres', database, """SELECT p.oid::regprocedure::text FROM pg_proc p
         WHERE has_function_privilege(current_user,p.oid,'EXECUTE') AND
-        (p.pronamespace <> 'pg_catalog'::regnamespace OR p.provolatile='v' OR
+        ((p.pronamespace NOT IN ('pg_catalog'::regnamespace,'information_schema'::regnamespace)) OR p.provolatile='v' OR
          p.proname IN ('txid_current','pg_current_xact_id') OR p.prosecdef) ORDER BY 1""")
     assert unsafe == '', 'demo can execute unapproved routines: ' + unsafe
 
@@ -154,15 +154,28 @@ def test_postgres_demo_cannot_change_persistent_data_or_schema(database):
 def test_postgres_demo_exact_routine_allowlist():
     import re
     from pathlib import Path
-    names = re.findall(r"\('([^']+)','[^']+'\)", Path('engines/postgres/init/read-routine-names.sql').read_text())
+    policy = Path('engines/postgres/init/read-routine-names.sql').read_text()
+    names = re.findall(r"\('([^']+)','[^']+'\)", policy)
+    helpers = re.findall(r"\('information_schema','([^']+)'", policy)
     sql_names = ','.join("'" + name + "'" for name in names)
+    sql_helpers = ','.join("'" + name + "'" for name in helpers)
     for database in PG_DATABASES:
-        expected = accepted('postgres', database, "SELECT oid::regprocedure::text FROM pg_proc "
-            f"WHERE proname IN ({sql_names}) AND pronamespace='pg_catalog'::regnamespace "
-            "AND oid<16384 AND provolatile IN ('i','s') AND NOT prosecdef ORDER BY 1", 'postgres')
+        expected = accepted('postgres', database, "SELECT p.oid::regprocedure::text FROM pg_proc p "
+            "WHERE p.provolatile IN ('i','s') AND NOT p.prosecdef AND "
+            f"((p.pronamespace='information_schema'::regnamespace AND p.proname IN ({sql_helpers}) AND p.proowner='postgres'::regrole) OR "
+            "(p.pronamespace='pg_catalog'::regnamespace AND p.oid<16384 AND "
+            f"(p.proname IN ({sql_names}) OR "
+            "EXISTS(SELECT 1 FROM pg_operator o WHERE o.oid<16384 AND o.oprcode=p.oid) OR "
+            "EXISTS(SELECT 1 FROM pg_cast c WHERE c.oid<16384 AND c.castfunc=p.oid)))) ORDER BY 1", 'postgres')
         actual = accepted('postgres', database, "SELECT oid::regprocedure::text FROM pg_proc "
             "WHERE has_function_privilege('demo',oid,'EXECUTE') ORDER BY 1", 'postgres')
         assert actual == expected, database + ': executable routines differ from the explicit policy'
         for signature in ['pg_read_file(text)', 'pg_reload_conf()', 'lo_import(text)']:
             assert accepted('postgres', database,
                 f"SELECT has_function_privilege('admin','{signature}','EXECUTE')", 'postgres') == 'f'
+
+
+@pytest.mark.parametrize('database', PG_DATABASES)
+def test_postgres_demo_reads_column_and_constraint_metadata(database):
+    accepted('postgres', database, "SELECT column_name,data_type FROM information_schema.columns WHERE table_schema='public'")
+    accepted('postgres', database, "SELECT constraint_name,column_name FROM information_schema.key_column_usage WHERE table_schema='public'")
