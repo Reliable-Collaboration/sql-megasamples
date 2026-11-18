@@ -38,6 +38,26 @@
       "url": "https://www.postgresql.org/docs/18/sql-createextension.html",
       "use": "Track template-resident policy objects as extension members",
       "read_at": "2026-11-18T06:42:31Z"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/functions-xml.html",
+      "use": "XPath functions read supplied XML values; required by AdventureWorks read views",
+      "read_at": "2026-11-18T07:10:01Z"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html",
+      "use": "Release source for the unchanged engine version measured natively",
+      "read_at": "2026-11-18T07:11:18Z"
+    },
+    {
+      "url": "https://sqlite.org/releaselog/3_54_1.html",
+      "use": "Release source for the unchanged engine version measured natively",
+      "read_at": "2026-11-18T07:11:18Z"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/release/18.7/",
+      "use": "Release source for the unchanged engine version measured natively",
+      "read_at": "2026-11-18T07:11:18Z"
     }
   ]
 }

@@ -371,3 +371,7 @@ INSERT INTO read_routine_names (namespace,name,reason) VALUES
 ('information_schema','_pg_numeric_scale','Upstream information-schema helper: expands supplied arrays or reads type and index metadata'),
 ('information_schema','_pg_datetime_precision','Upstream information-schema helper: expands supplied arrays or reads type and index metadata'),
 ('information_schema','_pg_interval_type','Upstream information-schema helper: expands supplied arrays or reads type and index metadata');
+
+INSERT INTO read_routine_names (name,reason) VALUES
+('xpath','Reads a supplied XML value with an XPath expression; required by AdventureWorks read views'),
+('xpath_exists','Tests an XPath expression against a supplied XML value without changing stored state');
