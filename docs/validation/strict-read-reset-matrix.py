@@ -27,6 +27,11 @@ started = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
 
 def query(database, sql):
+    if os.environ.get('STRICT_READ_NATIVE_DRIVER')=='library':
+        from docs.validation.strict_read_clients import query as native_query
+        p=native_query(engine,'megasamples-'+engine,'demo',database,sql,separator='\t')
+        assert p.returncode==0,p.stderr[:400]
+        return p.stdout.strip()
     with client(engine, 'megasamples-'+engine, 'demo', secret['DEMO_PASSWORD']) as command:
         args = (['-X','-d',database,'-v','ON_ERROR_STOP=1','-qAt','-F','\t'] if engine=='postgres'
                 else ['--batch','-N','--raw',database])

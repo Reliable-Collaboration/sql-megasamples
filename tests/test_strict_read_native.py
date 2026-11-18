@@ -197,6 +197,10 @@ def test_postgres_employee_views_do_not_require_mutating_helpers():
     assert values.splitlines()[0] == values.splitlines()[-1] == 't'
     assert accepted('postgres', 'employees',
         "SELECT has_function_privilege('current_manager(character)','EXECUTE')") == 'f'
+    assert accepted('postgres', 'employees',
+        "SELECT bool_and(pg_get_userbyid(relowner)='admin') FROM pg_class "
+        "WHERE oid IN ('v_full_departments'::regclass,'v_full_employees'::regclass)", 'postgres') == 't'
+
 
 
 @pytest.mark.parametrize('engine', ['postgres', 'mysql'])

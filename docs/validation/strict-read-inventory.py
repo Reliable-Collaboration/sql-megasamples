@@ -19,7 +19,13 @@ reasons = dict(re.findall(r"\('([^']+)','([^']+)'\)", Path('engines/postgres/ini
 
 def query(engine, user, database, sql):
     key = {'postgres': 'POSTGRES_PASSWORD', 'root': 'MYSQL_ROOT_PASSWORD'}.get(user, user.upper() + '_PASSWORD')
-    with client(engine, 'megasamples-' + engine, user, secret[key]) as command:
+    container = os.environ.get('STRICT_READ_' + engine.upper() + '_CONTAINER', 'megasamples-' + engine)
+    if os.environ.get('STRICT_READ_NATIVE_DRIVER') == 'library':
+        from docs.validation.strict_read_clients import query as native_query
+        p = native_query(engine, container, user, database, sql, separator='\t')
+        assert p.returncode == 0, p.stderr[:300]
+        return p.stdout.strip()
+    with client(engine, container, user, secret[key]) as command:
         args = ['-X', '-d', database, '-v', 'ON_ERROR_STOP=1', '-qAt', '-c', sql] if engine == 'postgres' else ['--batch', '-N', database, '-e', sql]
         p = subprocess.run([*command, *args], text=True, capture_output=True)
     assert p.returncode == 0, p.stderr[:300]
@@ -43,7 +49,7 @@ with session():
             'admin_execute',has_function_privilege('admin',p.oid,'EXECUTE'),
             'superuser_execute',has_function_privilege('postgres',p.oid,'EXECUTE')) ORDER BY p.oid::regprocedure::text)
             FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace))"""
-        row = json.loads(query('postgres','postgres',db,sql))
+        row = json.loads(query('postgres','postgres',db,sql+'::text'))
         for routine in row['routines']:
             if routine['demo_execute']:
                 if routine['namespace']=='information_schema' and routine['name'].startswith('_pg_'):
@@ -60,6 +66,8 @@ with session():
         result['postgres'][db] = row
     for user in ['demo','admin','root']:
         result['mysql'][user] = {'grants': query('mysql', user, 'megasamples', 'SHOW GRANTS').splitlines()}
+    for host in ['localhost', '%']:
+        result['mysql']['root@'+host] = {'grants': query('mysql', 'root', 'megasamples', "SHOW GRANTS FOR 'root'@'"+host+"'").splitlines()}
     # Stored-routine inventory is privileged because MySQL hides it from demo.
     result['mysql']['routines'] = query('mysql','root','megasamples',
         "SELECT routine_schema,routine_name,routine_type,security_type FROM information_schema.routines ORDER BY 1,2").splitlines()

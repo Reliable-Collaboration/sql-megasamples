@@ -30,7 +30,7 @@ def endpoint(container,engine):
     return '127.0.0.1',port
 
 
-def query(engine,container,user,database,sql):
+def query(engine,container,user,database,sql,separator=None):
     secret=config.passwords()
     key={'postgres':'POSTGRES_PASSWORD','root':'MYSQL_ROOT_PASSWORD'}.get(user,user.upper()+'_PASSWORD')
     args=['native-protocol',engine,user,database]
@@ -58,7 +58,8 @@ def query(engine,container,user,database,sql):
                             if isinstance(item,bool) and engine=='postgres':
                                 return 't' if item else 'f'
                             return str(item)
-                        lines.append(('|' if engine=='postgres' else '\t').join(value(item) for item in row))
+                        delimiter=separator if separator is not None else ('|' if engine=='postgres' else '\t')
+                        lines.append(delimiter.join(value(item) for item in row))
                 if not cursor.nextset():
                     break
         return subprocess.CompletedProcess(args,0,'\n'.join(lines)+'\n' if lines else '','')
