@@ -104,3 +104,19 @@ def test_all_executable_fragments_compile():
             if token == '-c' and pos and ('PY' in tokens[pos-1] or 'python' in tokens[pos-1]):
                 compile(tokens[pos+1], f'block-{index}-python-c', 'exec'); count += 1
     assert count > 10
+
+
+def test_scanner_failure_is_saved_without_exiting_strict_shell(tmp_path):
+    server = context(tmp_path, 'rollback-down')
+    try:
+        script = '. "$CONTEXT"\npython3() { :; }; podman() { test "$1" != unshare; }\n'
+        script += block('# BEGIN four checks\n', '# END four checks')
+        script += '\ntest "$PROCESS_RC" = 1\necho captured-refusal\n'
+        result = subprocess.run(['bash', '-eu', '-c', script],
+                                env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')},
+                                capture_output=True,text=True)
+        assert result.returncode == 0, result.stderr
+        assert result.stdout.endswith('captured-refusal\n')
+        assert next(tmp_path.glob('process-evidence-*.exit-code')).read_text() == '1\n'
+    finally:
+        server.close()

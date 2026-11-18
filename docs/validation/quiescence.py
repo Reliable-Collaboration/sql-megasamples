@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
-"""Conservative /proc evidence for the runbook's two manual teardown checks.
+"""Read-only, owner-scoped /proc quiescence evidence. No arguments or environments.
 
-Run in podman unshare. Never read cmdline or environ. Unreadable processes remain
-unresolved; only the coordinator can exclude them with independent attribution.
+Run in podman unshare for visibility into rootless descendants. Other owners are
+counted, never implicitly certified. An unresolved own process refuses quiescence.
 """
 import argparse
+import array
+import fcntl
 import json
 import os
 from pathlib import Path
@@ -15,42 +17,101 @@ def under(path, base):
     return path == base or path.startswith(base.rstrip('/') + '/')
 
 
+def classify_owner(process, uid):
+    if process.stat().st_uid == uid:
+        return 'own'
+    # Linux NS_GET_OWNER_UID: owner of a user namespace, translated to caller's UID space.
+    # Opening namespace entries of other owners may be denied: do not inspect their FDs.
+    try:
+        with (process / 'ns/user').open('rb') as ns:
+            owner = array.array('I', [0])
+            fcntl.ioctl(ns.fileno(), 0xb704, owner, True)
+        if owner[0] == uid:
+            return 'owned-user-namespace'
+    except (PermissionError, OSError):
+        pass
+    # When native ptrace rules deny ns/user, uid_map remains readable. The single
+    # primary mapping to our UID identifies rootless namespaces rooted in our UID.
+    # Run in podman unshare so subordinate processes can then be fully inspected.
+    try:
+        mappings = [tuple(map(int, line.split())) for line in (process / 'uid_map').read_text().splitlines()]
+        if any(inside == 0 and outside == uid and size == 1 for inside, outside, size in mappings):
+            return 'owned-user-namespace'
+    except (PermissionError, OSError, ValueError):
+        pass
+    return 'other-owner'
+
+
+def unescape(value):
+    for code, char in [('040',' '),('011','\t'),('012','\n'),('134','\\')]:
+        value = value.replace('\\' + code, char)
+    return value
+
+
+def mount_rows(path):
+    rows = []
+    for line in path.read_text().splitlines():
+        fields = line.split()
+        rows.append((fields[2], unescape(fields[3]), unescape(fields[4])))
+    return rows
+
+
+def host_mounts(proc):
+    return mount_rows(proc / 'self/mountinfo')
+
+
+def resolve_root(device, root, mounts):
+    candidates = [(len(base), point.rstrip('/') + root[len(base):] if base != '/' else point.rstrip('/') + root)
+                  for dev, base, point in mounts if dev == device and under(root, base)]
+    if candidates:
+        return max(candidates)[1] or '/'
+    # A namespace-private filesystem's whole root cannot itself identify a host bind.
+    if root == '/':
+        return None
+    raise ValueError('cannot resolve mount root to host path: ' + device + ' ' + root)
+
+
 def evidence(snapshot, proc=Path('/proc')):
     saved = json.loads(snapshot.read_text())
     sources = {src for row in saved['containers'] for src, _ in row.get('mounts', [])}
-    own = {str(os.getpid())}
+    counts = dict(own=0, **{'owned-user-namespace': 0, 'other-owner': 0})
     holders, helpers, unreadable = [], [], []
+    mounts = host_mounts(proc)
     for process in proc.iterdir():
-        if not process.name.isdigit() or process.name in own:
-            continue  # the scanner reads only the snapshot, never deployment data
+        if not process.name.isdigit() or int(process.name) == os.getpid():
+            continue
         pid = int(process.name)
         try:
+            owner = classify_owner(process, os.getuid())
+            counts[owner] += 1
+            if owner == 'other-owner':
+                continue
             comm = (process / 'comm').read_text().strip()
             network = os.readlink(process / 'ns/net')
-            if comm in ('pasta', 'slirp4netns', 'rootlessport'):
-                helpers.append(dict(pid=pid, comm=comm, network=network,
+            if comm.startswith(('pasta', 'slirp4netns', 'rootlessport')):
+                helpers.append(dict(pid=pid, owner=owner, comm=comm, network=network,
                                     cgroup=(process / 'cgroup').read_text().strip()))
             paths = [(key, os.readlink(process / key)) for key in ('root', 'cwd')]
             paths += [('fd/' + fd.name, os.readlink(fd)) for fd in (process / 'fd').iterdir()]
-            for line in (process / 'mountinfo').read_text().splitlines():
-                fields = line.split()
-                # Linux mountinfo escapes spaces, tabs, newlines and backslashes.
-                def unescape(value):
-                    for code, char in [('040', ' '), ('011', '\t'), ('012', '\n'), ('134', '\\')]:
-                        value = value.replace('\\' + code, char)
-                    return value
-                paths += [('mount-root', unescape(fields[3])), ('mountpoint', unescape(fields[4]))]
+            for device, root, _ in mount_rows(process / 'mountinfo'):
+                target = resolve_root(device, root, mounts)
+                if target:
+                    paths.append(('mount-root', target))
             matched = [(kind, target) for kind, target in paths
                        if any(under(target.removesuffix(' (deleted)'), src) for src in sources)]
             if matched:
-                holders.append(dict(pid=pid, paths=matched))
+                holders.append(dict(pid=pid, owner=owner, paths=matched))
         except (FileNotFoundError, ProcessLookupError) as error:
             if process.exists():
                 unreadable.append(dict(pid=pid, error=type(error).__name__))
-            # If /proc/PID itself vanished, the process exited during enumeration.
-        except (PermissionError, OSError) as error:
-            unreadable.append(dict(pid=pid, error=type(error).__name__))
-    return dict(holders=holders, helpers=helpers, unreadable=unreadable)
+        except (PermissionError, OSError, ValueError) as error:
+            item = dict(pid=pid, error=type(error).__name__)
+            if isinstance(error, ValueError):
+                item['reason'] = str(error)
+            unreadable.append(item)
+    return dict(scope='own and owned-user-namespace processes only', counts=counts,
+                other_owner_inspection='Not run: requires privilege',
+                holders=holders, helpers=helpers, unreadable=unreadable)
 
 
 def main():
@@ -59,7 +120,6 @@ def main():
     args = parser.parse_args()
     report = evidence(args.snapshot)
     print(json.dumps(report, indent=2))
-    # No automatic exception: unresolved evidence blocks continuation.
     if report['holders'] or report['helpers'] or report['unreadable']:
         sys.exit(1)
 

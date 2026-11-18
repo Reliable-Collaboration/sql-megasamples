@@ -1,46 +1,98 @@
-"""Process evidence must retain holders, helpers and unreadable processes."""
+"""Owner-scoped /proc attribution, helper variants and filesystem mount resolution."""
 import importlib.util
 import json
 import os
 from pathlib import Path
 
+import pytest
 
-def test_mount_root_and_deleted_fd_are_detected(tmp_path):
-    spec = importlib.util.spec_from_file_location('quiescence', Path(__file__).parents[1] / 'docs/validation/quiescence.py')
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+SPEC = importlib.util.spec_from_file_location('quiescence', Path(__file__).parents[1] / 'docs/validation/quiescence.py')
+scanner = importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(scanner)
+
+
+def fixture(tmp_path, monkeypatch, comm='server'):
     snapshot = tmp_path / 'snapshot.json'
-    snapshot.write_text(json.dumps({'containers': [{'mounts': [['/fixture/data', '/data']]}]}))
+    snapshot.write_text(json.dumps({'containers':[{'mounts':[['/store/data','/data']]}]}))
     proc = tmp_path / 'proc'; process = proc / '123456789'
     (process / 'fd').mkdir(parents=True); (process / 'ns').mkdir()
-    for name, target in [('cwd', '/unrelated'), ('root', '/'), ('fd/3', '/fixture/data/file (deleted)'), ('ns/net', 'net:[fixture]')]:
+    for name,target in [('root','/'),('cwd','/unrelated'),('ns/net','net:[fixture]')]:
         os.symlink(target, process / name)
-    (process / 'comm').write_text('rootlessport\n')
-    (process / 'cgroup').write_text('fixture\n')
-    (process / 'mountinfo').write_text('10 1 0:1 /fixture/data /data rw - overlay overlay rw\n')
-    result = module.evidence(snapshot, proc)
-    assert result['holders'][0]['paths'] == [('fd/3', '/fixture/data/file (deleted)'), ('mount-root', '/fixture/data')]
-    assert result['helpers'] == [{'pid': 123456789, 'comm': 'rootlessport', 'network': 'net:[fixture]', 'cgroup': 'fixture'}]
+    (process / 'comm').write_text(comm)
+    (process / 'cgroup').write_text('fixture')
+    (process / 'mountinfo').write_text('10 1 8:2 / / rw - ext4 /dev/fixture rw\n')
+    monkeypatch.setattr(scanner, 'host_mounts', lambda _: [('8:2','/','/')])
+    return snapshot, proc, process
+
+
+@pytest.mark.parametrize('comm',['pasta','pasta.avx2','slirp4netns','rootlessport'])
+def test_helper_prefixes(tmp_path, monkeypatch, comm):
+    snapshot,proc,process = fixture(tmp_path,monkeypatch,comm)
+    report = scanner.evidence(snapshot,proc)
+    assert report['helpers'][0]['comm'] == comm
+    assert report['counts']['own'] == 1
+
+
+def test_other_owner_not_an_unreadable_own_process(tmp_path,monkeypatch):
+    snapshot,proc,process = fixture(tmp_path,monkeypatch)
+    monkeypatch.setattr(scanner,'classify_owner',lambda *args:'other-owner')
+    (process / 'comm').unlink()  # Do not even try privileged fields for other owners.
+    report = scanner.evidence(snapshot,proc)
+    assert report['counts']['other-owner'] == 1
+    assert report['unreadable'] == []
+    assert report['scope'] == 'own and owned-user-namespace processes only'
+    assert report['other_owner_inspection'] == 'Not run: requires privilege'
+
+
+def test_owned_namespace_process_is_fully_inspected(tmp_path,monkeypatch):
+    snapshot,proc,process = fixture(tmp_path,monkeypatch)
+    monkeypatch.setattr(scanner,'classify_owner',lambda *args:'owned-user-namespace')
+    os.symlink('/store/data/file (deleted)', process / 'fd/3')
+    report = scanner.evidence(snapshot,proc)
+    assert report['counts']['owned-user-namespace'] == 1
+    assert report['holders'][0]['pid'] == int(process.name)
+
+
+def test_nonroot_filesystem_mount_root_resolves_host_path(tmp_path,monkeypatch):
+    snapshot,proc,process = fixture(tmp_path,monkeypatch)
+    # Host /store is root /private/store on filesystem 8:9.
+    monkeypatch.setattr(scanner,'host_mounts',lambda _: [('8:9','/private/store','/store')])
+    (process / 'mountinfo').write_text('10 1 8:9 /private/store/data /data rw - ext4 /dev/fixture rw\n')
+    result = scanner.evidence(snapshot,proc)
+    assert result['holders'][0]['paths'] == [('mount-root','/store/data')]
     assert result['unreadable'] == []
-    (process / 'comm').write_text('server\n')
-    (process / 'fd/3').unlink()
-    (process / 'mountinfo').write_text('10 1 0:1 /other /other rw - overlay overlay rw\n')
-    assert module.evidence(snapshot, proc) == dict(holders=[], helpers=[], unreadable=[])
 
 
-def test_unreadable_or_racing_live_process_is_not_silently_excluded(tmp_path, monkeypatch):
-    spec = importlib.util.spec_from_file_location('quiescence', Path(__file__).parents[1] / 'docs/validation/quiescence.py')
-    module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
-    snapshot = tmp_path / 'snapshot.json'
-    snapshot.write_text(json.dumps({'containers': []}))
-    proc = tmp_path / 'proc'; process = proc / '123456789'; process.mkdir(parents=True)
-    # The process still exists, but an entry disappeared or is unreadable mid-scan.
-    result = module.evidence(snapshot, proc)
-    assert result['unreadable'] == [{'pid': 123456789, 'error': 'FileNotFoundError'}]
+def test_unknown_mount_root_refuses_with_reason(tmp_path,monkeypatch):
+    snapshot,proc,process = fixture(tmp_path,monkeypatch)
+    (process / 'mountinfo').write_text('10 1 8:9 /private/store/data /data rw - ext4 /dev/fixture rw\n')
+    result = scanner.evidence(snapshot,proc)
+    assert result['unreadable'][0]['reason'] == 'cannot resolve mount root to host path: 8:9 /private/store/data'
+
+
+def test_unreadable_own_or_racing_live_process_refuses(tmp_path,monkeypatch):
+    snapshot,proc,process = fixture(tmp_path,monkeypatch)
+    (process / 'comm').unlink()
+    assert scanner.evidence(snapshot,proc)['unreadable'][0]['error'] == 'FileNotFoundError'
     original = Path.read_text
-    def read(path, *args, **kwargs):
-        if path.name == 'comm':
-            raise PermissionError('fixture')
-        return original(path, *args, **kwargs)
-    monkeypatch.setattr(Path, 'read_text', read)
-    assert module.evidence(snapshot, proc)['unreadable'] == [{'pid': 123456789, 'error': 'PermissionError'}]
+    def read(path,*args,**kwargs):
+        if path.name == 'comm': raise PermissionError('fixture')
+        return original(path,*args,**kwargs)
+    monkeypatch.setattr(Path,'read_text',read)
+    assert scanner.evidence(snapshot,proc)['unreadable'][0]['error'] == 'PermissionError'
+
+
+def test_namespace_owner_ioctl_and_primary_mapping(tmp_path,monkeypatch):
+    process = tmp_path / 'process'; (process / 'ns').mkdir(parents=True)
+    (process / 'ns/user').write_bytes(b'fixture')
+    uid = os.getuid() + 123
+    def ioctl(fd, operation, owner, mutate):
+        assert operation == 0xb704
+        owner[0] = uid
+    monkeypatch.setattr(scanner.fcntl,'ioctl',ioctl)
+    assert scanner.classify_owner(process,uid) == 'owned-user-namespace'
+    def denied(*args): raise PermissionError('fixture')
+    monkeypatch.setattr(scanner.fcntl,'ioctl',denied)
+    (process / 'uid_map').write_text(f'0 {uid} 1\n1 500000 65536\n')
+    assert scanner.classify_owner(process,uid) == 'owned-user-namespace'
+    (process / 'uid_map').write_text('0 0 4294967295\n')
+    assert scanner.classify_owner(process,uid) == 'other-owner'
