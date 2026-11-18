@@ -298,3 +298,52 @@ def test_port_selection_and_exemption(monkeypatch):
         check([endpoint], {endpoint})
         with pytest.raises(ValueError, match='occupied'):
             check([endpoint], {('127.0.0.1', endpoint[1] + 1)})
+
+
+def test_snapshot_retains_nonsecret_evidence_and_partial_removal(tmp_path, monkeypatch):
+    calls = []
+    state = {'engine-id': 'exited|false|0|0|false'}
+    def pod(*args):
+        calls.append(args)
+        if args[0] == 'ps':
+            return 'engine-id'
+        if args[0] == 'inspect':
+            if '.Mounts' in args[2]:
+                return '/fixture/data\t/data'
+            return '/fixture-engine|engine-id|' + state['engine-id'] + '|/fixture/netns'
+        if args[:2] == ('container', 'exists') and args[-1] not in state:
+            raise subprocess.CalledProcessError(1, args)
+        return ''
+    monkeypatch.setattr(upgrade, 'pod', pod)
+    before, exited = tmp_path / 'before.json', tmp_path / 'exited.json'
+    upgrade.snapshot(before, 'fixture', ['fixture-engine'])
+    saved = json.loads(before.read_text())
+    assert saved['containers'][0]['mounts'] == [['/fixture/data', '/data']]
+    assert saved['containers'][0]['network'] == '/fixture/netns'
+    assert all('.Config' not in str(c) for c in calls)
+    upgrade.exited(before, exited)
+    del state['engine-id']  # down removed it after the guarded stop.
+    upgrade.exited(before, tmp_path / 'removed.json', removed_with=exited)
+    with pytest.raises(ValueError, match='missing'):
+        upgrade.exited(before, tmp_path / 'unproven.json')
+
+
+def test_exited_refuses_running_and_requires_crash_acknowledgment(tmp_path, monkeypatch):
+    before = tmp_path / 'before.json'
+    before.write_text(json.dumps({'project': 'fixture', 'engines': ['fixture-engine'],
+                                 'containers': [{'name': 'fixture-engine', 'id': 'id'}]}))
+    state = ['running', 'true', '22', '0', 'false']
+    def pod(*args):
+        if args[0] == 'inspect':
+            return '/fixture-engine|id|' + '|'.join(state) + '|/netns'
+        return ''
+    monkeypatch.setattr(upgrade, 'pod', pod)
+    with pytest.raises(ValueError, match='exited'):
+        upgrade.exited(before, tmp_path / 'after.json')
+    state[:] = ['exited', 'false', '0', '137', 'false']
+    with pytest.raises(ValueError, match='crash-consistent'):
+        upgrade.exited(before, tmp_path / 'after.json')
+    upgrade.exited(before, tmp_path / 'ack.json', allow_crash_consistent=True)
+    state[3] = '9'
+    with pytest.raises(ValueError, match='exit code'):
+        upgrade.exited(before, tmp_path / 'bad-code.json', allow_crash_consistent=True)

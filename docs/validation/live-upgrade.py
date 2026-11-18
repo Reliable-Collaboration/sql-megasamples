@@ -130,6 +130,66 @@ def load_images(backup):
             raise ValueError('rollback tag-to-ID mismatch: ' + tag)
 
 
+# Deliberately select fields: full inspect output includes credential environments.
+STATE_FORMAT = '{{.Name}}|{{.Id}}|{{.State.Status}}|{{.State.Running}}|{{.State.Pid}}|{{.State.ExitCode}}|{{.State.OOMKilled}}|{{.NetworkSettings.SandboxKey}}'
+
+
+def container_state(container):
+    name, identity, status, running, pid, code, oom, network = pod('inspect', '-f', STATE_FORMAT, container).split('|')
+    return dict(name=name.lstrip('/'), id=identity, state=status, running=running == 'true',
+                pid=int(pid), exit_code=int(code), oom=oom == 'true', network=network)
+
+
+def write_receipt(path, data):
+    with path.open('x') as out:
+        json.dump(data, out, indent=2)
+        out.write('\n')
+    path.chmod(0o600)
+
+
+def snapshot(output, project, engines):
+    rows = []
+    for identity in pod('ps', '-aq', '--filter', 'label=com.docker.compose.project=' + project).split():
+        row = container_state(identity)
+        mounts = pod('inspect', '-f', '{{range .Mounts}}{{printf "%s\t%s\n" .Source .Destination}}{{end}}', identity)
+        row['mounts'] = [line.split('\t') for line in mounts.splitlines() if line]
+        rows.append(row)
+    if not set(engines) <= {row['name'] for row in rows}:
+        raise ValueError('missing engine before teardown; retain original snapshot')
+    write_receipt(output, dict(project=project, engines=engines, containers=rows))
+
+
+def exited(before, output, removed_with=None, allow_crash_consistent=False):
+    saved = json.loads(before.read_text())
+    prior = json.loads(removed_with.read_text())['containers'] if removed_with else []
+    prior = {row['id']: row for row in prior}
+    rows = []
+    for original in saved['containers']:
+        try:
+            pod('container', 'exists', original['id'])
+        except subprocess.CalledProcessError as error:
+            if error.returncode != 1:
+                raise
+            if original['id'] not in prior:
+                raise ValueError('missing container without retained exited receipt: ' + original['name']) from error
+            row = prior[original['id']]
+        else:
+            row = container_state(original['id'])
+        if row['id'] != original['id'] or row['state'] != 'exited' or row['running'] or row['pid'] != 0:
+            raise ValueError('container must be exited with PID 0: ' + original['name'])
+        if row['name'] in saved['engines']:
+            if row['exit_code'] == 137:
+                if not allow_crash_consistent:
+                    raise ValueError('137 requires coordinator acknowledgment: crash-consistent backup')
+            elif row['exit_code'] != 0 or row['oom']:
+                raise ValueError('unexpected engine exit code/OOM: ' + original['name'])
+        rows.append(row)
+    if pod('ps', '-q', '--filter', 'label=com.docker.compose.project=' + saved['project']):
+        raise ValueError('deployment container still running')
+    write_receipt(output, dict(project=saved['project'], engines=saved['engines'], containers=rows,
+                               crash_consistent_acknowledged=allow_crash_consistent))
+
+
 def check_ports(endpoints, allowed=()):
     for host, port in endpoints:
         try:
@@ -256,6 +316,15 @@ def main():
         p = sub.add_parser(action)
         p.add_argument('bundle', type=Path)
         p.add_argument('--root', type=Path, default=ROOT)
+    p = sub.add_parser('snapshot')
+    p.add_argument('output', type=Path)
+    p.add_argument('--project', required=True)
+    p.add_argument('--engine', action='append', required=True)
+    p = sub.add_parser('exited')
+    p.add_argument('before', type=Path)
+    p.add_argument('output', type=Path)
+    p.add_argument('--removed-with', type=Path)
+    p.add_argument('--allow-crash-consistent', action='store_true')
     p = sub.add_parser('ports')
     p.add_argument('--allow-running-project')
     p.add_argument('--port-config', type=Path)
@@ -269,7 +338,11 @@ def main():
     p.add_argument('host')
     p.add_argument('port', type=int)
     args = parser.parse_args()
-    if args.command.endswith('-images'):
+    if args.command == 'snapshot':
+        snapshot(args.output, args.project, args.engine)
+    elif args.command == 'exited':
+        exited(args.before, args.output, args.removed_with, args.allow_crash_consistent)
+    elif args.command.endswith('-images'):
         globals()[args.command.replace('-', '_')](args.backup)
     elif args.command.endswith('-metadata'):
         globals()[args.command.replace('-', '_')](args.root, args.bundle, required_metadata())
