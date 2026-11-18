@@ -612,7 +612,12 @@ test "$PROCESS_RC" = 0
 
 For a clean-stop recovery, select the diagnosed engine explicitly, start that
 existing container, wait for its configured health, then allow 300 seconds for
-shutdown. A failed health wait is a hold: diagnose that engine before stopping it;
+shutdown. Select PostgreSQL or MySQL only: SQLite's expected 137 does not need this
+route, and restarting it recopies `/data` into `/shared` before cold copy.
+If health scheduling produces no entries during the wait, use the
+[manual health-probe fallback](#manual-health-probe-fallback) in a second maintenance
+shell for the selected engine only, then retry the bounded health wait. A failed
+configured probe or health wait is a hold: diagnose that engine before stopping it;
 never copy a running database. A stop error uses the same four-check procedure,
 with a fresh snapshot and original-stop gate. The 300-second bounds are maintenance
 choices, not measured guarantees.
@@ -620,15 +625,21 @@ choices, not measured guarantees.
 ```sh
 # BEGIN original clean stop
 : "${RECOVER_ENGINE:?Set the diagnosed original engine}"
-case "$RECOVER_ENGINE" in postgres|mysql|sqlite) :;; *) exit 1;; esac
+case "$RECOVER_ENGINE" in
+  postgres|mysql) :;;
+  sqlite) echo 'STOP: SQLite exit 137 is expected; do not restart it for clean-stop recovery.'; exit 1;;
+  *) echo 'STOP: select postgres or mysql for clean-stop recovery.'; exit 1;;
+esac
 python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" --service "$RECOVER_ENGINE"
 docker compose -p sql-megasamples -f compose.yaml start "$RECOVER_ENGINE"
 python3 "$UPGRADE_HELPER" wait-healthy "$RECOVER_ENGINE" --timeout 300
 TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
 TEARDOWN_PHASE=stop
+PRIOR_SNAPSHOT="$TEARDOWN_SNAPSHOT"
 TEARDOWN_SNAPSHOT="$EVIDENCE_DIR/clean-stop-before-$TEARDOWN_ATTEMPT.json"
 EXITED_RECEIPT=
 python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
+  --prior "$PRIOR_SNAPSHOT" \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
 date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/clean-stop.log.timestamps"
@@ -667,7 +678,7 @@ and the existing client both provide `--timeout` (references read
 2026-11-18 19:50:17 UTC; local help checked 2026-11-18 20:02 UTC).
 
 If abandoning before `.env` rotation, cold copies may not exist, so do **not** enter the full
-cold-copy rollback. If stop was attempted, complete the original recovery checks below first, using `original-restart`
+cold-copy rollback. If stop was attempted, complete the original recovery checks above first, using `original-restart`
 (not the cold-copy eligibility rule). Original containers/volumes still exist in this path.
 Restore original source/configuration and start only the originally running containers:
 
@@ -880,7 +891,9 @@ ms_tool "$MEGASAMPLES_PY" docs/validation/verify-configured-passwords.py --previ
 ms_tool make test-console PY="$MEGASAMPLES_PY" </dev/null
 ```
 
-If `make up` waits with no health-log entries, the isolated rehearsal observed the same scheduling issue. In a second **coordinator maintenance shell**, run the real configured probes once for this project's engines; do not edit health status or change proxy services:
+### Manual health-probe fallback
+
+If `make up` waits with no health-log entries, the isolated rehearsal observed the same scheduling issue. In a second **coordinator maintenance shell**, run the real configured probes once for this project's engines; do not edit health status or change proxy services. During clean-stop recovery, replace the loop's engine list with the selected PostgreSQL or MySQL engine only:
 
 ```sh
 unset CONTAINERS_STORAGE_CONF CONTAINERS_CONF CONTAINERS_CONF_OVERRIDE DOCKER_HOST COMPOSE_PROJECT_NAME
@@ -1035,7 +1048,8 @@ repeat the four checks. For **rollback-pre-up**, keep the saved combined snapsho
 (including all four new volume targets), repeat the four checks and resume at
 `# BEGIN pre-up continuation`; never repeat branch/configuration restoration or volume
 creation. For **rollback-populate**, source the exact attempt context in a fresh
-shell, verify the socket and immutable digests at the beginning of Roll back,
+shell, verify the socket, then run only `# BEGIN rollback input verification`
+through `# END rollback input verification` in Roll back (stop before candidate teardown),
 then resume at `# BEGIN rollback population` through the overrides and pre-up
 checkpoint. That block rechecks labelled volume ownership, state and all target
 mounts before retrying the copy. Never repeat branch/configuration restoration
@@ -1333,10 +1347,12 @@ rollback: it restores the new image contents, including the added datasets.
 
 ```sh
 # Verify immutable rollback inputs before restoring anything.
+# BEGIN rollback input verification
 python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
 (cd "$BACKUP_DIR" && sha256sum -c original-configurations.sha256)
 bash -c 'set -o pipefail; actual=$(podman unshare tar --sort=name --numeric-owner --format=gnu --atime-preserve=system -C "$1" -cf - postgres mysql sqlite sqlite-shared | sha256sum); test "$actual" = "$(cat "$1/cold-copies.stream.sha256")"' sh "$BACKUP_DIR"
 test -d "$CONFIG_DIR"
+# END rollback input verification
 # Stop candidates BEFORE down can remove evidence. Keep every failed candidate volume.
 : "${TEARDOWN_ATTEMPT:?Bootstrap a new attempt or source its saved context}"
 TEARDOWN_PHASE=rollback-stop

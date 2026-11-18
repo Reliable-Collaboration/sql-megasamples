@@ -352,6 +352,44 @@ docker() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/recovery-calls"; }
         if mode=='clean-stop':
             assert 'stop --timeout 300 postgres' in calls
             assert calls.index('stop --timeout') < calls.rindex('--phase original-stop')
+            snapshot_call = next(line for line in calls.splitlines() if ' snapshot ' in line)
+            assert '--prior ' + str(tmp_path/'evidence/before.json') in snapshot_call
+    finally: server.close()
+
+
+def test_clean_stop_recovery_refuses_sqlite_before_any_commands(tmp_path):
+    server = context(tmp_path, 'stop')
+    try:
+        script = '. "$CONTEXT"\nRECOVER_ENGINE=sqlite\n' + r'''
+python3() { echo unexpected-command >> "$EVIDENCE_DIR/calls"; }
+docker() { echo unexpected-command >> "$EVIDENCE_DIR/calls"; }
+'''
+        script += block('# BEGIN original clean stop\n', '# END original clean stop')
+        result = subprocess.run(['bash','-eu','-c',script], capture_output=True, text=True,
+                                env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')})
+        assert result.returncode != 0
+        assert 'SQLite exit 137 is expected' in result.stdout
+        assert not (tmp_path/'evidence/calls').exists()
+    finally: server.close()
+
+
+def test_population_resume_digest_fragment_cannot_stop_candidates(tmp_path):
+    server = context(tmp_path, 'rollback-populate')
+    try:
+        script = '. "$CONTEXT"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"\nmkdir -p "$CONFIG_DIR"\n' + r'''
+python3() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/input-calls"; }
+sha256sum() { :; }
+bash() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/input-calls"; }
+docker() { echo unexpected-stop; return 42; }
+'''
+        script += block('# BEGIN rollback input verification\n', '# END rollback input verification')
+        result = subprocess.run(['bash','-eu','-c',script], capture_output=True, text=True,
+                                env={'PATH':os.environ['PATH'],'CONTEXT':str(tmp_path/'resume-context.bash')})
+        assert result.returncode == 0, result.stderr
+        assert 'unexpected-stop' not in result.stdout
+        calls=(tmp_path/'evidence/input-calls').read_text()
+        assert 'check-images' in calls and 'cold-copies.stream.sha256' in calls
+        assert 'snapshot' not in calls
     finally: server.close()
 
 
