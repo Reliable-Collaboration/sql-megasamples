@@ -108,6 +108,24 @@ def image_archives(backup, rows):
     return {name: (image, checksums[name]) for name, image in expected.items()}
 
 
+def check_space(backup, extra_bytes):
+    if extra_bytes < 0:
+        raise ValueError('extra space reserve must be nonnegative')
+    images = {image for _, image in image_rows(backup)}
+    image_bytes = sum(int(pod('image', 'inspect', '-f', '{{.Size}}', 'sha256:' + image)) for image in images)
+    # Per-image archives duplicate shared layers; budget full Size for EACH image.
+    # A second full set is loaded into scratch. 25% covers archive/metadata overhead.
+    required = (2 * image_bytes * 125 + 99) // 100 + extra_bytes
+    free = shutil.disk_usage(backup).free
+    result = dict(unique_images=len(images), per_image_total_bytes=image_bytes,
+                  copies=2, allowance_percent=25, extra_reserve_bytes=extra_bytes,
+                  required_bytes=required, available_bytes=free)
+    if free < required:
+        raise ValueError('insufficient free space: ' + json.dumps(result))
+    print(json.dumps(result))
+    return result
+
+
 def check_images(backup):
     rows = image_rows(backup)
     for name, (image, digest) in image_archives(backup, rows).items():
@@ -316,6 +334,9 @@ def main():
         p = sub.add_parser(action)
         p.add_argument('bundle', type=Path)
         p.add_argument('--root', type=Path, default=ROOT)
+    p = sub.add_parser('space')
+    p.add_argument('backup', type=Path)
+    p.add_argument('--extra-bytes', required=True, type=int)
     p = sub.add_parser('snapshot')
     p.add_argument('output', type=Path)
     p.add_argument('--project', required=True)
@@ -338,7 +359,9 @@ def main():
     p.add_argument('host')
     p.add_argument('port', type=int)
     args = parser.parse_args()
-    if args.command == 'snapshot':
+    if args.command == 'space':
+        check_space(args.backup, args.extra_bytes)
+    elif args.command == 'snapshot':
         snapshot(args.output, args.project, args.engine)
     elif args.command == 'exited':
         exited(args.before, args.output, args.removed_with, args.allow_crash_consistent)

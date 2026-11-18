@@ -389,3 +389,16 @@ def test_rollback_opens_with_fresh_shell_and_checks_ports():
     assert first_block.lstrip().startswith('# Fresh Bash maintenance shell')
     assert '. "$BACKUP_DIR/resume-context.bash"' in first_block
     assert text.index('ports --port-config') < text.index(' up -d --wait')
+
+
+def test_space_gate_counts_duplicate_archives_and_scratch_store(tmp_path, monkeypatch):
+    image = 'a' * 64
+    (tmp_path / 'rollback-image-ids.txt').write_text(f'localhost/a:old {image} []\nlocalhost/b:old {image} []\n')
+    monkeypatch.setattr(upgrade, 'pod', lambda *args: '1000')
+    monkeypatch.setattr(upgrade.shutil, 'disk_usage', lambda _: SimpleNamespace(free=2599))
+    # One unique image, two incremental copies (archive and scratch), plus 25%,
+    # plus 100 bytes explicitly reserved by the coordinator.
+    with pytest.raises(ValueError, match='space'):
+        upgrade.check_space(tmp_path, 100)
+    monkeypatch.setattr(upgrade.shutil, 'disk_usage', lambda _: SimpleNamespace(free=2600))
+    assert upgrade.check_space(tmp_path, 100)['required_bytes'] == 2600

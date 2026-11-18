@@ -308,6 +308,13 @@ chmod 600 "$UPGRADE_HELPER"
 PREPARATION_STAGE=archive-gates
 save_context
 # Native host Python + Podman; no package installation, one docker archive per full image ID.
+# Before saving, measure B (cold copies), D (logical dumps), remaining candidate/tool
+# import/data copies and their scratch on THIS filesystem. Set the additional reserve.
+: "${EXTRA_RESERVE_BYTES:?Set measured B+D+remaining candidate/tool/scratch reserve in bytes}"
+# Adds TWO complete original-image sets (per-image archives + scratch load), with 25%.
+# Existing original images and any retained malformed aggregate already occupy disk.
+python3 "$UPGRADE_HELPER" space "$BACKUP_DIR" --extra-bytes "$EXTRA_RESERVE_BYTES" \
+  > "$BACKUP_DIR/archive-space-$UPGRADE_ID.log"
 # BEGIN archive gates
 python3 "$UPGRADE_HELPER" save-images "$BACKUP_DIR"
 python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
@@ -324,6 +331,11 @@ python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
   test "$(podman info --format '{{.Store.GraphRoot}}')" = "$SCRATCH_DIR/graph"
   python3 "$UPGRADE_HELPER" load-images "$BACKUP_DIR" > "$SCRATCH_DIR/load.log" 2>&1
   test -z "$(podman ps -aq)"
+  # Only this freshly created scratch store: drop loaded duplicates AND its pause process.
+  # Keep logs/configuration under BACKUP_DIR. Never run this in the default/isolated store.
+  test "$CONTAINERS_STORAGE_CONF" = "$SCRATCH_DIR/storage.conf"
+  test "$(podman info --format '{{.Store.GraphRoot}}')" = "$SCRATCH_DIR/graph"
+  podman system reset --force >> "$SCRATCH_DIR/cleanup.log" 2>&1
 )
 # Back in the original maintenance shell/store. Retain the rehearsal log with the backup.
 # The reviewed tools snapshot is a PRIVATE local artifact, not a public image.
