@@ -47,7 +47,7 @@ def test_original_stop_all_down_still_holds(down):
     assert any(r['reason']=='deployment process capture missing; cannot capture after stop' for r in report['holds'])
 
 
-@pytest.mark.parametrize('mode',['live-task','unreadable-group','started','conmon','path-helper','port-helper','unreadable-conmon'])
+@pytest.mark.parametrize('mode',['live-task','unreadable-group','started','conmon','path-helper','port-helper','unreadable-conmon','conmon-identity-contradicted'])
 def test_down_live_evidence_blocks_with_reversal(down,monkeypatch,mode):
     snap,out,proc,cg,data=down
     assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
@@ -67,6 +67,8 @@ def test_down_live_evidence_blocks_with_reversal(down,monkeypatch,mode):
         reason='positively associated down helper survives'
         if 'conmon' in mode:
             monkeypatch.setattr(gate,'pod',lambda *a:'test|0|12349|none|false|' if a[0]=='inspect' and a[2]==gate.CAPTURE_FORMAT else original(*a))
+            if mode=='conmon-identity-contradicted':
+                (p/'comm').write_text('reused-process');reason='down helper association unreadable';kind='holds';expected='HOLD'
             if mode=='unreadable-conmon':
                 (p/'stat').unlink();reason='down helper association unreadable';kind='holds';expected='HOLD'
         if mode=='path-helper':(p/'cwd').unlink();(p/'cwd').symlink_to('/store/overlay-containers/test/userdata')
@@ -157,3 +159,21 @@ def test_down_capture_requires_one_evidence_row_per_container(down):
     report=gate.verify(out,proc=proc,cgroup_root=cg)
     assert report['outcome']=='HOLD'
     assert any(r['reason']=='capture missing or incomplete' for r in report['holds'])
+
+
+def test_positive_down_conmon_refuses_even_when_descriptors_unreadable(down,monkeypatch):
+    snap,out,proc,cg,data=down
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
+    original_pod=gate.pod
+    monkeypatch.setattr(gate,'pod',lambda *a:'test|0|12349|none|false|' if a[0]=='inspect' and a[2]==gate.CAPTURE_FORMAT else original_pod(*a))
+    p=process(proc,12349,'conmon','/shell')
+    listing=Path.iterdir
+    def denied(path):
+        if path==p/'fd':raise PermissionError('required helper descriptors')
+        return listing(path)
+    monkeypatch.setattr(Path,'iterdir',denied)
+    report=gate.verify(out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='REFUSE'
+    assert any(r['reason']=='positively associated down helper survives' for r in report['refusals'])
+    monkeypatch.setattr(Path,'iterdir',listing);monkeypatch.setattr(gate,'pod',original_pod);shutil.rmtree(p)
+    assert gate.verify(out,proc=proc,cgroup_root=cg)['outcome']=='PASS'

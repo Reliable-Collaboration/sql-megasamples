@@ -298,16 +298,29 @@ def down_helpers(rows, proc):
         associated = int(process.name) in conmons
         try:
             comm = (process/'comm').read_text().strip()
+            if associated and comm != 'conmon':
+                raise ValueError('Podman conmon association contradicted by process identity')
             if not associated and not (helper_names(comm) or comm == 'conmon'):
                 continue
             if not task_alive(process):
                 continue
             lines = (process/'cgroup').read_text()
             associated |= any('/libpod-'+i+'.scope' in lines or '/libpod-conmon-'+i+'.scope' in lines for i in ids)
+            if associated:
+                refusals.append(dict(reason='positively associated down helper survives', **process_identity(process)))
+                continue
             targets = [os.readlink(process/'cwd')]
+            associated |= any(i in target.split('/') for i in ids for target in targets)
+            if associated:
+                refusals.append(dict(reason='positively associated down helper survives', **process_identity(process)))
+                continue
             for fd in (process/'fd').iterdir():
                 try:
-                    targets.append(os.readlink(fd))
+                    target = os.readlink(fd)
+                    targets.append(target)
+                    if target in sockets or any(i in target.split('/') for i in ids):
+                        associated = True
+                        break
                 except FileNotFoundError:
                     continue
             associated |= any(i in target.split('/') for i in ids for target in targets)
