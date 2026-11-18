@@ -110,6 +110,20 @@ def test_retained_live_phase_a_layout(tmp_path, monkeypatch):
     (tmp_path / 'phase-a-resume-receipt.json').write_text(json.dumps({'saved_images': saved}))
     before = {p.name: p.read_bytes() for p in tmp_path.iterdir()}
     assert len(upgrade.check_images(tmp_path)) == len(saved)
+    loaded, restored = [], {}
+    def pod(*args):
+        if args[0] == 'load':
+            assert Path(args[-1]).is_file()
+            loaded.append(Path(args[-1]).name)
+        elif args[:2] == ('image', 'tag'):
+            restored[args[-1]] = args[-2]
+        elif args[:2] == ('image', 'inspect'):
+            return restored[args[-1]]
+        return ''
+    monkeypatch.setattr(upgrade, 'pod', pod)
+    upgrade.load_images(tmp_path)
+    assert set(loaded) == {entry['archive'] for entry in layout['archives']}
+    assert restored == {entry['original_tag']: entry['image_id'] for entry in saved}
     assert before == {p.name: p.read_bytes() for p in tmp_path.iterdir()}
     # Receipt cannot silently substitute another tag or an unchecked archive.
     saved[-1]['original_tag'] = saved[0]['original_tag']
