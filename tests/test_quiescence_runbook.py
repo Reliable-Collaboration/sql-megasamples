@@ -61,3 +61,14 @@ def test_superseded_inventory_policy_is_historical():
     paragraph=next(p for p in text.split('\n\n') if 'native-host UID/start-time inventory' in p)
     assert 'historical' in paragraph.lower()
     assert 'DL-088' in text
+
+
+def test_fresh_shell_keeps_diagnostics_private(tmp_path):
+    server=context(tmp_path,'rollback-down')
+    try:
+        script='umask 022\n. "$CONTEXT"\npython3() { :; }; podman() { :; }\n'+block('# BEGIN four checks\n','# END four checks')
+        result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
+        assert result.returncode==0,result.stderr
+        for path in (tmp_path/'evidence').glob('*'):
+            assert path.stat().st_mode & 0o777 == 0o600,path
+    finally:server.close()
