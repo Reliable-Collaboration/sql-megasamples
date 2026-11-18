@@ -12,7 +12,8 @@ from megasamples.engines.base import Engine
 from megasamples.engines import expected_tables, unique_databases
 from megasamples.engines.mysql import dump as dumper, image_test as tester, load as loader, server
 from megasamples.paths import ROOT, engine_build_dir, engine_dir, rel
-from megasamples import container_engine
+from megasamples import container_engine, config as stack
+from megasamples.credentials import client
 
 
 def link_tree(src, dst):
@@ -132,9 +133,10 @@ class MySQL(Engine):
                         "--temptable-max-ram=1G"],
             "container_name": self.container,
             "ports": [f"127.0.0.1:{cfg.ports.get('mysql', self.port)}:3306"],
-            "environment": {"DEMO_PASSWORD": "${DEMO_PASSWORD:-demo}",
+            "environment": {"MYSQL_ROOT_PASSWORD": "${MYSQL_ROOT_PASSWORD:-root}",
+                            "DEMO_PASSWORD": "${DEMO_PASSWORD:-demo}",
                             "ADMIN_PASSWORD": "${ADMIN_PASSWORD:-admin}"},
-            "healthcheck": {"test": ["CMD-SHELL", "mysql -udemo -p\"$$DEMO_PASSWORD\" -e 'SELECT 1'"],
+            "healthcheck": {"test": ["CMD-SHELL", "mysql --defaults-extra-file=/run/megasamples-health.cnf -e 'SELECT 1'"],
                             "interval": "5s", "timeout": "5s", "retries": 30},
             "restart": "unless-stopped",
         }
@@ -160,9 +162,11 @@ class MySQL(Engine):
                     "DEMO_PASSWORD": demo, "ADMIN_PASSWORD": admin}
         return {}
 
-    def query(self, container, sql, user="root", password="root"):
-        p = subprocess.run(["docker", "exec", container, "mysql", f"-u{user}", f"-p{password}",
-                            "-N", "--batch", "-e", sql], capture_output=True, text=True)
+    def query(self, container, sql, user="root", password=None):
+        if password is None:
+            password = stack.passwords()["MYSQL_ROOT_PASSWORD" if user == "root" else user.upper() + "_PASSWORD"]
+        with client("mysql", container, user, password) as command:
+            p = subprocess.run([*command, "-N", "--batch", "-e", sql], capture_output=True, text=True)
         if p.returncode != 0:
             raise RuntimeError(f"{container}: {p.stderr.strip()[:200]}")
         return [line.split("\t") for line in p.stdout.splitlines() if line.strip()]
@@ -180,7 +184,7 @@ class MySQL(Engine):
 
     def connection_hint(self, cfg):
         from megasamples.engines import first_database
-        return f"mysql -h 127.0.0.1 -P {cfg.ports.get('mysql', self.port)} -u demo -pdemo {first_database(cfg, 'mysql')}"
+        return f"mysql -h 127.0.0.1 -P {cfg.ports.get('mysql', self.port)} -u demo -p {first_database(cfg, 'mysql')}"
 
 
 ENGINE = MySQL()

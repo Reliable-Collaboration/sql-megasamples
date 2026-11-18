@@ -12,20 +12,12 @@ import http.cookiejar, json, os, subprocess, sys, urllib.error, urllib.request
 
 from megasamples import config as stack, consoles as console_registry, engines as engine_registry
 from megasamples.paths import ROOT
+from megasamples.credentials import client
 
 
 def passwords():
-    found = {}
-    env_file = os.path.join(ROOT, ".env")
-    if os.path.exists(env_file):
-        for line in open(env_file, encoding="utf-8"):
-            line = line.strip()
-            if line.startswith("#") or "=" not in line:
-                continue
-            k, v = line.split("=", 1)
-            found[k.strip()] = v.strip().strip('"\'')
-    return (found.get("DEMO_PASSWORD") or os.environ.get("DEMO_PASSWORD") or "demo",
-            found.get("ADMIN_PASSWORD") or os.environ.get("ADMIN_PASSWORD") or "admin")
+    values = stack.passwords()
+    return values["DEMO_PASSWORD"], values["ADMIN_PASSWORD"]
 
 
 def get(url, timeout=20):
@@ -82,8 +74,8 @@ def engine_checks(engine, cfg, demo_pw, admin_pw, failures):
     c = engine.container
     if engine.name == "mysql":
         def run(user, pw, sql):
-            return subprocess.run(["docker", "exec", c, "mysql", f"-u{user}", f"-p{pw}", "-N", "--batch", "-e", sql],
-                                  capture_output=True, text=True).returncode
+            with client("mysql", c, user, pw) as command:
+                return subprocess.run([*command, "-N", "--batch", "-e", sql], capture_output=True, text=True).returncode
         db = "sakila" if "sakila" in cfg.datasets("mysql") else cfg.datasets("mysql")[0]
         ok_read = run("demo", demo_pw, f"SELECT 1 FROM information_schema.tables WHERE table_schema='{db}' LIMIT 1") == 0
         can_write = run("demo", demo_pw, f"CREATE TABLE {db}.t_console_probe (i INT)") == 0
@@ -92,8 +84,9 @@ def engine_checks(engine, cfg, demo_pw, admin_pw, failures):
         admin_ok = run("admin", admin_pw, f"CREATE TABLE {db}.t_console_probe (i INT); DROP TABLE {db}.t_console_probe") == 0
     elif engine.name == "postgres":
         def run(user, pw, sql, db="megasamples"):
-            return subprocess.run(["docker", "exec", "-e", f"PGPASSWORD={pw}", c, "psql", "-h", "127.0.0.1", "-U", user,
-                                   "-d", db, "-v", "ON_ERROR_STOP=1", "-tAc", sql], capture_output=True, text=True).returncode
+            with client("postgres", c, user, pw) as command:
+                return subprocess.run([*command, "-d", db, "-v", "ON_ERROR_STOP=1", "-tAc", sql],
+                                      capture_output=True, text=True).returncode
         ok_read = run("demo", demo_pw, "SELECT count(*) FROM datasets") == 0
         can_write = run("demo", demo_pw, "CREATE TABLE t_console_probe (i int)") == 0
         if can_write:

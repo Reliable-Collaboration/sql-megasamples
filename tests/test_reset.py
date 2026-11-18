@@ -10,6 +10,14 @@ from megasamples.reset import plan
 CFG = stack.Config({"engines": {"mysql": {"datasets": "quick"}, "postgres": {"datasets": "core"}, "sqlite": {"datasets": ["sakila"]}}})
 
 
+@pytest.fixture(autouse=True)
+def no_working_compose_writes(monkeypatch, tmp_path):
+    # These tests isolate reset selection, locking and copy behavior. The real
+    # generator has its own tests; a mocked stack must never rewrite the checkout.
+    monkeypatch.setattr(reset.compose, "main", lambda *args: 0)
+    monkeypatch.setattr(reset.tempfile, "tempdir", str(tmp_path))
+
+
 def test_all_resets_every_engine_whole():
     assert plan(CFG, ["all"]) == {"mysql": None, "postgres": None, "sqlite": None}
 

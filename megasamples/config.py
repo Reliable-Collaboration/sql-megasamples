@@ -13,12 +13,12 @@ it. Without the file the built-in default applies: MySQL with the core tier and 
     build:    {threads: 4, keep_build_server: false, scale_factor: 1}
     downloads: {concurrency: 3}
 """
-import copy, os
+import copy, os, re
 
 import yaml
 
 from megasamples import datasets as inventory
-from megasamples.paths import CONFIG, rel
+from megasamples.paths import CONFIG, ROOT, rel
 
 DEFAULT = {
     "engines": {"mysql": {"datasets": "core"}},
@@ -114,3 +114,54 @@ def write(raw, path=None):
         fh.write("\n".join(lines))
         yaml.safe_dump(ordered, fh, sort_keys=False, default_flow_style=None, allow_unicode=True)
     return path
+
+
+PASSWORD_DEFAULTS = {"DEMO_PASSWORD": "demo", "ADMIN_PASSWORD": "admin",
+                     "MYSQL_ROOT_PASSWORD": "root", "POSTGRES_PASSWORD": "root"}
+
+
+def passwords():
+    """The four Compose password overrides, shared by reset, registries and consoles.
+
+    Single-quoted .env values are literal (recommended for passwords). Shell
+    overrides have Compose's precedence. Never source .env into a shell or log it.
+    """
+    found = {}
+    path = os.path.join(ROOT, ".env")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as stream:
+            for line in stream:
+                line = line.strip()
+                if line.startswith("export "):
+                    line = line[7:].lstrip()
+                if line.startswith("#") or "=" not in line:
+                    continue
+                key, value = line.split("=", 1)
+                key, value = key.strip(), value.strip()
+                if value.startswith("'"):
+                    match = re.fullmatch(r"'((?:\\'|[^'])*)'\s*(?:#.*)?", value)
+                    if not match:
+                        raise ValueError("invalid single-quoted .env value for " + key)
+                    value = match[1].replace("\\'", "'")
+                else:
+                    if value.startswith('"'):
+                        match = re.fullmatch(r'"((?:\\.|[^"\\])*)"\s*(?:#.*)?', value)
+                        if not match:
+                            raise ValueError("invalid double-quoted .env value for " + key)
+                        value = re.sub(r'\\([nrt\\"])', lambda m: {"n": "\n", "r": "\r", "t": "\t"}.get(m[1], m[1]), match[1])
+                    else:
+                        value = re.split(r"\s+#", value, maxsplit=1)[0].rstrip()
+                    # Match Compose's common direct/default interpolation, without executing shell code.
+                    def expand(match):
+                        if match[0] == "$$":
+                            return "$"
+                        name, op, default, bare = match.groups()
+                        current = os.environ.get(name or bare, found.get(name or bare))
+                        if op == ":-":
+                            return current or default
+                        if op == "-":
+                            return default if current is None else current
+                        return current or ""
+                    value = re.sub(r"\$\$|\$\{([A-Za-z_][A-Za-z_0-9]*)(?:(:-|-)([^}]*))?\}|\$([A-Za-z_][A-Za-z_0-9]*)", expand, value)
+                found[key] = value
+    return {key: os.environ.get(key, found.get(key)) or default for key, default in PASSWORD_DEFAULTS.items()}

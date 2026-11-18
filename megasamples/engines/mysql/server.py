@@ -11,6 +11,7 @@ import json, os, shlex, subprocess, sys, time
 
 from megasamples.paths import BUILD, DATASETS, ENGINES, STAGE
 from megasamples.engines.mysql import base_image
+from megasamples.credentials import client
 IMAGE = os.environ.get("MYSQL_IMAGE", base_image.IMAGE)
 NAME = os.environ.get("BUILD_SERVER", "megasamples-build-mysql")
 PW = "build"
@@ -32,9 +33,9 @@ def ready(timeout=180):
     (P-02), and the socket answers during the official image's first-start initialisation, when a
     temporary server runs with --skip-networking and is stopped before the real one starts."""
     for _ in range(int(timeout * 5)):
-        if run(["docker", "exec", NAME, "mysql", "-h", "127.0.0.1", "--protocol=tcp", f"-p{PW}", "-uroot",
-                "-N", "-e", "SELECT 1"]).returncode == 0:
-            return True
+        with client("mysql", NAME, "root", PW) as command:
+            if run([*command, "-N", "-e", "SELECT 1"]).returncode == 0:
+                return True
         time.sleep(0.2)
     return False
 
@@ -85,15 +86,15 @@ def stop():
 def sql(statement, database=None, table=False, check=True, raw=True):
     """Run a statement through the mysql client. `raw=False` keeps the client's batch escaping
     (\\n, \\t, \\\\, \\0 inside values), so a value holding a newline or a tab cannot break a row."""
-    cmd = ["docker", "exec", "-i", NAME, "mysql", f"-p{PW}", "-uroot",
-           "--default-character-set=utf8mb4", "--local-infile=1"]
+    cmd = ["--default-character-set=utf8mb4", "--local-infile=1"]
     if not table:
         cmd += ["-N", "--batch"] + (["--raw"] if raw else [])
     else:
         cmd += ["--table"]
     if database:
         cmd += ["-D", database]
-    p = run(cmd, input=statement)
+    with client("mysql", NAME, "root", PW) as command:
+        p = run([*command, *cmd], input=statement)
     if check and p.returncode != 0:
         raise RuntimeError(f"SQL failed: {p.stderr.strip()}\n--- statement ---\n{statement[:400]}")
     return p.stdout
@@ -103,12 +104,11 @@ def sql_file(path, database=None):
     """Stream a .sql file into the server (files can be large; never read them into argv)."""
     # --local-infile: the client is the one that reads a LOAD DATA LOCAL INFILE path, and it runs
     # inside the container, so those paths are the container's (/context is the staged input mount)
-    cmd = ["docker", "exec", "-i", NAME, "mysql", f"-p{PW}", "-uroot",
-           "--default-character-set=utf8mb4", "--local-infile=1"]
+    cmd = ["--default-character-set=utf8mb4", "--local-infile=1"]
     if database:
         cmd += ["-D", database]
-    with open(path, "rb") as fh:
-        p = subprocess.run(cmd, stdin=fh, capture_output=True, text=True)
+    with client("mysql", NAME, "root", PW) as command, open(path, "rb") as fh:
+        p = subprocess.run([*command, *cmd], stdin=fh, capture_output=True, text=True)
     if p.returncode != 0:
         raise RuntimeError(f"loading {path} failed: {p.stderr.strip()[:500]}")
     return p.stderr

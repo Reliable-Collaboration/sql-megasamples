@@ -4,12 +4,12 @@ from pathlib import Path
 from megasamples import reset
 from megasamples.engines.mysql import server as mysql
 from megasamples.engines.postgres import server as pg
-root=Path.cwd();out=root/'build/lts-audit'
+root=Path.cwd();out=root/os.environ.get('MEGASAMPLES_VALIDATION_OUT', 'build/lts-audit')
 assert root==Path('/home/rcc-vstudio/working/sql-megasamples-upgrade')
 assert os.environ.get('COMPOSE_PROJECT_NAME')=='megasamples-upgrade'
 assert os.environ.get('DOCKER_HOST')=='unix:///home/rcc-vstudio/working/sql-megasamples-upgrade-env/podman.sock'
 store=subprocess.check_output(['docker','info','--format','{{.DockerRootDir}}'],text=True).strip();assert store.startswith('/home/rcc-vstudio/working/sql-megasamples-upgrade-env/')
-secrets=dict(line.split('=',1) for line in (root/'.env').read_text().splitlines() if line and not line.startswith('#'))
+secrets=__import__("megasamples.config", fromlist=["passwords"]).passwords()
 mysql.NAME='megasamples-mysql';mysql.PW=secrets['MYSQL_ROOT_PASSWORD'];pg.NAME='megasamples-postgres'
 def cmd(args):return subprocess.run(args,capture_output=True,text=True,check=True).stdout.strip()
 def sq(sql,directory='/data'):return cmd(['docker','exec','megasamples-sqlite','sqlite3','-tabs',directory+'/dvdstore.sqlite',sql])

@@ -22,7 +22,7 @@ from megasamples.engines.mysql import server as mysql
 from megasamples.engines.postgres import server as pg
 
 ROOT = Path.cwd()
-OUT = ROOT / 'build/lts-audit'
+OUT = ROOT / os.environ.get('MEGASAMPLES_VALIDATION_OUT', 'build/lts-audit')
 assert ROOT == Path('/home/rcc-vstudio/working/sql-megasamples-upgrade')
 assert os.environ['CONTAINERS_STORAGE_CONF'] == str(ROOT.parent / 'sql-megasamples-upgrade-env/storage.conf')
 assert os.environ['DOCKER_HOST'] == 'unix://' + str(ROOT.parent / 'sql-megasamples-upgrade-env/podman.sock')
@@ -37,7 +37,7 @@ assert command('info', '--format', '{{.DockerRootDir}}').startswith(str(ROOT.par
 engine = sys.argv[1]
 assert engine in ['mysql', 'postgres', 'sqlite']
 cfg = config.load()
-secret = dict(line.split('=', 1) for line in (ROOT / '.env').read_text().splitlines() if line and not line.startswith('#'))
+secret = config.passwords()
 mysql.NAME, mysql.PW = 'megasamples-mysql', secret['MYSQL_ROOT_PASSWORD']
 pg.NAME = 'megasamples-postgres'
 frozen = {name: yaml.safe_load((ROOT / 'build/live' / f'{name}.observed.yaml').read_text())

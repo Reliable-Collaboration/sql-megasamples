@@ -12,6 +12,7 @@ import os, subprocess, sys, time
 import yaml
 
 from megasamples.paths import ROOT
+from megasamples.credentials import client, environment_file, session
 from megasamples.engines import unique_databases
 from megasamples.registry import image_counts
 from megasamples.engines.image_startup import probe_startup
@@ -25,18 +26,17 @@ def sh(*args, **kw):
 
 
 def q(sql, user="postgres", pw="root", database="postgres", container=NAME):
-    """A query from inside the container. The role is what is asked for, so privilege checks are
-    real; the password is not checked, because the official image trusts its own loopback."""
-    return sh("docker", "exec", "-e", f"PGPASSWORD={pw}", container, "psql", "-h", "127.0.0.1",
-              "-U", user, "-d", database, "-v", "ON_ERROR_STOP=1", "-tAc", sql)
+    """Authenticate from inside the container over its non-loopback network address."""
+    with client("postgres", container, user, pw) as command:
+        return sh(*command, "-d", database, "-v", "ON_ERROR_STOP=1", "-tAc", sql)
 
 
 def q_net(sql, user="postgres", pw="root", database="postgres", container=NAME):
-    """A query from another container over the Docker network: the path a client takes, where
-    pg_hba applies scram-sha-256, so a wrong password is refused."""
+    """Non-loopback TCP applies the shipped SCRAM rule and refuses wrong passwords."""
     ip = sh("docker", "inspect", "-f", "{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}", container).stdout.strip()
-    return sh("docker", "run", "--rm", "--label", "megasamples.transient=true", "-e", f"PGPASSWORD={pw}",
-              IMAGE, "psql", "-h", ip, "-U", user, "-d", database, "-v", "ON_ERROR_STOP=1", "-tAc", sql)
+    with client("postgres", container, user, pw, host=ip) as command:
+        return sh(*command, "-d", database, "-v", "ON_ERROR_STOP=1", "-tAc", sql)
+
 
 
 class Checks:
@@ -46,6 +46,7 @@ class Checks:
     def expect(self, cond, label): (self.ok if cond else self.fail)(label)
 
 
+@session()
 def main(argv=None):
     datasets = list(sys.argv[1:] if argv is None else argv) or ["sakila"]
     c = Checks()
@@ -104,9 +105,10 @@ def main(argv=None):
         print(f"  . data directory: {size} MB across {n} databases")
     finally:
         sh("docker", "rm", "-fv", NAME)
-        sh("docker", "run", "-d", "--name", NAME + "2",
-           "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
-           "-e", "POSTGRES_PASSWORD=sekret", "-e", "DEMO_PASSWORD=viewer", IMAGE)
+        with environment_file({"POSTGRES_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:
+            sh("docker", "run", "-d", "--name", NAME + "2",
+               "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
+               "--env-file", path, IMAGE)
         for _ in range(150):
             if q("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0:
                 break

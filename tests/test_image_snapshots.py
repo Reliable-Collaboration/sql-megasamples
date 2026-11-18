@@ -2,6 +2,7 @@
 import importlib
 import json
 import re
+from pathlib import Path
 from subprocess import CompletedProcess
 
 import pytest
@@ -30,6 +31,10 @@ def test_image_gate_checks_exact_hub_snapshot_and_one_registry_row_per_database(
 
     def sh(*args, **kwargs):
         if "run" in args:
+            if "--env-file" in args:
+                path = Path(args[args.index("--env-file") + 1])
+                assert path.stat().st_mode & 0o777 == 0o600
+                overrides.update(line.split("=", 1) for line in path.read_text().splitlines())
             for i, value in enumerate(args[:-1]):
                 if value == "-e":
                     key, value = args[i + 1].split("=", 1)

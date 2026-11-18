@@ -24,4 +24,15 @@ if [ "${1:-}" = "postgres" ] && [ -n "${POSTGRES_PASSWORD:-}${DEMO_PASSWORD:-}${
     run_as pg_ctl -D "$PGDATA" -w -m fast stop >/dev/null
 fi
 
+# Only the passfile path reaches psql's environment; its contents remain owner-only.
+umask 077
+health_file=/run/megasamples-health.pgpass
+{
+    printf '*:*:*:demo:'
+    printf '%s' "${DEMO_PASSWORD:-demo}" | sed 's/\\/\\\\/g; s/:/\\:/g'
+    printf '\n'
+} > "$health_file"
+chmod 600 "$health_file"
+unset POSTGRES_PASSWORD DEMO_PASSWORD ADMIN_PASSWORD
+
 exec docker-entrypoint.sh "$@"

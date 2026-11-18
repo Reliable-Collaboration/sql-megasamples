@@ -13,6 +13,7 @@ import json, os, subprocess, sys, time
 import yaml
 
 from megasamples.paths import ROOT
+from megasamples.credentials import client, environment_file, session
 from megasamples.engines import unique_databases
 from megasamples.registry import image_counts
 from megasamples.engines.image_startup import probe_startup
@@ -25,11 +26,9 @@ def sh(*args, **kw):
 
 
 def q(sql, user="root", pw="root", database=None, container=NAME):
-    cmd = ["docker", "exec", container, "mysql", f"-u{user}", f"-p{pw}", "-N", "--batch"]
-    if database:
-        cmd += ["-D", database]
-    cmd += ["-e", sql]
-    return sh(*cmd)
+    with client("mysql", container, user, pw) as command:
+        return sh(*command, "-N", "--batch", *(["-D", database] if database else []), "-e", sql)
+
 
 
 class Checks:
@@ -74,6 +73,7 @@ def account_checks(checks, schema, read_table, expected_count):
         q(f"DROP TABLE IF EXISTS {table}, {created}")
 
 
+@session()
 def main(argv=None):
     datasets = list(sys.argv[1:] if argv is None else argv) or ["sakila"]
     c = Checks()
@@ -81,7 +81,7 @@ def main(argv=None):
     started = time.monotonic()
     run = sh("docker", "run", "-d", "--name", NAME,
              "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
-             "-e", "MYSQL_ROOT_PASSWORD=root", IMAGE)
+             IMAGE)
     if run.returncode != 0:
         sys.exit(f"could not start {IMAGE}: {run.stderr}")
     provisioned = time.monotonic() - started
@@ -161,9 +161,10 @@ def main(argv=None):
     finally:
         # the override path needs its own container
         sh("docker", "rm", "-f", NAME)
-        sh("docker", "run", "-d", "--name", NAME + "2",
-           "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
-           "-e", "MYSQL_ROOT_PASSWORD=sekret", "-e", "DEMO_PASSWORD=viewer", IMAGE)
+        with environment_file({"MYSQL_ROOT_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:
+            sh("docker", "run", "-d", "--name", NAME + "2",
+               "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
+               "--env-file", path, IMAGE)
         for _ in range(150):
             if q("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0:
                 break

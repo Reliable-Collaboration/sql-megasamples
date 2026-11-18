@@ -342,6 +342,18 @@ containers and released on exit. Different hosts/users sharing a daemon need ext
 Dump stderr goes to a temporary file so a full stderr pipe cannot block the data stream; both
 pipeline processes are reaped on success or failure.
 
+Reset reads all four password overrides through `config.passwords()`, shared with the console and
+registry checks. Both Compose engine generators pass their superuser override as well as demo/admin.
+Pristine sources receive the same overrides via a mode-0600 `--env-file`, removed after creation.
+Native clients read mode-0600 option/pass files under mode-0700 container directories; the password
+is streamed over stdin, while `PGPASSFILE` exposes only the path. PostgreSQL maintenance uses a
+non-loopback container address to exercise authentication. Command-scoped credential sessions reuse
+files across thousands of queries and clean them on success or failure; different passwords,
+programs, users, containers or endpoints cannot share a file. Count helpers fail explicitly on a
+listing/count error. Startup health files are private too, and entrypoints unset password overrides
+before handing off to the server. The daemon owner still controls container configuration metadata.
+
+
 | gate | command | cost | when |
 |---|---|---|---|
 | bundle and generated files | `make check` | seconds, no Docker | before every commit |

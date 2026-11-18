@@ -117,11 +117,11 @@ Two accounts are offered from every console, and both are usable from any client
 
 Each console opens on `demo`, because the safe account should be the one you get without choosing.
 The passwords are boilerplate for a disposable local database and are committed on purpose; to
-change them, copy `.env.example` to `.env` — the same value reaches the server (applied at startup)
+change them, copy `.env.example` to `.env`, set mode 0600, and edit it privately — the same value reaches the server (applied at startup)
 and every console, so the two cannot drift apart.
 
 ```sh
-mysql -h 127.0.0.1 -P 3306 -u demo -pdemo sakila
+mysql -h 127.0.0.1 -P 3306 -u demo -p sakila
 docker compose up -d mysql        # the database alone, no consoles
 ```
 
@@ -145,7 +145,7 @@ says why. The identical table set is kept, so a query written for one engine nam
 on the other.
 
 ```sh
-PGPASSWORD=demo psql -h 127.0.0.1 -p 5432 -U demo sakila
+psql -W -h 127.0.0.1 -p 5432 -U demo sakila
 ```
 
 ### SQLite
@@ -204,6 +204,13 @@ Two comparisons are weaker than a digest and say so in the verification output: 
 on SQLite, which does decimal arithmetic in floating point, a view's computed decimal columns are
 left out of the digest while every other column is still compared exactly.
 
+Runtime password overrides use `DEMO_PASSWORD`, `ADMIN_PASSWORD`, `MYSQL_ROOT_PASSWORD`
+and `POSTGRES_PASSWORD` in the private `.env` file. Recreate the services after editing it (`make up`).
+Reset, its row-count checks and registry readers use that same configuration. Native maintenance
+clients use private option/pass files; password values do not enter process arguments. Interactive
+connection examples prompt for the password. For a cutover, verify every new password and require
+every previous password to be refused; see the [live runbook](docs/live-upgrade-runbook.md).
+
 ## Connect with your own tool
 
 Every server engine listens on `127.0.0.1` of the machine running the stack, with the same two
@@ -218,7 +225,7 @@ ports and passwords you actually configured.
 | full access | `admin` / `admin` (all privileges) | `admin` / `admin` (owns every sample table) | — |
 | superuser | `root` / `root` | `postgres` / `root` | — |
 | database | any of the 21, e.g. `sakila` | one per dataset; connect to it, or to `megasamples` for the registry | one file per database |
-| client | `mysql -h 127.0.0.1 -P 3306 -u demo -pdemo sakila` | `PGPASSWORD=demo psql -h 127.0.0.1 -p 5432 -U demo sakila` | `sqlite3 sakila.sqlite` |
+| client | `mysql -h 127.0.0.1 -P 3306 -u demo -p sakila` | `psql -W -h 127.0.0.1 -p 5432 -U demo sakila` | `sqlite3 sakila.sqlite` |
 | URL | `mysql://demo:demo@127.0.0.1:3306/sakila` | `postgresql://demo:demo@127.0.0.1:5432/sakila` | the file's path |
 | JDBC | `jdbc:mysql://127.0.0.1:3306/sakila` | `jdbc:postgresql://127.0.0.1:5432/sakila` | `jdbc:sqlite:/path/to/sakila.sqlite` |
 
