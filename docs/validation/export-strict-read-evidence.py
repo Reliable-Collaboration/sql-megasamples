@@ -94,6 +94,12 @@ assert all(all(v['status']=='Passed' for v in row['results'].values()) for row i
 mysql_boundary=read('mysql-boundary.json')
 assert mysql_boundary['write_denials']['status']=='Passed'
 assert mysql_boundary['builtin_function_read_only_enforcement']['status']=='Unsupported'
+red_log=BASE/'native-before-connected.log'
+red_summary=re.search(r'^94 failed, 94 passed in .+$',red_log.read_text(),re.M)
+assert red_summary,'missing connected failing baseline'
+native_log=BASE/'native-final.log'
+native_summary=re.search(r'^254 passed in .+$',native_log.read_text(),re.M)
+assert native_summary,'missing passing native candidate gate'
 receipt={
     'generated_at':datetime.datetime.now(datetime.timezone.utc).isoformat(),
     'main_before':'2cf1f3e9538ea2e90ef23f8715c5e08e4c7de848',
@@ -101,6 +107,8 @@ receipt={
     'grants':{'before_read_at':before['read_at'],'candidate_read_at':after['read_at'],
               'postgres':grant_comparison,'mysql_before':before['mysql'],'mysql_candidate':after['mysql']},
     'executable_routines':json.loads((ROOT/'docs/validation/strict-read-executable-routines.json').read_text()),
+    'test_first':{'connected_original_main':{'status':'Failed','expected_permission_regressions':True,'summary':red_summary.group(0),'log':file_record(red_log)},
+                  'candidate_native_gate':{'status':'Passed','summary':native_summary.group(0),'log':file_record(native_log)}},
     'canonical_matrices':matrices,'native_read_fingerprints':native_reads,'checkpoints':checkpoints,'final_validation_steps':steps,
     'writer_scenarios':writers,'image_checks':images,'rotation':read('rotation-results.json'),
     'mysql_builtin_boundary':mysql_boundary,
