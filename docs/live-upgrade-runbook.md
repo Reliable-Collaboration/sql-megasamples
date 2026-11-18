@@ -123,6 +123,8 @@ podman exec -e PYTHONPATH=. megasamples-upgrade-tools /opt/venv/bin/python \
 ```
 
 Return to a separate **coordinator live maintenance shell** for the remaining procedure.
+Use Bash (`bash --noprofile --norc`); the recoverable context below uses Bash's quoted
+`declare -p` and `declare -f` output. Keep the backup directory path in the maintenance receipt.
 
 ```sh
 set -eu
@@ -403,6 +405,20 @@ The files in `containers.json` include environment credentials: restrict access,
 
 ```sh
 # BACKUP_DIR and UPGRADE_ID are the values from the preparation shell.
+# Save non-secret maintenance context.
+umask 077
+{
+  printf '%s\n' 'set -eu' \
+    'unset CONTAINERS_STORAGE_CONF CONTAINERS_CONF CONTAINERS_CONF_OVERRIDE' \
+    'unset DEMO_PASSWORD ADMIN_PASSWORD MYSQL_ROOT_PASSWORD POSTGRES_PASSWORD'
+  declare -p BACKUP_DIR UPGRADE_ID UPGRADE_HELPER UPGRADE_TOOLS_CONTAINER MEGASAMPLES_PY \
+    METADATA_BUNDLE DOCKER_HOST MEGASAMPLES_LIVE_API_PID
+  printf '%s\n' 'export DOCKER_HOST COMPOSE_PROJECT_NAME=sql-megasamples'
+  printf 'cd -- %q\n' "$PWD"
+  declare -f ms_tool
+} > "$BACKUP_DIR/resume-context.bash"
+chmod 600 "$BACKUP_DIR/resume-context.bash"
+# End saved context.
 # Keep logical backups for inspection/recovery; only private pass/option files reach clients.
 ms_tool "$MEGASAMPLES_PY" - "$BACKUP_DIR" <<'PY_LOGICAL_BACKUP'
 import pathlib, subprocess, sys
@@ -430,9 +446,13 @@ ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py check-metadata "$METAD
 ms_tool "$MEGASAMPLES_PY" docs/validation/live-upgrade.py ports --allow-running-project sql-megasamples
 # Downtime starts here. SQLite consumers must be stopped before copying its files.
 # Stop every configured console as well as all engines; keep the proxy services running.
-if ! docker compose -p sql-megasamples -f compose.yaml stop > "$BACKUP_DIR/stop.log" 2>&1; then
+if docker compose -p sql-megasamples -f compose.yaml stop > "$BACKUP_DIR/stop.log" 2>&1; then
+  printf '0\n' > "$BACKUP_DIR/stop.log.exit-code"
+else
+  STOP_RC=$?
+  printf '%s\n' "$STOP_RC" > "$BACKUP_DIR/stop.log.exit-code"
   echo 'STOP: inspect stop.log and apply the four-check teardown procedure below.'
-  exit 1
+  exit "$STOP_RC"
 fi
 # Retain the final quiesced UI workspace too, including changes made during preparation.
 if podman container exists megasamples-cloudbeaver; then
@@ -529,6 +549,14 @@ the teardown cause. Do not suppress arbitrary Compose errors or add a sudo/host-
 Both guarded commands stop the shell on failure. Preserve the exit code and private log. If the
 only failure is this teardown error, the coordinator may resume **after** all four checks below
 pass, with a dated receipt. A failed or inconclusive check keeps the procedure stopped.
+
+The guards save the actual Compose status beside each log as `*.log.exit-code` before exiting.
+To perform the four checks after that shell exits, start a fresh Bash maintenance shell, set
+`BACKUP_DIR` to the exact retained directory from the receipt, then run
+`. "$BACKUP_DIR/resume-context.bash"`. This restores the original directory, selected socket,
+tooling function and non-secret paths/IDs without rerunning preparation or password generation.
+It does not start, stop or restore a container. Inspect the saved exit status/log and carry out
+all four checks before resuming at the specified block. Never source `.env` for recovery.
 
 1. Every engine has exited: inspect only `{{.State.Status}} {{.State.Running}} {{.State.Pid}}`
    for `megasamples-postgres`, `megasamples-mysql`, `megasamples-sqlite`. Require `exited false 0`.
@@ -702,9 +730,13 @@ bash -c 'set -o pipefail; actual=$(podman unshare tar --sort=name --numeric-owne
 if test -f .env; then cp .env "$BACKUP_DIR/failed-candidate.env"; chmod 600 "$BACKUP_DIR/failed-candidate.env"; fi
 tar -xf "$BACKUP_DIR/original-configurations.tar" -C "$BACKUP_DIR"
 # Restore original configuration and its original branch (never reset a pushed branch).
-if ! docker compose -p sql-megasamples -f compose.yaml down > "$BACKUP_DIR/rollback-down.log" 2>&1; then
+if docker compose -p sql-megasamples -f compose.yaml down > "$BACKUP_DIR/rollback-down.log" 2>&1; then
+  printf '0\n' > "$BACKUP_DIR/rollback-down.log.exit-code"
+else
+  DOWN_RC=$?
+  printf '%s\n' "$DOWN_RC" > "$BACKUP_DIR/rollback-down.log.exit-code"
   echo 'STOP: inspect rollback-down.log and apply the four-check teardown procedure below.'
-  exit 1
+  exit "$DOWN_RC"
 fi
 ROLLBACK_BRANCH=$(cat "$BACKUP_DIR/rollback-branch.txt")
 git switch "$ROLLBACK_BRANCH"
