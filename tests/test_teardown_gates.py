@@ -179,3 +179,16 @@ def test_post_start_logic_and_repeatable_receipts(tmp_path,monkeypatch,failure):
     else:
         upgrade.check_restored(backup,attempt,'first');upgrade.check_restored(backup,attempt,'repeat')
         assert len(list(attempt.glob('restart-after-gate-*.json')))==2
+
+
+def test_stopped_or_removed_snapshot_retains_helper_attribution(tmp_path,monkeypatch):
+    prior=tmp_path/'prior.json';out=tmp_path/'out.json'
+    prior.write_text(json.dumps(dict(containers=[dict(name='megasamples-postgres',id='old-id',
+        network_namespace='net:[retained]',cgroups=['0::/libpod-old-id.scope'],mounts=[['/retained/data','/data']])],engines=ENGINES)))
+    monkeypatch.setattr(upgrade,'pod',lambda *args:'')
+    upgrade.snapshot(out,'fixture',['megasamples-postgres'],phase='candidate-teardown',prior=prior)
+    row=json.loads(out.read_text())['containers'][0]
+    assert row['network_namespace']=='net:[retained]'
+    assert row['mounts']==[['/retained/data','/data']]
+    assert row['state']=='missing'
+    assert row['id']=='old-id'

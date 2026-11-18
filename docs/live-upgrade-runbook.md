@@ -1265,11 +1265,12 @@ fi
 EXITED_RECEIPT="$ATTEMPT_DIR/rollback-stop-exited-$TEARDOWN_ATTEMPT.json"
 python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" "$EXITED_RECEIPT" --phase candidate-teardown
 # BEGIN pre-down continuation
-# Snapshot again immediately before down, with stopped PIDs/exit codes and mounts.
+# Snapshot again immediately before down; retain pre-stop helper attribution.
+PRIOR_SNAPSHOT="$TEARDOWN_SNAPSHOT"
 TEARDOWN_PHASE=rollback-down
 TEARDOWN_SNAPSHOT="$ATTEMPT_DIR/rollback-down-before-$TEARDOWN_ATTEMPT.json"
 python3 "$UPGRADE_HELPER" snapshot "$TEARDOWN_SNAPSHOT" --project sql-megasamples \
-  --phase candidate-teardown \
+  --phase candidate-teardown --prior "$PRIOR_SNAPSHOT" \
   --engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite
 save_context
 date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-down.log.timestamps"

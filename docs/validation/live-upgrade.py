@@ -210,7 +210,7 @@ def write_receipt(path, data):
     path.chmod(0o600)
 
 
-def snapshot(output, project, engines, phase='original-stop'):
+def snapshot(output, project, engines, phase='original-stop', prior=None):
     rows = []
     for identity in pod('ps', '-aq', '--filter', 'label=com.docker.compose.project=' + project).split():
         row = container_state(identity)
@@ -231,6 +231,19 @@ def snapshot(output, project, engines, phase='original-stop'):
         raise ValueError('original container missing; use coordinator recovery; no cold copy or restart')
     rows += [dict(name=name, id=None, state='missing', running=False, pid=0,
                   exit_code=None, oom=False, mounts=[], network='') for name in sorted(missing)]
+    if prior:
+        previous = json.loads(prior.read_text())['containers']
+        by_name = {r['name']: r for r in previous}
+        for row in rows:
+            old = by_name.get(row['name'], {})
+            if row['id'] is None and old.get('id'):
+                row.update(id=old['id'], mounts=old.get('mounts', []))
+            if row['id'] == old.get('id'):
+                for key in ('network_namespace', 'cgroups'):
+                    if not row.get(key): row[key] = old.get(key, '' if key == 'network_namespace' else [])
+        names = {r['name'] for r in rows}
+        rows += [dict(r, state='missing', running=False, pid=0, exit_code=None, oom=False)
+                 for r in previous if r['name'] not in names]
     write_receipt(output, dict(project=project, engines=engines, phase=phase, containers=rows))
 
 
@@ -474,6 +487,7 @@ def main():
     p.add_argument('--project', required=True)
     p.add_argument('--engine', action='append', required=True)
     p.add_argument('--phase', choices=['original-stop', 'original-restart', 'candidate-teardown', 'restart-before', 'restart-after'], default='original-stop')
+    p.add_argument('--prior', type=Path)
     p = sub.add_parser('exited')
     p.add_argument('before', type=Path)
     p.add_argument('output', type=Path)
@@ -503,7 +517,7 @@ def main():
     elif args.command == 'space':
         check_space(args.backup, args.extra_bytes)
     elif args.command == 'snapshot':
-        snapshot(args.output, args.project, args.engine, args.phase)
+        snapshot(args.output, args.project, args.engine, args.phase, args.prior)
     elif args.command == 'exited':
         exited(args.before, args.output, args.removed_with, args.phase)
     elif args.command == 'resume-save-images':
