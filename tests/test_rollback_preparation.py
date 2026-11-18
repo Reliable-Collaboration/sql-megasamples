@@ -115,6 +115,14 @@ def test_bootstrap_and_abort_execute_without_mutating_retained_inputs(tmp_path, 
                 target.mkdir(exist_ok=True)
             elif not target.exists():
                 target.touch()
+        # The retained checksum file names the unusable aggregate. Corrected
+        # service-named payloads are authorized only by the phase-A receipt.
+        corrected = backup / 'rollback-image-postgres.tar'
+        image_path.rename(corrected)
+        (backup / 'rollback-images.sha256').write_text('0'*64 + '  rollback-images.tar\n')
+        (backup / 'phase-a-resume-receipt.json').write_text(json.dumps(dict(saved_images=[dict(
+            original_tag='localhost/fixture:old', image_id=digest, service='postgres',
+            archive='/retained/rollback-image-postgres.tar', sha256=upgrade.sha(corrected))])))
         (backup / 'original-ports.json').unlink()
         ports = json.loads((ROOT / 'docs/validation/retained-backups/20261118T133807Z-ports.json').read_text())
         # Bind the names-only fixture receipt to its synthetic archive, never live data.
