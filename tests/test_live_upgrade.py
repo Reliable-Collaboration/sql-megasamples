@@ -444,3 +444,19 @@ def test_resume_save_keeps_valid_archives_and_checks_all_before_new_save(tmp_pat
     with pytest.raises((ValueError, tarfile.ReadError)):
         upgrade.save_images(tmp_path, resume=True)
     assert not calls
+
+
+def test_rollback_ports_select_only_services_being_started(tmp_path, monkeypatch):
+    cfg = tmp_path / 'ports.json'
+    cfg.write_text(json.dumps(dict(engines=['postgres'], consoles=['landing','cloudbeaver'],
+                                  ports=dict(postgres=5432,landing=8080,cloudbeaver=8084))))
+    selected = tmp_path / 'running.txt'; selected.write_text('postgres\n')
+    calls = []
+    monkeypatch.setattr(upgrade, 'check_ports', lambda endpoints, allowed: calls.append(endpoints))
+    monkeypatch.setattr('sys.argv', ['helper','ports','--port-config',str(cfg),'--services-file',str(selected)])
+    upgrade.main()
+    assert calls == [[('127.0.0.1',5432)]]
+    calls.clear()
+    monkeypatch.setattr('sys.argv', ['helper','ports','--port-config',str(cfg),'--service','cloudbeaver'])
+    upgrade.main()
+    assert calls == [[('127.0.0.1',8084)]]

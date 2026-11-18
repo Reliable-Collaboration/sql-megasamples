@@ -338,6 +338,9 @@ python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
   printf '[engine]\ntmp_dir="%s/tmp"\n' "$SCRATCH_DIR" > "$SCRATCH_DIR/containers.conf"
   export CONTAINERS_STORAGE_CONF="$SCRATCH_DIR/storage.conf" CONTAINERS_CONF="$SCRATCH_DIR/containers.conf"
   unset CONTAINERS_CONF_OVERRIDE
+  # Give this scratch store its own rootless pause process and runtime files.
+  export XDG_RUNTIME_DIR="$SCRATCH_DIR/xdg"
+  mkdir -m 700 "$XDG_RUNTIME_DIR"
   test "$(podman info --format '{{.Store.GraphRoot}}')" = "$SCRATCH_DIR/graph"
   python3 "$UPGRADE_HELPER" load-images "$BACKUP_DIR" > "$SCRATCH_DIR/load.log" 2>&1
   test -z "$(podman ps -aq)"
@@ -345,6 +348,8 @@ python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
   # Keep logs/configuration under BACKUP_DIR. Never run this in the default/isolated store.
   test "$CONTAINERS_STORAGE_CONF" = "$SCRATCH_DIR/storage.conf"
   test "$(podman info --format '{{.Store.GraphRoot}}')" = "$SCRATCH_DIR/graph"
+  # No containers remain; stop the pause process in the private runtime first.
+  podman system migrate >> "$SCRATCH_DIR/cleanup.log" 2>&1
   podman system reset --force >> "$SCRATCH_DIR/cleanup.log" 2>&1
 )
 # Back in the original maintenance shell/store. Retain the rehearsal log with the backup.
@@ -445,6 +450,9 @@ RepoDigest was not retained by Docker archive transport, but its resulting image
 The scratch cleanup follows [Podman's reset reference](https://docs.podman.io/en/latest/markdown/podman-system-reset.1.html),
 read **2026-11-18 18:03:54 UTC**. It deletes the selected store's resources and graph/run roots;
 the graphroot assertions above restrict it to the freshly created rehearsal store.
+The preceding [migrate command](https://docs.podman.io/en/latest/markdown/podman-system-migrate.1.html),
+read **2026-11-18 18:10:46 UTC**, stops the rootless pause process. The private `XDG_RUNTIME_DIR`
+keeps that process separate from the maintenance and isolated stores.
 
 ### Resume or abort preparation
 
@@ -483,7 +491,7 @@ if test -d "$BACKUP_DIR/python-venv"; then cp -a "$BACKUP_DIR/python-venv" .venv
 if test -n "$TEARDOWN_SNAPSHOT"; then
   # Exempt only the original project's still-running ports; stopped ports must be free.
   python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" \
-    --allow-running-project sql-megasamples
+    --allow-running-project sql-megasamples --services-file "$BACKUP_DIR/original-running-services.txt"
   set --
   while IFS= read -r service; do set -- "$@" "$service"; done < "$BACKUP_DIR/original-running-services.txt"
   test "$#" -gt 0
@@ -1038,7 +1046,8 @@ for line in (backup/'rollback-image-tags.txt').read_text().splitlines():
 (backup/'rollback-consoles.override.json').write_text(json.dumps({"services":services},indent=2)+'\n')
 PY_CONSOLE_ROLLBACK
 # Standalone retained helper reads the original port selection, even on the old branch.
-python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json"
+python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" \
+  --services-file "$BACKUP_DIR/original-running-services.txt"
 set --
 RESTORE_CLOUDBEAVER=0
 while IFS= read -r service; do
@@ -1048,7 +1057,7 @@ test "$#" -gt 0
 docker compose -p sql-megasamples -f compose.yaml -f "$BACKUP_DIR/rollback.override.yaml" \
   -f "$BACKUP_DIR/rollback-consoles.override.json" up -d --wait "$@"
 if test "$RESTORE_CLOUDBEAVER" = 1; then
-  python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" --consoles-only
+  python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" --service cloudbeaver
   # Populate a stopped fresh container before its first initialization, retaining original UI state.
   docker compose -p sql-megasamples -f compose.yaml -f "$BACKUP_DIR/rollback.override.yaml" \
     -f "$BACKUP_DIR/rollback-consoles.override.json" create --force-recreate --no-build cloudbeaver

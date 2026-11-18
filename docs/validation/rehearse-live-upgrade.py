@@ -55,7 +55,9 @@ def main():
         storage.write_text(f'[storage]\ndriver="overlay"\ngraphroot="{base}/graph"\nrunroot="{base}/run"\n')
         conf = base / 'containers.conf'
         conf.write_text(f'[engine]\ntmp_dir="{base}/tmp"\n[network]\ndefault_rootless_network_cmd="slirp4netns"\n')
-        env = dict(os.environ, CONTAINERS_STORAGE_CONF=str(storage), CONTAINERS_CONF=str(conf))
+        runtime = base / 'xdg'
+        runtime.mkdir(mode=0o700)
+        env = dict(os.environ, CONTAINERS_STORAGE_CONF=str(storage), CONTAINERS_CONF=str(conf), XDG_RUNTIME_DIR=str(runtime))
         env.pop('CONTAINERS_CONF_OVERRIDE', None)
         def pod(*args):
             return run(['podman', *args], env).stdout.strip()
@@ -130,6 +132,15 @@ def main():
         assert not pod('ps', '-aq')
         graph = pod('info', '--format', '{{.Store.GraphRoot}}')
         assert Path(graph).is_relative_to(out)
+        # Private XDG runtime prevents sharing a rootless pause process with another store.
+        base = Path(env['XDG_RUNTIME_DIR']).parent
+        pidfiles = [p for directory in ('xdg', 'tmp', 'run') for p in (base / directory).rglob('pause.pid')]
+        pause_pids = [int(p.read_text().strip()) for p in pidfiles]
+        pod('system', 'migrate')
+        for pid in pause_pids:
+            status = Path(f'/proc/{pid}/stat')
+            assert not status.exists() or status.read_text().split(') ', 1)[1].startswith('Z ')
+        receipt.setdefault('scratch_pause_pids', []).extend(pause_pids)
         pod('system', 'reset', '--force')
     receipt['checks']['scratch_stores_and_pause_cleanup'] = 'Passed'
     (out / 'archive-receipt.json').write_text(json.dumps(receipt, indent=2) + '\n')

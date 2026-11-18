@@ -363,6 +363,8 @@ def main():
     p = sub.add_parser('ports')
     p.add_argument('--allow-running-project')
     p.add_argument('--port-config', type=Path)
+    p.add_argument('--services-file', type=Path)
+    p.add_argument('--service', action='append')
     p = sub.add_parser('export-ports')
     p.add_argument('output', type=Path)
     p.add_argument('--config', type=Path)
@@ -400,6 +402,11 @@ def main():
                 json.dump(raw, out, indent=2)
         else:
             services = raw['consoles'] if args.consoles_only else [*raw['engines'], *raw['consoles']]
+            requested = args.services_file.read_text().splitlines() if args.services_file else args.service
+            if requested is not None:
+                if not set(requested) <= set(raw['engines']) | set(raw['consoles']):
+                    raise ValueError('unknown service in port selection')
+                services = [name for name in services if name in requested]
             endpoints = [('127.0.0.1', int(raw['ports'][name])) for name in services if name in raw['ports'] and name != 'sqlite']
             allowed = running_ports(args.allow_running_project) if args.allow_running_project else ()
             check_ports(endpoints, allowed)
