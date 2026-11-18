@@ -235,26 +235,39 @@ def test_cgroup_members_reconciled_even_when_proc_listing_misses_member(capture_
 def test_clean_stop_verifies_first_capture_other_engine_survivor(capture_fixture,monkeypatch):
     import shutil
     snap,first,proc,cg,data=capture_fixture
-    helper=process(proc,12349,'rootlessport')
-    (cg/'libpod-test.scope/cgroup.procs').write_text('12345\n12349')
+    helper=process(proc,12349,'rootlessport','/libpod-other.scope')
+    for pid,comm,group in [(12351,'mysql','libpod-other.scope'),(12352,'conmon','libpod-conmon-other.scope')]:
+        process(proc,pid,comm,'/'+group)
+        directory=cg/group;directory.mkdir()
+        for name in ('cgroup.procs','cgroup.threads'):
+            (directory/name).write_text(str(pid)+('\n12349' if pid==12351 else ''))
+    saved=json.loads(snap.read_text())
+    saved['containers'][0]['name']='postgres'
+    saved['containers'].append(dict(name='mysql',id='other',pid=12351,running=True,state='running',mounts=[[str(data),'/data']]))
+    snap.write_text(json.dumps(saved))
+    initial=gate.pod
+    monkeypatch.setattr(gate,'pod',lambda *a:'test other' if a[0]=='ps' else 'other|12351|12352|none|false|' if a[-1]=='other' else initial(*a))
     assert gate.capture(snap,first,proc=proc,cgroup_root=cg)['outcome']=='PASS'
     before=first.read_bytes()
-    # Only the recovered engine is running at capture two. The first engine's
-    # dedicated helper survives the first stop in its original cgroup.
-    for pid in ('12345','12346'): shutil.rmtree(proc/pid)
-    for group in ('libpod-test.scope','libpod-conmon-test.scope'):
-        (cg/group/'cgroup.procs').write_text('12349' if group=='libpod-test.scope' else '')
-        (cg/group/'cgroup.threads').write_text('12349' if group=='libpod-test.scope' else '')
+    # Only recovered PostgreSQL runs at capture two. Stopped MySQL's dedicated
+    # helper survives the first stop, outside the recovered engine's new groups.
+    for pid in ('12345','12346','12351','12352'): shutil.rmtree(proc/pid)
+    for group in ('libpod-test.scope','libpod-conmon-test.scope','libpod-other.scope','libpod-conmon-other.scope'):
+        for name in ('cgroup.procs','cgroup.threads'):
+            (cg/group/name).write_text('12349' if group=='libpod-other.scope' else '')
     for pid,comm,group in [(22345,'server','new'),(22346,'conmon','libpod-conmon-new.scope')]:
         process(proc,pid,comm,'/'+group)
         directory=cg/group;directory.mkdir()
         for name in ('cgroup.procs','cgroup.threads'): (directory/name).write_text(str(pid))
-    saved=json.loads(snap.read_text());saved['containers'][0]['pid']=22345;snap.write_text(json.dumps(saved))
+    saved=json.loads(snap.read_text());saved['containers'][0]['pid']=22345
+    saved['containers'][1].update(pid=0,running=False,state='exited')
+    snap.write_text(json.dumps(saved))
     stopped=False
     def pod(*args):
-        if args[0]=='ps': return '' if stopped and '-q' in args else 'test'
-        if args[2]==gate.CAPTURE_FORMAT: return 'test|22345|22346|none|false|'
-        return 'test|false|0'
+        if args[0]=='ps': return '' if stopped and '-q' in args else 'test other'
+        if args[2]==gate.CAPTURE_FORMAT:
+            return 'other|0|0|none|false|' if args[-1]=='other' else 'test|22345|22346|none|false|'
+        return args[-1]+'|false|0'
     monkeypatch.setattr(gate,'pod',pod)
     current=data.parent/'second.json'
     assert gate.capture(snap,current,proc=proc,cgroup_root=cg)['outcome']=='PASS'
@@ -268,7 +281,7 @@ def test_clean_stop_verifies_first_capture_other_engine_survivor(capture_fixture
     assert any(r['reason']=='dedicated helper survives' for r in report['refusals'])
     assert first.read_bytes()==before
     shutil.rmtree(helper)
-    for name in ('cgroup.procs','cgroup.threads'):(cg/'libpod-test.scope'/name).write_text('')
+    for name in ('cgroup.procs','cgroup.threads'):(cg/'libpod-other.scope'/name).write_text('')
     assert gate.verify_all(current,data.parent,proc=proc,cgroup_root=cg)['outcome']=='PASS'
 
 
