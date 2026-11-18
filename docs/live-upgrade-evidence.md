@@ -295,14 +295,36 @@ cross-filesystem aliases, equal path text on different filesystems, source
 replacement and a zombie leader with a live worker. Expected REFUSE and HOLD
 outcomes are successful tests, not cold-copy authorization.
 
-**Unsupported on this host in this rehearsal:** starting the fresh scratch
-published bridge failed when Pasta could not open its rootless network namespace
-(permission denied); the earlier slirp attempt timed out. Consequently the full
-published-port lifecycle and native dedicated/shared helper-survivor acceptance
-cases are not Passed. Shared-consumer decision branches have focused fixtures;
-read-only capture of the already running isolated deployment passed separately.
+**Historical part-two limitation:** the fresh scratch store's published bridge
+failed when Pasta could not open its rootless network namespace (permission
+denied); the earlier slirp attempt timed out. That rehearsal did not establish
+the published-port lifecycle or the dedicated/shared helper-survivor cases.
 This startup failure does not reproduce or explain the live teardown failure.
-The original netns root cause remains unknown.
+
+The [part-three native receipt](validation/live-upgrade-review-r4-part3-2026-11-18.json)
+records the subsequent proof in the working isolated store, with a separate
+scratch Compose project: two containers, a bridge network, one checked loopback
+publication, a scratch named volume and a scratch bind source. Capture, stop,
+phase-state verification and the process gate **Passed**, including partial
+removal and continuation from a fresh shell. The native regression first exposed
+a false HOLD: image EXPOSE entries without host bindings had been mistaken for
+published ports. The corrected capture tests actual host bindings.
+
+The project's recorded `rootlessport` was deliberately kept alive with SIGSTOP
+through stop. Verification **Passed** by returning REFUSE specifically for
+`dedicated helper survives`; SIGCONT released it, it exited, and verification
+returned PASS. The recorded shared `slirp4netns` helper survived with ten
+independently verified remaining consumers and caused no refusal. **Unsupported:**
+the shared helper without another consumer. The isolated stack must remain
+running and uses that same helper; a second scratch project cannot remove those
+consumers. No zero-consumer native proof is claimed.
+
+Cleanup removed the scratch project's containers, network and volume; no
+container, network or volume named `dl088-proof-*` remained. All twelve isolated
+containers retained their IDs, images, states and start times. Read-only inspection also matched the live
+containers' IDs, images, states and start times to the retained cutover record.
+The original netns root cause remains unknown. These results do not establish a
+live restoration or DataIntent acceptance.
 
 The alternative unchanged-original-data restart route is fixture-tested only.
 It independently checks original data objects and rejects overlap with candidate

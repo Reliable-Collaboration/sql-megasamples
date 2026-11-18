@@ -7,6 +7,12 @@ backups and two small console-image archives, never end to end on the live store
 or with engine-size image archives. The native scanner has separately run read-only
 on this host with existing stacks up and deliberate scratch holders; its results
 and inspection limits are recorded in the round-three correction receipt.
+The subsequent [DL-088 native proof](validation/live-upgrade-review-r4-part3-2026-11-18.json)
+ran a separate published-bridge Compose project in the isolated store: stop,
+partial removal and fresh-shell verification Passed, as did a dedicated-helper
+survivor refusal and release. The shared helper with remaining consumers Passed;
+the zero-consumer native case remains Unsupported because the isolated stack
+must stay running. Neither stack was stopped for that proof.
 
 The isolated build uses `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/env.sh`. The live commands below deliberately use the default rootless Podman store instead. Run them only in the coordinator's live maintenance session. Never run them from the isolated validation shell.
 
