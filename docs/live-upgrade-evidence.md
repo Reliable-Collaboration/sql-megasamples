@@ -770,7 +770,10 @@ restart and ordinary routes are exercised for bootstrap and dispatch. A console
 port refusal in retained-original restart intentionally holds only that console;
 its start remains blocked while policy restoration continues. The preparation
 control plants `set +e` immediately after entry and fails the class check on
-continued execution. The full manual-cleanup fixture remains separate.
+continued execution. The bootstrap's EXIT trap still removes its exact temporary
+route-report path on refusal; the fixture permits that bounded cleanup and
+rejects subsequent data/store operations or starts. The full manual-cleanup
+fixture remains separate.
 The whole cold-start and unchanged-volume fences run under plain `bash -c` with
 state, port and each engine-health gate rejecting in turn. No engine recreation
 follows a rejected state/port gate; no console starts after rejected engine health.
@@ -821,3 +824,28 @@ separate fix supplied. The C4 holder fixture initially lacked the source-device
 mount mapping; its separate test-only correction was red against the unchanged
 helper before the fix passed. These are authoring-session results, with no new
 review, acceptance or merge claim. No software version or support claim changes.
+
+
+### Follow-up review round 2: D1 through D4
+
+D1 scopes record attribution without Git, D2 widens the destructive-command class
+and checks context-supplied strictness, D3 runs the real fences with failed gates,
+and D4 corrects the cleanup entry and missing-metadata wording. The class table
+and execution details above describe the final behavior. No quiescence helper,
+engine, image, dependency or privilege behavior changes in this round.
+
+The native scratch replay is retained in
+`build/dl086-follow-up/native-scratch-9dlaewpl/receipt.json`. It again covers
+ordinary rehearsal, failure after loading one small image, and failure before
+loading with a real pause process and zero images. The failure exits were 73;
+both complete manual cleanups exited 0 under plain `bash -c`. All three recorded
+pause PIDs were absent afterward. Loaded-store image metadata was empty; the
+zero-image store had no metadata file. No Podman call followed final migrate.
+This remains small-image scratch proof, without an engine-size restore or
+restored-stack-startup claim.
+
+The [round-two receipt](validation/live-upgrade-follow-up-review-r2-2026-11-19.json)
+retains each red, green, test/fix commit, reversal, source/evidence hash and final
+validation/isolation result. These are authoring-session checks. No independent
+approval, DataIntent acceptance or merge is claimed, and no software version or
+support claim changes.
