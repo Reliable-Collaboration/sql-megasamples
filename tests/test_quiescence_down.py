@@ -74,7 +74,8 @@ def test_legacy_history_checks_survivors_without_endpoint_hold(down, survivor):
     assert report['outcome']==('PASS' if survivor=='none' else 'REFUSE'),report
     assert not report['holds'],report
     entry=next(row for row in report['history'] if row['path']==str(history))
-    assert entry['applicable'] is False
+    assert entry['applicable'] is True
+    assert entry['verification'] == 'identity-only'
     assert entry['survivor_obligations']=='process and cgroup identities enforced'
     assert entry['reason']=='older capture schema; unverifiable history neither passes nor blocks'
     if survivor!='none':
