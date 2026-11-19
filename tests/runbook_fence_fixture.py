@@ -43,7 +43,11 @@ mv() { _hit "${BASH_LINENO[0]}" mv "$@" || return 73; }
 rm() {
   # The bootstrap's EXIT trap removes only its temporary route report. It is
   # expected even on refusal, unlike data/store cleanup.
-  if [[ "$*" != *rollback-route.* ]]; then _effect rm "$@"; fi
+  if [[ -n "${BOOTSTRAP_REPORT:-}" && "${@: -1}" = "$BOOTSTRAP_REPORT" &&
+        "$BOOTSTRAP_REPORT" = "$FIXTURE"/build/rollback-route.*.json ]]; then
+    return 0
+  fi
+  _effect rm "$@"
 }
 mkdir() { command mkdir -p "$@" 2>/dev/null || :; }
 mktemp() { command mktemp "$@"; }
@@ -77,7 +81,11 @@ python3() {
   fi
 }
 podman() {
-  _hit "${BASH_LINENO[0]}" podman "$@" || return 73
+  if [[ "${FUNCNAME[1]}" = ms_tool ]]; then
+    _hit "${BASH_LINENO[1]}" ms_tool "$@" || return 73
+  else
+    _hit "${BASH_LINENO[0]}" podman "$@" || return 73
+  fi
   case "$1 ${2-}" in
     'info --format') printf '%s/graph' "$SCRATCH_DIR";;
     'ps -aq') if [[ "$*" = *--filter* ]]; then printf fixture; fi;;
@@ -100,7 +108,7 @@ docker() {
   _hit "${BASH_LINENO[0]}" docker "$@" || return 73
   case " $* " in
     *' config --services '*|*' ps --services '*) printf 'postgres\nmysql\nsqlite\nadminer\n';;
-    *' start '*|*' stop '*|*' down '*|*' --force-recreate '*|*' run '*) _effect docker "$@";;
+    *' up '*|*' start '*|*' stop '*|*' down '*|*' --force-recreate '*|*' run '*) _effect docker "$@";;
   esac
 }
 '''

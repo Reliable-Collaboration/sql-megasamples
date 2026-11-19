@@ -38,7 +38,7 @@ python3() {
 
 
 @pytest.mark.parametrize('route', ['cold', 'unchanged'])
-@pytest.mark.parametrize('failure', ['state', 'ports', 'health:postgres', 'health:mysql', 'health:sqlite'])
+@pytest.mark.parametrize('failure', ['snapshot', 'state', 'ports', 'health:postgres', 'health:mysql', 'health:sqlite'])
 def test_real_restore_fence_failed_gate_in_plain_bash(tmp_path, route, failure):
     import re
     from test_runbook_fragments import RUNBOOK
@@ -50,6 +50,7 @@ def test_real_restore_fence_failed_gate_in_plain_bash(tmp_path, route, failure):
 save_context() { :; }
 python3() {
   case " $* " in
+    *' snapshot '*' --phase restart-before'*) gate=snapshot;;
     *' exited '*' --phase restart-before'*) gate=state;;
     *' ports '*) gate=ports;;
     *' wait-healthy '*) gate="health:$3";;
@@ -77,7 +78,7 @@ docker() { printf 'START:%s\n' "$*" >> "$CALLS"; }
     assert 'REJECTED' in calls, (calls, result.stderr)
     assert result.returncode == 73, (calls, result.stderr)
     starts = [line for line in calls if line.startswith('START:')]
-    if failure in ('state', 'ports'):
+    if failure in ('snapshot', 'state', 'ports'):
         assert not starts, calls
     else:
         assert len(starts) == 1 and starts[0].endswith(' postgres mysql sqlite'), calls
