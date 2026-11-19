@@ -1614,7 +1614,6 @@ belong to the selected attempt. A fresh bootstrap does not require a retained-ro
 The filename audit neither certifies cold-data/image contents nor executes a live restoration.
 
 ```sh
-set -eu
 # BEGIN rollback bootstrap
 set -eu
 : "${BACKUP_DIR:?Set retained backup directory}"
