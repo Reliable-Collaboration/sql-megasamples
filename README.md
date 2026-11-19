@@ -143,7 +143,8 @@ catalogue, the landing page and the image tests all read it, so none can drift f
 ### PostgreSQL
 
 `sql-megasamples-postgres:dev` is `postgres:18.7-trixie` with one database per dataset already in
-its cluster, the same `demo` (sample-table reads) and `admin` accounts, the superuser `postgres` with
+its cluster, the same `demo` (reads sample tables, including tables `admin` later creates
+in a sample database's `public` schema) and `admin` accounts, the superuser `postgres` with
 factory password `root` (overridden by the private `.env`), and a `megasamples` database holding the registry. `POSTGRES_PASSWORD`,
 `DEMO_PASSWORD` and `ADMIN_PASSWORD` override the passwords at start. Tables, data, primary and
 unique keys, secondary indexes, foreign keys, check constraints, stored generated columns, views,
@@ -160,6 +161,7 @@ psql -W -h 127.0.0.1 -p 5432 -U demo sakila
 ```
 
 PostgreSQL `demo` cannot modify the persistent sample tables in the tested DML/DDL paths.
+Its read scope includes tables `admin` later creates in a sample database's `public` schema.
 As of **2026-11-18**, it still has `TEMPORARY`, can create large objects and can execute granted
 routines. Treat it as a sample-data reader, not a general sandbox account; see the
 [account limits](docs/live-upgrade-evidence.md#documentation-checks).
@@ -278,7 +280,12 @@ FTS5 table named `<table>_<index>_fts`. Ports and passwords are yours to change 
 
 ## Putting the data back
 
-`admin` and the superusers can change anything, and nothing a client writes reaches the images, so
+MySQL `admin` has `ALL PRIVILEGES WITH GRANT OPTION` on every database (`*.*`).
+
+PostgreSQL `admin` has `CREATEDB` and `CREATEROLE`, owns the sample databases,
+and has registry-table privileges without grant option; it is not a superuser.
+
+Nothing a client writes reaches the images, so
 the out-of-the-box state is always one command away. `make reset` returns what you name to exactly
 what the images ship; it is chosen the way `make configure` chooses, by engine and dataset, and
 nothing is reset without naming it:

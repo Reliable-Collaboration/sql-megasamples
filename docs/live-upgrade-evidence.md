@@ -632,7 +632,8 @@ Known limits retained for later work:
 ### Round-eleven address attribution and account guidance
 
 Down-state helper association now preserves each published endpoint's address,
-address family and port, including wildcard bindings. A readable `rootlessport`
+address family and port. The wildcard cases are fixture-tested, not natively proved;
+the configured publications use loopback addresses. A readable `rootlessport`
 on the same port at another address is not attributed by that socket. The
 regression covers matching/different IPv4 and IPv6 addresses, wildcard listeners
 and publications, both with retained containers and after removal. Each positive

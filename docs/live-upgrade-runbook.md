@@ -1688,7 +1688,8 @@ For down containers, positively associated `conmon`/helpers refuse: full contain
 IDs in cgroups or readable cwd/descriptor paths, Podman's conmon record paired
 with the captured process start time, the store
 helper PID file, or a recorded published listening endpoint matched by address,
-address family and port, including wildcard bindings. An indicated association
+address family and port. The wildcard cases are fixture-tested, not natively proved;
+this deployment publishes on loopback addresses. An indicated association
 whose live evidence is unreadable HOLDs. No process arguments/environments are
 read. Unassociated helpers remain a limitation. **Down-state evidence does not
 establish complete teardown outside the identified cgroups.** Readable data holders
@@ -2221,7 +2222,7 @@ fi
 
 Verify selected images, mounts, accounts, counts, fingerprints and consoles before
 resuming clients, using the normal post-start checks. A startup failure uses the
-partial-original-restart hold below, with this recorded unchanged-data override;
+partial-original-restart hold above, with this recorded unchanged-data override;
 never substitute the cold-restoration override. This route is fixture-tested;
 recreating engines on retained original data has **Not run** natively here.
 If original mount identity evidence is missing (including the first live backup's
