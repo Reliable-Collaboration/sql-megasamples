@@ -10,8 +10,10 @@ ROOT = Path(__file__).parents[1]
 def test_committed_follow_up_files_do_not_name_reviewers():
     # Split aliases so the check itself contains no named attribution.
     pattern = re.compile(r'\b(?:' + '|'.join(('As'+'tra', 'Fa'+'ble')) + r')\b', re.I)
-    # Preserve pre-existing dataset provenance outside this PR and its fixed base.
-    files = subprocess.check_output(['git', 'diff', '--name-only', '-z', '3bef1436', 'HEAD'], cwd=ROOT).decode().split('\0')
+    # The attribution rule governs review/validation records, not dataset provenance.
+    files = ['docs/live-upgrade-evidence.md', *(
+        str(path.relative_to(ROOT)) for path in
+        sorted((ROOT/'docs/validation').glob('live-upgrade*.json')))]
     override = os.environ.get('DL086_FOLLOW_UP_RECEIPT_SOURCE')
     offending = []
     for name in filter(None, files):
