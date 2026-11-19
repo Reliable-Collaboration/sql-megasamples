@@ -49,6 +49,7 @@ def test_copy_hold_never_blocks_unchanged_original_restart(tmp_path):
 ABORT_ID=fixture
 python3() { case "$1" in */quiescence.py) return 2;; esac; }
 docker() { printf 'restarted %s\n' "$*"; }
+podman() { if test "$1" = ps; then echo fixture; fi; }
 '''+block('# BEGIN original recovery checks\n','# END original recovery checks')+block('# BEGIN abort original start\n','# END abort original start')
         result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
         assert result.returncode==0,result.stderr
@@ -139,6 +140,7 @@ python3() {
 git() { if test "$1" = rev-parse; then echo fixture; fi; }
 sha256sum() { :; }
 docker() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/restart-calls"; }
+podman() { if test "$1" = ps; then echo fixture; fi; }
 '''
         script+=block('# BEGIN retained original restart\n','# END retained original restart')
         result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash'),CHECKOUT=str(checkout)),capture_output=True,text=True)
