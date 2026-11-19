@@ -234,7 +234,7 @@ def test_history_ignores_unreadable_cold_data_but_keeps_earlier_survivor(fixture
     gate.write_capture(attempt/'stop-capture.json',prior)
     original_scan=gate.os.scandir
     def denied(root):
-        if Path(root)==cold: raise PermissionError(13,'cold data unreadable',str(root))
+        if not isinstance(root,int) and Path(root)==cold: raise PermissionError(13,'cold data unreadable',str(root))
         return original_scan(root)
     monkeypatch.setattr(gate.os,'scandir',denied)
     report=gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)
