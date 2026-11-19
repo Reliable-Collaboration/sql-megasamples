@@ -443,3 +443,26 @@ def test_dead_at_capture_conmon_pid_reuse_is_not_continuity(down, monkeypatch, r
     for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('')
     (p/'cgroup').write_text('0::/unrelated.scope\n')
     assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+
+
+@pytest.mark.parametrize('site', ['capture', 'verify'])
+def test_stale_shared_pidfile_with_missing_proc_entry_is_absent(down, monkeypatch, site):
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    monkeypatch.setattr(gate, 'pod', lambda *a: 'test|0|0|bridge|false|'
+        if a[0] == 'inspect' and a[2] == gate.CAPTURE_FORMAT else original(*a))
+    pidfile = Path(gate.store_identity()['run'])/'networks/rootless-netns/rootless-netns-conn.pid'
+    pidfile.parent.mkdir(parents=True)
+    if site == 'verify':
+        assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    pidfile.write_text('12349')
+    assert not (proc/'12349').exists()
+    def check(path):
+        return gate.capture(snap, path, proc=proc, cgroup_root=cg, allow_down=True) if site == 'capture' else gate.verify(out, proc=proc, cgroup_root=cg)
+    assert check(out)['outcome'] == 'PASS'
+    # A present but unreadable process is required evidence, even for ENOENT on stat.
+    (proc/'12349').mkdir()
+    report = check(data.parent/'denied.json')
+    assert report['outcome'] == 'HOLD', report
+    shutil.rmtree(proc/'12349')
+    assert check(data.parent/'absent-again.json')['outcome'] == 'PASS'
