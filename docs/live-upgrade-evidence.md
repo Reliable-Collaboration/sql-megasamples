@@ -529,3 +529,43 @@ runs to current-head proof. The historical assertion/test gaps were repaired by
 archiving each fix's parent locally, applying only its test and retaining the red;
 a planted bug separately proves the recorded-cgroup-vanish regression. Pushed
 history was preserved. These are authoring-session checks, not independent approval.
+
+### Round-eight preparation and continuity corrections
+
+The 2026-11-19 authoring-session checks cover a failed CloudBeaver workspace
+copy followed by an abort in a fresh shell, without later archives or a stop
+snapshot. Recovery restarts only its recorded existing ID, refuses a replacement,
+and clears the workspace phase. A failed workspace restart has the same early
+route. Partial abort startup saves its guard in the preparation context as well
+as the abort attempt; dispatch, four-checks and partial-stop retry cannot resume
+teardown from that context. The composed abort regression asserts the exact-ID
+`--allow-running` gate and its order before startup. Clean-stop startup and
+unchanged-data recreation have interrupted-start controls too.
+
+Retained conmon birth identity now governs an unchanged PID association even
+when the stopped container still exists. The regression covers both retained
+and removed containers, with a surviving original process as the refusal reversal.
+The configuration-enumeration denial has a separate red against the pre-fix
+helper, plus a readable reversal. Both embedded directory walks now propagate
+enumeration errors. Ordinary shared-helper capture HOLDs on ESRCH as it does on
+a missing required process entry; down-state absence remains separately scoped.
+
+The round-eight replica uses anonymous volumes for all three engine data mounts,
+with SQLite's cold root asserted as 0755. It checks that ordinary `down` preserves
+the anonymous volumes and their recorded source identities, then verifies the
+restore, population and pre-up gates against that retained structure. The
+fixture explicitly seeds tiny fresh data in its newly allocated anonymous
+volumes before starting; the image's sample payloads are not this rehearsal's
+inputs. The scratch shared helper is slirp4netns with other isolated consumers;
+it does not reproduce the live store's Pasta or zero-consumer condition. Small
+data, four services, different ports, MySQL internal metadata and placeholder
+non-data retained inputs remain differences. Stop/state/down/restore execute in
+one fresh shell; population and pre-up each use another saved-context shell.
+These checks do not establish full bootstrap, input verification,
+configuration/image restoration, restored-stack startup, forwarded sign-ins or
+live restoration. DataIntent acceptance remains separate.
+
+The [round-eight receipt](validation/live-upgrade-review-r8-2026-11-19.json)
+records the actual results, failed attempts, removal controls, source/evidence
+hashes and complete isolation inventories. The kernel netns error's cause remains
+unknown; a successful scratch stop/down does not explain the live failures.
