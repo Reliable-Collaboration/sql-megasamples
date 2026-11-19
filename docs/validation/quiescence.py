@@ -801,6 +801,8 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
                 report['refusals'] += refusals; report['holds'] += holds
                 # Retain the down container's known conmon and ports after removal.
                 fresh['ports'] = sorted(set(fresh['ports']) | set(row.get('ports',[])))
+                if fresh.get('conmon') == row.get('conmon'):
+                    fresh['conmon_start'] = row.get('conmon_start')
                 if not fresh.get('conmon'):
                     fresh['conmon'] = row.get('conmon',0)
                     fresh['conmon_start'] = row.get('conmon_start')
