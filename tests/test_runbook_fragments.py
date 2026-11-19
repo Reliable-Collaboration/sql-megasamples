@@ -335,6 +335,7 @@ RECOVER_ENGINE=postgres
 ABORT_ID=fixture
 python3() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/recovery-calls"; }
 docker() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/recovery-calls"; }
+podman() { if test "$1" = ps; then echo fixture; fi; }
 '''
         script+=block('# BEGIN original recovery checks\n','# END original recovery checks')
         if mode=='clean-stop': script+=block('# BEGIN original clean stop\n','# END original clean stop')
