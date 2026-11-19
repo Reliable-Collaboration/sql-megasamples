@@ -70,6 +70,8 @@ def test_recorded_cgroup_member_esrch_is_absent(fixture,monkeypatch):
         if path==p:raise PermissionError('task unreadable')
         return original(path)
     monkeypatch.setattr(gate,'task_alive',denied)
+    exists=Path.exists
+    monkeypatch.setattr(Path,'exists',lambda path:False if path==p else exists(path))
     assert 'required cgroup inspection unreadable' in reasons(verify(),'holds')
 
 

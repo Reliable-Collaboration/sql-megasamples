@@ -306,6 +306,8 @@ def test_neighbouring_proc_reads_treat_esrch_as_vanished(down,monkeypatch,site):
         if path==p:raise PermissionError('required read denied')
         return identity(path) if site.startswith('shared') else alive(path)
     monkeypatch.setattr(gate,'process_identity' if site.startswith('shared') else 'task_alive',denied)
+    exists=Path.exists
+    monkeypatch.setattr(Path,'exists',lambda path:False if path==p else exists(path))
     if site=='shared-verify':report=gate.verify(out,proc=proc,cgroup_root=cg)
     else:report=gate.capture(snap,data.parent/'denied.json',proc=proc,cgroup_root=cg,allow_down=True)
     assert report['outcome']=='HOLD',report
