@@ -326,6 +326,7 @@ git show "$APPROVED_UPGRADE_MERGE:docs/validation/live-upgrade.py" > "$UPGRADE_H
 git show "$APPROVED_UPGRADE_MERGE:docs/validation/quiescence.py" > "$BACKUP_DIR/quiescence.py"
 chmod 600 "$UPGRADE_HELPER" "$BACKUP_DIR/quiescence.py"
 RECOVER_ENGINE= CB_WAS_RUNNING=
+CB_CONTAINER_ID=
 TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE= TEARDOWN_ATTEMPT= QUIESCENCE_CAPTURE=
 ATTEMPT_DIR= CONFIG_DIR= CANDIDATE_SNAPSHOT=
 EVIDENCE_DIR="$BACKUP_DIR"
@@ -375,7 +376,7 @@ umask 077
     'unset DEMO_PASSWORD ADMIN_PASSWORD MYSQL_ROOT_PASSWORD POSTGRES_PASSWORD'
   declare -p BACKUP_DIR UPGRADE_ID UPGRADE_HELPER UPGRADE_TOOLS_CONTAINER MEGASAMPLES_PY \
     METADATA_BUNDLE DOCKER_HOST MEGASAMPLES_LIVE_API_PID APPROVED_UPGRADE_MERGE PREPARATION_STAGE \
-    TEARDOWN_SNAPSHOT EXITED_RECEIPT TEARDOWN_PHASE TEARDOWN_ATTEMPT QUIESCENCE_CAPTURE EXTRA_RESERVE_BYTES RECOVER_ENGINE CB_WAS_RUNNING \
+    TEARDOWN_SNAPSHOT EXITED_RECEIPT TEARDOWN_PHASE TEARDOWN_ATTEMPT QUIESCENCE_CAPTURE EXTRA_RESERVE_BYTES RECOVER_ENGINE CB_WAS_RUNNING CB_CONTAINER_ID \
     ATTEMPT_DIR CONFIG_DIR EVIDENCE_DIR CONTEXT_FILE XDG_RUNTIME_DIR CANDIDATE_SNAPSHOT \
     APPROVED_ENGINE_MERGE APPROVED_CLIENTS_MERGE APPROVED_DATASET_MERGE \
     APPROVED_LTS_MERGE APPROVED_CREDENTIAL_MERGE TOOLS_ARCHIVE TOOLS_IMAGE CANDIDATE_ARCHIVE DOCKER_CLIENT
@@ -433,16 +434,18 @@ docker compose -p sql-megasamples -f compose.yaml ps --services --status running
 # CloudBeaver keeps its workspace in the container's writable layer in this deployment.
 # Retain it privately before any client-image or catalogue refresh; stop it for a consistent copy.
 if podman container exists megasamples-cloudbeaver; then
+  CB_CONTAINER_ID=$(podman inspect -f '{{.Id}}' megasamples-cloudbeaver)
   CB_WAS_RUNNING=$(podman inspect -f '{{.State.Running}}' megasamples-cloudbeaver)
   if test "$CB_WAS_RUNNING" = true; then
     TEARDOWN_PHASE=preparation-workspace-stop; save_context
-    podman stop megasamples-cloudbeaver
+    podman stop "$CB_CONTAINER_ID"
   fi
-  podman cp megasamples-cloudbeaver:/opt/cloudbeaver/workspace "$BACKUP_DIR/cloudbeaver-workspace"
+  podman cp "$CB_CONTAINER_ID:/opt/cloudbeaver/workspace" "$BACKUP_DIR/cloudbeaver-workspace"
   chmod 700 "$BACKUP_DIR/cloudbeaver-workspace"
   if test "$CB_WAS_RUNNING" = true; then
     TEARDOWN_PHASE=preparation-workspace-start; save_context
-    podman start megasamples-cloudbeaver
+    podman start "$CB_CONTAINER_ID"
+    TEARDOWN_PHASE=; save_context
   fi
 fi
 : > "$BACKUP_DIR/rollback-image-tags.txt"
@@ -692,6 +695,13 @@ previous logs and do not collide. Keep the small empty store metadata as evidenc
 
 At a refusal, start a fresh Bash shell, set the recorded `BACKUP_DIR`, and source
 `"$BACKUP_DIR/resume-context.bash"`. Read `PREPARATION_STAGE` and the failed command's log.
+For `preparation-workspace-stop`, inspect the recorded CloudBeaver ID: if the stop
+failed, retry only that stop before the copy; if the copy failed, keep the partial
+copy and use the early abort below. For `preparation-workspace-start`, retry only
+`podman start "$CB_CONTAINER_ID"`, then clear `TEARDOWN_PHASE` and `save_context`,
+or use the same early abort. Both routes reuse the exact existing container;
+missing/replaced IDs require coordinator recovery. A successful restart clears
+the workspace phase. No workspace phase authorizes cold copying engine data.
 Rerun **only that failed gate**, then continue at its next command. A failed metadata check can
 be repaired only from the same verified bundle; a port refusal requires the unrelated listener's
 owner to release it or a separately reviewed port configuration. Do not kill it or improvise a
@@ -852,6 +862,19 @@ Restore original source/configuration and start only the originally running cont
 # BEGIN abort preparation
 # Abort before password rotation ONLY; original containers/volumes must still exist.
 . "$BACKUP_DIR/resume-context.bash"
+# Early workspace recovery needs no archive, ports receipt or stop snapshot.
+case "$TEARDOWN_PHASE" in
+  preparation-workspace-stop|preparation-workspace-start)
+    test "$CB_WAS_RUNNING" = true
+    : "${CB_CONTAINER_ID:?Missing recorded CloudBeaver ID; coordinator hold}"
+    test "$(podman inspect -f '{{.Id}}' megasamples-cloudbeaver)" = "$CB_CONTAINER_ID"
+    test "$(podman inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$CB_CONTAINER_ID")" = sql-megasamples
+    TEARDOWN_PHASE=preparation-workspace-start; save_context
+    podman start "$CB_CONTAINER_ID"
+    TEARDOWN_PHASE=; save_context
+    echo 'Early preparation aborted; exact existing CloudBeaver restarted. Keep partial evidence.'
+    exit 0 ;;
+esac
 ABORT_ID=$(date -u +%Y%m%dT%H%M%S%N)
 python3 "$UPGRADE_HELPER" prepare-rollback "$BACKUP_DIR" "abort-$ABORT_ID" "$PWD"
 ATTEMPT_DIR="$BACKUP_DIR/rollback-abort-$ABORT_ID"
@@ -1597,6 +1620,7 @@ APPROVED_ENGINE_MERGE= APPROVED_CLIENTS_MERGE= APPROVED_DATASET_MERGE=
 APPROVED_LTS_MERGE= APPROVED_CREDENTIAL_MERGE=
 TOOLS_ARCHIVE= TOOLS_IMAGE= CANDIDATE_ARCHIVE= DOCKER_CLIENT=
 RECOVER_ENGINE= CB_WAS_RUNNING=
+CB_CONTAINER_ID=
 TEARDOWN_SNAPSHOT= EXITED_RECEIPT= TEARDOWN_PHASE= CANDIDATE_SNAPSHOT= QUIESCENCE_CAPTURE=
 PREPARATION_STAGE=rollback-prepared
 # Freeze only the service/port fields into this attempt; no candidate package used.
