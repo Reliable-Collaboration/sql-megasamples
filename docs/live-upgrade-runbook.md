@@ -404,12 +404,17 @@ if test -f .env; then cp .env "$BACKUP_DIR/"; chmod 600 "$BACKUP_DIR/.env"; fi
 # The existing Docker client uses this default-store socket, not the isolated socket.
 MEGASAMPLES_LIVE_API_PID=
 if ! test -S "${DOCKER_HOST#unix://}"; then
+  PREPARATION_STAGE=api-start
+  save_context
   podman system service --time=0 "$DOCKER_HOST" > "$BACKUP_DIR/api-service.log" 2>&1 &
   MEGASAMPLES_LIVE_API_PID=$!
   for attempt in $(seq 1 50); do
     test -S "${DOCKER_HOST#unix://}" && break
     sleep 0.2
   done
+  test -S "${DOCKER_HOST#unix://}"
+  PREPARATION_STAGE=api-started
+  save_context
 fi
 docker version --format '{{.Server.Version}}'
 podman inspect megasamples-postgres megasamples-mysql megasamples-sqlite > "$BACKUP_DIR/containers.json"
