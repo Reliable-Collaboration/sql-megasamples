@@ -42,3 +42,38 @@ def test_kernel_stderr_means_not_run(tmp_path,status,stderr,expected):
         FAILURE_SINCE='fixture',FAILURE_UNTIL='fixture',CHECK_ID='fixture',ERR=stderr,RC=str(status)),capture_output=True,text=True)
     assert result.returncode == 0
     assert ('Not run' in result.stdout) == bool(expected)
+
+
+@pytest.mark.parametrize('failure', ['none', 'path', 'graph', 'listing', 'containers'])
+def test_failed_scratch_manual_cleanup_is_scoped_and_guarded(tmp_path, failure):
+    backup = tmp_path/'backup'; backup.mkdir()
+    scratch = backup/('unrelated' if failure == 'path' else 'rollback-load-rehearsal-owned')
+    scratch.mkdir()
+    for name in ('storage.conf', 'containers.conf'): (scratch/name).touch()
+    for name in ('xdg', 'tmp', 'run'): (scratch/name).mkdir()
+    stubs = r'''
+podman() {
+ printf '%s\n' "$*" >> "$CALLS"
+ case "$1 $2" in
+ 'info --format') if test "$FAILURE" = graph; then echo /wrong/graph; else echo "$SCRATCH_DIR/graph"; fi;;
+ 'ps -aq')
+   if test "$FAILURE" = listing; then return 37; fi
+   if test "$FAILURE" = containers; then echo owned-but-not-empty; fi;;
+ 'image rm'|'system migrate') :;;
+ *) return 49;;
+ esac
+}
+'''
+    result = subprocess.run(['bash', '-eu', '-c', stubs+block(
+        '# BEGIN failed scratch cleanup\n', '# END failed scratch cleanup')], capture_output=True, text=True,
+        env=dict(os.environ, BACKUP_DIR=str(backup), SCRATCH_DIR=str(scratch),
+                 CALLS=str(tmp_path/'calls'), FAILURE=failure))
+    calls = (tmp_path/'calls').read_text().splitlines() if (tmp_path/'calls').exists() else []
+    if failure == 'none':
+        assert result.returncode == 0, result.stdout+result.stderr
+        assert calls == ['info --format {{.Store.GraphRoot}}', 'ps -aq', 'image rm --all --force', 'system migrate']
+        assert (scratch/'pause-pids.json').exists()
+    else:
+        assert result.returncode == (37 if failure == 'listing' else 1), result.stdout+result.stderr
+        assert not any(call.startswith(('image rm', 'system migrate')) for call in calls)
+        if failure == 'path': assert calls == []
