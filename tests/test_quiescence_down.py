@@ -467,3 +467,53 @@ def test_stale_shared_pidfile_with_missing_proc_entry_is_absent(down, monkeypatc
     assert report['outcome'] == 'HOLD', report
     shutil.rmtree(proc/'12349')
     assert check(data.parent/'absent-again.json')['outcome'] == 'PASS'
+
+
+@pytest.mark.parametrize('overlap', ['generation', 'data'])
+@pytest.mark.parametrize('survivor', ['none', 'process', 'shared-helper'])
+def test_legacy_ordinary_history_by_generation_or_data(capture_fixture, monkeypatch, overlap, survivor):
+    snap, out, proc, cg, data = capture_fixture
+    # Obtain an ordinary pre-stop record from the real capture implementation.
+    history = data.parent/'stop-capture-20261118T123000Z.json'
+    assert gate.capture(snap, history, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+    saved = json.loads(history.read_text()); assert saved['kind'] == 'ordinary'
+    saved['schema'] = 1
+    shared = process(proc, 12349, 'pasta.avx2', '/rootless-netns-old.scope')
+    if survivor == 'shared-helper':
+        saved['shared_helper'] = dict(gate.process_identity(shared), role='shared helper')
+    history.write_text(json.dumps(saved)); before = history.read_bytes()
+    for path in list(proc.iterdir()):
+        if path != shared or survivor != 'shared-helper': shutil.rmtree(path)
+    for path in list(cg.iterdir()): shutil.rmtree(path)
+    # A fresh down capture either shares IDs or applies solely through data overlap.
+    current = json.loads(snap.read_text()); current['phase'] = 'candidate-teardown'
+    identity = 'test' if overlap == 'generation' else 'new-generation'
+    current['containers'][0].update(id=identity, pid=0, running=False, state='exited')
+    snap.write_text(json.dumps(current))
+    def pod(*args):
+        if args[0] == 'ps': return '' if '-q' in args else identity
+        if args[0] == 'container': return ''
+        if args[0] == 'inspect':
+            if args[2] == gate.CAPTURE_FORMAT: return identity+'|0|0|none|false|'
+            if args[2] == '{{json .HostConfig.PortBindings}}': return '{}'
+            return identity+'|false|0'
+        raise AssertionError(args)
+    monkeypatch.setattr(gate, 'pod', pod)
+    monkeypatch.setattr(gate, 'remaining_consumers', lambda *a: [])
+    assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    if survivor == 'process': process(proc, 12345)
+    report = gate.verify_all(out, data.parent, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == ('PASS' if survivor == 'none' else 'REFUSE'), report
+    assert not report['holds'], report
+    entry = next(r for r in report['history'] if r['path'] == str(history))
+    assert entry['applicable'] and entry['verification'] == 'identity-only'
+    if survivor != 'none':
+        reason = 'recorded process survives' if survivor == 'process' else 'shared helper without verified consumer'
+        assert any(r['reason'] == reason and r['capture'] == str(history) for r in report['refusals'])
+        if survivor == 'shared-helper':
+            monkeypatch.setattr(gate, 'remaining_consumers', lambda *a: ['verified-other'])
+            assert gate.verify_all(out, data.parent, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+            monkeypatch.setattr(gate, 'remaining_consumers', lambda *a: [])
+        shutil.rmtree(proc/('12345' if survivor == 'process' else '12349'))
+        assert gate.verify_all(out, data.parent, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+    assert history.read_bytes() == before
