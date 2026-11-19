@@ -725,7 +725,7 @@ records each item's test and fix commits, red and green runs, defect controls,
 native scratch proof, source and evidence hashes, and remaining limits. B-13 is
 a comment/local-name change: restoring it also passes the same checks. The
 initial B-2 reversal fixture required a separate correction to supply real
-cgroup membership files; that failed run and its replay are retained. Test-only
+cgroup membership files; the receipt records that failure and links its replay. Test-only
 coverage improvements were already green on production code and are paired
 with planted-defect controls. These are authoring-session checks; independent
 review, acceptance and merge remain separate.
