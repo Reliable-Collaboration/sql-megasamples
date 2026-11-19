@@ -306,3 +306,19 @@ def test_unchanged_originals_real_shared_mount_overlap_gets_fresh_volume(capture
     candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(dirs['sq']),'/data']])])) )
     with pytest.raises(ValueError,match='candidate used original data'):
         gate.original_override(out,data.parent/'refused.json','fixture',candidate)
+
+
+def test_readable_scope_is_kept_when_comm_fails_before_identity(capture_fixture,monkeypatch):
+    snap,out,proc,cg,data=capture_fixture
+    member=process(proc,12349)
+    # A racing cgroup member list does not undo membership already read in proc.
+    original=Path.read_text
+    def denied(path,*args,**kwargs):
+        if path==member/'comm':raise PermissionError('required comm denied')
+        return original(path,*args,**kwargs)
+    monkeypatch.setattr(Path,'read_text',denied)
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='HOLD'
+    assert any(r['reason']=='required cgroup member identity unreadable' and r['pid']==12349 for r in report['holds'])
+    monkeypatch.setattr(Path,'read_text',original)
+    assert gate.capture(snap,data.parent/'reversed.json',proc=proc,cgroup_root=cg)['outcome']=='PASS'

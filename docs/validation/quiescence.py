@@ -417,8 +417,8 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
             belongs = False
             try:
                 lines = (process/'cgroup').read_text().splitlines()
-                comm = (process/'comm').read_text().strip()
                 belongs = in_groups(lines, groups)
+                comm = (process/'comm').read_text().strip()
                 if belongs:
                     identities.setdefault(int(process.name), dict(process_identity(process), role='process'))
                 if helper_names(comm):
