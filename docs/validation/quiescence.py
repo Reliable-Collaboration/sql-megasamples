@@ -9,6 +9,7 @@ import argparse
 import array
 import errno
 import fcntl
+import ipaddress
 import json
 import os
 from pathlib import Path
@@ -254,6 +255,19 @@ def names_container(path, identity):
     return any(part in ('libpod-'+identity+'.scope', 'libpod-conmon-'+identity+'.scope') for part in Path(path).parts)
 
 
+def merge_endpoints(*groups):
+    # Keep HostIp and its family after container removal; port-only historical
+    # evidence cannot establish positive association and must hold.
+    endpoints = set()
+    for group in groups:
+        for endpoint in group:
+            if not isinstance(endpoint, dict):
+                raise ValueError('published endpoint address missing')
+            endpoints.add((endpoint['family'], endpoint['address'], endpoint['port']))
+    return [dict(family=family, address=address, port=port)
+            for family, address, port in sorted(endpoints)]
+
+
 def down_evidence(row, proc, cgroup_root, scan_cache=None):
     """Per-container fresh state and completed full-ID cgroup search, never empty on error."""
     identity = row.get('id')
@@ -288,7 +302,14 @@ def down_evidence(row, proc, cgroup_root, scan_cache=None):
                     else:
                         holds.append(dict(reason='down helper association unreadable', error=type(error).__name__))
             ports = json.loads(pod('inspect', '-f', '{{json .HostConfig.PortBindings}}', identity))
-            evidence['ports'] = sorted({int(p['HostPort']) for bindings in (ports or {}).values() for p in bindings or []})
+            endpoints = []
+            for bindings in (ports or {}).values():
+                for binding in bindings or []:
+                    # An unspecified HostIp publishes on both address families.
+                    for host in [binding['HostIp']] if binding.get('HostIp') else ['0.0.0.0', '::']:
+                        address = ipaddress.ip_address(host)
+                        endpoints.append(dict(family=address.version, address=str(address), port=int(binding['HostPort'])))
+            evidence['ports'] = merge_endpoints(endpoints)
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         holds.append(dict(reason='down container state unreadable', error=type(error).__name__))
     try:
@@ -322,14 +343,24 @@ def down_helpers(rows, proc):
     refusals, holds = [], []
     ids = {r['id'] for r in rows if r.get('id')}
     conmons = {r['conmon']:r.get('conmon_start') for r in rows if r.get('conmon')}
-    ports = {port for r in rows for port in r.get('ports', [])}
+    ports = merge_endpoints(*(r.get('ports', []) for r in rows))
     sockets = set()
     if ports:
         try:
             for name in ('tcp','tcp6'):
                 for line in (proc/'net'/name).read_text().splitlines()[1:]:
                     fields = line.split()
-                    if fields[3] == '0A' and int(fields[1].split(':')[1],16) in ports:
+                    if fields[3] != '0A':
+                        continue
+                    host, port = fields[1].split(':')
+                    # proc stores each 32-bit address word in host byte order.
+                    packed = b''.join(int(host[i:i+8], 16).to_bytes(4, sys.byteorder)
+                                      for i in range(0, len(host), 8))
+                    address = ipaddress.ip_address(packed)
+                    if any(endpoint['family'] == address.version and endpoint['port'] == int(port, 16)
+                           and (endpoint['address'] == str(address) or address.is_unspecified
+                                or ipaddress.ip_address(endpoint['address']).is_unspecified)
+                           for endpoint in ports):
                         sockets.add('socket:['+fields[9]+']')
         except (OSError, ValueError, IndexError):
             holds.append(dict(reason='down published port association unreadable'))
@@ -803,7 +834,7 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
                 fresh, refusals, holds = down_evidence(row, proc, cgroup_root, scan_cache)
                 report['refusals'] += refusals; report['holds'] += holds
                 # Retain the down container's known conmon and ports after removal.
-                fresh['ports'] = sorted(set(fresh['ports']) | set(row.get('ports',[])))
+                fresh['ports'] = merge_endpoints(fresh['ports'], row.get('ports', []))
                 if fresh.get('conmon') == row.get('conmon'):
                     fresh['conmon_start'] = row.get('conmon_start')
                 if not fresh.get('conmon'):
