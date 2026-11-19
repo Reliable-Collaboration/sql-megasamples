@@ -255,6 +255,18 @@ docker() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/started"; }
     finally:server.close()
 
 
+@pytest.mark.parametrize('phase',['originals-restarting','original-clean-starting','originals-restarted'])
+def test_four_checks_hold_original_restart_phases_before_state_gate(tmp_path,phase):
+    server=context(tmp_path,phase)
+    try:
+        script='. "$CONTEXT"\npython3() { echo UNSAFE_STATE_GATE; return 49; }\n'
+        script+=block('# BEGIN four checks\n','# END four checks')
+        result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
+        assert result.returncode==1 and 'HOLD:' in result.stdout,result.stdout+result.stderr
+        assert 'UNSAFE_STATE_GATE' not in result.stdout
+    finally:server.close()
+
+
 def test_restart_policy_failure_blocks_capture_and_has_guarded_restore(tmp_path):
     server=context(tmp_path,'stop')
     try:
