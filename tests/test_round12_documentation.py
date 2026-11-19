@@ -38,3 +38,11 @@ def test_failed_rehearsal_resume_names_cleanup_and_extra_space():
     assert '[manual cleanup](#failed-rehearsal-store-manual-cleanup)' in section
     assert 'third image set' in section and 'budgets two' in section
     assert 'space gate' in section
+
+
+def test_fixed_pid_and_native_scratch_limits_are_retired():
+    document = Path(os.environ.get('DL086_EVIDENCE_SOURCE', ROOT/'docs/live-upgrade-evidence.md')).read_text()
+    assert 'its PID is lost from the capture' not in document
+    assert 'has run only against stubbed Podman' not in document
+    assert 'manual cleanup exit 0' in document
+    assert 'one small image' in document
