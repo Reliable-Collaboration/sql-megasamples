@@ -734,6 +734,7 @@ coordinator to investigate. Once runtime enumeration is readable, run:
 ```sh
 # BEGIN failed scratch cleanup
 (
+  set -eu
   python3 - "$BACKUP_DIR" "$SCRATCH_DIR" <<'PY_SCRATCH_PATH'
 import pathlib, sys
 backup, scratch = map(lambda value: pathlib.Path(value).resolve(), sys.argv[1:])
@@ -929,6 +930,7 @@ their restart policy before completing. Original containers/volumes must still e
 Restore original source/configuration and start only the originally running containers:
 
 ```sh
+set -eu
 # BEGIN abort preparation
 # Abort before password rotation ONLY; original containers/volumes must still exist.
 . "$BACKUP_DIR/resume-context.bash"
@@ -1043,6 +1045,7 @@ are isolated rehearsal checks; do not run them as live verification.
 The files in `containers.json` include environment credentials: restrict access, do not paste them into tickets. Take logical backups while quiesced, then cold-copy each data directory. Rollback uses the cold copies with the original engine images; never open a new-version data directory with an old binary.
 
 ```sh
+set -eu
 # BACKUP_DIR and UPGRADE_ID are the values from the preparation shell.
 PREPARATION_STAGE=final-backups
 save_context
@@ -1611,6 +1614,7 @@ belong to the selected attempt. A fresh bootstrap does not require a retained-ro
 The filename audit neither certifies cold-data/image contents nor executes a live restoration.
 
 ```sh
+set -eu
 # BEGIN rollback bootstrap
 set -eu
 : "${BACKUP_DIR:?Set retained backup directory}"
@@ -1789,6 +1793,7 @@ datasets; the pre-upgrade cold copies cannot contain those writes. Do not use `m
 rollback: it restores the new image contents, including the added datasets.
 
 ```sh
+set -eu
 # BEGIN rollback route dispatch
 case "${TEARDOWN_PHASE:-}" in
   originals-restarting|original-clean-starting|originals-restarted|rollback-starting|rollback-restored)
@@ -1893,6 +1898,7 @@ first: the saved context does not carry `ROLLBACK_ROUTE`. Continue below only
 after the pause block succeeds.
 
 ```sh
+set -eu
 # Stop candidates BEFORE down can remove evidence. Keep every failed candidate volume.
 : "${TEARDOWN_ATTEMPT:?Bootstrap a new attempt or source its saved context}"
 TEARDOWN_PHASE=rollback-stop
