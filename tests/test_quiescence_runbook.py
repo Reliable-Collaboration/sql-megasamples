@@ -197,7 +197,7 @@ podman() { printf 'podman %s\n' "$*" >> "$EVIDENCE_DIR/order"; }
     finally:server.close()
 
 
-@pytest.mark.parametrize('phase',['originals-restarted','rollback-starting','rollback-restored'])
+@pytest.mark.parametrize('phase',['originals-restarting','original-clean-starting','originals-restarted','rollback-starting','rollback-restored'])
 def test_rollback_dispatch_never_tears_down_restarted_originals(tmp_path,phase):
     server=context(tmp_path,phase)
     try:
@@ -378,3 +378,58 @@ def test_state_table_separates_running_abort_from_clean_stop():
     cells=dict(zip([c.strip() for c in header.split('|')[1:-1]],[c.strip() for c in row.split('|')[1:-1]]))
     assert cells['Early abort on unchanged volumes']=='Pass only with exact original IDs and unchanged mounts'
     assert cells['Clean-stop recovery on unchanged volumes']=='Refuse'
+
+
+@pytest.mark.parametrize('route',['abort','clean-stop'])
+@pytest.mark.parametrize('failure',['start','identity'])
+def test_recovery_partial_start_fresh_preparation_context_holds(tmp_path,route,failure):
+    server=context(tmp_path,'stop')
+    backup=tmp_path/'retained';attempt=tmp_path/'attempt';checkout=tmp_path/'checkout'
+    checkout.mkdir();(checkout/'consoles').mkdir()
+    config=attempt/'configuration';(config/'consoles').mkdir(parents=True)
+    for name in ('.env','compose.yaml','megasamples.yaml'):(config/name).write_text('# fixture\n')
+    (backup/'original-running-services.txt').write_text('postgres\nmysql\n')
+    (backup/'rollback-branch.txt').write_text('original');(backup/'original-commit.txt').write_text('fixture')
+    stubs=r'''
+python3() {
+ printf '%s\n' "$*" >> "$EVIDENCE_DIR/calls"
+ if test "$FAILURE" = identity && test "$2" = original-eligible; then return 42; fi
+}
+git() { if test "$1" = rev-parse; then echo fixture; fi; }
+docker() { echo "start $*" >> "$EVIDENCE_DIR/calls"; return 37; }
+RECOVER_ENGINE=postgres
+'''
+    if route=='abort':
+        fragment=block('# BEGIN abort preparation\n','# END abort preparation')
+        fragment=fragment.replace('. "$BACKUP_DIR/resume-context.bash"','. "$CONTEXT"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"')
+        fragment=fragment.replace('ATTEMPT_DIR="$BACKUP_DIR/rollback-abort-$ABORT_ID"',': # fixture extraction allocated')
+    else:fragment=block('# BEGIN original clean stop\n','# END original clean stop')
+    env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash'),FAILURE=failure)
+    try:
+        failed=subprocess.run(['bash','-eu','-c','. "$CONTEXT"\ncd "$CHECKOUT"\n'+stubs+fragment],env=dict(env,CHECKOUT=str(checkout)),capture_output=True,text=True)
+        calls=(tmp_path/'evidence/calls').read_text()
+        if route=='abort':
+            gate=next(line for line in calls.splitlines() if ' original-eligible ' in line)
+            assert '--allow-running' in gate and str(tmp_path/'evidence/before.json') in gate
+            if failure=='identity':
+                assert failed.returncode==42 and 'start compose' not in calls
+                return
+            assert calls.index(' original-eligible ') < calls.index('start compose')
+        assert failed.returncode==37,failed.stdout+failed.stderr
+        for check in ('rollback route dispatch','four checks','partial stop retry'):
+            fresh='. "$CONTEXT"\npython3() { echo UNSAFE; return 49; }; stop_project() { echo UNSAFE; }\n'
+            fresh+=block('# BEGIN '+check+'\n','# END '+check)+'\necho UNSAFE_TEARDOWN\n'
+            resumed=subprocess.run(['bash','-eu','-c',fresh],env=env,capture_output=True,text=True)
+            assert resumed.returncode!=0 and 'UNSAFE' not in resumed.stdout,(route,check,resumed.stdout,resumed.stderr)
+    finally:server.close()
+
+
+def test_exact_restart_port_refusal_precedes_restart_checkpoint():
+    text=block('# BEGIN retained original restart\n','# END retained original restart')
+    checkpoint=text.index('TEARDOWN_PHASE=rollback-starting')
+    assert text.index('--service "$engine"') < checkpoint < text.index('start "$engine"')
+
+
+def test_rollback_points_to_policy_pause_between_dispatch_and_capture():
+    text=RUNBOOK.read_text().split('## Roll back',1)[1]
+    assert text.index('# END rollback route dispatch') < text.index('# Pause restart automation here') < text.index('# Stop candidates BEFORE down')

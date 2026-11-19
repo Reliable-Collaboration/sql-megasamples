@@ -335,7 +335,7 @@ def test_api_start_failure_retains_preparation_phase_in_fresh_shell(tmp_path):
     script='. "$CONTEXT"\npodman() { return 37; }; sleep() { :; }\n'+fragment+'\ntest -S "${DOCKER_HOST#unix://}"\n'
     result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
     assert result.returncode!=0
-    fresh=subprocess.run(['bash','-eu','-c','. "$CONTEXT"; test "$PREPARATION_STAGE" = api-start'],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')))
+    fresh=subprocess.run(['bash','-eu','-c','. "$CONTEXT"; test "$PREPARATION_STAGE" = api-start; test -n "$MEGASAMPLES_LIVE_API_PID"; test "$MEGASAMPLES_LIVE_API_PID" != fixture'],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')))
     assert fresh.returncode==0
 
 @pytest.mark.parametrize('mode',['clean-stop','abort'])

@@ -331,3 +331,23 @@ def test_original_override_requires_positive_candidate_mount_evidence(capture_fi
     candidate.write_text(json.dumps(dict(containers=[dict(id='removed-candidate',mounts=[])])))
     with pytest.raises(ValueError,match='independent candidate mount evidence required'):
         gate.original_override(out,data.parent/'override.json','fixture',candidate)
+
+
+@pytest.mark.parametrize('error_type',[ProcessLookupError,FileNotFoundError])
+def test_ordinary_shared_helper_vanish_holds_consistently(capture_fixture,monkeypatch,error_type):
+    snap,out,proc,cg,data=capture_fixture
+    pidfile=Path(gate.store_identity()['run'])/'networks/rootless-netns/rootless-netns-conn.pid'
+    pidfile.parent.mkdir(parents=True);pidfile.write_text('12349')
+    original=gate.pod
+    monkeypatch.setattr(gate,'pod',lambda *a:'test|12345|12346|bridge|false|' if a[0]=='inspect' and a[2]==gate.CAPTURE_FORMAT else original(*a))
+    identity=gate.process_identity
+    def vanished(path):
+        if path==proc/'12349':raise error_type('helper vanished')
+        return identity(path)
+    monkeypatch.setattr(gate,'process_identity',vanished)
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='HOLD',report
+    assert any(r['reason']=='shared helper association unresolved; return to deciders' for r in report['holds']),report
+    monkeypatch.setattr(gate,'process_identity',identity)
+    process(proc,12349,'slirp4netns','/rootless-netns-store.scope')
+    assert gate.capture(snap,out.with_name('readable.json'),proc=proc,cgroup_root=cg)['outcome']=='PASS'
