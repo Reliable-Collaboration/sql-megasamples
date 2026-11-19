@@ -554,3 +554,32 @@ def test_malformed_shared_pidfile_holds(down, monkeypatch, site, content):
     if site == 'capture': report = gate.capture(snap, data.parent/'valid-pid.json', proc=proc, cgroup_root=cg, allow_down=True)
     else: report = gate.verify(out, proc=proc, cgroup_root=cg)
     assert report['outcome'] == 'PASS', report
+
+
+@pytest.mark.parametrize('comm', ['conmon', 'unrelated'])
+def test_known_absent_conmon_unreadable_reuse_keeps_independent_checks(down, monkeypatch, comm):
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    monkeypatch.setattr(gate, 'pod', lambda *a: 'test|0|12349|none|false|'
+        if a[0] == 'inspect' and a[2] == gate.CAPTURE_FORMAT else original(*a))
+    assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    p = process(proc, 12349, comm, '/unrelated.scope', start='99')
+    start = gate.start_time
+    def denied(path):
+        if path == p: raise PermissionError('unreadable reused PID birth')
+        return start(path)
+    monkeypatch.setattr(gate, 'start_time', denied)
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+    group = cg/'libpod-test.scope'; group.mkdir()
+    for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('12349')
+    report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == 'REFUSE', report
+    assert any(row['reason'] == 'live deployment cgroup task' for row in report['refusals'])
+    for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('')
+    # Source holder checking also remains independent of the ignored birth read.
+    (p/'fd/3').symlink_to(data/'held')
+    report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == 'REFUSE', report
+    assert any(row['reason'] == 'unattributed source holder' for row in report['refusals'])
+    (p/'fd/3').unlink()
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
