@@ -118,6 +118,20 @@ def test_history_does_not_list_load_rehearsal_or_abort_directories(fixture,monke
     assert gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)['outcome']=='PASS'
 
 
+def test_current_all_running_capture_still_owns_later_stopped_containers(fixture,monkeypatch):
+    saved,proc,cg,data,path,verify=fixture
+    assert 'down_evidence' not in saved
+    original=gate.pod
+    def pod(*args):
+        if args[0]=='ps':return '' if '-q' in args else 'test late-stopped-console'
+        return original(*args)
+    monkeypatch.setattr(gate,'pod',pod)
+    report=verify()
+    assert report['outcome']=='HOLD' and 'container capture incomplete' in reasons(report,'holds')
+    monkeypatch.setattr(gate,'pod',original)
+    assert verify()['outcome']=='PASS'
+
+
 @pytest.mark.parametrize('role,reason',[('process','recorded process survives'),('conmon','recorded process survives'),('dedicated helper','dedicated helper survives')])
 def test_recorded_survivor_refuses_with_reversal(fixture,role,reason):
     saved,proc,cg,data,path,verify=fixture
