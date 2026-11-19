@@ -783,13 +783,15 @@ python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
 Every capture writes an exclusive `.quiescence-reference` beside its private record.
 Never delete these index entries or older captures. The helper also discovers the
 previous runbook's timestamped capture filenames, so retained unindexed DL-088
-records remain required. A history-tree traversal error HOLDs; arbitrary backup
-JSON is never opened to find captures. Every verification uses
+records remain required. Discovery lists only the backup root and each direct `rollback-*` attempt
+directory, never the cold-data payloads. A capture-inventory error HOLDs; arbitrary
+backup JSON is never opened to find captures. Every verification uses
 `--history-dir "$BACKUP_DIR"` to verify all applicable records alongside the current
 one, including the first stop's helpers from other engines. Applicability means
 complete, same boot/store, and the same container generation or overlapping recorded
-data. Reused process/cgroup identifiers and stale/incomplete captures are reported
-as history, never substituted for current evidence. Unreadable live evidence in an
+data. Reuse is judged per process/cgroup row: that superseded identity cannot
+establish continuity, while other rows from that capture remain required.
+Stale/incomplete captures are history, never substituted for current evidence. Unreadable live evidence in an
 applicable record still blocks. Keep the whole backup/attempt tree available.
 Repeat all four checks before cold copy; repeat per crashed engine if necessary.
 For an abort use the block below after the original recovery checks. Missing

@@ -13,6 +13,7 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import stat
 import sys
 
 
@@ -915,7 +916,7 @@ def verify_all(capture_path, history_dir, **kwargs):
         # Explicit iteration propagates genuine capture-inventory errors.
         legacy = re.compile(r'^(stop-capture|clean-stop-capture|rollback-stop-capture|capture-retry|populate-capture)-[0-9]{8}T[0-9]+Z?\.json$')
         entries = list(history_dir.iterdir())
-        directories = [history_dir] + [p for p in entries if p.name.startswith('rollback-') and p.is_dir()]
+        directories = [history_dir] + [p for p in entries if p.name.startswith('rollback-') and stat.S_ISDIR(p.stat().st_mode)]
         for directory in directories:
             for path in (entries if directory == history_dir else directory.iterdir()):
                 if path.name.endswith('.quiescence-reference'):

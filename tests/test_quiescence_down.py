@@ -193,8 +193,14 @@ def test_rollback_route_holds_unreadable_required_original_evidence(down,monkeyp
 @pytest.mark.parametrize('number',[2,19])
 def test_unrelated_cgroup_vanish_is_absent_and_search_runs_once(down,monkeypatch,number):
     snap,out,proc,cg,data=down
-    saved=json.loads(snap.read_text());saved['containers'].append(dict(saved['containers'][0],id=None,name='missing',state='missing'))
+    saved=json.loads(snap.read_text());saved['containers'].append(dict(saved['containers'][0],id='other',name='other',state='exited'))
     snap.write_text(json.dumps(saved))
+    original_pod=gate.pod
+    def pod(*args):
+        if args[0]=='ps':return '' if '-q' in args else 'test other'
+        result=original_pod(*args)
+        return result.replace('test|','other|') if args[-1]=='other' and args[0]=='inspect' else result
+    monkeypatch.setattr(gate,'pod',pod)
     original=gate.os.walk;walks=[]
     def racing(root,onerror=None):
         if root==cg:

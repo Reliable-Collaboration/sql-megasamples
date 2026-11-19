@@ -33,7 +33,7 @@ def test_capture_is_saved_and_required_before_original_stop(tmp_path):
     assert setup.index('save_context') < setup.index(' capture ')
     server=context(tmp_path,'stop')
     try:
-        script='. "$CONTEXT"\npython3() { case "$2" in snapshot) echo {} > "$3";; capture) return 2;; esac; }; podman() { :; }\n'+setup+'\necho UNSAFE_STOP\n'
+        script='. "$CONTEXT"\npython3() { case "$2" in snapshot) echo {} > "$3";; capture) return 2;; esac; }; podman() { if test "$1" = ps; then echo fixture; fi; }\n'+setup+'\necho UNSAFE_STOP\n'
         result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
         assert result.returncode==2 and 'UNSAFE_STOP' not in result.stdout
         fresh=subprocess.run(['bash','-eu','-c','. "$CONTEXT"; test -n "$QUIESCENCE_CAPTURE"'],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
