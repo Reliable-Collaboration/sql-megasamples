@@ -128,7 +128,7 @@ def test_retained_live_phase_a_layout(tmp_path, monkeypatch):
     # Receipt cannot silently substitute another tag or an unchecked archive.
     saved[-1]['original_tag'] = saved[0]['original_tag']
     (tmp_path / 'phase-a-resume-receipt.json').write_text(json.dumps({'saved_images': saved}))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='^phase-A receipt differs from rollback mapping$'):
         upgrade.check_images(tmp_path)
 
 
@@ -252,10 +252,12 @@ def test_forwarded_protocol_socket_fixture(engine, reply, expected):
     with socket.socket() as listener:
         listener.bind(('127.0.0.1', 0))
         listener.listen()
+        requests = []
         def serve():
             with listener.accept()[0] as stream:
+                stream.settimeout(2)
                 if engine == 'postgres':
-                    assert upgrade.receive(stream, 8) == bytes.fromhex('0000000804d2162f')
+                    requests.append(upgrade.receive(stream, 8))
                 stream.sendall(reply)
         worker = threading.Thread(target=serve)
         worker.start()
@@ -263,11 +265,19 @@ def test_forwarded_protocol_socket_fixture(engine, reply, expected):
             if expected:
                 assert expected in upgrade.forwarded_protocol(engine, *listener.getsockname())
             else:
-                with pytest.raises(ValueError):
+                reason = {
+                    ('postgres', b'X'): 'invalid PostgreSQL SSLRequest response',
+                    ('postgres', b''): 'short protocol reply',
+                    ('mysql', b'\x0a\x00'): 'short protocol reply',
+                    ('mysql', b'\x03\x00\x00\x00\xffxx'): 'invalid MySQL greeting',
+                    ('mysql', b'\x03\x00\x00\x00\x09x\x00'): 'invalid MySQL greeting',
+                }[(engine, reply)]
+                with pytest.raises(ValueError, match='^'+reason+'$'):
                     upgrade.forwarded_protocol(engine, *listener.getsockname())
         finally:
             worker.join(timeout=5)
             assert not worker.is_alive()
+            assert requests == ([bytes.fromhex('0000000804d2162f')] if engine == 'postgres' else [])
 
 
 def test_retained_helper_ports_needs_no_checkout(tmp_path):
