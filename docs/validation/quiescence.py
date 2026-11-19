@@ -294,7 +294,7 @@ def down_evidence(row, proc, cgroup_root, scan_cache=None):
             if found != identity or int(pid) != 0:
                 raise ValueError('container identity changed')
             evidence.update(conmon=int(conmon), mode=mode)
-            if int(conmon):
+            if int(conmon) and not (row.get('conmon_absent') and int(conmon) == row.get('conmon')):
                 try:
                     evidence['conmon_start'] = start_time(proc/conmon)
                 except OSError as error:
