@@ -610,3 +610,27 @@ def test_pre_marker_down_row_keeps_conservative_reuse_result(down, monkeypatch, 
     assert out.read_bytes() == retained
     shutil.rmtree(p)
     assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+
+
+@pytest.mark.parametrize('comm', ['conmon', 'unrelated'])
+def test_known_absent_conmon_reuse_with_unreadable_stat(down, monkeypatch, comm):
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    monkeypatch.setattr(gate, 'pod', lambda *a: 'test|0|12349|none|false|'
+        if a[0] == 'inspect' and a[2] == gate.CAPTURE_FORMAT else original(*a))
+    assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    p = process(proc, 12349, comm, '/unrelated.scope', start='99')
+    read = Path.read_text
+    def denied(path, *args, **kwargs):
+        if path == p/'stat': raise PermissionError('reused occupant stat denied')
+        return read(path, *args, **kwargs)
+    monkeypatch.setattr(Path, 'read_text', denied)
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+    # Required cgroup membership is still inspected and holds on that denial.
+    group = cg/'libpod-test.scope'; group.mkdir()
+    for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('12349')
+    report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == 'HOLD', report
+    assert any(row['reason'] == 'down cgroup evidence unreadable' for row in report['holds'])
+    for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('')
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
