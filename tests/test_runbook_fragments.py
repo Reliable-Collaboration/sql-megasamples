@@ -433,3 +433,28 @@ podman() {
         assert resumed.returncode==0,resumed.stderr
         assert (tmp_path/'evidence/populate-calls').read_text().count('copy\n')==4
     finally: server.close()
+
+
+@pytest.mark.parametrize('delimiter',['PY_PAUSE_CAPTURE','PY_ORIGINAL_TREE'])
+def test_embedded_traversal_denial_propagates_with_readable_reversal(tmp_path,monkeypatch,delimiter):
+    import sys
+    code=re.search(r"<<'"+delimiter+r"'\n(.*?)^"+delimiter+r"$",RUNBOOK.read_text(),re.M|re.S)[1]
+    if delimiter=='PY_PAUSE_CAPTURE':
+        for name in ('xdg','tmp','run'):(tmp_path/name).mkdir()
+        child=tmp_path/'run/nested';child.mkdir();(child/'pause.pid').write_text('123')
+        args=['fragment',str(tmp_path)]
+    else:
+        source=tmp_path/'source';source.mkdir()
+        target=tmp_path/'target';target.mkdir()
+        child=target/'nested';child.mkdir();(child/'obsolete').write_text('old')
+        args=['fragment',str(source),str(target)]
+    original=os.scandir
+    def denied(directory):
+        if Path(directory)==child:raise PermissionError(13,'embedded enumeration denied',str(child))
+        return original(directory)
+    monkeypatch.setattr(sys,'argv',args);monkeypatch.setattr(os,'scandir',denied)
+    with pytest.raises(PermissionError,match='embedded enumeration denied'):exec(compile(code,delimiter,'exec'),{})
+    monkeypatch.setattr(os,'scandir',original)
+    exec(compile(code,delimiter,'exec'),{})
+    if delimiter=='PY_PAUSE_CAPTURE':assert json.loads((tmp_path/'pause-pids.json').read_text())==[123]
+    else:assert not list(target.iterdir())
