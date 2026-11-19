@@ -902,16 +902,17 @@ def verify_all(capture_path, history_dir, **kwargs):
         import re
         paths = set()
         history_dir.stat()
-        # pathlib glob suppresses traversal errors. A partial history inventory
-        # must HOLD. Read only index entries and the old runbook's safe filenames,
-        # never arbitrary backup JSON such as a full container inspection.
+        # Captures are written only at the retained root or directly in an
+        # attempt. Cold data preserves subordinate ownership; never traverse it.
+        # Explicit iteration propagates genuine capture-inventory errors.
         legacy = re.compile(r'^(stop-capture|clean-stop-capture|rollback-stop-capture|capture-retry|populate-capture)-[0-9]{8}T[0-9]+Z?\.json$')
-        for directory, _, files in os.walk(history_dir, onerror=lambda error: (_ for _ in ()).throw(error)):
-            for name in files:
-                path = Path(directory)/name
-                if name.endswith('.quiescence-reference'):
+        entries = list(history_dir.iterdir())
+        directories = [history_dir] + [p for p in entries if p.name.startswith('rollback-') and p.is_dir()]
+        for directory in directories:
+            for path in (entries if directory == history_dir else directory.iterdir()):
+                if path.name.endswith('.quiescence-reference'):
                     paths.add(Path(json.loads(path.read_text())['path']))
-                elif legacy.fullmatch(name):
+                elif legacy.fullmatch(path.name):
                     paths.add(path)
         for path in sorted(paths):
             if path.resolve() == capture_path.resolve():
