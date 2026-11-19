@@ -604,7 +604,7 @@ B-2 and B-3 were subsequently fixed in the follow-up:
 - **B-2:** a dead-at-capture conmon retains its PID with an explicit absence marker.
   A later occupant is reuse rather than continuity; separately established
   deployment membership still refuses. Fixtures cover retained and removed
-  containers, helper and non-helper occupants, and the existing live-birth case.
+  containers, conmon-named and unrelated occupants, and the existing live-birth case.
   Existing captures without the absence marker cannot retroactively establish
   that the PID was dead. They retain conservative REFUSE/HOLD behavior if the
   missing birth evidence is needed. Keep the maintenance hold and rerun after
@@ -698,7 +698,7 @@ acceptance hold remains separate; the netns error's root cause remains unknown.
 
 ### DL-086 follow-up: B-2 through B-15
 
-New follow-up captures retain a dead-at-capture conmon PID with an absence marker and
+A new follow-up capture retains a dead-at-capture conmon PID with an absence marker and
 ignores later PID reuse as continuity; real deployment membership remains a
 refusal. Down-route shared-helper checks now distinguish a genuinely missing
 `/proc` entry from a present but unreadable entry. A fresh-shell empty policy
@@ -717,7 +717,8 @@ boundaries, PostgreSQL read-grant wording, literal IPv6 socket rows, actual gran
 options across init files, and SSLRequest bytes in the caller thread. The stale
 endpoint comment and rebound filename-matcher variable were corrected without
 changing behavior. The native scratch proof and its scope are described above;
-the resume instructions now link manual cleanup and explain the additional
+B-3 also stops before cleanup on a failed or non-empty container listing; the
+rehearsal fixtures cover both outcomes. The resume instructions now link manual cleanup and explain the additional
 image copy a failed-store rerun can retain beyond the two-copy space budget.
 
 The [follow-up receipt](validation/live-upgrade-follow-up-2026-11-19.json)
@@ -725,7 +726,9 @@ records each item's test and fix commits, red and green runs, defect controls,
 native scratch proof, source and evidence hashes, and remaining limits. B-13 is
 a comment/local-name change: restoring it also passes the same checks. The
 initial B-2 reversal fixture required a separate correction to supply real
-cgroup membership files; the receipt records that failure and links its replay. Test-only
+cgroup membership files (test-only correction `913a380` after fix `614ecc3`).
+The first fix was red for two fixture cases; its retained replay is also red.
+The receipt records that failure and links its replay. Neither commit is rewritten. Test-only
 coverage improvements were already green on production code and are paired
 with planted-defect controls. These are authoring-session checks; independent
 review, acceptance and merge remain separate.

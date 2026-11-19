@@ -777,6 +777,11 @@ Keep configuration, logs and empty store metadata. Never substitute the default
 or isolated stack's store, use `system reset`, delete trees blindly, or signal a
 bare PID. Failure here is a coordinator hold, not permission to bypass the checks.
 
+On the down route, a store helper file must name a positive decimal PID. A
+malformed PID file holds for investigation; a valid PID with no /proc entry is absent on the down route.
+A present but unreadable process still holds. A helper appearing later is checked
+for association and surviving consumers at verification.
+
 ### Partial stop: rerun the guarded stop on the same capture
 
 If the console or SQLite stop fails, another engine may still run. Neither the
