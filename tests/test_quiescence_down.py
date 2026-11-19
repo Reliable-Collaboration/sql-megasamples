@@ -435,8 +435,11 @@ def test_dead_at_capture_conmon_pid_reuse_is_not_continuity(down, monkeypatch, r
     assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
     # Reuse excludes only the PID association: real deployment membership still refuses.
     (p/'cgroup').write_text('0::/libpod-test.scope\n')
+    group = cg/'libpod-test.scope'; group.mkdir()
+    for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('12349')
     report = gate.verify(out, proc=proc, cgroup_root=cg)
     assert report['outcome'] == 'REFUSE', report
-    assert any(r['reason'] == 'positively associated down helper survives' for r in report['refusals'])
+    assert any(r['reason'] == 'live deployment cgroup task' for r in report['refusals'])
+    for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('')
     (p/'cgroup').write_text('0::/unrelated.scope\n')
     assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
