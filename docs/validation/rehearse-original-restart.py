@@ -133,6 +133,12 @@ for engine in ('postgres','mysql'):
             if (ENV/'podman.sock').is_socket():break
             assert api.poll() is None;time.sleep(.05)
         comp('up','-d')
+        # The proof must match candidate anonymous engine data volumes.
+        for engine,destination in (('postgres','/var/lib/postgresql'),('mysql','/var/lib/mysql'),('sqlite','/data')):
+            mounts=json.loads(pod('inspect','-f','{{json .Mounts}}',project+'-'+engine))
+            mounted=next(row for row in mounts if row['Destination']==destination)
+            assert mounted['Type']=='volume',engine+' proof data must use an anonymous volume'
+            assert pod('volume','inspect','-f','{{.Anonymous}}',mounted['Name'])=='true'
         for engine in ('postgres','mysql','sqlite'):
             deadline=time.monotonic()+180
             while True:
