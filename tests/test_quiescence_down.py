@@ -188,3 +188,33 @@ def test_rollback_route_holds_unreadable_required_original_evidence(down,monkeyp
         monkeypatch.setattr(gate,'pod',lambda *a:'incomplete state' if a[0]=='inspect' else original(*a))
     with pytest.raises(ValueError,match='original restart evidence unreadable'):
         gate.rollback_route(snap,'project')
+
+
+@pytest.mark.parametrize('number',[2,19])
+def test_unrelated_cgroup_vanish_is_absent_and_search_runs_once(down,monkeypatch,number):
+    snap,out,proc,cg,data=down
+    saved=json.loads(snap.read_text());saved['containers'].append(dict(saved['containers'][0],id=None,name='missing',state='missing'))
+    snap.write_text(json.dumps(saved))
+    original=gate.os.walk;walks=[]
+    def racing(root,onerror=None):
+        if root==cg:
+            walks.append(root)
+            onerror(OSError(number,'vanished',str(cg/'unrelated')))
+        yield from original(root,onerror=onerror)
+    monkeypatch.setattr(gate.os,'walk',racing)
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
+    assert walks==[cg]
+    walks.clear()
+    assert gate.verify(out,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+    assert walks==[cg]
+
+
+def test_recorded_cgroup_vanish_error_holds(down,monkeypatch):
+    snap,out,proc,cg,data=down
+    def racing(root,onerror=None):
+        onerror(FileNotFoundError(2,'vanished',str(cg/'libpod-test.scope')))
+        return iter(())
+    monkeypatch.setattr(gate.os,'walk',racing)
+    report=gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)
+    assert report['outcome']=='HOLD'
+    assert any(r['reason']=='down cgroup evidence unreadable' for r in report['holds'])

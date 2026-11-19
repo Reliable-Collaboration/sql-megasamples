@@ -7,6 +7,7 @@ Never reads process arguments or environments. Run in the host initial namespace
 """
 import argparse
 import array
+import errno
 import fcntl
 import json
 import os
@@ -238,7 +239,21 @@ def rollback_route(snapshot, project):
     return dict(route='down-capture')
 
 
-def down_evidence(row, proc, cgroup_root):
+def cgroup_inventory(root, cache):
+    """One host-tree search per invocation, retaining errors for scoped judgment."""
+    if 'directories' not in cache:
+        root.stat()
+        errors = []
+        cache['directories'] = [Path(d) for d, _, _ in os.walk(root, onerror=errors.append)]
+        cache['errors'] = errors
+    return cache['directories'], cache['errors']
+
+
+def names_container(path, identity):
+    return any(part in ('libpod-'+identity+'.scope', 'libpod-conmon-'+identity+'.scope') for part in Path(path).parts)
+
+
+def down_evidence(row, proc, cgroup_root, scan_cache=None):
     """Per-container fresh state and completed full-ID cgroup search, never empty on error."""
     identity = row.get('id')
     evidence = dict(id=identity, name=row.get('name'), cgroup_state='absent', cgroups=[], ports=[])
@@ -268,22 +283,26 @@ def down_evidence(row, proc, cgroup_root):
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
         holds.append(dict(reason='down container state unreadable', error=type(error).__name__))
     try:
-        # stat ensures a missing/unreadable root cannot silently mean no groups.
-        cgroup_root.stat()
-        if identity:
-            for directory, _, _ in os.walk(cgroup_root, onerror=lambda error: (_ for _ in ()).throw(error)):
-                path = Path(directory)
-                if not any(part in ('libpod-'+identity+'.scope', 'libpod-conmon-'+identity+'.scope') for part in path.parts):
-                    continue
-                evidence['cgroups'].append(dict(path=str(path.relative_to(cgroup_root)), **object_identity(path)))
-                evidence['cgroup_state'] = 'empty'
-                for pid in group_members(path):
-                    try:
-                        if task_alive(proc/pid):
-                            refusals.append(dict(reason='live deployment cgroup task', pid=int(pid)))
-                    except OSError:
-                        if (proc/pid).exists():
-                            holds.append(dict(reason='down cgroup evidence unreadable'))
+        directories, errors = cgroup_inventory(cgroup_root, {} if scan_cache is None else scan_cache)
+        for error in errors:
+            if error.errno in (errno.ENOENT, errno.ENODEV) and error.filename and not names_container(error.filename, identity):
+                continue  # Unrelated cgroups routinely disappear during health checks.
+            raise error
+        for path in directories:
+            if not names_container(path, identity):
+                continue
+            evidence['cgroups'].append(dict(path=str(path.relative_to(cgroup_root)), **object_identity(path)))
+            evidence['cgroup_state'] = 'empty'
+            members = set()
+            for name in ('cgroup.procs', 'cgroup.threads'):
+                members.update((path/name).read_text().split())
+            for pid in members:
+                try:
+                    if task_alive(proc/pid):
+                        refusals.append(dict(reason='live deployment cgroup task', pid=int(pid)))
+                except OSError:
+                    if (proc/pid).exists():
+                        holds.append(dict(reason='down cgroup evidence unreadable'))
     except (OSError, ValueError) as error:
         holds.append(dict(reason='down cgroup evidence unreadable', error=type(error).__name__))
     return evidence, refusals, holds
@@ -376,9 +395,10 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
         # With an empty current listing the supported deployment's shared store
         # helper is still inspected. Its independently verified consumers decide.
         bridge = down_allowed and not listed
+        scan_cache = {}
         for row in saved['containers']:
             if down_allowed and not row.get('running'):
-                evidence, refusals, holds = down_evidence(row, proc, cgroup_root)
+                evidence, refusals, holds = down_evidence(row, proc, cgroup_root, scan_cache)
                 saved['down_evidence'].append(evidence)
                 saved['refusals'] += refusals; saved['holds'] += holds
                 bridge |= evidence.get('mode') == 'bridge'
@@ -718,7 +738,7 @@ def complete_capture(saved):
     return bool(saved['processes'] and saved['cgroups'])
 
 
-def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), phase_eligible=True):
+def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), phase_eligible=True, _down_scan=None):
     report = dict(outcome='HOLD', assurance='The recorded deployment stopped using the exact recorded data; bounded by readable required evidence. This does not prove the host quiet or prevent new writers.',
                   refusals=[], holds=[], limitations=[], shared_consumers=[], counts={})
     def hold(reason, **detail): report['holds'].append(dict(reason=reason, **detail))
@@ -752,8 +772,9 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
             if listed - {r['id'] for r in saved['containers'] if r.get('id')}:
                 hold('container capture incomplete')
             evidence = []
+            scan_cache = {} if _down_scan is None else _down_scan
             for row in saved['down_evidence']:
-                fresh, refusals, holds = down_evidence(row, proc, cgroup_root)
+                fresh, refusals, holds = down_evidence(row, proc, cgroup_root, scan_cache)
                 report['refusals'] += refusals; report['holds'] += holds
                 # Retain the down container's known conmon and ports after removal.
                 fresh['ports'] = sorted(set(fresh['ports']) | set(row.get('ports',[])))
@@ -895,6 +916,7 @@ def historical_applicability(saved, current, proc, cgroup_root):
 
 
 def verify_all(capture_path, history_dir, **kwargs):
+    kwargs['_down_scan'] = {}
     report = verify(capture_path, **kwargs)
     report['history'] = []
     try:
