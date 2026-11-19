@@ -155,6 +155,15 @@ The narrowed PostgreSQL account guidance was checked against `engines/postgres/i
 large-object creation or routine execution. This change documents those limits;
 it does not claim account hardening has been deployed.
 
+MySQL's `demo` scope was checked against
+[`engines/mysql/init/00-users.sql`](../engines/mysql/init/00-users.sql):
+`GRANT SELECT, SHOW VIEW ON *.*` permits reads on every database on the server,
+system schemas included. This includes `mysql`, where account rows live, and
+any database added later. The README now states that scope and the absence of
+write privilege. The grant itself is unchanged; narrowing it is a separate
+security-posture decision. The documentation regression derives both engines'
+`demo` scopes from their init SQL.
+
 ## Correction follow-up on 2026-11-18
 
 The [follow-up receipt](validation/live-upgrade-review-r1-2026-11-18.json) records

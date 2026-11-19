@@ -119,7 +119,7 @@ Two accounts are offered from every console, and both are usable from any client
 
 | account | factory password (without overrides) | privileges |
 |---|---|---|
-| `demo` | `demo` | `SELECT`, `SHOW VIEW` on the sample data |
+| `demo` | `demo` | `SELECT`, `SHOW VIEW` on every database (`*.*`), system schemas included, including `mysql`, where account rows live; no write privilege |
 | `admin` | `admin` | `ALL PRIVILEGES WITH GRANT OPTION` |
 
 Each console opens on `demo`, because the safe account should be the one you get without choosing.
