@@ -46,3 +46,4 @@ def test_fixed_pid_and_native_scratch_limits_are_retired():
     assert 'has run only against stubbed Podman' not in document
     assert 'manual cleanup exit 0' in document
     assert 'one small image' in document
+    assert 'Existing captures without the absence marker' in document
