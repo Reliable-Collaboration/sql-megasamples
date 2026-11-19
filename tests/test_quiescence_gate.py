@@ -211,16 +211,37 @@ def test_exited_zombie_with_deleted_cgroup_is_not_unresolved(fixture):
     assert 'recorded process survives' in reasons(report,'refusals')
 
 
-def test_history_walk_failure_holds_instead_of_dropping_prior_records(fixture,monkeypatch):
+def test_history_inventory_failure_holds_instead_of_dropping_prior_records(fixture,monkeypatch):
     saved,proc,cg,data,path,verify=fixture
     assert verify()['outcome']=='PASS'
-    def denied(root,onerror=None):
-        onerror(PermissionError('history directory unreadable'))
-        return iter(())
-    monkeypatch.setattr(gate.os,'walk',denied)
+    original=Path.iterdir
+    def denied(root):
+        if root==data.parent: raise PermissionError('history directory unreadable')
+        return original(root)
+    monkeypatch.setattr(Path,'iterdir',denied)
     report=gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)
     assert report['outcome']=='HOLD'
     assert 'capture history inspection unreadable' in reasons(report,'holds')
+
+
+def test_history_ignores_unreadable_cold_data_but_keeps_earlier_survivor(fixture,monkeypatch):
+    saved,proc,cg,data,path,verify=fixture
+    assert verify()['outcome']=='PASS'
+    cold=data.parent/'postgres';cold.mkdir(mode=0o700)
+    attempt=data.parent/'rollback-fixture';attempt.mkdir()
+    prior=copy.deepcopy(saved);p=process(proc,comm='rootlessport')
+    prior['processes']=[dict(gate.process_identity(p),role='dedicated helper')]
+    gate.write_capture(attempt/'stop-capture.json',prior)
+    original_scan=gate.os.scandir
+    def denied(root):
+        if Path(root)==cold: raise PermissionError(13,'cold data unreadable',str(root))
+        return original_scan(root)
+    monkeypatch.setattr(gate.os,'scandir',denied)
+    report=gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)
+    assert 'capture history inspection unreadable' not in reasons(report,'holds')
+    assert 'dedicated helper survives' in reasons(report,'refusals')
+    import shutil;shutil.rmtree(p)
+    assert gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)['outcome']=='PASS'
 
 
 def test_legacy_unindexed_capture_is_also_required(fixture):
