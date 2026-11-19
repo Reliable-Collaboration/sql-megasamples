@@ -89,7 +89,7 @@ def admin_scope(document, engine):
         assert (('ALL',), 'datasets') in grants
         for source in (ROOT/'engines/postgres/init').glob('*.sql'):
             grant_sql = re.sub(r'--[^\n]*', '', source.read_text())
-            assert not re.search(r'GRANT[^;]+TO\s+admin\s+WITH\s+GRANT\s+OPTION\s*;', grant_sql, re.I)
+            assert not re.search(r'GRANT[^;]+TO\s+(?:[^;]*,\s*)?(?:admin|"admin")(?:\s*,[^;]*?)?\s+WITH\s+GRANT\s+OPTION\s*;', grant_sql, re.I)
         dockerfile = (ROOT/'engines/postgres/Dockerfile').read_text()
         assert 'OWNER admin TEMPLATE template0' in dockerfile
         for clause in ('CREATEDB', 'CREATEROLE', 'owns the sample databases',

@@ -244,6 +244,7 @@ def test_runbook_context_restores_fresh_maintenance_shell(tmp_path):
     ('mysql', b'\x0a\x00\x00\x00\x0ascratch\x00x', 'scratch'),
     ('postgres', b'X', None), ('postgres', b'', None),
     ('mysql', b'\x0a\x00', None),
+    ('mysql', b'\x03\x00\x00\x01\x0ax\x00', None),
     ('mysql', b'\x03\x00\x00\x00\xffxx', None),
     ('mysql', b'\x03\x00\x00\x00\x09x\x00', None),
 ])
@@ -269,6 +270,7 @@ def test_forwarded_protocol_socket_fixture(engine, reply, expected):
                     ('postgres', b'X'): 'invalid PostgreSQL SSLRequest response',
                     ('postgres', b''): 'short protocol reply',
                     ('mysql', b'\x0a\x00'): 'short protocol reply',
+                    ('mysql', b'\x03\x00\x00\x01\x0ax\x00'): 'invalid MySQL greeting header',
                     ('mysql', b'\x03\x00\x00\x00\xffxx'): 'invalid MySQL greeting',
                     ('mysql', b'\x03\x00\x00\x00\x09x\x00'): 'invalid MySQL greeting',
                 }[(engine, reply)]
