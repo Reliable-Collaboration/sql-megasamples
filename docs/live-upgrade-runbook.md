@@ -1681,7 +1681,8 @@ across their next stop before any cold copy.
 For down containers, positively associated `conmon`/helpers refuse: full container
 IDs in cgroups or readable cwd/descriptor paths, Podman's conmon record paired
 with the captured process start time, the store
-helper PID file, or a recorded published listening port. An indicated association
+helper PID file, or a recorded published listening endpoint matched by address,
+address family and port, including wildcard bindings. An indicated association
 whose live evidence is unreadable HOLDs. No process arguments/environments are
 read. Unassociated helpers remain a limitation. **Down-state evidence does not
 establish complete teardown outside the identified cgroups.** Readable data holders

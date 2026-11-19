@@ -628,3 +628,27 @@ Known limits retained for later work:
   the default or isolated stack's store, use `system reset`, delete trees blindly
   or signal a bare PID. This describes manual recovery, not a validated cleanup
   implementation or native proof of the stricter walk.
+
+### Round-eleven address attribution and account guidance
+
+Down-state helper association now preserves each published endpoint's address,
+address family and port, including wildcard bindings. A readable `rootlessport`
+on the same port at another address is not attributed by that socket. The
+regression covers matching/different IPv4 and IPv6 addresses, wildcard listeners
+and publications, both with retained containers and after removal. Each positive
+case reverses to PASS on another port. Restoring port-only matching makes the
+eight different-address/family cases fail.
+
+The MySQL README cell and `.env.example` now distinguish the global MySQL read
+grant from PostgreSQL's sample-table grants and remaining `TEMPORARY`, large-object
+and routine capabilities. Checks extract both engines' `demo` grants from init
+SQL; the earlier wording fails those checks. No privilege changes are made.
+The preparation abort now refuses `candidate-starting` before its first effect
+and points to **Roll back**; a pre-rotation phase still enters preparation recovery.
+
+The [round-eleven receipt](validation/live-upgrade-review-r11-2026-11-19.json)
+records each test-only/fix commit, red, green and planted-defect reversal, plus the
+suite, image checks, cleanup and complete nine-object live isolation inventory.
+These are authoring-session checks. Independent same-head review and DataIntent
+acceptance remain separate. The netns failure's root cause remains unknown;
+this small round adds no new native rollback or archive rehearsal.
