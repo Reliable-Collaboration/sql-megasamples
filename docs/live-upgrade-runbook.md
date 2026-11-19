@@ -706,6 +706,10 @@ copy and use the early abort below. For `preparation-workspace-start`, retry onl
 or use the same early abort. Both routes reuse the exact existing container;
 missing/replaced IDs require coordinator recovery. A successful restart clears
 the workspace phase. No workspace phase authorizes cold copying engine data.
+For a failed load rehearsal, use the [manual cleanup](#failed-rehearsal-store-manual-cleanup)
+before retrying. A rerun without cleanup loads a third image set while the space gate
+budgets two; if cleanup cannot finish, retain the store and rerun the space gate
+with that additional retained copy included in `EXTRA_RESERVE_BYTES` before allocating another.
 Rerun **only that failed gate**, then continue at its next command. A failed metadata check can
 be repaired only from the same verified bundle; a port refusal requires the unrelated listener's
 owner to release it or a separately reviewed port configuration. Do not kill it or improvise a
