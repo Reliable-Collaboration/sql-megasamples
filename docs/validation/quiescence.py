@@ -12,6 +12,7 @@ import fcntl
 import ipaddress
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import stat
