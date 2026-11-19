@@ -253,7 +253,8 @@ def test_mixed_capture_states_its_down_evidence_limit(down):
     assert 'Mixed' in report['assurance'] and 'outside the identified cgroups' in report['assurance']
 
 
-def test_retained_down_conmon_pid_reuse_is_not_continuity(down,monkeypatch):
+@pytest.mark.parametrize('retained',[False,True])
+def test_retained_down_conmon_pid_reuse_is_not_continuity(down,monkeypatch,retained):
     snap,out,proc,cg,data=down
     p=process(proc,12349,'conmon','/shell',state='Z')
     original=gate.pod
@@ -263,7 +264,7 @@ def test_retained_down_conmon_pid_reuse_is_not_continuity(down,monkeypatch):
     def removed(*args):
         if args[0]=='ps':return ''
         raise subprocess.CalledProcessError(1,args)
-    monkeypatch.setattr(gate,'pod',removed)
+    if not retained:monkeypatch.setattr(gate,'pod',removed)
     assert gate.verify(out,proc=proc,cgroup_root=cg)['outcome']=='REFUSE'
     for stat in (p/'stat',p/'task/12349/stat'):stat.write_text(stat.read_text().replace('42','43'))
     assert gate.verify(out,proc=proc,cgroup_root=cg)['outcome']=='PASS'
