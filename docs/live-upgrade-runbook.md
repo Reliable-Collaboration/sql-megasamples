@@ -2053,15 +2053,33 @@ if test "$PROCESS_RC" != 0; then
 fi
 # END pre-up process gate
 set --
-RESTORE_CLOUDBEAVER=0
 while IFS= read -r service; do
-  if test "$service" = cloudbeaver; then RESTORE_CLOUDBEAVER=1; else set -- "$@" "$service"; fi
+  case "$service" in postgres|mysql|sqlite) set -- "$@" "$service";; esac
 done < "$BACKUP_DIR/original-running-services.txt"
 # BEGIN original start boundary
 # After this checkpoint, a failure is a partial-original-restart HOLD, not pre-up.
 TEARDOWN_PHASE=rollback-starting
 save_context
 # END original start boundary
+if test "$#" -gt 0; then
+  docker compose -p sql-megasamples -f compose.yaml -f "$ATTEMPT_DIR/rollback.override.yaml" \
+    -f "$ATTEMPT_DIR/rollback-consoles.override.json" up -d --no-deps --wait "$@"
+fi
+for engine in postgres mysql sqlite; do
+  case " $* " in
+    *" $engine "*) python3 "$UPGRADE_HELPER" wait-healthy "$engine" --timeout 300 ;;
+  esac
+done
+# Only after SQLite has republished /shared may its consoles start.
+set --
+RESTORE_CLOUDBEAVER=0
+while IFS= read -r service; do
+  case "$service" in
+    postgres|mysql|sqlite) :;;
+    cloudbeaver) RESTORE_CLOUDBEAVER=1;;
+    *) set -- "$@" "$service";;
+  esac
+done < "$BACKUP_DIR/original-running-services.txt"
 if test "$#" -gt 0; then
   docker compose -p sql-megasamples -f compose.yaml -f "$ATTEMPT_DIR/rollback.override.yaml" \
     -f "$ATTEMPT_DIR/rollback-consoles.override.json" up -d --no-deps --wait "$@"
