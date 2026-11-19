@@ -52,6 +52,12 @@ def prove(n,g,u,out,backup,attempt,project,compose,sources,receipt):
         n.pod('unshare','chmod','1777',str(backup/name))
         root=(backup/name).stat()
         assert root.st_uid==100998 and root.st_gid==100998 and root.st_mode & 0o7777==0o1777
+    assert (backup/'sqlite').stat().st_mode & 0o777==0o755
+    anonymous={}
+    for engine,destination in (('postgres','/var/lib/postgresql'),('mysql','/var/lib/mysql'),('sqlite','/data')):
+        mounted=next(row for row in json.loads(n.pod('inspect','-f','{{json .Mounts}}',project+'-'+engine)) if row['Destination']==destination)
+        assert mounted['Type']=='volume' and n.pod('volume','inspect','-f','{{.Anonymous}}',mounted['Name'])=='true'
+        anonymous[engine]=dict(name=mounted['Name'],source=g.source_identity(mounted['Source']))
     unreadable=[]
     for name in ('postgres','mysql'):
         def denied(error):unreadable.append(dict(engine=name,error=type(error).__name__))
@@ -61,9 +67,10 @@ def prove(n,g,u,out,backup,attempt,project,compose,sources,receipt):
     assert pg.st_mode & 0o777 == 0o700 and pg.st_uid != os.getuid()
     receipt['replica'].update(dict(root_metadata=dict(uid=100998,gid=100998,mode='1777'),top_level_names='tests/fixtures/live-upgrade/retained-root-names.json',
         attempt_under_backup=True,cold_copy='podman unshare cp -a from stopped scratch PostgreSQL, MySQL, SQLite and shared mounts',
-        unreadable_cold_directories=len(unreadable),unreadable_classes=sorted({r['error'] for r in unreadable}),postgres_data_mode='0700',postgres_data_subordinate_owner=True,
+        unreadable_cold_directories=len(unreadable),unreadable_classes=sorted({r['error'] for r in unreadable}),postgres_data_mode='0700',postgres_data_subordinate_owner=True,sqlite_root_mode='0755',engine_data_volumes='anonymous',
         differences=['Tiny fresh scratch data, fewer unreadable directories; MySQL internal UID/depth differs',
-                     'Non-data retained names include placeholders; smaller deployment and different bridge ports',
+                     'Non-data retained names include placeholders; four services and different bridge ports',
+                     'Shared helper is slirp4netns with other isolated consumers; live uses Pasta with no other consumer',
                      'No full bootstrap, configuration/image restore or live restoration']) )
     text=(ROOT/'docs/live-upgrade-runbook.md').read_text()
     def block(start,end):return text.split(start+'\n',1)[1].split(end,1)[0]
@@ -93,6 +100,10 @@ def prove(n,g,u,out,backup,attempt,project,compose,sources,receipt):
     (attempt/'quiescence.py').write_bytes((ROOT/'docs/validation/quiescence.py').read_bytes())
     fragment=block('# Stop candidates BEFORE down can remove evidence. Keep every failed candidate volume.','# END restore process gate')
     shell('replica-fresh-shell-rollback-restore-gate',fragment)
+    for row in anonymous.values():
+        assert n.pod('volume','inspect','-f','{{.Anonymous}}|{{.MountCount}}',row['name'])=='true|0'
+        assert g.source_identity(row['source']['path'])==row['source']
+    receipt['results']['anonymous-volumes-survive-down']=dict(status='Passed',volumes=len(anonymous),identities_unchanged=True,unmounted=True)
     capture=json.loads(next(attempt.glob('rollback-stop-capture-*.json')).read_text())
     assert capture['kind']=='ordinary' and capture['processes']
     receipt['results']['replica-ordinary-route']=dict(status='Passed',capture_kind=capture['kind'],processes=len(capture['processes']),dispatch='ordinary-capture',fresh_context_without_phase_injection=True)

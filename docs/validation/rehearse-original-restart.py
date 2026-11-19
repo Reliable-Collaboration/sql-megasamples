@@ -64,12 +64,12 @@ def main():
     write_env(original)
     config=dict(services={
       'postgres':dict(image='sha256:'+images['postgres'],pull_policy='never',container_name=project+'-postgres',entrypoint=['/usr/local/bin/docker-entrypoint.sh'],command=['postgres'],
-          environment=dict(POSTGRES_PASSWORD='${POSTGRES_PASSWORD}',PGDATA='/var/lib/postgresql/18/docker'),volumes=[str(data['postgres'])+':/var/lib/postgresql'],ports=[f'127.0.0.1:{ports["postgres"]}:5432'],healthcheck=dict(test=['CMD','pg_isready','-U','postgres'],interval='2s',timeout='2s',retries=90)),
+          environment=dict(POSTGRES_PASSWORD='${POSTGRES_PASSWORD}',PGDATA='/var/lib/postgresql/18/docker'),volumes=[dict(type='volume',target='/var/lib/postgresql',volume=dict(nocopy=True))],ports=[f'127.0.0.1:{ports["postgres"]}:5432'],healthcheck=dict(test=['CMD','pg_isready','-U','postgres'],interval='2s',timeout='2s',retries=90)),
       'mysql':dict(image='sha256:'+images['mysql'],pull_policy='never',container_name=project+'-mysql',entrypoint=['/entrypoint.sh'],command=['mysqld'],
-          environment=dict(MYSQL_ROOT_PASSWORD='${MYSQL_ROOT_PASSWORD}',MYSQL_ROOT_HOST='%'),volumes=[str(data['mysql'])+':/var/lib/mysql'],ports=[f'127.0.0.1:{ports["mysql"]}:3306'],healthcheck=dict(test=['CMD','mysqladmin','ping','-h','127.0.0.1'],interval='2s',timeout='2s',retries=90)),
+          environment=dict(MYSQL_ROOT_PASSWORD='${MYSQL_ROOT_PASSWORD}',MYSQL_ROOT_HOST='%'),volumes=[dict(type='volume',target='/var/lib/mysql',volume=dict(nocopy=True))],ports=[f'127.0.0.1:{ports["mysql"]}:3306'],healthcheck=dict(test=['CMD','mysqladmin','ping','-h','127.0.0.1'],interval='2s',timeout='2s',retries=90)),
       'sqlite':dict(image='sha256:'+images['sqlite'],pull_policy='never',container_name=project+'-sqlite',entrypoint=['sh','-c',
           'rm -f /shared/.complete; for f in /data/*.sqlite; do n=$$(basename "$$f"); cp -f "$$f" "/shared/.$$n.part" && mv -f "/shared/.$$n.part" "/shared/$$n" || exit 1; done; touch /shared/.complete; exec sleep infinity'],
-          volumes=[str(data['sqlite'])+':/data','shared:/shared'],healthcheck=dict(test=['CMD-SHELL','test -f /shared/.complete'],interval='2s',timeout='2s',retries=90)),
+          volumes=[dict(type='volume',target='/data',volume=dict(nocopy=True)),'shared:/shared'],healthcheck=dict(test=['CMD-SHELL','test -f /shared/.complete'],interval='2s',timeout='2s',retries=90)),
       'landing':dict(image='sha256:'+images['landing'],pull_policy='never',container_name=project+'-landing',entrypoint=['sh','-c','trap "exit 0" TERM; while :; do sleep 1; done'],ports=[f'127.0.0.1:{ports["landing"]}:8080'])},volumes={'shared':dict(name=project+'-shared')})
     for service in config['services'].values():service['restart']='unless-stopped'
     compose=checkout/'compose.yaml';compose.write_text(json.dumps(config));(checkout/'megasamples.yaml').write_text('{}')
@@ -90,6 +90,7 @@ def main():
     u=n.module('original_upgrade',helper);g=n.gate
     u.pod=pod;g.pod=pod
     api=None
+    anonymous_volumes=[]
     def comp(*args):return run(['docker','compose','-p',project,'-f',str(compose),*args],timeout=180)
     def save(): (out/'receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
     # Authentication uses the existing host-network tools container's installed
@@ -132,6 +133,21 @@ for engine in ('postgres','mysql'):
         for _ in range(100):
             if (ENV/'podman.sock').is_socket():break
             assert api.poll() is None;time.sleep(.05)
+        comp('create')
+        for engine,destination in (('postgres','/var/lib/postgresql'),('mysql','/var/lib/mysql'),('sqlite','/data')):
+            mounted=next(row for row in json.loads(pod('inspect','-f','{{json .Mounts}}',project+'-'+engine)) if row['Destination']==destination)
+            anonymous_volumes.append(mounted['Name'])
+            data[engine]=Path(mounted['Source'])
+            # Only our newly allocated, never-started anonymous data volume.
+            # Explicitly empty it: the image carries sample data, and this API
+            # route did not yield fresh data with Compose's nocopy alone.
+            assert pod('volume','inspect','-f','{{.Anonymous}}',mounted['Name'])=='true'
+            pod('unshare','sh','-c','find "$1" -mindepth 1 -maxdepth 1 -exec rm -rf -- {} +','owned-scratch',str(data[engine]))
+            pod('unshare','chmod','755',str(data[engine]))
+            pod('unshare','touch',str(data[engine]/'.scratch-empty'))
+            print(engine,'owned anonymous volume before start',pod('volume','inspect','-f','{{.NeedsCopyUp}}|{{.MountCount}}',mounted['Name']),flush=True)
+        pod('unshare','cp','-a',str(out/'sqlite')+'/.',str(data['sqlite'])+'/')
+        pod('unshare','chmod','755',str(data['sqlite']))
         comp('up','-d')
         # The proof must match candidate anonymous engine data volumes.
         for engine,destination in (('postgres','/var/lib/postgresql'),('mysql','/var/lib/mysql'),('sqlite','/data')):
@@ -147,6 +163,7 @@ for engine in ('postgres','mysql'):
                 assert time.monotonic()<deadline,'scratch health deadline: '+engine
                 time.sleep(1)
             u.wait_healthy(engine,30)
+        print('scratch data before auth',pod('unshare','sh','-c','test -f "$1/18/docker/PG_VERSION" && echo initialized','owned-scratch',str(data['postgres'])),flush=True)
         fingerprints=authcheck('init');sqlite_digest=hashlib.sha256((data['sqlite']/'fixture.sqlite').read_bytes()).hexdigest()
         names=[project+'-'+name for name in ('postgres','mysql','sqlite','landing')]
         original_ids={name:pod('inspect','-f','{{.Id}}',name) for name in names}
@@ -244,6 +261,10 @@ for engine in ('postgres','mysql'):
                 volume=project+'-rollback-'+engine+'-'+replica_attempt
                 if n.run(['podman','volume','exists',volume],check=False).returncode==0:
                     assert pod('volume','inspect','-f','{{index .Labels "dl086.rollback-attempt"}}',volume)==replica_attempt
+                    pod('volume','rm',volume)
+            for volume in anonymous_volumes:
+                if run(['podman','volume','exists',volume],check=False).returncode==0:
+                    assert pod('volume','inspect','-f','{{.Anonymous}}|{{.MountCount}}',volume)=='true|0'
                     pod('volume','rm',volume)
             assert not pod('ps','-aq','--filter','label=com.docker.compose.project='+project)
             assert not pod('network','ls','-q','--filter','label=com.docker.compose.project='+project)
