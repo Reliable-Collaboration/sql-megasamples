@@ -205,7 +205,7 @@ class OriginalRestartIneligible(ValueError):
     """Readable evidence selects another route; inspection errors never do."""
 
 
-def original_eligible(snapshot, project):
+def original_eligible(snapshot, project, allow_running=False):
     try:
         saved = json.loads(snapshot.read_text())
         ids = {r['id'] for r in saved['containers'] if r.get('id')}
@@ -222,9 +222,9 @@ def original_eligible(snapshot, project):
                 raise ValueError('invalid container state')
         except ValueError as error:
             raise ValueError('original restart evidence unreadable') from error
-        if found != identity or running != 'false' or pid != 0:
+        if found != identity or (running == 'true') != (pid > 0) or (not allow_running and (running != 'false' or pid != 0)):
             raise OriginalRestartIneligible('original restart requires stopped original containers')
-    if pod('ps', '-q', '--filter', 'label=com.docker.compose.project='+project):
+    if not allow_running and pod('ps', '-q', '--filter', 'label=com.docker.compose.project='+project):
         raise OriginalRestartIneligible('original restart refuses a running project container')
 
 
@@ -941,7 +941,8 @@ def verify_all(capture_path, history_dir, **kwargs):
         # Explicit iteration propagates genuine capture-inventory errors.
         legacy = re.compile(r'^(stop-capture|clean-stop-capture|rollback-stop-capture|capture-retry|populate-capture)-[0-9]{8}T[0-9]+Z?\.json$')
         entries = list(history_dir.iterdir())
-        directories = [history_dir] + [p for p in entries if p.name.startswith('rollback-') and stat.S_ISDIR(p.stat().st_mode)]
+        directories = [history_dir] + [p for p in entries if p.name.startswith('rollback-')
+            and not p.name.startswith(('rollback-abort-', 'rollback-load-rehearsal-')) and stat.S_ISDIR(p.stat().st_mode)]
         for directory in directories:
             for path in (entries if directory == history_dir else directory.iterdir()):
                 if path.name.endswith('.quiescence-reference'):
@@ -973,6 +974,7 @@ def main():
     cap.add_argument('--allow-down', action='store_true', help='Candidate teardown only; per-container fresh down evidence')
     route = sub.add_parser('rollback-route'); route.add_argument('snapshot', type=Path); route.add_argument('--project', required=True)
     eligible = sub.add_parser('original-eligible'); eligible.add_argument('snapshot', type=Path); eligible.add_argument('--project', required=True)
+    eligible.add_argument('--allow-running', action='store_true', help='Abort before rotation only; exact original IDs still mandatory')
     ext = sub.add_parser('extend'); ext.add_argument('capture',type=Path); ext.add_argument('output',type=Path)
     ext.add_argument('--snapshot',type=Path); ext.add_argument('--source',action='append',default=[])
     original = sub.add_parser('original-override'); original.add_argument('capture',type=Path); original.add_argument('output',type=Path); original.add_argument('--upgrade-id',required=True); original.add_argument('--candidate-capture',type=Path,required=True)
@@ -986,8 +988,8 @@ def main():
     elif args.command == 'rollback-route':
         report = dict(outcome='PASS', **rollback_route(args.snapshot,args.project))
     elif args.command == 'original-eligible':
-        original_eligible(args.snapshot,args.project)
-        report = dict(outcome='PASS', assurance='Exactly the stopped original container IDs exist; no copy authorized')
+        original_eligible(args.snapshot,args.project,allow_running=args.allow_running)
+        report = dict(outcome='PASS', assurance='Exactly the original container IDs exist'+('' if args.allow_running else ' and are stopped')+'; no copy authorized')
     elif args.command == 'extend':
         extend_capture(args.capture,args.output,args.snapshot,args.source)
         report = dict(outcome='PASS', assurance='Sources added; verify remains mandatory before use')

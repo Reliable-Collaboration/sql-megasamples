@@ -176,7 +176,7 @@ interval**; record the coordinator's maintenance hold in the private receipt.
 Leave the LAN socket-proxy services running. Never stop an unidentified host unit.
 The Compose services declare `restart: unless-stopped`; prevent automatic restarts
 on only the complete recorded project list, and repeat this scoped step after any
-candidate/original recreation before another capture/copy:
+candidate/original recreation before another capture/copy.
 
 The guarded “pause restart automation” block in the cutover below records each
 policy and refuses before capture if any scoped update fails. Repeat that block
@@ -420,10 +420,16 @@ docker compose -p sql-megasamples -f compose.yaml ps --services --status running
 # Retain it privately before any client-image or catalogue refresh; stop it for a consistent copy.
 if podman container exists megasamples-cloudbeaver; then
   CB_WAS_RUNNING=$(podman inspect -f '{{.State.Running}}' megasamples-cloudbeaver)
-  if test "$CB_WAS_RUNNING" = true; then podman stop megasamples-cloudbeaver; fi
+  if test "$CB_WAS_RUNNING" = true; then
+    TEARDOWN_PHASE=preparation-workspace-stop; save_context
+    podman stop megasamples-cloudbeaver
+  fi
   podman cp megasamples-cloudbeaver:/opt/cloudbeaver/workspace "$BACKUP_DIR/cloudbeaver-workspace"
   chmod 700 "$BACKUP_DIR/cloudbeaver-workspace"
-  if test "$CB_WAS_RUNNING" = true; then podman start megasamples-cloudbeaver; fi
+  if test "$CB_WAS_RUNNING" = true; then
+    TEARDOWN_PHASE=preparation-workspace-start; save_context
+    podman start megasamples-cloudbeaver
+  fi
 fi
 : > "$BACKUP_DIR/rollback-image-tags.txt"
 for service in postgres mysql sqlite landing cloudbeaver dbgate adminer phpmyadmin; do
@@ -695,6 +701,7 @@ partial rollback stop. All captures remain required at the later copy gate.
 ```sh
 # BEGIN partial stop retry
 case "$TEARDOWN_PHASE" in stop|rollback-stop) :;; *) exit 2;; esac
+save_context
 PARTIAL_ID=$(date -u +%Y%m%dT%H%M%S%N)
 if stop_project >> "$EVIDENCE_DIR/partial-stop-$PARTIAL_ID.log" 2>&1; then
   printf '0\n' > "$EVIDENCE_DIR/partial-stop-$PARTIAL_ID.exit-code"
@@ -753,6 +760,8 @@ case "$RECOVER_ENGINE" in
   *) echo 'STOP: select postgres or mysql for clean-stop recovery.'; exit 1;;
 esac
 python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" --service "$RECOVER_ENGINE"
+TEARDOWN_PHASE=original-clean-starting
+save_context
 docker compose -p sql-megasamples -f compose.yaml start "$RECOVER_ENGINE"
 python3 "$UPGRADE_HELPER" wait-healthy "$RECOVER_ENGINE" --timeout 300
 TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
@@ -844,10 +853,14 @@ if test -f "$CONFIG_DIR/.env"; then cp "$CONFIG_DIR/.env" .env; chmod 600 .env; 
 if test -d .venv; then mv .venv "$ATTEMPT_DIR/aborted-venv"; fi
 if test -d "$BACKUP_DIR/python-venv"; then cp -a "$BACKUP_DIR/python-venv" .venv; fi
 if test -n "$TEARDOWN_SNAPSHOT"; then
-  # Original recovery checks must already have passed; recheck state and ports.
+  # Before rotation, a pause/capture HOLD may leave some or all originals running.
+  # Exact IDs remain mandatory; no copy is authorized by this abort gate.
+  python3 "$EVIDENCE_DIR/quiescence.py" original-eligible "$TEARDOWN_SNAPSHOT" \
+    --project sql-megasamples --allow-running
+  CONTEXT_FILE="$ATTEMPT_DIR/resume-context.bash"
+  TEARDOWN_PHASE=originals-restarting
+  save_context
 # BEGIN abort original start
-  python3 "$UPGRADE_HELPER" exited "$TEARDOWN_SNAPSHOT" \
-    "$ATTEMPT_DIR/abort-restart-$ABORT_ID.json" --phase original-restart
   python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" \
     --allow-running-project sql-megasamples --services-file "$BACKUP_DIR/original-running-services.txt"
   set --
@@ -859,6 +872,17 @@ if test -n "$TEARDOWN_SNAPSHOT"; then
       *" $engine "*) python3 "$UPGRADE_HELPER" wait-healthy "$engine" --timeout 300 ;;
     esac
   done
+AUTOMATION_ID=$(date -u +%Y%m%dT%H%M%S%N)
+AUTOMATION_IDS=$(podman ps -aq --no-trunc --filter label=com.docker.compose.project=sql-megasamples)
+test -n "$AUTOMATION_IDS"
+for id in $AUTOMATION_IDS; do
+  podman inspect -f '{{.Id}}|{{.Name}}|{{.HostConfig.RestartPolicy.Name}}' "$id" \
+    >> "$ATTEMPT_DIR/restored-restart-policy-$AUTOMATION_ID.txt"
+  if podman update --restart=unless-stopped "$id" >> "$ATTEMPT_DIR/restored-restart-policy-$AUTOMATION_ID.log" 2>&1; then :;
+  else POLICY_RC=$?; echo 'HOLD: restart policy restoration failed; keep maintenance hold.'; exit "$POLICY_RC"; fi
+done
+  TEARDOWN_PHASE=originals-restarted
+  save_context
 # END abort original start
 fi
 # Before any stop attempt, leave the still-running original containers alone.
@@ -1032,6 +1056,8 @@ chmod 600 .env
 # Render the corrected credential wiring; all consoles and engines are still stopped.
 ms_tool make compose PY="$MEGASAMPLES_PY" </dev/null
 # Clear the shared SQLite copy only after its verified cold backup. Retain old anonymous volumes.
+TEARDOWN_PHASE=candidate-starting
+save_context
 docker compose -p sql-megasamples -f compose.yaml run --rm --no-deps -T --entrypoint sh sqlite -c \
   'rm -f /shared/*.sqlite /shared/*.sqlite-wal /shared/*.sqlite-shm /shared/*.sqlite-journal'
 # Use the imported images with fresh anonymous data copies. Never rebuild in this cutover step.
@@ -1419,7 +1445,10 @@ Start a fresh coordinator Bash shell with `bash --noprofile --norc` **before**
 pasting the block below. Set `BACKUP_DIR` from the private receipt, `REVIEWED_CHECKOUT`
 to the reviewed corrected source, and `UPGRADE_TOOLS_CONTAINER` to the retained
 host-network tools container. The bootstrap applies to both old and new backups.
-It writes only into a **new** attempt directory and refuses reuse. Existing backup
+It writes retained evidence only into a **new** attempt directory and refuses reuse.
+A temporary route report is allocated under `build/` before the port gate; a
+refusal removes it through an EXIT trap, while a completed selection moves it
+into the attempt. Existing backup
 files may all be read-only; the backup directory itself needs permission to add the
 new attempt directory. A completely read-only directory refuses allocation without
 changing any input. No permission bypass or host change is prescribed.
@@ -1482,6 +1511,7 @@ fi
 BOOTSTRAP_ROUTE=ordinary-capture
 # Keep route evidence even if selection HOLDs before ordinary allocation.
 BOOTSTRAP_REPORT=
+trap 'if test -n "$BOOTSTRAP_REPORT"; then rm -f -- "$BOOTSTRAP_REPORT"; fi' EXIT
 if test -f "$BACKUP_DIR/original-stop.json"; then
   mkdir -p build
   BOOTSTRAP_REPORT=$(mktemp "$PWD/build/rollback-route.XXXXXXXX.json")
@@ -1581,7 +1611,8 @@ backups lacking that ID evidence cannot use the exact-original route. A down-sta
 capture is distinct from pre-stop history: every listed container is freshly
 inspected as not running/PID 0 and searched by full ID across the cgroup tree.
 Absent groups after a completed search and present empty groups (threads included)
-are evidence; an error is HOLD, a live task REFUSE. Verification repeats these
+are evidence; required inspection errors HOLD, a live task REFUSE. ENOENT/ENODEV
+on unrelated directories that do not name a recorded container are tolerated. Verification repeats these
 checks and refuses a container started since capture. Full/partial removal is
 supported. A never-created/missing placeholder has no container ID: the complete
 project listing proves absence, and the record explicitly says no historical
@@ -1631,7 +1662,7 @@ rollback: it restores the new image contents, including the added datasets.
 ```sh
 # BEGIN rollback route dispatch
 case "${TEARDOWN_PHASE:-}" in
-  originals-restarted|rollback-starting|rollback-restored)
+  originals-restarting|original-clean-starting|originals-restarted|rollback-starting|rollback-restored)
     echo 'HOLD: originals have begun restart; use the partial-original-restart procedure or completed validation.'
     exit 2 ;;
 esac
@@ -1695,6 +1726,15 @@ while IFS= read -r service; do
     printf 'HOLD: console %s stays stopped; its port is occupied.\n' "$service"
   fi
 done < "$BACKUP_DIR/original-running-services.txt"
+AUTOMATION_ID=$(date -u +%Y%m%dT%H%M%S%N)
+AUTOMATION_IDS=$(podman ps -aq --no-trunc --filter label=com.docker.compose.project=sql-megasamples)
+test -n "$AUTOMATION_IDS"
+for id in $AUTOMATION_IDS; do
+  podman inspect -f '{{.Id}}|{{.Name}}|{{.HostConfig.RestartPolicy.Name}}' "$id" \
+    >> "$ATTEMPT_DIR/restored-restart-policy-$AUTOMATION_ID.txt"
+  if podman update --restart=unless-stopped "$id" >> "$ATTEMPT_DIR/restored-restart-policy-$AUTOMATION_ID.log" 2>&1; then :;
+  else POLICY_RC=$?; echo 'HOLD: restart policy restoration failed; keep maintenance hold.'; exit "$POLICY_RC"; fi
+done
 TEARDOWN_PHASE=originals-restarted
 save_context
 # END retained original restart
