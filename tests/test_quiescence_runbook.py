@@ -420,7 +420,7 @@ RECOVER_ENGINE=postgres
             fresh='. "$CONTEXT"\npython3() { echo UNSAFE; return 49; }; stop_project() { echo UNSAFE; }\n'
             fresh+=block('# BEGIN '+check+'\n','# END '+check)+'\necho UNSAFE_TEARDOWN\n'
             resumed=subprocess.run(['bash','-eu','-c',fresh],env=env,capture_output=True,text=True)
-            assert resumed.returncode!=0 and 'UNSAFE' not in resumed.stdout,(route,check,resumed.stdout,resumed.stderr)
+            assert resumed.returncode=={'rollback route dispatch':2,'four checks':1,'partial stop retry':2}[check] and 'UNSAFE' not in resumed.stdout,(route,check,resumed.stdout,resumed.stderr)
     finally:server.close()
 
 
