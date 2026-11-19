@@ -735,27 +735,36 @@ review, acceptance and merge remain separate.
 
 ### Follow-up review round 1: C1 through C5
 
-C1 gives each destructive fenced paste block its own `set -eu`. The class is:
+C1 and round-two D2 give each whole destructive fenced paste block its own
+`set -eu`. The widened class includes any `rm` form, `system migrate/reset`,
+`stop`, `down`, forced replacement and copies into data volumes:
 
 | Paste block | Destructive operation | Strict entry |
 |---|---|---|
-| Preparation and archive rehearsal | scratch `image rm`, `system migrate` | first command in fence |
+| Preparation and archive rehearsal | workspace stop; scratch `image rm`, `system migrate` | first command in fence |
 | Failed scratch cleanup | scratch `image rm`, `system migrate` | first command inside subshell |
+| Partial stop retry | `stop_project` | first command in fence |
+| Original clean stop | Compose `stop` | first command in fence |
 | Abort preparation | absent original `.env` removal | first command in fence |
-| Final backups, stop and candidate start | SQLite shared-file removal | first command in fence |
+| Final backups, stop and candidate start | stop, data copy, SQLite shared-file removal, forced replacement | first command in fence |
 | Rollback bootstrap | temporary bootstrap report removal in trap | first command in fence |
 | Rollback route dispatch | absent original `.env` removal | first command in fence |
-| Rollback stop, down and restore | Compose `down`, absent original `.env` removal | first command in fence |
+| Rollback stop, down and restore | stop, Compose `down`, absent original `.env` removal | first command in fence |
+| Rollback population and cold start | copy into attempt volumes, console forced replacement | first command in fence |
+| Unchanged-volume recovery | engine and console forced replacement | first command in fence |
+| Marker continuations within these fences | including `pre-down`, `restore`, `cold-copy`, population and pre-up | context-strict: documented fresh-shell entry sources the saved context, whose first command is `set -eu` |
 
-There is no executable `volume rm` in this runbook. The class test discovers
-these fences from their commands and executes their strict entry and each
-standalone `test` guard under plain `bash -c`, using failing guard and destructive
-command fixtures. Explicit status dispatch remains covered by the fragment
-fixtures. The complete manual cleanup also runs in plain Bash against path,
-nested-path, escaping-symlink, both missing-configuration, graph-root,
-listing-error, non-empty-listing, pause-enumeration and unset-path failures.
-No removal or migrate call follows a failed guard. Each fence has a separate
-strictness-removal control.
+There is no executable `volume rm` or `system reset` in this runbook. Discovery
+also recognizes `rm -rf` and `podman rm` for future fences. A plain `bash -c`
+fixture sources a context produced by the real `save_context` and independently
+checks that a failed command and an unset variable both stop execution. Marker
+fragments rely on this mechanical entry; they are not independent paste blocks.
+The complete manual cleanup also runs in plain Bash against path, nested-path,
+escaping-symlink, both missing-configuration, graph-root, listing-error,
+non-empty-listing, pause-enumeration and unset-path failures.
+The whole cold-start and unchanged-volume fences run under plain `bash -c` with
+state, port and each engine-health gate rejecting in turn. No engine recreation
+follows a rejected state/port gate; no console starts after rejected engine health.
 
 C2 removes named attribution from the follow-up receipt and checks whole files
 changed by this PR against the fixed base. Pre-existing dataset provenance in

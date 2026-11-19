@@ -787,6 +787,7 @@ with a snapshot of the partly stopped project. This route also applies to a
 partial rollback stop. All captures remain required at the later copy gate.
 
 ```sh
+set -eu
 # BEGIN partial stop retry
 case "$TEARDOWN_PHASE" in stop|rollback-stop) :;; *) exit 2;; esac
 save_context
@@ -840,6 +841,7 @@ with a fresh snapshot and original-stop gate. The 300-second bounds are maintena
 choices, not measured guarantees.
 
 ```sh
+set -eu
 # BEGIN original clean stop
 : "${RECOVER_ENGINE:?Set the diagnosed original engine}"
 case "$RECOVER_ENGINE" in
@@ -2011,6 +2013,7 @@ the extraction parent stays private. Check console bind-tree readability before 
 For exact preservation of application writes, create four **new** named rollback volumes (the three engine data directories and SQLite shared files), populate them from the cold copies while no database has them open, and attach them to the original image IDs. The backup loop resolves the actual source of each stopped data mount and copies it without changing ownership. Both backup and restore run `cp -a` inside the native rootless user namespace ([unshare reference](https://docs.podman.io/en/latest/markdown/podman-unshare.1.html), read 2026-11-16 21:05 UTC); this command is unavailable through a remote Podman client. The cold files may require `podman unshare` to inspect because their subordinate UID/GID ownership is retained. Use a Compose override, leaving original volumes untouched:
 
 ```sh
+set -eu
 # BEGIN rollback population
 # Save BEFORE creating or filling any volume. A partial copy resumes here only.
 TEARDOWN_PHASE=rollback-populate
@@ -2242,6 +2245,7 @@ or unreadable copy evidence does not bar this route. Changed original data must
 be resolved independently; never start an old binary on candidate data.
 
 ```sh
+set -eu
 # BEGIN unchanged volume recovery
 : "${ORIGINAL_CAPTURE:?Set retained original pre-upgrade data capture}"
 RECOVERY_ID=$(date -u +%Y%m%dT%H%M%S%N)
