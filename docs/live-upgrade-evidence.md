@@ -775,8 +775,11 @@ route-report path on refusal; the fixture permits that bounded cleanup and
 rejects subsequent data/store operations or starts. The full manual-cleanup
 fixture remains separate.
 The whole cold-start and unchanged-volume fences run under plain `bash -c` with
-state, port and each engine-health gate rejecting in turn. No engine recreation
-follows a rejected state/port gate; no console starts after rejected engine health.
+restart snapshot, exited-state, initial port, CloudBeaver port and each
+engine-health gate rejecting in turn. No engine recreation follows a rejected
+initial state/port gate; no console starts after rejected engine health. A failed
+later CloudBeaver port gate prevents its recreation/start, preserving earlier
+successful starts.
 
 C2 removes named attribution from the follow-up receipt. Round-two D1 limits the
 whole-file attribution check to `docs/live-upgrade-evidence.md` and
