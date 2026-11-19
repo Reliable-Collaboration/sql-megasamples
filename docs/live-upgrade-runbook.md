@@ -144,15 +144,15 @@ attempt. Keep failed candidate volumes and original cold copies unchanged.
 Every recorded engine **and** console is a row in this table. PID/running checks
 are independent of status and exit code. An OOM is checked independently of 137.
 
-| Observed state | (a) Originals before cold copy: PostgreSQL / MySQL | (a) SQLite | (a) Consoles | (b) Candidate teardown; (c) before original `up` | Originals restart on unchanged volumes (abort / clean-stop recovery) | (c) After original `up`, selected services |
-|---|---|---|---|---|---|---|
-| running | Refuse | Refuse | Refuse | Refuse | Refuse | Pass: PID positive, no OOM |
-| created (never started), PID 0 | Refuse | Refuse | Pass | Pass, record | Pass, record | Refuse |
-| exited 0, PID 0 | Pass | Pass | Pass | Pass, record | Pass, record | Refuse |
-| exited 137, PID 0 | Refuse | Pass, expected | Pass | Pass, record | Pass, record | Refuse |
-| exited other, PID 0 | Refuse | Refuse | Pass | Pass, record | Pass, record | Refuse |
-| OOM-killed, PID 0 (any exit) | Refuse | Refuse | Refuse | Pass, record | Pass, record | Refuse |
-| missing | Refuse | Refuse | Refuse | Pass, record missing | Refuse | Refuse |
+| Observed state | (a) Originals before cold copy: PostgreSQL / MySQL | (a) SQLite | (a) Consoles | (b) Candidate teardown; (c) before original `up` | Early abort on unchanged volumes | Clean-stop recovery on unchanged volumes | (c) After original `up`, selected services |
+|---|---|---|---|---|---|---|---|
+| running | Refuse | Refuse | Refuse | Refuse | Pass only with exact original IDs and unchanged mounts | Refuse | Pass: PID positive, no OOM |
+| created (never started), PID 0 | Refuse | Refuse | Pass | Pass, record | Pass, record | Pass, record | Refuse |
+| exited 0, PID 0 | Pass | Pass | Pass | Pass, record | Pass, record | Pass, record | Refuse |
+| exited 137, PID 0 | Refuse | Pass, expected | Pass | Pass, record | Pass, record | Pass, record | Refuse |
+| exited other, PID 0 | Refuse | Refuse | Pass | Pass, record | Pass, record | Pass, record | Refuse |
+| OOM-killed, PID 0 (any exit) | Refuse | Refuse | Refuse | Pass, record | Pass, record | Pass, record | Refuse |
+| missing | Refuse | Refuse | Refuse | Pass, record missing | Refuse | Refuse | Refuse |
 
 SQLite's PID 1 is `sleep infinity` (`megasamples/engines/sqlite/__init__.py`),
 which needs SIGKILL on stop; its observed 137 needs no crash-consistency acknowledgment.
