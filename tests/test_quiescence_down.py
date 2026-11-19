@@ -177,3 +177,14 @@ def test_positive_down_conmon_refuses_even_when_descriptors_unreadable(down,monk
     assert any(r['reason']=='positively associated down helper survives' for r in report['refusals'])
     monkeypatch.setattr(Path,'iterdir',listing);monkeypatch.setattr(gate,'pod',original_pod);shutil.rmtree(p)
     assert gate.verify(out,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+
+
+@pytest.mark.parametrize('unreadable',['snapshot','state'])
+def test_rollback_route_holds_unreadable_required_original_evidence(down,monkeypatch,unreadable):
+    snap,out,proc,cg,data=down
+    original=gate.pod
+    if unreadable=='snapshot':snap.write_text('{broken')
+    else:
+        monkeypatch.setattr(gate,'pod',lambda *a:'incomplete state' if a[0]=='inspect' else original(*a))
+    with pytest.raises(ValueError,match='original restart evidence unreadable'):
+        gate.rollback_route(snap,'project')

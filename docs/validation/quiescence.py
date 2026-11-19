@@ -199,18 +199,31 @@ def container_exists(identity):
         return False
 
 
+class OriginalRestartIneligible(ValueError):
+    """Readable evidence selects another route; inspection errors never do."""
+
+
 def original_eligible(snapshot, project):
-    saved = json.loads(snapshot.read_text())
-    ids = {r['id'] for r in saved['containers'] if r.get('id')}
+    try:
+        saved = json.loads(snapshot.read_text())
+        ids = {r['id'] for r in saved['containers'] if r.get('id')}
+    except (ValueError, KeyError, TypeError) as error:
+        raise ValueError('original restart evidence unreadable') from error
     listed = set(pod('ps', '-aq', '--no-trunc', '--filter', 'label=com.docker.compose.project='+project).split())
     if not ids or any(not r.get('id') for r in saved['containers']) or listed != ids:
-        raise ValueError('original restart requires exactly the retained original IDs')
+        raise OriginalRestartIneligible('original restart requires exactly the retained original IDs')
     for identity in ids:
-        found, running, pid = pod('inspect', '-f', '{{.Id}}|{{.State.Running}}|{{.State.Pid}}', identity).split('|')
-        if found != identity or running != 'false' or int(pid) != 0:
-            raise ValueError('original restart requires stopped original containers')
+        try:
+            found, running, pid = pod('inspect', '-f', '{{.Id}}|{{.State.Running}}|{{.State.Pid}}', identity).split('|')
+            pid = int(pid)
+            if running not in ('true','false') or pid < 0:
+                raise ValueError('invalid container state')
+        except ValueError as error:
+            raise ValueError('original restart evidence unreadable') from error
+        if found != identity or running != 'false' or pid != 0:
+            raise OriginalRestartIneligible('original restart requires stopped original containers')
     if pod('ps', '-q', '--filter', 'label=com.docker.compose.project='+project):
-        raise ValueError('original restart refuses a running project container')
+        raise OriginalRestartIneligible('original restart refuses a running project container')
 
 
 def rollback_route(snapshot, project):
@@ -220,7 +233,7 @@ def rollback_route(snapshot, project):
         try:
             original_eligible(snapshot, project)
             return dict(route='original-restart')
-        except ValueError:
+        except OriginalRestartIneligible:
             pass
     return dict(route='down-capture')
 
