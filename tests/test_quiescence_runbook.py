@@ -261,5 +261,55 @@ podman() { case "$1" in ps) echo fixture;; inspect) echo 'fixture|engine|unless-
 '''+block('# BEGIN pause restart automation\n','# END pause restart automation')+'\necho UNSAFE_CAPTURE\n'
         result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
         assert result.returncode==37 and 'UNSAFE_CAPTURE' not in result.stdout
-        assert block('# BEGIN restore restart automation\n','# END restore restart automation')
+        restore='. "$CONTEXT"\n'+r'''
+podman() {
+ case "$1" in
+ ps) echo fixture;; inspect) echo 'fixture|engine|no';;
+ update) printf '%s\n' "$*" >> "$EVIDENCE_DIR/policy-updates"; return "$RESTORE_RC";;
+ esac
+}
+'''+block('# BEGIN restore restart automation\n','# END restore restart automation')+'\necho RESTORED\n'
+        for code in (0,37):
+            restored=subprocess.run(['bash','-eu','-c',restore],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash'),RESTORE_RC=str(code)),capture_output=True,text=True)
+            assert restored.returncode==code,restored.stderr
+            assert ('RESTORED' in restored.stdout)==(code==0)
+        assert (tmp_path/'evidence/policy-updates').read_text().splitlines()==['update --restart=unless-stopped fixture']*2
+    finally:server.close()
+
+
+@pytest.mark.parametrize('route',['abort-running','abort-stopped','exact-restart'])
+def test_original_recovery_restores_restart_policy_even_after_capture_hold(tmp_path,route):
+    server=context(tmp_path,'stop' if route.startswith('abort') else 'rollback-stop')
+    backup=tmp_path/'retained';attempt=tmp_path/'attempt';checkout=tmp_path/'checkout'
+    checkout.mkdir();(checkout/'consoles').mkdir()
+    config=attempt/'configuration';(config/'consoles').mkdir(parents=True)
+    for name in ('.env','compose.yaml','megasamples.yaml'):(config/name).write_text('# fixture\n')
+    (backup/'original-running-services.txt').write_text('postgres\nmysql\n')
+    (backup/'rollback-branch.txt').write_text('original');(backup/'original-commit.txt').write_text('fixture')
+    # Aborting before rotation reuses the preparation context and verifies exact
+    # originals even if pause/capture failed while they were still running.
+    script='. "$CONTEXT"\ncd "$CHECKOUT"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"\n'+r'''
+python3() {
+  if test "$1" = -; then command python3 "$@"; return; fi
+  if test "$ROUTE" = abort-running && test "$2" = exited; then return 37; fi
+}
+git() { if test "$1" = rev-parse; then echo fixture; fi; }
+sha256sum() { :; }
+docker() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/started"; }
+podman() { case "$1" in ps) echo fixture;; inspect) echo 'fixture|engine|no';; update) printf '%s\n' "$*" >> "$EVIDENCE_DIR/policies";; esac; }
+cp() { if test "${1-}" != -a || test "${2-}" != consoles; then command cp "$@"; fi; }
+'''
+    if route.startswith('abort'):
+        # Allocation itself is not under test here; the real extraction fixture
+        # exists and the original preparation context is reused unmodified.
+        script+='ABORT_ID=fixture\n'
+        fragment=block('# BEGIN abort preparation\n','# END abort preparation')
+        fragment=fragment.replace('. "$BACKUP_DIR/resume-context.bash"','. "$CONTEXT"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"')
+        fragment=fragment.replace('ATTEMPT_DIR="$BACKUP_DIR/rollback-abort-$ABORT_ID"',': # fixture extraction already allocated')
+    else:fragment=block('# BEGIN retained original restart\n','# END retained original restart')
+    try:
+        result=subprocess.run(['bash','-eu','-c',script+fragment],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash'),CHECKOUT=str(checkout),ROUTE=route),capture_output=True,text=True)
+        assert result.returncode==0,result.stdout+result.stderr
+        assert 'start' in (tmp_path/'evidence/started').read_text()
+        assert (tmp_path/'evidence/policies').read_text().splitlines()==['update --restart=unless-stopped fixture']
     finally:server.close()

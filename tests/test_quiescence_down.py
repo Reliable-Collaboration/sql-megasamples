@@ -226,6 +226,21 @@ def test_recorded_cgroup_vanish_error_holds(down,monkeypatch):
     assert any(r['reason']=='down cgroup evidence unreadable' for r in report['holds'])
 
 
+@pytest.mark.parametrize('change',['none','extra','replaced','malformed'])
+def test_abort_allows_running_exact_originals_but_requires_identity(down,monkeypatch,change):
+    snap,out,proc,cg,data=down
+    original=gate.pod
+    def pod(*args):
+        if args[0]=='ps':return 'test other' if change=='extra' else 'test'
+        if args[0]=='inspect':return {'replaced':'other|true|12349','malformed':'test|true|0'}.get(change,'test|true|12349')
+        return original(*args)
+    monkeypatch.setattr(gate,'pod',pod)
+    if change=='none':gate.original_eligible(snap,'project',allow_running=True)
+    else:
+        with pytest.raises(ValueError,match='original restart'):
+            gate.original_eligible(snap,'project',allow_running=True)
+
+
 def test_mixed_capture_states_its_down_evidence_limit(down):
     snap,out,proc,cg,data=down
     assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'

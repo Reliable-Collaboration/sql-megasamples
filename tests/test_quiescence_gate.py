@@ -103,6 +103,19 @@ def test_historical_mixed_generation_does_not_own_current_listing(fixture,monkey
         assert all('capture' not in row for row in report['holds'])
 
 
+def test_history_does_not_list_load_rehearsal_or_abort_directories(fixture,monkeypatch):
+    saved,proc,cg,data,path,verify=fixture
+    verify()
+    irrelevant=[data.parent/name for name in ('rollback-load-rehearsal-fixture','rollback-abort-fixture')]
+    for directory in irrelevant:directory.mkdir()
+    original=Path.iterdir
+    def denied(directory):
+        if directory in irrelevant:raise PermissionError('not a capture location')
+        return original(directory)
+    monkeypatch.setattr(Path,'iterdir',denied)
+    assert gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+
+
 @pytest.mark.parametrize('role,reason',[('process','recorded process survives'),('conmon','recorded process survives'),('dedicated helper','dedicated helper survives')])
 def test_recorded_survivor_refuses_with_reversal(fixture,role,reason):
     saved,proc,cg,data,path,verify=fixture
