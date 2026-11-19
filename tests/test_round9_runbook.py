@@ -99,3 +99,14 @@ def test_empty_original_listing_still_refuses_policy_pause(tmp_path):
         assert result.returncode != 0 and 'UNSAFE' not in result.stdout
     finally:
         server.close()
+
+
+def test_rollback_policy_pause_is_a_separate_guarded_step():
+    text = RUNBOOK.read_text().split('## Roll back', 1)[1]
+    # Pasting the dispatch/input block must end before capture or stop.
+    before_capture = text.split('# Stop candidates BEFORE down', 1)[0]
+    after_inputs = before_capture.split('# END rollback input verification', 1)[1]
+    assert '```\n' in after_inputs and after_inputs.rstrip().endswith('```sh')
+    prose = after_inputs.split('```\n', 1)[1].rsplit('```sh', 1)[0]
+    assert 'guarded' in prose and 'pause restart automation' in prose
+    assert 'before' in prose and 'capture' in prose
