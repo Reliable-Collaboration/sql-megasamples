@@ -79,10 +79,11 @@ def test_recreate_originals_on_retained_unchanged_data_is_not_copy_gated(tmp_pat
     server=context(tmp_path,'rollback-down')
     try:
         (tmp_path/'retained/original-running-services.txt').write_text('postgres\n')
+        (tmp_path/'retained/rollback-image-tags.txt').write_text('')
         script='. "$CONTEXT"\n'+r'''
 ORIGINAL_CAPTURE=fixture
 PROCESS_RC="$COPY_RC"
-python3() { case "$2" in verify|capture|extend) return "$COPY_RC";; esac; }
+python3() { if test "$1" = -; then command python3 "$@"; else case "$2" in verify|capture|extend) return "$COPY_RC";; esac; fi; }
 docker() { printf 'recreated %s\n' "$*"; }
 '''+block('# BEGIN unchanged volume recovery\n','# END unchanged volume recovery')
         result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash'),COPY_RC=str(copy_rc)),capture_output=True,text=True)
@@ -163,4 +164,32 @@ python3() { case "$2" in capture) exit 47;; esac; }
         assert result.returncode==0,result.stderr
         assert (tmp_path/'evidence/calls').exists(), 'guarded partial stop was not executed'
         assert (tmp_path/'evidence/calls').read_text()=='stopped\n'
+    finally:server.close()
+
+
+def test_unchanged_recovery_restores_saved_consoles_and_workspace_before_start(tmp_path):
+    server=context(tmp_path,'rollback-down')
+    backup=tmp_path/'retained'
+    (backup/'original-running-services.txt').write_text('postgres\nsqlite\ncloudbeaver\nlanding\n')
+    (backup/'rollback-image-tags.txt').write_text('localhost/sql-megasamples-cloudbeaver:rollback-fixture\nlocalhost/sql-megasamples-landing:rollback-fixture\n')
+    workspace=backup/'cloudbeaver-workspace-final';workspace.mkdir();(workspace/'saved-query').write_text('select 42;')
+    try:
+        script='. "$CONTEXT"\n'+r'''
+ORIGINAL_CAPTURE=fixture
+python3() { case "$1" in -) command python3 "$@";; esac; }
+docker() { printf 'compose %s\n' "$*" >> "$EVIDENCE_DIR/order"; }
+podman() { printf 'podman %s\n' "$*" >> "$EVIDENCE_DIR/order"; }
+'''+block('# BEGIN unchanged volume recovery\n','# END unchanged volume recovery')
+        result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
+        assert result.returncode==0,result.stderr
+        calls=(tmp_path/'evidence/order').read_text().splitlines()
+        stopped=next(i for i,r in enumerate(calls) if 'up --no-start' in r and r.endswith('cloudbeaver'))
+        copied=next(i for i,r in enumerate(calls) if 'podman cp ' in r and 'cloudbeaver-workspace-final/.' in r)
+        started=next(i for i,r in enumerate(calls) if 'up -d' in r and r.endswith('cloudbeaver'))
+        assert stopped < copied < started
+        assert all('rollback-consoles.override.json' in r for r in calls if r.startswith('compose '))
+        import json
+        images=json.loads((tmp_path/'attempt/rollback-consoles.override.json').read_text())['services']
+        assert images['cloudbeaver']['image']=='localhost/sql-megasamples-cloudbeaver:rollback-fixture'
+        assert images['landing']['pull_policy']=='never'
     finally:server.close()

@@ -1984,6 +1984,17 @@ python3 "$UPGRADE_HELPER" exited "$ATTEMPT_DIR/unchanged-before-$RECOVERY_ID.jso
   "$ATTEMPT_DIR/unchanged-state-$RECOVERY_ID.json" --phase restart-before
 python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" \
   --services-file "$BACKUP_DIR/original-running-services.txt"
+# Select saved console image IDs for this recovery too.
+python3 - "$BACKUP_DIR" "$UPGRADE_ID" "$ATTEMPT_DIR" <<'PY_CONSOLE_ROLLBACK'
+import json, pathlib, sys
+backup=pathlib.Path(sys.argv[1]); upgrade=sys.argv[2]
+names={"landing", "cloudbeaver", "dbgate", "adminer", "phpmyadmin"}
+services={}
+for line in (backup/'rollback-image-tags.txt').read_text().splitlines():
+    name=line.split('/sql-megasamples-',1)[1].split(':',1)[0]
+    if name in names: services[name]={"image":line,"pull_policy":"never"}
+(pathlib.Path(sys.argv[3])/'rollback-consoles.override.json').write_text(json.dumps({"services":services},indent=2)+'\n')
+PY_CONSOLE_ROLLBACK
 set --
 while IFS= read -r service; do
   case "$service" in postgres|mysql|sqlite) set -- "$@" "$service";; esac
@@ -1993,7 +2004,8 @@ TEARDOWN_PHASE=rollback-starting
 save_context
 # Record this exact override path in the maintenance receipt before starting.
 docker compose -p sql-megasamples -f compose.yaml \
-  -f "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" up --no-deps --force-recreate --no-build -d "$@"
+  -f "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" \
+  -f "$ATTEMPT_DIR/rollback-consoles.override.json" up --no-deps --force-recreate --no-build -d "$@"
 for engine in postgres mysql sqlite; do
   case " $* " in
     *" $engine "*) python3 "$UPGRADE_HELPER" wait-healthy "$engine" --timeout 300 ;;
@@ -2001,12 +2013,32 @@ for engine in postgres mysql sqlite; do
 done
 # Only after SQLite has rebuilt the fresh shared volume may consoles start.
 set --
+RESTORE_CLOUDBEAVER=0
 while IFS= read -r service; do
-  case "$service" in postgres|mysql|sqlite) :;; *) set -- "$@" "$service";; esac
+  case "$service" in
+    postgres|mysql|sqlite) :;;
+    cloudbeaver) RESTORE_CLOUDBEAVER=1;;
+    *) set -- "$@" "$service";;
+  esac
 done < "$BACKUP_DIR/original-running-services.txt"
 if test "$#" -gt 0; then
   docker compose -p sql-megasamples -f compose.yaml \
-    -f "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" up --no-deps --force-recreate --no-build -d "$@"
+    -f "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" \
+    -f "$ATTEMPT_DIR/rollback-consoles.override.json" up --no-deps --force-recreate --no-build -d "$@"
+fi
+if test "$RESTORE_CLOUDBEAVER" = 1; then
+  python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" --service cloudbeaver
+  docker compose -p sql-megasamples -f compose.yaml \
+    -f "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" \
+    -f "$ATTEMPT_DIR/rollback-consoles.override.json" up --no-start --no-deps --force-recreate --no-build cloudbeaver
+  CB_WORKSPACE_BACKUP="$BACKUP_DIR/cloudbeaver-workspace-final"
+  if ! test -d "$CB_WORKSPACE_BACKUP"; then CB_WORKSPACE_BACKUP="$BACKUP_DIR/cloudbeaver-workspace"; fi
+  if test -d "$CB_WORKSPACE_BACKUP"; then
+    podman cp "$CB_WORKSPACE_BACKUP/." megasamples-cloudbeaver:/opt/cloudbeaver/workspace/
+  fi
+  docker compose -p sql-megasamples -f compose.yaml \
+    -f "$ATTEMPT_DIR/unchanged-original-data-$RECOVERY_ID.json" \
+    -f "$ATTEMPT_DIR/rollback-consoles.override.json" up -d --no-deps --wait cloudbeaver
 fi
 # END unchanged volume recovery
 ```
