@@ -638,6 +638,11 @@ regression covers matching/different IPv4 and IPv6 addresses, wildcard listeners
 and publications, both with retained containers and after removal. Each positive
 case reverses to PASS on another port. Restoring port-only matching makes the
 eight different-address/family cases fail.
+The endpoint semantics were checked against the
+[Podman publish reference](https://docs.podman.io/en/latest/markdown/podman-run.1.html#publish-p-hostip-hostport-containerport-protocol)
+and the [kernel TCP proc interface](https://www.kernel.org/doc/html/latest/networking/proc_net_tcp.html),
+read **2026-11-19 05:29:31 UTC**. This cites interface behavior, not a new version
+or support claim.
 
 The MySQL README cell and `.env.example` now distinguish the global MySQL read
 grant from PostgreSQL's sample-table grants and remaining `TEMPORARY`, large-object
