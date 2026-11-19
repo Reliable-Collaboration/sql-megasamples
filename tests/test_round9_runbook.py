@@ -159,3 +159,24 @@ podman() { case "$1" in ps) echo exact-original-id;; inspect) echo 'exact-origin
         assert checked.returncode == 0, checked.stderr
     finally:
         server.close()
+
+
+def test_abort_completion_in_fresh_shell_saves_both_canonical_contexts(tmp_path):
+    server = context(tmp_path, 'originals-restarting')
+    env = dict(os.environ, CONTEXT=str(tmp_path/'resume-context.bash'))
+    try:
+        setup = '. "$CONTEXT"\nCONTEXT_FILE="$BACKUP_DIR/resume-context.bash"; save_context\n'
+        setup += 'CONTEXT_FILE="$ATTEMPT_DIR/resume-context.bash"; save_context\n'
+        subprocess.run(['bash', '-eu', '-c', setup], env=env, check=True)
+        completion = 'TEARDOWN_PHASE=originals-restarted\n' + block(
+            '  TEARDOWN_PHASE=originals-restarted\n', '# END abort original start')
+        fresh = subprocess.run(['bash', '-eu', '-c', '. "$1"\n'+completion,
+            'complete-abort', str(tmp_path/'attempt/resume-context.bash')],
+            env={'PATH': os.environ['PATH']}, capture_output=True, text=True)
+        assert fresh.returncode == 0, fresh.stdout + fresh.stderr
+        for path in (tmp_path/'retained/resume-context.bash', tmp_path/'attempt/resume-context.bash'):
+            checked = subprocess.run(['bash', '-eu', '-c',
+                '. "$1"; test "$TEARDOWN_PHASE" = originals-restarted', 'check', str(path)])
+            assert checked.returncode == 0, path
+    finally:
+        server.close()

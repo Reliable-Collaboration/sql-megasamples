@@ -315,10 +315,10 @@ cp() { if test "${1-}" != -a || test "${2-}" != consoles; then command cp "$@"; 
 '''
     if route.startswith('abort'):
         # Allocation itself is not under test here; the real extraction fixture
-        # exists and the original preparation context is reused unmodified.
-        script+='ABORT_ID=fixture\n'
+        # exists. Use the runbook's canonical preparation-context location.
+        script+='ABORT_ID=fixture\nCONTEXT_FILE="$BACKUP_DIR/resume-context.bash"; save_context\n'
         fragment=block('# BEGIN abort preparation\n','# END abort preparation')
-        fragment=fragment.replace('. "$BACKUP_DIR/resume-context.bash"','. "$CONTEXT"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"')
+        fragment=fragment.replace('. "$BACKUP_DIR/resume-context.bash"','. "$BACKUP_DIR/resume-context.bash"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"')
         fragment=fragment.replace('ATTEMPT_DIR="$BACKUP_DIR/rollback-abort-$ABORT_ID"',': # fixture extraction already allocated')
     else:fragment=block('# BEGIN retained original restart\n','# END retained original restart')
     try:
@@ -327,7 +327,7 @@ cp() { if test "${1-}" != -a || test "${2-}" != consoles; then command cp "$@"; 
         assert 'start' in (tmp_path/'evidence/started').read_text()
         assert (tmp_path/'evidence/policies').read_text().splitlines()==['update --restart=unless-stopped fixture']
         if route.startswith('abort'):
-            for saved in (tmp_path/'resume-context.bash', attempt/'resume-context.bash'):
+            for saved in (backup/'resume-context.bash', attempt/'resume-context.bash'):
                 fresh=subprocess.run(['bash','-eu','-c','. "$1"; test "$TEARDOWN_PHASE" = originals-restarted',
                     'completed-abort',str(saved)],capture_output=True,text=True)
                 assert fresh.returncode==0,(saved,fresh.stdout,fresh.stderr)
