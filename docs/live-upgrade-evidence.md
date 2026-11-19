@@ -637,7 +637,8 @@ on the same port at another address is not attributed by that socket. The
 regression covers matching/different IPv4 and IPv6 addresses, wildcard listeners
 and publications, both with retained containers and after removal. Each positive
 case reverses to PASS on another port. Restoring port-only matching makes the
-eight different-address/family cases fail.
+different-address/family cases fail; a separate family-guard removal catches
+cross-family wildcards.
 The endpoint semantics were checked against the
 [Podman publish reference](https://docs.podman.io/en/latest/markdown/podman-run.1.html#publish-p-hostip-hostport-containerport-protocol)
 and the [kernel TCP proc interface](https://www.kernel.org/doc/html/latest/networking/proc_net_tcp.html),
