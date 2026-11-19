@@ -401,7 +401,7 @@ RECOVER_ENGINE=postgres
 '''
     if route=='abort':
         fragment=block('# BEGIN abort preparation\n','# END abort preparation')
-        fragment=fragment.replace('. "$BACKUP_DIR/resume-context.bash"','. "$CONTEXT"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"')
+        fragment=fragment.replace('. "$BACKUP_DIR/resume-context.bash"','. "$CONTEXT"\ncd "$CHECKOUT"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"')
         fragment=fragment.replace('ATTEMPT_DIR="$BACKUP_DIR/rollback-abort-$ABORT_ID"',': # fixture extraction allocated')
     else:fragment=block('# BEGIN original clean stop\n','# END original clean stop')
     env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash'),FAILURE=failure)
