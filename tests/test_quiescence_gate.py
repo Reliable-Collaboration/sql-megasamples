@@ -17,7 +17,7 @@ gate=importlib.util.module_from_spec(SPEC); SPEC.loader.exec_module(gate)
 def fixture(tmp_path,monkeypatch):
     proc=tmp_path/'proc'; proc.mkdir(); cg=tmp_path/'cgroup'; cg.mkdir()
     data=tmp_path/'data'; data.mkdir()
-    saved=dict(schema=1,complete=True,boot_id='boot',project='project',store=dict(graph='graph',run='run'),
+    saved=dict(schema=2,complete=True,boot_id='boot',project='project',store=dict(graph='graph',run='run'),
                containers=[dict(id='test',name='engine',pid=0,running=False,state='exited')],
                processes=[dict(pid=999999999,start='42',comm='exited-server',cgroups=['0::/libpod-original.scope'],role='process')],
                cgroups=[dict(line='0::/libpod-original.scope',device='0:1',inode=1)],sources=[gate.source_identity(data)],shared_helper=None,holds=[])
