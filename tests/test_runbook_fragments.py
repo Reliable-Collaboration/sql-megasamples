@@ -326,6 +326,18 @@ def test_start_boundary_saves_partial_restart_hold(tmp_path):
     finally:
         server.close()
 
+
+def test_api_start_failure_retains_preparation_phase_in_fresh_shell(tmp_path):
+    server=context(tmp_path,'')
+    server.close();(tmp_path/'podman.sock').unlink()
+    text=RUNBOOK.read_text()
+    fragment=text.split('MEGASAMPLES_LIVE_API_PID=\n',1)[1].split('docker version --format',1)[0]
+    script='. "$CONTEXT"\npodman() { return 37; }; sleep() { :; }\n'+fragment
+    result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
+    assert result.returncode!=0
+    fresh=subprocess.run(['bash','-eu','-c','. "$CONTEXT"; test "$PREPARATION_STAGE" = api-start'],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')))
+    assert fresh.returncode==0
+
 @pytest.mark.parametrize('mode',['clean-stop','abort'])
 def test_refused_original_stop_recovery_from_fresh_shell(tmp_path,mode):
     server=context(tmp_path,'stop')
