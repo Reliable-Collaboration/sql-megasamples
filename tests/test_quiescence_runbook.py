@@ -461,3 +461,37 @@ python3() { return 43; }
         assert fresh.returncode==0,fresh.stderr
         assert (tmp_path/'evidence/started').read_text()=='original-cloudbeaver-id\n'
     finally:server.close()
+
+
+def test_partial_stop_checkpoint_is_saved_before_stop_effect(tmp_path):
+    server=context(tmp_path,'stop')
+    try:
+        script='. "$CONTEXT"\nTEARDOWN_ATTEMPT=retry-attempt\n'+r'''
+stop_project() {
+ bash -eu -c '. "$CONTEXT"; test "$TEARDOWN_ATTEMPT" = retry-attempt' || return 49
+ return 37
+}
+'''+block('# BEGIN partial stop retry\n','# END partial stop retry')
+        result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
+        assert result.returncode==37,result.stdout+result.stderr
+    finally:server.close()
+
+
+def test_unchanged_recreation_partial_start_holds_in_fresh_shell(tmp_path):
+    server=context(tmp_path,'rollback-down')
+    (tmp_path/'retained/original-running-services.txt').write_text('postgres\n')
+    (tmp_path/'retained/rollback-image-tags.txt').write_text('')
+    try:
+        script='. "$CONTEXT"\n'+r'''
+ORIGINAL_CAPTURE=fixture
+python3() { if test "$1" = -; then command python3 "$@"; fi; }
+docker() { echo first-start > "$EVIDENCE_DIR/started"; return 37; }
+'''+block('# BEGIN unchanged volume recovery\n','# END unchanged volume recovery')
+        env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash'))
+        failed=subprocess.run(['bash','-eu','-c',script],env=env,capture_output=True,text=True)
+        assert failed.returncode==37 and (tmp_path/'evidence/started').exists(),failed.stdout+failed.stderr
+        for check,status in [('rollback route dispatch',2),('four checks',1)]:
+            fresh='. "$CONTEXT"\npython3() { return 49; }\n'+block('# BEGIN '+check+'\n','# END '+check)
+            resumed=subprocess.run(['bash','-eu','-c',fresh],env=env,capture_output=True,text=True)
+            assert resumed.returncode==status and 'HOLD:' in resumed.stdout,resumed.stdout+resumed.stderr
+    finally:server.close()
