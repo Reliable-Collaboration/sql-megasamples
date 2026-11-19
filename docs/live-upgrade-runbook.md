@@ -558,7 +558,7 @@ python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
   unset CONTAINERS_CONF_OVERRIDE
   # Give this scratch store its own rootless pause process and runtime files.
   export XDG_RUNTIME_DIR="$SCRATCH_DIR/xdg"
-  mkdir -m 700 "$XDG_RUNTIME_DIR"
+  mkdir -m 700 "$XDG_RUNTIME_DIR" "$SCRATCH_DIR/tmp" "$SCRATCH_DIR/run"
   test "$(podman info --format '{{.Store.GraphRoot}}')" = "$SCRATCH_DIR/graph"
   python3 "$UPGRADE_HELPER" load-images "$BACKUP_DIR" > "$SCRATCH_DIR/load.log" 2>&1
   test -z "$(podman ps -aq)"
