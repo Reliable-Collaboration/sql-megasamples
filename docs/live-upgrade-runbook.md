@@ -867,6 +867,8 @@ Restore original source/configuration and start only the originally running cont
 . "$BACKUP_DIR/resume-context.bash"
 # Early workspace recovery needs no archive, ports receipt or stop snapshot.
 case "$TEARDOWN_PHASE" in
+  candidate-starting)
+    echo 'HOLD: password rotation reached; use Roll back, not the preparation abort.'; exit 2 ;;
   preparation-workspace-stop|preparation-workspace-start)
     test "$CB_WAS_RUNNING" = true
     : "${CB_CONTAINER_ID:?Missing recorded CloudBeaver ID; coordinator hold}"
