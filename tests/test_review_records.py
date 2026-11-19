@@ -30,3 +30,20 @@ def test_follow_up_wording_and_listing_record_match_behavior():
     assert '913a380' in evidence and '614ecc3' in evidence
     assert 'positive decimal PID' in runbook and 'malformed PID file holds' in runbook
     assert 'valid PID with no /proc entry is absent on the down route' in runbook
+
+
+def test_attribution_check_uses_only_record_paths_without_git(tmp_path, monkeypatch):
+    import sys
+    module = sys.modules[__name__]
+    records = tmp_path/'docs/validation'
+    records.mkdir(parents=True)
+    (records/'live-upgrade-follow-up-2026-11-19.json').write_text('{}')
+    (tmp_path/'docs/live-upgrade-evidence.md').write_text('Source round and note')
+    knowledge = tmp_path/'knowledge/example.md'
+    knowledge.parent.mkdir()
+    knowledge.write_text('by: claude-code/claude-' + 'fa' + 'ble-example')
+    monkeypatch.setattr(module, 'ROOT', tmp_path)
+    def forbidden_git(*args, **kwargs):
+        raise AssertionError('record attribution must work without Git or a base object')
+    monkeypatch.setattr(subprocess, 'check_output', forbidden_git)
+    test_committed_follow_up_files_do_not_name_reviewers()
