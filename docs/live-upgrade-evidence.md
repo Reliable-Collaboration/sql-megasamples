@@ -569,3 +569,52 @@ The [round-eight receipt](validation/live-upgrade-review-r8-2026-11-19.json)
 records the actual results, failed attempts, removal controls, source/evidence
 hashes and complete isolation inventories. The kernel netns error's cause remains
 unknown; a successful scratch stop/down does not explain the live failures.
+
+### Round-nine rollback continuation corrections
+
+The round-nine authoring-session checks compose dispatch, the restart-policy
+pause and the real down-state capture with every candidate removed. A successful
+empty listing can continue on `down-capture`; listing errors still refuse, and
+empty originals still refuse during the original stop. The Roll back shell block
+ends before the separate guarded pause step, matching the replica's order.
+A completed abort saves `originals-restarted` to both preparation and attempt
+contexts. A first port refusal followed by fresh-shell dispatch completes after
+the port is freed, preserving the retained candidate configuration. The early
+abort names the coordinator hold on missing/replaced/project-mismatched identity.
+Its table describes exact IDs and consistent running/PID state; the eligibility
+gate does not compare mounts. The duplicate clean-stop identity test was removed;
+the separate clean-stop start-failure case remains.
+
+The [round-nine receipt](validation/live-upgrade-review-r9-2026-11-19.json)
+records reds, greens, removal/order controls and isolation. These checks do not
+establish DataIntent acceptance or independent approval of the new head.
+
+Known limits retained for later work:
+
+- **B-2 — dead-at-capture conmon PID reuse.** When conmon is already dead at
+  capture, its PID is lost from the capture. A later process reusing Podman's
+  recorded PID can cause REFUSE or HOLD. This fails safe. Keep the maintenance
+  hold and rerun the gate once the reusing process exits; do not kill an
+  unattributed process to clear the gate. This round does not fix that case.
+- **B-3 — scratch pause walk and failed-rehearsal cleanup.** The stricter
+  pause-PID directory walk has run only against stubbed Podman, not a native
+  rehearsal store. An enumeration failure can leave loaded duplicate images and
+  that store's pause process. There is no automated failure-cleanup route.
+  Manual cleanup, **not run in round nine**: in a fresh strict Bash shell source
+  the isolated `sql-megasamples-upgrade-env/env.sh` and check its storage/socket
+  settings. Select the exact owned failed `rollback-load-rehearsal-*` directory
+  directly under the retained backup; verify that relationship before proceeding.
+  In a subshell select its `storage.conf`, `containers.conf` and `xdg` as
+  `CONTAINERS_STORAGE_CONF`, `CONTAINERS_CONF` and `XDG_RUNTIME_DIR`, and unset
+  `CONTAINERS_CONF_OVERRIDE`, as in the runbook's rehearsal. Verify
+  `podman info --format '{{.Store.GraphRoot}}'` equals `$SCRATCH_DIR/graph`.
+  Assign `SCRATCH_CONTAINERS=$(podman ps -aq)` as a separate command, then
+  `test -z "$SCRATCH_CONTAINERS"`; a listing error or any container holds cleanup.
+  Once enumeration is readable, run the existing `PY_PAUSE_CAPTURE` inventory,
+  then `podman image rm --all --force`, then `podman system migrate`, retaining
+  their logs. Run the existing `PY_PAUSE_CHECK` after the final Podman command;
+  no Podman call follows it. Keep configuration and logs. If inventory or checks
+  still fail, preserve the store for coordinator investigation. Never substitute
+  the default or isolated stack's store, use `system reset`, delete trees blindly
+  or signal a bare PID. This describes manual recovery, not a validated cleanup
+  implementation or native proof of the stricter walk.
