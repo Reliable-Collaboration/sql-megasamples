@@ -34,7 +34,7 @@ def test_destructive_block_is_strict_in_plain_bash(body, tmp_path):
         stubs = '''
 test() { return 73; }
 git() { :; }; cat() { :; }; sed() { :; }
-podman() { case "$1" in info|inspect) :;; *) echo unsafe >> "$MARKER";; esac; }
+podman() { case "$1 $2" in "info --format"|"inspect -f"|"image inspect") :;; *) echo unsafe >> "$MARKER";; esac; }
 rm() { echo unsafe >> "$MARKER"; }
 docker() { echo unsafe >> "$MARKER"; }
 '''
