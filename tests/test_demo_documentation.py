@@ -52,3 +52,14 @@ def test_readme_demo_scope_matches_init_sql(engine):
         mysql_scope(cell)
     else:
         postgres_scope(readme.split('### PostgreSQL\n', 1)[1].split('### SQLite\n', 1)[0])
+
+
+@pytest.mark.parametrize('engine', ['mysql', 'postgres'])
+def test_env_example_demo_scope_matches_init_sql(engine):
+    # Only comments participate in checks and potential failure output.
+    comments = '\n'.join(line for line in text('.env.example', 'DL086_ENV_EXAMPLE_SOURCE').splitlines() if line.startswith('#'))
+    assert 'cannot write anything, anywhere' not in comments
+    if engine == 'mysql':
+        mysql_scope(comments.split('demo (MySQL):', 1)[1].split('demo (PostgreSQL):', 1)[0])
+    else:
+        postgres_scope(comments.split('demo (PostgreSQL):', 1)[1].split('admin ', 1)[0])
