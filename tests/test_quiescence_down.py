@@ -577,9 +577,12 @@ def test_known_absent_conmon_unreadable_reuse_keeps_independent_checks(down, mon
     assert any(row['reason'] == 'live deployment cgroup task' for row in report['refusals'])
     for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('')
     # Source holder checking also remains independent of the ignored birth read.
-    (p/'fd/3').symlink_to(data/'held')
+    source = json.loads(out.read_text())['sources'][0]
+    (p/'mountinfo').write_text(f"1 0 {source['device']} {source['root']} /held-source rw - tmpfs tmpfs rw\n")
+    (p/'fd/3').symlink_to('/held-source/held')
     report = gate.verify(out, proc=proc, cgroup_root=cg)
     assert report['outcome'] == 'REFUSE', report
-    assert any(row['reason'] == 'unattributed source holder' for row in report['refusals'])
+    assert any(row['reason'] == 'recorded data source held' for row in report['refusals'])
     (p/'fd/3').unlink()
+    (p/'mountinfo').write_text('1 0 0:1 / / rw - tmpfs tmpfs rw\n')
     assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
