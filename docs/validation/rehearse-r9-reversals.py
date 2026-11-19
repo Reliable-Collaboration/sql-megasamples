@@ -37,7 +37,7 @@ def main():
     add('AA2 paste-through boundary', boundary, '\n# Pause restart automation here\n',
         prefix+'test_rollback_policy_pause_is_a_separate_guarded_step')
     add('AA3 final preparation context',
-        '  ( CONTEXT_FILE="$PREPARATION_CONTEXT_FILE"; save_context )\n', '',
+        '  ( CONTEXT_FILE="$BACKUP_DIR/resume-context.bash"; save_context )\n', '',
         'tests/test_quiescence_runbook.py::test_original_recovery_restores_restart_policy_even_after_capture_hold[abort-running]')
     add('AA4 first port refusal re-entry',
         '    python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" --service "$engine"\n    TEARDOWN_PHASE=rollback-starting; save_context',
@@ -52,6 +52,10 @@ def main():
         add('AA4 coordinator message '+identity,
             "echo 'HOLD: "+message+"; keep coordinator hold.'; exit 2", 'exit 2',
             'tests/test_quiescence_runbook.py::test_workspace_copy_failure_fresh_shell_abort_uses_exact_existing_id['+identity+']')
+    add('AA3 fresh-shell completion uses only saved context',
+        '  ( CONTEXT_FILE="$BACKUP_DIR/resume-context.bash"; save_context )',
+        '  ( CONTEXT_FILE="$PREPARATION_CONTEXT_FILE"; save_context )',
+        prefix+'test_abort_completion_in_fresh_shell_saves_both_canonical_contexts')
     results = []
     for name, changed, test in controls:
         number = len(results)

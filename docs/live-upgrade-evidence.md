@@ -578,7 +578,8 @@ empty listing can continue on `down-capture`; listing errors still refuse, and
 empty originals still refuse during the original stop. The Roll back shell block
 ends before the separate guarded pause step, matching the replica's order.
 A completed abort saves `originals-restarted` to both preparation and attempt
-contexts. A first port refusal followed by fresh-shell dispatch completes after
+contexts; its completion step also works with only the saved attempt context in
+a fresh shell. A first port refusal followed by fresh-shell dispatch completes after
 the port is freed, preserving the retained candidate configuration. The early
 abort names the coordinator hold on missing/replaced/project-mismatched identity.
 Its table describes exact IDs and consistent running/PID state; the eligibility
