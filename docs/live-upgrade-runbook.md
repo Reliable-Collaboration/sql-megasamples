@@ -1802,9 +1802,16 @@ python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
 bash -c 'set -o pipefail; actual=$(podman unshare tar --sort=name --numeric-owner --format=gnu --atime-preserve=system -C "$1" -cf - postgres mysql sqlite sqlite-shared | sha256sum); test "$actual" = "$(cat "$1/cold-copies.stream.sha256")"' sh "$BACKUP_DIR"
 test -d "$CONFIG_DIR"
 # END rollback input verification
-# Pause restart automation here: run the guarded “pause restart automation” block above
-# on this complete candidate project, after dispatch/input checks and before capture.
-# A failed pause HOLDs; do not proceed to capture or stop until it succeeds.
+# Pause restart automation here; continue with the separate guarded step below.
+```
+
+Run the guarded “pause restart automation” block under
+[Final backups and cutover](#final-backups-and-cutover) in this same maintenance
+shell, after dispatch/input checks and before capture or stop. A successful empty
+listing is allowed on `down-capture`; a listing error or failed policy update
+HOLDs. Continue below only after that block succeeds.
+
+```sh
 # Stop candidates BEFORE down can remove evidence. Keep every failed candidate volume.
 : "${TEARDOWN_ATTEMPT:?Bootstrap a new attempt or source its saved context}"
 TEARDOWN_PHASE=rollback-stop
