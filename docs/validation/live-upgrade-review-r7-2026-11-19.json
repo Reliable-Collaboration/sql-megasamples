@@ -1,0 +1,1291 @@
+{
+  "at": "2026-11-19T03:04:12.358284+00:00",
+  "checked_code_commit": "05ff31abff89ff40f464b039a28f2d3bbf746b92",
+  "scope": "DL-086 round seven Y1-Y4. Authoring-session checks; DataIntent acceptance/merge held. No live mutation.",
+  "fixes": {
+    "Y1": {
+      "test_only_commit": "e989023",
+      "commits": [
+        "8a1c787"
+      ],
+      "red": "y123-red.log: readable empty membership with denied descendant enumeration returned PASS",
+      "green": "Required enumeration errors HOLD; readable reversal PASS; removal control fails"
+    },
+    "Y2": {
+      "test_only_commits": [
+        "e989023",
+        "eea285d",
+        "1622e1a",
+        "c83925e"
+      ],
+      "commits": [
+        "e2569eb",
+        "686ebe7",
+        "f05a0f6",
+        "7fec0b4"
+      ],
+      "red": [
+        "y123-red.log: failed health after original start resumed into route selection",
+        "y2-four-check-red.log: three original-start phases reached state checks",
+        "y2-api-corrected-red.log: failed API startup lost its phase"
+      ],
+      "green": "Fresh-shell dispatch and four-check HOLD; every startup/shutdown route audited; API failure context retained"
+    },
+    "Y3": {
+      "test_only_commits": [
+        "e989023",
+        "ef87050"
+      ],
+      "commits": [
+        "398c1a1",
+        "fb4aa68"
+      ],
+      "red": [
+        "y123-red.log: earlier mixed generation holds current stopped generation; historical HOLD contaminates late-container case",
+        "y3-ordinary-red.log: ordinary capture omitted newly created stopped container"
+      ],
+      "green": "Current generation PASS alongside history; late current container HOLD; both removal controls fail"
+    },
+    "Y4": {
+      "test_only_commits": [
+        "67e1873",
+        "414e157",
+        "12a3bcb",
+        "9cfc40e",
+        "569deb0",
+        "a31fddc",
+        "bdd9e83",
+        "eaa50c2"
+      ],
+      "commits": [
+        "24b805e",
+        "686ebe7",
+        "d3e1a5b",
+        "c46b2bf",
+        "3e69f27",
+        "1c3352b",
+        "05ff31a"
+      ],
+      "red": [
+        "y4-process-red.log",
+        "y4-conmon-corrected-red.log",
+        "y4-recovery-red.log",
+        "replica-red.log",
+        "y4-required-denial-red.log"
+      ],
+      "green": "Focused tests, historical test audit, 17 round-seven removal controls, final native replica/down/OOM reruns",
+      "notes": {
+        "2": "Round-six differences stated; new PostgreSQL 18/docker path and both cold-root UID/GID 100998 mode 1777 asserted. Small data, seven vs 28 unreadable directories, different MySQL internal metadata, placeholder inputs and networking limits remain explicit.",
+        "3": "Running scratch project through actual ordinary dispatch, stop, state gate, down, restore/populate/pre-up gates; fresh contexts without per-fragment phase injection.",
+        "4": "All four running unless-stopped containers changed to no, restored, then paused again before capture.",
+        "5": "Abort after pause/capture HOLD allows exact running originals; both abort and exact restart execute guarded restart-policy restoration.",
+        "6": "Y2 guarded before first exact-original start.",
+        "7": "One-shot down and OOM harnesses rerun; round-five DL-089 receipt dated 2026-11-19T00:21:14Z predates subsequent down_evidence rewrites and remains historical.",
+        "8": "Parent archives plus only each test show historical reds. Recorded-cgroup-vanish bug control fails. Policy restoration and failure branch now executed, not merely searched as text.",
+        "9": "Neighbouring required process reads distinguish ESRCH from permission/read errors; unconfirmable exists does not clear a permission HOLD.",
+        "10": "Dangling colon, required-vs-unrelated error wording, bootstrap temporary route report and cleanup trap, historical evidence marked.",
+        "11": "Discovery excludes rollback-abort-* and rollback-load-rehearsal-*.",
+        "12": "Retained conmon PID paired with process start time; reuse alone is not continuity."
+      }
+    }
+  },
+  "Y1_traversal_class": [
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 148,
+      "judgment": "group_members: propagates every required enumeration error"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 174,
+      "judgment": "network_refs: raises; required network/helper capture remains unresolved and HOLDs"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 248,
+      "judgment": "cgroup_inventory: retains all errors; each down row judges them; only unrelated ENOENT/ENODEV tolerated"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 336,
+      "judgment": "down_helpers: root listing errors propagate to capture/verification HOLD; per-helper reads HOLD only positive scope"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 363,
+      "judgment": "down_helpers: indicated helper association errors HOLD; unassociated evidence bounded by down assurance"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 461,
+      "judgment": "capture: root enumeration errors become required capture HOLD"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 624,
+      "judgment": "task_alive: propagates required task enumeration failures to caller"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 646,
+      "judgment": "holder_scan: root errors propagate to required deployment HOLD"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 664,
+      "judgment": "holder_scan: required scope HOLD; unattributed limit reported; actual ESRCH absent"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 692,
+      "judgment": "holder_scan read: required scope HOLD, other-owner/unattributed limitations reported"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 870,
+      "judgment": "verify: propagates recorded cgroup descendant enumeration errors to HOLD (Y1)"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 885,
+      "judgment": "verify corroboration: root errors HOLD; per-process errors do not replace independent required identity/cgroup/holder checks"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 947,
+      "judgment": "verify_all: root enumeration errors HOLD; no cold-data recursion"
+    },
+    {
+      "file": "docs/validation/quiescence.py",
+      "line": 951,
+      "judgment": "verify_all: attempt enumeration errors HOLD; non-capture abort/load directories excluded"
+    },
+    {
+      "file": "docs/validation/live-upgrade.py",
+      "line": 97,
+      "judgment": "prepare_rollback: propagates extraction enumeration errors; no partial mode restoration success"
+    }
+  ],
+  "Y2_effect_route_class": [
+    {
+      "route": "maintenance API",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 415,
+      "judgment": "before service launch; api-started/PID saved after socket gate"
+    },
+    {
+      "route": "maintenance tools",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 600,
+      "judgment": "before podman run"
+    },
+    {
+      "route": "initial workspace stop",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 438,
+      "judgment": "before CloudBeaver stop"
+    },
+    {
+      "route": "initial workspace restart",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 444,
+      "judgment": "before CloudBeaver start"
+    },
+    {
+      "route": "partial stop retry",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 716,
+      "judgment": "inherited stop/rollback-stop re-saved before stop_project"
+    },
+    {
+      "route": "clean-stop recovery start",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 777,
+      "judgment": "before selected engine start; health failure HOLD"
+    },
+    {
+      "route": "clean-stop recovery stop",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 782,
+      "judgment": "new snapshot/capture and saved stop phase before selected stop"
+    },
+    {
+      "route": "abort originals",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 877,
+      "judgment": "before first start; original IDs checked allowing running state"
+    },
+    {
+      "route": "cutover original stop",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 940,
+      "judgment": "stop phase/snapshot saved before policy pause, capture and stop_project"
+    },
+    {
+      "route": "candidate initialization and startup",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 1078,
+      "judgment": "before SQLite clear run and both engine/console up groups"
+    },
+    {
+      "route": "exact-original restart",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 1700,
+      "judgment": "rollback-starting saved before first engine port check/start; dispatch guard"
+    },
+    {
+      "route": "rollback stop",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 1777,
+      "judgment": "before stop_project"
+    },
+    {
+      "route": "rollback down",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 1806,
+      "judgment": "before down"
+    },
+    {
+      "route": "cold-restored originals",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 2000,
+      "judgment": "rollback-starting saved before first up; partial restart HOLD"
+    },
+    {
+      "route": "unchanged-data originals",
+      "file": "docs/live-upgrade-runbook.md",
+      "line": 2096,
+      "judgment": "rollback-starting saved before first engine up; consoles inherit phase"
+    }
+  ],
+  "Y2_effect_route_scope": "stop_project is called only after a saved stop phase. Manual health probes do not start/stop services. Archive scratch pause lifecycle inherits saved archive-gates; graph guards prevent touching other stores. Policy updates inherit the saved cutover/recovery phase and are guarded.",
+  "native_replica": {
+    "receipt": "build/dl089-original-cac2y9w1/receipt.json",
+    "construction": {
+      "attempt": "20261119T025344159978Z",
+      "root_metadata": {
+        "uid": 100998,
+        "gid": 100998,
+        "mode": "1777"
+      },
+      "top_level_names": "tests/fixtures/live-upgrade/retained-root-names.json",
+      "attempt_under_backup": true,
+      "cold_copy": "podman unshare cp -a from stopped scratch PostgreSQL, MySQL, SQLite and shared mounts",
+      "unreadable_cold_directories": 7,
+      "unreadable_classes": [
+        "PermissionError"
+      ],
+      "postgres_data_mode": "0700",
+      "postgres_data_subordinate_owner": true,
+      "differences": [
+        "Tiny fresh scratch data, fewer unreadable directories; MySQL internal UID/depth differs",
+        "Non-data retained names include placeholders; smaller deployment and different bridge ports",
+        "No full bootstrap, configuration/image restore or live restoration"
+      ]
+    },
+    "results": {
+      "rotation-port-refusal": {
+        "status": "Passed",
+        "ports": 1
+      },
+      "exact-original-restart-fresh-shell": {
+        "status": "Passed",
+        "containers": 4,
+        "engines_healthy": 3,
+        "consoles_held": 1,
+        "ids_unchanged": true,
+        "mounts_unchanged": true,
+        "sql_fingerprints_unchanged": true,
+        "sqlite_fingerprint_unchanged": true,
+        "shared_rebuilt": true,
+        "original_credentials_accepted": true,
+        "rotated_credentials_refused": true,
+        "env_digest_restored": true
+      },
+      "original-restart-refuses-running": {
+        "status": "Passed",
+        "outcome": "REFUSE",
+        "reason_class": "exact original restart eligibility"
+      },
+      "original-restart-refuses-candidate-present": {
+        "status": "Passed",
+        "outcome": "REFUSE",
+        "reason_class": "exact original restart eligibility"
+      },
+      "original-restart-refuses-missing-ID": {
+        "status": "Passed",
+        "outcome": "REFUSE",
+        "reason_class": "exact original restart eligibility"
+      },
+      "original-restart-refuses-replaced-ID": {
+        "status": "Passed",
+        "outcome": "REFUSE",
+        "reason_class": "exact original restart eligibility"
+      },
+      "replica-ordinary-route": {
+        "status": "Passed",
+        "capture_kind": "ordinary",
+        "processes": 87,
+        "dispatch": "ordinary-capture",
+        "fresh_context_without_phase_injection": true
+      },
+      "replica-old-history-red": {
+        "status": "Passed",
+        "control": "Old helper HOLDs on unreadable cold payload",
+        "outcome": "HOLD",
+        "assurance": "The recorded deployment stopped using the exact recorded data; bounded by readable required evidence. This does not prove the host quiet or prevent new writers.",
+        "refusals": {},
+        "holds": {
+          "capture history inspection unreadable": 1
+        },
+        "counts": {
+          "inspected": 1284,
+          "other_owner": 842,
+          "vanished": 27,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "replica-population-content": {
+        "status": "Passed",
+        "trees": 4,
+        "numeric_ownership_modes_and_bytes_equal": true
+      },
+      "replica-restore": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "The recorded deployment stopped using the exact recorded data; bounded by readable required evidence. This does not prove the host quiet or prevent new writers.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1343,
+          "other_owner": 846,
+          "vanished": 16,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10,
+        "history_records": 1
+      },
+      "replica-populate": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "The recorded deployment stopped using the exact recorded data; bounded by readable required evidence. This does not prove the host quiet or prevent new writers.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1283,
+          "other_owner": 837,
+          "vanished": 25,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10,
+        "history_records": 2
+      },
+      "replica-pre-up": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "The recorded deployment stopped using the exact recorded data; bounded by readable required evidence. This does not prove the host quiet or prevent new writers.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1277,
+          "other_owner": 841,
+          "vanished": 19,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10,
+        "history_records": 2
+      },
+      "native-restart-policy": {
+        "status": "Passed",
+        "containers": 4,
+        "initial_running_policy": "unless-stopped",
+        "pause": "no",
+        "restore": "unless-stopped",
+        "paused_again_before_capture": true
+      }
+    },
+    "cleanup": {
+      "status": "Passed",
+      "containers": 0,
+      "networks": 0,
+      "volumes": 0,
+      "isolated_unchanged": true
+    }
+  },
+  "native_down": {
+    "receipt": "build/dl089-proof-qy7zjzxh/receipt.json",
+    "at": "2026-11-19T02:57:33.910896+00:00",
+    "results": {
+      "mixed-capture": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": null,
+        "refusals": {},
+        "holds": {},
+        "counts": {},
+        "shared_consumers": 0
+      },
+      "mixed-stopped": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "Mixed pre-stop and down-state capture. Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1268,
+          "other_owner": 844,
+          "vanished": 11,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "all-down-capture": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": null,
+        "refusals": {},
+        "holds": {},
+        "counts": {},
+        "shared_consumers": 0
+      },
+      "all-down-same-boot": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1257,
+          "other_owner": 832,
+          "vanished": 9,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "original-stop-all-down": {
+        "status": "Passed",
+        "outcome": "HOLD",
+        "assurance": null,
+        "refusals": {},
+        "holds": {
+          "deployment process capture missing; cannot capture after stop": 1
+        },
+        "counts": {},
+        "shared_consumers": 0
+      },
+      "down-cold-directory-holder": {
+        "status": "Passed",
+        "outcome": "REFUSE",
+        "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {
+          "recorded data source held": 1
+        },
+        "holds": {},
+        "counts": {
+          "inspected": 1255,
+          "other_owner": 829,
+          "vanished": 16,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "down-holder-released": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1254,
+          "other_owner": 829,
+          "vanished": 10,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "started-after-capture": {
+        "status": "Passed",
+        "outcome": "REFUSE",
+        "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {
+          "deployment container running": 3,
+          "positively associated down helper survives": 2,
+          "recorded data source held": 1
+        },
+        "holds": {},
+        "counts": {
+          "inspected": 1246,
+          "other_owner": 819,
+          "vanished": 12,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "started-then-stopped": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1244,
+          "other_owner": 831,
+          "vanished": 20,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "ordinary-capture-after-full-down": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "Mixed pre-stop and down-state capture. Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1239,
+          "other_owner": 835,
+          "vanished": 8,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "down-capture-after-full-down": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1240,
+          "other_owner": 836,
+          "vanished": 9,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "created-capture": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": null,
+        "refusals": {},
+        "holds": {},
+        "counts": {},
+        "shared_consumers": 0
+      },
+      "created-verification": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1261,
+          "other_owner": 836,
+          "vanished": 10,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "exit-0-capture": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": null,
+        "refusals": {},
+        "holds": {},
+        "counts": {},
+        "shared_consumers": 0
+      },
+      "exit-0-verification": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1263,
+          "other_owner": 848,
+          "vanished": 19,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "exit-137-capture": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": null,
+        "refusals": {},
+        "holds": {},
+        "counts": {},
+        "shared_consumers": 0
+      },
+      "exit-137-verification": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1279,
+          "other_owner": 856,
+          "vanished": 16,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "exit-23-capture": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": null,
+        "refusals": {},
+        "holds": {},
+        "counts": {},
+        "shared_consumers": 0
+      },
+      "exit-23-verification": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1280,
+          "other_owner": 858,
+          "vanished": 16,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "one-container-removed": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+        "refusals": {},
+        "holds": {},
+        "counts": {
+          "inspected": 1278,
+          "other_owner": 856,
+          "vanished": 19,
+          "zombie_or_exited": 21
+        },
+        "shared_consumers": 10
+      },
+      "oom-killed": {
+        "status": "Unsupported",
+        "reason": "A real OOM was not induced; fixture and rule reversal cover OOM state eligibility."
+      },
+      "exited-cgroup-live-task": {
+        "status": "Unsupported",
+        "reason": "Retaining a live task in a container cgroup after its native exited state was not safely arranged."
+      },
+      "reboot": {
+        "status": "Unsupported",
+        "reason": "Requires a separately approved disposable host; both running stacks must remain unchanged."
+      },
+      "shared-helper-zero-consumers": {
+        "status": "Unsupported",
+        "reason": "The unchanged isolated stack consumes this store helper; a second scratch project cannot remove its consumers."
+      }
+    },
+    "cleanup": {
+      "status": "Passed",
+      "containers": 0,
+      "networks": 0,
+      "volumes": 0,
+      "isolated_containers": 12,
+      "unchanged": true
+    },
+    "one_shot_capture_attempts": true,
+    "oom_scope": "This driver does not induce OOM; the separate final native_oom result establishes the OOM row."
+  },
+  "native_oom": {
+    "status": "Passed",
+    "containers": 1,
+    "published_loopback_ports": 1,
+    "memory_limit_bytes": 8388608,
+    "native_oom": true,
+    "exit_code": 137,
+    "state_gate": "PASS",
+    "down_capture": "PASS",
+    "down_verification": "PASS",
+    "capture_attempts": [
+      {
+        "outcome": "PASS",
+        "holds": {}
+      }
+    ],
+    "artifacts": "build/dl089-oom-l72gyz1k",
+    "scope": "Actual native cgroup OOM in this owned 8 MiB scratch container; no simulated OOM flag",
+    "cleanup": {
+      "status": "Passed",
+      "containers": 0,
+      "volumes": 0
+    }
+  },
+  "historical_test_audit": {
+    "results": [
+      {
+        "test": "test_history_applicability_is_mechanical_with_reversal",
+        "parent": "1fa6d49a7a6c910047b9cdd754bc2f9b9b70725a",
+        "status": "Passed",
+        "result": "Red: test alone fails on fix parent"
+      },
+      {
+        "test": "test_bootstrap_route_hold_retains_reason_in_new_attempt",
+        "parent": "e3125bc1544120a1650c0bc74d91915b0fbc6ec5",
+        "status": "Passed",
+        "result": "Red: test alone fails on fix parent"
+      },
+      {
+        "test": "test_recorded_cgroup_vanish_error_holds",
+        "status": "Passed",
+        "result": "Planted bug: suppress recorded cgroup ENOENT; reason-specific regression fails"
+      }
+    ]
+  },
+  "oom_summary_preservation": {
+    "original_expected_sha256": "f7b8bbbf780f207a93b1a64f619a37ceb2d5e4a1a945284a49148ed89f195265",
+    "before_sha256": "5f782ae51c703fb031387046a029d7675e9aaaa4c6f9ec7c20e9237ab571f384",
+    "status": "Passed",
+    "restored_from": "build/dl089/native-oom-final.log",
+    "restored_sha256": "f7b8bbbf780f207a93b1a64f619a37ceb2d5e4a1a945284a49148ed89f195265"
+  },
+  "real_backup_metadata": {
+    "roots": [
+      {
+        "name": "postgres",
+        "uid": 100998,
+        "gid": 100998,
+        "mode": "0o1777"
+      },
+      {
+        "name": "mysql",
+        "uid": 100998,
+        "gid": 100998,
+        "mode": "0o1777"
+      },
+      {
+        "name": "sqlite",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      },
+      {
+        "name": "sqlite-shared",
+        "uid": 1000,
+        "gid": 1000,
+        "mode": "0o755"
+      }
+    ],
+    "unreadable_directories": 28,
+    "denials": [
+      {
+        "tree": "postgres",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      },
+      {
+        "tree": "mysql",
+        "error": "PermissionError"
+      }
+    ],
+    "scope": "names/modes/owners only; no file contents"
+  },
+  "results": {
+    "suite": {
+      "status": "Passed",
+      "summary": "865 passed in 31.94s"
+    },
+    "documentation": {
+      "status": "Passed",
+      "summary": "51 passed in 0.74s"
+    },
+    "images": {
+      "postgres": {
+        "status": "Passed",
+        "exit_code": 0
+      },
+      "mysql": {
+        "status": "Passed",
+        "exit_code": 0
+      },
+      "sqlite": {
+        "status": "Passed",
+        "exit_code": 0
+      }
+    },
+    "image_cleanup": {
+      "status": "Passed",
+      "removed": 3,
+      "already_absent": 0,
+      "observer_timeouts": 3,
+      "attribution": "New anonymous volumes observed mounted by reserved test containers or adjacent same-time create events; unused and unreferenced; all pre-existing volumes unchanged",
+      "own_api_forced_termination": false
+    },
+    "isolation": {
+      "status": "Passed",
+      "isolated": {
+        "containers": 12,
+        "unchanged": true,
+        "inventory": [
+          {
+            "name": "megasamples-adminer",
+            "id": "f094743e286e5475ed47db4a335b5ebfca7d923683699fa5bcb2cf2a0ab6561b",
+            "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+            "state": "running",
+            "started_at": "2026-11-17 12:26:40.760901753 -0600 CST"
+          },
+          {
+            "name": "megasamples-build-mysql",
+            "id": "adc7ac97d80975e5c7b8d670a2d962000815ac380c95621bab6c8e39430e07e2",
+            "image": "e3c5e24cdccea30c955dfa05b9b07fdc3b62323321c1e827a563e846d7552ea5",
+            "state": "running",
+            "started_at": "2026-11-17 11:35:53.185152816 -0600 CST"
+          },
+          {
+            "name": "megasamples-build-postgres",
+            "id": "764e08b53d08300dcfd369de7dc65257f531dc3be2b7850e37efc9b2695d0e59",
+            "image": "3cccc725163a95947178f4da5e9bf16add75cb286170ac5a2cd2f6513534955d",
+            "state": "running",
+            "started_at": "2026-11-17 02:43:06.427254006 -0600 CST"
+          },
+          {
+            "name": "megasamples-cloudbeaver",
+            "id": "9a8bc77db454ed2faa7ce0cd264479166cb8a761b766a46787ce7b2f48a4f6fb",
+            "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:45.435567666 -0600 CST"
+          },
+          {
+            "name": "megasamples-dbgate",
+            "id": "9019958eba77e79dfd88fa02426d84b2b64a0a188d5b88ef97b056a9a3301634",
+            "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:45.414450726 -0600 CST"
+          },
+          {
+            "name": "megasamples-landing",
+            "id": "dbc3b188a07d6c9920d1fc7011b43e5f6958f96e2d8abee622ce9860b3f9a76d",
+            "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+            "state": "running",
+            "started_at": "2026-11-17 12:27:07.694014647 -0600 CST"
+          },
+          {
+            "name": "megasamples-mysql",
+            "id": "9507a0bf975fc7833b2aa483f9449f5d95bdceab495782c6365145dc18f13e19",
+            "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:34.007118791 -0600 CST"
+          },
+          {
+            "name": "megasamples-phpmyadmin",
+            "id": "c5f6b29fc07e06613f9c145a536e723be2fe28cc98a6e7a1d0ea71fa6c53fe47",
+            "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+            "state": "running",
+            "started_at": "2026-11-17 20:51:13.181193732 -0600 CST"
+          },
+          {
+            "name": "megasamples-postgres",
+            "id": "3ac86c34b9eb04c1d0ece86a10884816ef79d9cd0b278ae8690e651f28951b1d",
+            "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:25.12361209 -0600 CST"
+          },
+          {
+            "name": "megasamples-sqlite",
+            "id": "4dbd24f800b97d2937a47eb0b2455d67b1256d8fd55431fe340af30fa4f52734",
+            "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+            "state": "running",
+            "started_at": "2026-11-18 05:27:15.807252083 -0600 CST"
+          },
+          {
+            "name": "megasamples-upgrade-browser",
+            "id": "c1ebd848a39b3ec7a104c80185ba5ea4f8ccae1b22a53885ca0f2d611b1e53e3",
+            "image": "32cfab2f09595b0266babd6ef76ee175ef024617f4077797bcecf235fe88eb68",
+            "state": "exited",
+            "started_at": "2026-11-16 12:58:52.851855644 -0600 CST"
+          },
+          {
+            "name": "megasamples-upgrade-tools",
+            "id": "ef64d26b142c7ecbe5b0ffa3b2e223a1501b8f0c7582e8ad7baf357db7183f14",
+            "image": "8ef0c198735c09bd0434807c462f61595e3b1b1fe4c7557d441a3e2c257b6740",
+            "state": "running",
+            "started_at": "2026-11-16 12:45:13.191511277 -0600 CST"
+          }
+        ]
+      },
+      "live": {
+        "containers": 9,
+        "services": 8,
+        "tools": 1,
+        "unchanged": true,
+        "inventory": [
+          {
+            "name": "megasamples-adminer",
+            "id": "7ef317c5e2574872c447d7b2a090d91669ec61f224415ece77bde7ba4e4e8343",
+            "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.977097776 -0600 CST"
+          },
+          {
+            "name": "megasamples-cloudbeaver",
+            "id": "2c08eebb7364571e658ef56d61769ff8e0d815a54954bc7a6c5c45259d859931",
+            "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.847600394 -0600 CST"
+          },
+          {
+            "name": "megasamples-dbgate",
+            "id": "3d219c0b086d05f86e972d6f107743e4140719c67ca5dee67c20be05bd14120e",
+            "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.787017348 -0600 CST"
+          },
+          {
+            "name": "megasamples-landing",
+            "id": "10dcf6333c62c4c636272bdbf591dfc6a7cce847d2ac0c979b39d274fb2a2e29",
+            "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.809734163 -0600 CST"
+          },
+          {
+            "name": "megasamples-live-upgrade-tools-20261118T133807Z",
+            "id": "47b022120bcd10ae47db9f8113cd4b9614570c7378f044fd81a4630473fb8149",
+            "image": "9cfca77f5b88e23f25e76429d70f0c72959ff13a6d933610c58ae74da67cd710",
+            "state": "running",
+            "started_at": "2026-11-18 07:51:54.959083715 -0600 CST"
+          },
+          {
+            "name": "megasamples-mysql",
+            "id": "a3f5c1204ee44b48dedbc5d3b7d9a8981aa5ffe04988019d58864b5157eac0d6",
+            "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:10.170768484 -0600 CST"
+          },
+          {
+            "name": "megasamples-phpmyadmin",
+            "id": "044fa1e2a6ee97811efc2d0165776330493c6ef66c33c1dcad9ee4da03f08128",
+            "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.93073862 -0600 CST"
+          },
+          {
+            "name": "megasamples-postgres",
+            "id": "ba1a9f7586814467210c0a5549f02f777dbd6d32af13f4176bb3e99c613316cc",
+            "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:13.76245404 -0600 CST"
+          },
+          {
+            "name": "megasamples-sqlite",
+            "id": "7adacf6eca19046bc2d8daa1a69271ac3bd112046eb41ffc143364e60b740a5e",
+            "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+            "state": "running",
+            "started_at": "2026-11-18 08:50:55.525102141 -0600 CST"
+          }
+        ]
+      },
+      "scratch": {
+        "projects": [
+          "dl089-oom-c_tc5rll",
+          "dl089-oom-l72gyz1k",
+          "dl089-original-5wid88je",
+          "dl089-original-7bp09qft",
+          "dl089-original-cac2y9w1",
+          "dl089-original-eav73kej",
+          "dl089-original-h2i13cdt",
+          "dl089-proof-qy7zjzxh",
+          "dl089-proof-sq5cjbb7"
+        ],
+        "containers": 0,
+        "networks": 0,
+        "volumes": 0,
+        "restore_volumes": 0
+      },
+      "api_socket_stopped": true,
+      "scope": "Default-store read-only exact nine-object inspection; no live exec/signals/service/network/volume changes"
+    },
+    "r7_reversals": {
+      "status": "Passed",
+      "controls": 17,
+      "artifacts": "build/dl091/reversals-wzsc87l4"
+    },
+    "r6_reversals": {
+      "status": "Passed",
+      "controls": 13,
+      "artifacts": "build/dl090/reversals-utp44gc9"
+    },
+    "dl089_reversals": {
+      "status": "Passed",
+      "controls": 16,
+      "artifacts": "build/dl089/reversals-pus3w7l0"
+    },
+    "dl088_reversals": {
+      "artifacts": "build/dl086/dl088/rule-removals-12nib7ne",
+      "rules": 22,
+      "status": "Passed"
+    },
+    "failed_image_rounds": [
+      {
+        "status": "Failed",
+        "observed": "Local Podman inspection observer timed out; wrapper interrupted its API while MySQL test was in flight. Later private-client directory creation failed. No completed MySQL exit code recorded by wrapper; timeout cause not established.",
+        "cleanup": {
+          "status": "Passed",
+          "own_api_processes": 0,
+          "containers_removed": 1,
+          "anonymous_volumes_removed": 2,
+          "remaining_containers": 12
+        }
+      },
+      {
+        "status": "Failed",
+        "observed": "Observer used an invalid ps reporter field (Id rather than ID); wrapper interrupted in-flight test. Corrected and observer errors made diagnostic.",
+        "cleanup": {
+          "status": "Passed",
+          "own_api_processes": 0,
+          "containers_removed": 1,
+          "anonymous_volumes_removed": 1,
+          "remaining_containers": 12
+        }
+      }
+    ],
+    "image_retry_scope": "Only MySQL/SQLite repeated; completed PostgreSQL pass retained. No engine-test assertion changed."
+  },
+  "netns": {
+    "reproduced": false,
+    "cause": "Unknown",
+    "scope": "Owned scratch lifecycle commands; no live teardown, host or forwarder changes"
+  },
+  "not_run": [
+    "Live stop/restore or real-backup bootstrap/end-to-end restoration",
+    "Engine-size image archive replay",
+    "Native unchanged-data engine/console recreation",
+    "Live forwarded authentication/TLS",
+    "DataIntent acceptance, new independent review or merge",
+    "Other DL-088 native cases retained as prior evidence, not rerun this round"
+  ],
+  "unsupported": [
+    "Actual reboot needs a separately approved disposable host",
+    "A live task retained in an exited container cgroup was not safely arranged natively",
+    "Zero shared-helper consumers cannot be arranged while the unchanged isolated stack uses it"
+  ],
+  "failed_then_corrected": [
+    "Initial host .venv invocation was unavailable; all tests used the existing isolated tools container, without host installation.",
+    "Initial conmon continuity fixture created an incomplete refused capture; a test-only correction, initially applied to the wrong neighbouring fixture and then corrected, isolated start-time reuse. Corrected red against the pre-fix helper and full green retained; no failed green reported as Passed.",
+    "An existing abort composition lacked the newly required policy command stub; corrected in a test-only commit without weakening assertions.",
+    "API phase fixture initially anchored at the earlier variable initializer; corrected in a test-only commit, with a fresh red against the old standalone startup and green.",
+    "First native replica run stopped at the new ordinary-route assertion, demonstrating the prior down-only route; cleanup Passed.",
+    "An intermediate native run was interrupted to remove a duplicate cold-copy operation that could run after scratch restart. The final driver copies only while stopped; cleanup retained.",
+    "Next native run stopped on an immediate recreated-MySQL health probe. A bounded configured-probe wait fixed the driver; cleanup Passed and subsequent runs Passed.",
+    "Initial image wrapper aborted on a local inspect observer timeout while a test remained in flight, then timed out stopping its own API. Failed round retained; exact owned test container and event-attributed volumes removed, original 12 containers restored. Diagnostic observer timeouts no longer interrupt image tests. MySQL/SQLite retry results are recorded separately.",
+    "Event template assumed Time.Unix; local event output showed Time already integer. Corrected before image checks; validated numeric format.",
+    "Native OOM driver overwrote its legacy shared build summary. Exact historical bytes were recovered from a retained log only after matching the committed receipt digest. The driver now writes summary.json under its unique attempt; final native rerun verifies the historical digest unchanged.",
+    "Required permission-read regression exposed exists-false handling; red before correction, full green and native reruns thereafter."
+  ],
+  "inspection_hygiene": {
+    "live_private_values_read_or_printed": false,
+    "scope": "Live inspection used only explicit non-secret fields; retained backup names/modes/owners only, no env/full inspection/dump/archive/cold payload contents. Generated scratch credentials consumed privately for fixture authentication and never displayed.",
+    "incidents": [
+      "Initial filename discovery included unrelated checkout filenames only; no unrelated contents read or used.",
+      "Initial default-store inventory included unrelated non-secret container metadata; it was not used as task context, and subsequent live reads selected only the exact nine baseline objects.",
+      "Inspecting image-test source displayed public factory credential examples. No private credential value was read or printed; later inspection limited to non-secret fields."
+    ]
+  },
+  "checked_source_sha256": {
+    "docs/validation/quiescence.py": "93d4a7c11e47e8ef63b23bb0a039b119ac0e1a36b9882869c4b46d422ad112ba",
+    "docs/validation/live-upgrade.py": "1d96eb461e1c07927e4c88f1592cc8c380bdad6462210276c15d192ccc638349",
+    "docs/live-upgrade-runbook.md": "c9f25a875f5ded0b190e258e404150fb5cc552bb64a6ad05b359f7bf65f1e790",
+    "docs/live-upgrade-evidence.md": "f6eacad26436b0639638fac4cf4d8901f126b4c7e07deaf3615d0f28f29af542",
+    "docs/validation/rehearse-original-restart.py": "71adef20ddc6052fff8e8328654d72bdcfb50b467340909b8d1116c8002d2464",
+    "docs/validation/rehearse-rollback-replica.py": "d4d3bec628d96a38d01c21e828cbea6f98ce753b7059c4919cf2f8c8e918271e",
+    "docs/validation/rehearse-quiescence-down.py": "340dbafcf88ed0a70f6c296043deb4267b7dc61223c4564de0a7feffb902e755",
+    "docs/validation/rehearse-quiescence-oom.py": "b7eff093ff2f8bfc83a0b44083ea0681cdfaddf12322b89d79c12da52aed5227",
+    "docs/validation/rehearse-r7-test-audit.py": "8c7b5800bda68b9437170c0a54b69af09e8601cec19580334896957b6817946b",
+    "docs/validation/rehearse-r7-reversals.py": "673e1960180351731712473413b356c03a920370ea17394c978e5e4662381687",
+    "docs/validation/rehearse-r6-reversals.py": "9648d2cb8ee90c7e26920145c1086c7c4bb96b98b6dd9ee7f5d78efb243ba42c",
+    "tests/test_quiescence_gate.py": "deec0c2f9ad8e789cee2c21d194a1e09f14215bf2a4f3d3811a93ce95b364336",
+    "tests/test_quiescence_down.py": "f526c6a413a341083269b2795e9b6f1392020dd7091beb1875924cbb47d93edd",
+    "tests/test_quiescence_runbook.py": "2d20a87b5d254d75604861ed8fb2f9f2ff1eca66f5613f8c7bfd90f6ef37733a",
+    "tests/test_runbook_fragments.py": "921a5e4a2b7c42f2b34d41dbeab568cd2a2e7860dcaeff76eb38b9c4cd2ab43a"
+  },
+  "evidence_sha256": {
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/suite.log": "bbd0c43cd85a0a17af683bf22abe4efe71e302f157bfda3d317d2478bf7500f8",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/documentation.log": "48e0e5ce023c2c6cb31f85e872442ca1690e2c95b7a00ec401fc624fec85488b",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/failed-image-cleanup.log": "513a33fe8c82fb2e55c4cbf8256e1789df75afbe82c726ea209e33db5334d6f8",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y3-green.log": "42ced9bcbe52228e623afb388c9d027b7edfc525fdce59ff3c84009455460d06",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y2-api-green.log": "f4c77b58e2280613a49ba18da1c4a02d440e862c49a6c8fe5daaf277333ff99d",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/images-run-failed.log": "735964907e71df802ebe40efb55d5a5f20b9078d53802b677931fa9b7fd404b8",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/baseline.log": "d6f8f25a56c441bf1c72f1ba9f733aa95f0678d927d46cc4f3670c74886cc6a1",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y123-red.log": "63069ac2021667fb19888581954aa56b67dbb369de382fe375fed215834fd7fa",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y2-api-red.log": "b50bc2843f06404fcda8869b1ace5ee1b44dbe9942f9e827bfb4c56d8e1b748d",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y1-green.log": "c3b51b2feae839bd3a05c4a3ac63cf956218f4de1ae10255742d5ab1f9e35f40",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/images-run.log": "9c892d12a45655e564710916101eeee6b411f17af4a899a512bfd29db7435652",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y2-four-check-red.log": "5665a519b7d79d61f745780279237d47509997a5ee503ff340ab54b9c41e2469",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/image-sqlite.log": "e905171984c9513d6b80e0087c8ed08939c8cd65ab4bc1a85766f3b3c8f5bff6",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/r6-reversals.log": "50e0906b18f0acc6d9b2391272fa5054a631e5039eeb495badb51c761b85a8e3",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/dl089-reversals.log": "bb87d60c89a9eb3268d04874f25d28ffea456c823dc4f02ab62d9117a6f7d92b",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y4-process-red.log": "c59f3512f0e30ff1e04541026d555297eb7f231ab623009e6364c8e9e2701352",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/api-images-failed.log": "f1f5330cb84a6898093507055f55ca0af423f3f6441f50a2e58e516fdc249da2",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y4-recovery-green.log": "a2893e61f2e98379ecc37590cd2c632289c1e49da3c716688abadb53f339e0f4",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/native-down-final.log": "12c39a544f05a31b27b360699ab73f6b4b5e87aa4ea355056158ec332b50ab3c",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y2-four-check-green.log": "efb87732f2eda66924cb3bd7f9391096f5da9616e38f6b428f2bbfd7fc0ba25f",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y2-green.log": "566b533769efda184c621fadcbb3499a3de7b732897627c27b430e8565082bbb",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/suite-complete.log": "2cfaf25ce056f7e785b56e1f4b6b838be2a163dea2797819147d25a564d1285c",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/suite-verified.log": "b775345612710c6ea3d8f76c8308d318cbe2180e6ecea1ab5711256409754a57",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/image-postgres.log": "164496d2c737fa982e02950971dd318d8fac82ffe7bd5b206237044b2fbbcf7a",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/image-mysql-failed.log": "ed8a66e98afa12284e80ba74a684ed2f0dddfb6f3fb84f5448b74a52668f5190",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y2-api-corrected-red.log": "9427982fe9c56f6d9e21c6ab31cb91ed56d3df81b94b5578b6d7bd99886204df",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/suite-guard-final.log": "f600fbf0b7e0a0c3e5fbe3eeb9e9cf54967c37afb3fe538c305def244db17104",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/isolation.log": "129f2990fed8a4735e64b505fb976f57e47083d792b76ac191170c4a4e8968ab",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y4-required-denial-red.log": "89fc927895b625feb7edee06b69df3aafc97021530430c639657dfd916bb51e8",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/dl088-reversals.log": "af223366651e8c94b76942789f2ea6d1cb84ff8fbd8ba5d952ff7a56d87df063",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/failed-image-cleanup-2.log": "6181b061507d626730f5f92aaf501b3de02aa5f97826e1aebe99785feca48b38",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/reversals-verified.log": "610300bc753e874ebb1fe6f36138d1168a30244a3f597915080a975fb018ac49",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/native-oom.log": "f908ebdf0aa7a7b3207d1c4814c5fd38ddd48e2df509af6c1db9ccf53e6b7a94",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/test-audit.log": "40e361f540902c2bd3fdadb4b4e369cb906aa8dc3e13ba72e28f9cb33c06bc82",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/api-images.log": "4a5cb33bd5e1e4f2d8ad276c0ab2a09d245d603f0beaf8b2c58cbff11ea95ff9",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/native-down.log": "b9d5eb3e8e78243c8fd80b1dee36d5f4f8111fc677f138177068a4e551b833a1",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/native-oom-final.log": "bbd0ad73176454c8aa197226f7438abc5e793bcbb29430870c0ca081491095f4",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y4-required-denial-green.log": "91e7809b3e27d7be1de9408076076bc6e6dd5b4dae4cd48d190cef0d8ffa906b",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/reversals.log": "71172f2af064c8ae42c058691986a31188d7ea5f7689c339d380f7089bc80c9f",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/image-mysql-failed-2.log": "3519263de6e31a103ac9660d3bd18eb996fd4364213fce823b8ad37b58a5b989",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/reversals-final.log": "938e8978518110b65a6ac5c2364fe8f42d31c79ad2cc04fc717771ae19695113",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y4-conmon-corrected-red.log": "3643b8f2603a92edfd12e1cb5f3b9735518dd6d68bb00f43c310924c43f7c734",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/native-replica-final.log": "9b93ee917635587feee85862d3d263e7fde9fef7ae122c790f90c65fad9fd570",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y3-ordinary-green.log": "0d54d1a44b70de3efc6ce0b7674459323183d64b9ebe41f9f3822ac6fea23a15",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/suite-final.log": "b04d1437b91289b7db283a4257252e15ae0d5a5c9ce410ab2339a97531b36e3e",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/replica-red.log": "b3e1f5bbdbdd0764cd7f07b99d1fcd681e914f92806d094fa742176f76efce53",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y4-process-green.log": "08e1a190afa612ed68b142f92d83a2db0f53104dac37581a6e255afd447af89d",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y4-recovery-red.log": "919cc4cddb5a4ef90c6c8455eddfaec437fc8b6147b231245219ccece7935082",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/y3-ordinary-red.log": "ecd052a19c6a4d1506598ecf598d07b679025be282e911f5b4fb114b9cb5a2f0",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/api-images-failed-2.log": "51577d29864220c64ff935afd32daab06b8da55ffa8f9c6a2e1cf171580df9e9",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/replica-green-3.log": "30d1b6c27d0ab83f38c7a6c939c726714df5f2bff26398dfcb7829119314b7e6",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/replica-green.log": "0f4081c3fc1de857fcdce4e161aed82275726f453d1a30aaa9e06cb78e3cbe7b",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/image-mysql.log": "aab0444d245bb311eccb83336a1ed5a79da902172e48fdc8f66e9be7bbf6c071",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/images-run-failed-2.log": "6de947b6f9243d759fb637235107c97cef050ba482fb2f1dd16a244c49942a2a",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/replica-green-2.log": "221fa04a249fe7805cd2f47202a4cf881a5d77a551f05badb3f2a0a97214b36c",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/images.json": "7e51d4ca37f1676b4c7dd5117f5d3f75637a3dbfdc0f5f518efadc864700fa9e",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/image-cleanup.json": "d400568e2892b7347e28b4a7ef9fe16d21470f504858e32a6fbc261a56c565f5",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/isolation.json": "53d33d7cab3d7bf2706a26995d6ef91504167a05593acce02fe5973c3880b356",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/real-backup-metadata.json": "5440c9eea1ab5fb1189a50350a6b672bf27054184767164ceb09053a81c7d261",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/live-before-nine.txt": "4281b0089ed7838c7bdc45757684084f16c27c5bd1de652d13d3e0e0be84c71e",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/live-after-nine.txt": "c7a95c36249d9534bb9e1fb43f99f7c7712773ef2c90f2e5563a41065ac0aa34",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/isolated-before.txt": "0aee86b42c5d01cd9805d7ccf1b9d70a7885cab2ccd6772da1c3545b3c18fb27",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/isolated-after.txt": "0aee86b42c5d01cd9805d7ccf1b9d70a7885cab2ccd6772da1c3545b3c18fb27",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/isolated-ps-after.txt": "83138daf6f27ec1aa320288daa71591caef91b5655491c56bea75b884867144d",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/image-create-events.txt": "eb459e960805d9e38b813fe04a0d53a73482428320d7e0211625f077994d7dd0",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/check-images.py": "0b3b592975ef9c2fea5edf8ba110fcb9dcd316ed0bc4f4064fbbeaa6fde1702d",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/write-receipt.py": "d040aa92cc75fb60d1845613604dc35866212bb564a2eaabc8c1856251893344",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/failed-image-cleanup.json": "0057aa4dcccaf23183dc1149ae051753ca7635d0eac4ad7e8970269106026a1d",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/failed-image-create-events.txt": "5775a8fb0d414ee3cfca20801b022d0ed1e90cbc1d1f6192fe8094f4eb1fdb86",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/cleanup-failed-images.py": "9a2829015730bb31b4cf59e837fb98863ea714cfabc48ce8e9035bd20da134fd",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/prove-isolation.py": "5a6c63d03b8c6fbcf714b1b7c76c6d5f710d4c345ed6ba40480bd0668bc1478f",
+    "/home/rcc-vstudio/working/sql-megasamples-upgrade/build/dl091/oom-summary-preservation.json": "a2c493ebea5e422120d2826f932cbea5cc398085350313816f3776bf82c94711",
+    "build/dl089-original-cac2y9w1/receipt.json": "e49c35fb54035d6e27ca838aa6110845b1112ff701fd9e28682c01c9238095fa",
+    "build/dl089-proof-qy7zjzxh/receipt.json": "04275bf0736c518ebb57e4b9733f8a686ac7e29e07e86b6c75a625d1c647cab1",
+    "build/dl089-oom-l72gyz1k/before.json": "5278c2852b634b67e28af9aea16dc10e7a80527c1e5b8ebbac659e23003a14b6"
+  }
+}
