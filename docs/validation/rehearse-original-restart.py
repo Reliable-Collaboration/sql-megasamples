@@ -64,13 +64,14 @@ def main():
     write_env(original)
     config=dict(services={
       'postgres':dict(image='sha256:'+images['postgres'],pull_policy='never',container_name=project+'-postgres',entrypoint=['/usr/local/bin/docker-entrypoint.sh'],command=['postgres'],
-          environment=dict(POSTGRES_PASSWORD='${POSTGRES_PASSWORD}',PGDATA='/var/lib/postgresql/fixture'),volumes=[str(data['postgres'])+':/var/lib/postgresql'],ports=[f'127.0.0.1:{ports["postgres"]}:5432'],healthcheck=dict(test=['CMD','pg_isready','-U','postgres'],interval='2s',timeout='2s',retries=90)),
+          environment=dict(POSTGRES_PASSWORD='${POSTGRES_PASSWORD}',PGDATA='/var/lib/postgresql/18/docker'),volumes=[str(data['postgres'])+':/var/lib/postgresql'],ports=[f'127.0.0.1:{ports["postgres"]}:5432'],healthcheck=dict(test=['CMD','pg_isready','-U','postgres'],interval='2s',timeout='2s',retries=90)),
       'mysql':dict(image='sha256:'+images['mysql'],pull_policy='never',container_name=project+'-mysql',entrypoint=['/entrypoint.sh'],command=['mysqld'],
           environment=dict(MYSQL_ROOT_PASSWORD='${MYSQL_ROOT_PASSWORD}',MYSQL_ROOT_HOST='%'),volumes=[str(data['mysql'])+':/var/lib/mysql'],ports=[f'127.0.0.1:{ports["mysql"]}:3306'],healthcheck=dict(test=['CMD','mysqladmin','ping','-h','127.0.0.1'],interval='2s',timeout='2s',retries=90)),
       'sqlite':dict(image='sha256:'+images['sqlite'],pull_policy='never',container_name=project+'-sqlite',entrypoint=['sh','-c',
           'rm -f /shared/.complete; for f in /data/*.sqlite; do n=$$(basename "$$f"); cp -f "$$f" "/shared/.$$n.part" && mv -f "/shared/.$$n.part" "/shared/$$n" || exit 1; done; touch /shared/.complete; exec sleep infinity'],
           volumes=[str(data['sqlite'])+':/data','shared:/shared'],healthcheck=dict(test=['CMD-SHELL','test -f /shared/.complete'],interval='2s',timeout='2s',retries=90)),
       'landing':dict(image='sha256:'+images['landing'],pull_policy='never',container_name=project+'-landing',entrypoint=['sh','-c','trap "exit 0" TERM; while :; do sleep 1; done'],ports=[f'127.0.0.1:{ports["landing"]}:8080'])},volumes={'shared':dict(name=project+'-shared')})
+    for service in config['services'].values():service['restart']='unless-stopped'
     compose=checkout/'compose.yaml';compose.write_text(json.dumps(config));(checkout/'megasamples.yaml').write_text('{}')
     retained_ports=dict(engines=['postgres','mysql','sqlite'],consoles=['landing'],ports=ports)
     (attempt/'original-ports.json').write_text(json.dumps(retained_ports))
@@ -218,15 +219,25 @@ for engine in ('postgres','mysql'):
         g.original_eligible(backup/'original-stop.json',project)
         comp('rm','-f','landing');must_refuse('original-restart-refuses-missing-ID')
         comp('create','landing');must_refuse('original-restart-refuses-replaced-ID')
+        # Ordinary rollback begins with the scratch project running, including
+        # the recreated console, all with the configured restart policy.
+        comp('up','-d')
+        for engine in ('postgres','mysql','sqlite'):
+            deadline=time.monotonic()+60
+            while run(['podman','healthcheck','run',project+'-'+engine],check=False).returncode:
+                assert time.monotonic()<deadline,'recreated scratch health deadline: '+engine
+                time.sleep(1)
+            u.wait_healthy(engine,30)
         replica.prove(n,g,u,out,backup,attempt,project,compose,sources,receipt)
         save()
     finally:
         try:
             comp('down','-v','--remove-orphans','-t','10')
             for engine in ('postgres','mysql','sqlite','sqlite-shared'):
-                volume=project+'-rollback-'+engine+'-replica'
+                replica_attempt=receipt.get('replica',{}).get('attempt','replica')
+                volume=project+'-rollback-'+engine+'-'+replica_attempt
                 if n.run(['podman','volume','exists',volume],check=False).returncode==0:
-                    assert pod('volume','inspect','-f','{{index .Labels "dl086.rollback-attempt"}}',volume)=='replica'
+                    assert pod('volume','inspect','-f','{{index .Labels "dl086.rollback-attempt"}}',volume)==replica_attempt
                     pod('volume','rm',volume)
             assert not pod('ps','-aq','--filter','label=com.docker.compose.project='+project)
             assert not pod('network','ls','-q','--filter','label=com.docker.compose.project='+project)
