@@ -22,8 +22,9 @@ def main():
         controls.append((name, book.replace(before, after, 1), test))
 
     prefix = 'tests/test_round9_runbook.py::'
+    empty_guard = book.split('# A successful empty listing needs no policy updates on the evidenced down route.\n', 1)[1].split('\nfor id in $AUTOMATION_IDS;', 1)[0]
     add('AA1 empty down-route listing',
-        'test -n "$AUTOMATION_IDS" || test "${ROLLBACK_ROUTE:-}" = down-capture',
+        empty_guard,
         'test -n "$AUTOMATION_IDS"',
         prefix+'test_removed_candidates_dispatch_pause_then_down_capture[0]')
     pause = book.split('# BEGIN pause restart automation\n', 1)[1].split('# END pause restart automation', 1)[0]
@@ -31,7 +32,7 @@ def main():
     add('AA1 listing error must refuse', pause, pause.replace(assignment, assignment+' || AUTOMATION_IDS='),
         prefix+'test_removed_candidates_dispatch_pause_then_down_capture[37]')
     add('AA1 empty originals listing must refuse',
-        'test -n "$AUTOMATION_IDS" || test "${ROLLBACK_ROUTE:-}" = down-capture', ':',
+        empty_guard, ':',
         prefix+'test_empty_original_listing_still_refuses_policy_pause')
     boundary = book.split('# END rollback input verification', 1)[1].split('# Stop candidates BEFORE down', 1)[0]
     add('AA2 paste-through boundary', boundary, '\n# Pause restart automation here\n',
