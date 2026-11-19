@@ -1030,7 +1030,10 @@ AUTOMATION_ID=$(date -u +%Y%m%dT%H%M%S%N)
 # Listing failure must not become an empty successful loop.
 AUTOMATION_IDS=$(podman ps -aq --no-trunc --filter label=com.docker.compose.project=sql-megasamples)
 # A successful empty listing needs no policy updates on the evidenced down route.
-test -n "$AUTOMATION_IDS" || test "${ROLLBACK_ROUTE:-}" = down-capture
+if test -z "$AUTOMATION_IDS" && test "${ROLLBACK_ROUTE:-}" != down-capture; then
+  echo 'HOLD: empty project listing; in a fresh rollback shell rerun rollback route dispatch first, then input checks and this pause. Original stop requires existing containers.'
+  exit 2
+fi
 for id in $AUTOMATION_IDS; do
   podman inspect -f '{{.Id}}|{{.Name}}|{{.HostConfig.RestartPolicy.Name}}' "$id" \
     >> "$EVIDENCE_DIR/restart-policy-$AUTOMATION_ID.txt"
@@ -1824,7 +1827,9 @@ Run the guarded “pause restart automation” block under
 [Final backups and cutover](#final-backups-and-cutover) in this same maintenance
 shell, after dispatch/input checks and before capture or stop. A successful empty
 listing is allowed on `down-capture`; a listing error or failed policy update
-HOLDs. Continue below only after that block succeeds.
+HOLDs. In a fresh shell, rerun rollback route dispatch and input verification
+first: the saved context does not carry `ROLLBACK_ROUTE`. Continue below only
+after the pause block succeeds.
 
 ```sh
 # Stop candidates BEFORE down can remove evidence. Keep every failed candidate volume.
