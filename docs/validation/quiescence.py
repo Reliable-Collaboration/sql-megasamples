@@ -782,14 +782,18 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
         hold('phase state ineligible')
     if saved.get('down_evidence'):
         report['assurance'] = ('' if down else 'Mixed pre-stop and down-state capture. ') + DOWN_ASSURANCE
+    # The current capture owns completeness for every current generation,
+    # including an ordinary capture with no stopped rows. Historical captures
+    # still check every surviving obligation below.
+    if not _historical:
+        try:
+            listed = set(pod('ps','-aq','--no-trunc','--filter','label=com.docker.compose.project='+saved['project']).split())
+            if listed - {r['id'] for r in saved['containers'] if r.get('id')}:
+                hold('container capture incomplete')
+        except (OSError, ValueError, subprocess.SubprocessError) as error:
+            hold('required deployment inspection unreadable', error=type(error).__name__)
     if saved.get('down_evidence'):
         try:
-            # The current capture owns completeness of the current generation.
-            # Historical captures still check every surviving obligation below.
-            if not _historical:
-                listed = set(pod('ps','-aq','--no-trunc','--filter','label=com.docker.compose.project='+saved['project']).split())
-                if listed - {r['id'] for r in saved['containers'] if r.get('id')}:
-                    hold('container capture incomplete')
             evidence = []
             scan_cache = {} if _down_scan is None else _down_scan
             for row in saved['down_evidence']:
