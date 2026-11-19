@@ -332,3 +332,77 @@ It independently checks original data objects and rejects overlap with candidate
 mounts; a reused shared volume cannot be represented as unchanged. No native or
 live original-volume recreation is claimed. As of 2026-11-18, DataIntent acceptance
 remains held; this authoring session supplies no independent reviewer blessing.
+
+
+## DL-089 down-state evidence and recovery, 2026-11-18/19 UTC
+
+The [round-five receipt](validation/live-upgrade-review-r5-2026-11-18.json)
+records authoring-session tests and native rehearsals, not independent approval.
+DL-089 amends DL-088 for a project already stopped when rollback begins. The
+[runbook route table](live-upgrade-runbook.md#rollback-routes-when-the-project-is-already-down-dl-089)
+selects an ordinary capture while anything runs, exact-original restart with
+retained configuration when every original ID still exists, or a distinct
+per-container evidenced down capture for candidates. Unreadable required evidence
+HOLDs. All-down original-stop capture still HOLDs before a cold copy.
+
+Earlier applicable captures remain required alongside the current record, including
+legacy timestamped captures without an index. Recovery cannot replace the first
+stop's obligations with a narrower capture. Current-boot/store, generation/data
+association and identifier continuity determine applicability; stale/incomplete
+history is never substituted for current evidence. History traversal errors HOLD.
+
+Native proof used a separate published bridge project in the isolated store. Mixed
+running/exited state, all-down state, created containers, exits 0/137/23, missing
+containers and partial removal passed their expected gates. A readable cold-directory
+holder refused and then passed after release; a container started after capture
+refused. The actual guarded stop/down/process-verification block ran from fresh
+Bash. Both the ordinary and down-state records verified after **full** `down`.
+An empty project listing with an explicit never-created/missing placeholder also
+passed with current store-helper and readable-source evidence. This does not claim
+a historical cgroup search for an unknown container ID or complete teardown outside
+the identified cgroups.
+
+A separate native original-restart rehearsal used tiny fresh PostgreSQL, MySQL and
+SQLite databases in existing isolated images. After cold copies, configuration
+rotation and clearing SQLite's shared files, a real console listener forced the
+port refusal. The actual fresh-shell restart route restored the whole retained
+configuration, restarted the same original IDs on the same mounts, waited for
+SQLite health before consoles, and left the occupied console stopped. SQL/file
+fingerprints remained equal, shared files were rebuilt, original credentials
+worked, rotated credentials failed specifically at authentication, and the `.env`
+digest matched the retained one. Running originals, missing/replaced original IDs
+and an extra candidate each refused. Configured health probes used the documented
+second-process fallback; no health state was edited. Recreating removed originals
+through `original-override` remains fixture-tested, not natively replayed.
+
+The read-only live capture at **2026-11-18 23:52:41 UTC** completed: eight containers,
+246 process identities, eight `conmon`, seven dedicated helpers, sixteen cgroups,
+four data sources and the shared `pasta.avx2` helper, with no capture HOLD.
+It read narrow Podman metadata, `/proc` and filesystem identity only. It did not
+stop or signal anything, read environments/arguments or credential values, write
+to the live checkout/store, or claim the running deployment was quiescent.
+
+A supplementary owned container with an inspected 8 MiB limit produced a real
+native OOM kill (exit 137). Candidate-teardown state, evidenced down capture and
+verification all Passed. Its container and volume were removed. This supplements
+the primary rehearsal's earlier OOM Unsupported row; that original record is kept.
+The replayable driver is
+[`rehearse-quiescence-oom.py`](validation/rehearse-quiescence-oom.py).
+
+**Unsupported natively:** a live task retained in an exited container's cgroup;
+a reboot, which needs a separately approved
+disposable host; and the shared helper with zero consumers while the isolated
+stack remains running. These branches retain focused fixtures and reversal
+coverage. A second scratch project cannot remove the isolated stack's consumers.
+Prior native descriptor/alias/thread proofs remain in the round-four receipts;
+the patched required-stat read is explicitly fault injection, while the required
+subordinate-UID descriptor PermissionError/HOLD was a real native denial.
+
+Each scratch attempt retained its evidence and removed only its own containers,
+network and named volume. The receipt records the full suite, decision-removal
+controls, image checks, exact unchanged-stack comparison and image-test volume
+cleanup, including a secondary anonymous volume. The original live netns teardown
+cause remains **unknown**. A transient scratch cgroup-search HOLD is not an
+explanation for it. Full live restoration, engine-size archive replay, forwarded
+live authentication/TLS and DataIntent acceptance remain unproved. As of
+2026-11-18, the acceptance hold remained DataIntent's.

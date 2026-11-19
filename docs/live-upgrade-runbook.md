@@ -14,6 +14,12 @@ survivor refusal and release. The shared helper with remaining consumers Passed;
 the zero-consumer native case remains Unsupported because the isolated stack
 must stay running. Neither stack was stopped for that proof.
 
+The [DL-089 correction receipt](validation/live-upgrade-review-r5-2026-11-18.json)
+records the later same-boot down-state and exact-original restart rehearsals,
+including verification after full `down`, and distinguishes Unsupported native
+subcases. Its live-store exercise was a **read-only capture while running**, not
+a live stop, verification of quiescence, rollback or acceptance.
+
 The isolated build uses `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/env.sh`. The live commands below deliberately use the default rootless Podman store instead. Run them only in the coordinator's live maintenance session. Never run them from the isolated validation shell.
 
 The dataset candidate's cold-readiness blocker is resolved by the
@@ -1542,7 +1548,11 @@ helper PID file, or a recorded published listening port. An indicated associatio
 whose live evidence is unreadable HOLDs. No process arguments/environments are
 read. Unassociated helpers remain a limitation. **Down-state evidence does not
 establish complete teardown outside the identified cgroups.** Readable data holders
-still refuse; mandatory port checks remain before every start.
+still refuse; mandatory port checks remain before every start. The loopback port
+probe binds and listens with `SO_REUSEADDR`, so a closed connection in TIME_WAIT
+is distinguished from an active listener. The native socket regression covers
+both outcomes; see [socket(7)](https://man7.org/linux/man-pages/man7/socket.7.html),
+read 2026-11-18 23:47:19 UTC.
 
 ## Roll back
 
