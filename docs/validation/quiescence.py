@@ -298,7 +298,7 @@ def down_evidence(row, proc, cgroup_root, scan_cache=None):
                     evidence['conmon_start'] = start_time(proc/conmon)
                 except OSError as error:
                     if isinstance(error, ProcessLookupError) or (isinstance(error, FileNotFoundError) and not (proc/conmon).exists()):
-                        evidence['conmon'] = 0
+                        evidence['conmon_absent'] = True
                     else:
                         holds.append(dict(reason='down helper association unreadable', error=type(error).__name__))
             ports = json.loads(pod('inspect', '-f', '{{json .HostConfig.PortBindings}}', identity))
@@ -342,7 +342,7 @@ def down_helpers(rows, proc):
     """Positive association only; arguments and environments are never inspected."""
     refusals, holds = [], []
     ids = {r['id'] for r in rows if r.get('id')}
-    conmons = {r['conmon']:r.get('conmon_start') for r in rows if r.get('conmon')}
+    conmons = {r['conmon']:r.get('conmon_start') for r in rows if r.get('conmon') and not r.get('conmon_absent')}
     ports = merge_endpoints(*(r.get('ports', []) for r in rows))
     sockets = set()
     if ports:
@@ -847,9 +847,11 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
                 fresh['ports'] = merge_endpoints(fresh['ports'], row.get('ports', []))
                 if fresh.get('conmon') == row.get('conmon'):
                     fresh['conmon_start'] = row.get('conmon_start')
+                    fresh['conmon_absent'] = row.get('conmon_absent', False)
                 if not fresh.get('conmon'):
                     fresh['conmon'] = row.get('conmon',0)
                     fresh['conmon_start'] = row.get('conmon_start')
+                    fresh['conmon_absent'] = row.get('conmon_absent', False)
                 evidence.append(fresh)
             refusals, holds = down_helpers(evidence, proc)
             report['refusals'] += refusals; report['holds'] += holds
