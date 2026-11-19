@@ -34,6 +34,56 @@ def fixture(tmp_path,monkeypatch):
 def reasons(report,kind): return {r['reason'] for r in report[kind]}
 
 
+def test_required_cgroup_enumeration_denial_holds_with_readable_reversal(fixture,monkeypatch):
+    saved,proc,cg,data,path,verify=fixture
+    parent=cg/'libpod-test.scope';parent.mkdir()
+    child=parent/'exec';child.mkdir()
+    for group in (parent,child):
+        for name in ('cgroup.procs','cgroup.threads'):(group/name).write_text('')
+    saved['cgroups']=[dict(line='0::/libpod-test.scope',**gate.object_identity(parent))]
+    original=gate.os.scandir
+    def denied(directory):
+        if Path(directory)==child:raise PermissionError(13,'enumeration denied',str(child))
+        return original(directory)
+    monkeypatch.setattr(gate.os,'scandir',denied)
+    assert (child/'cgroup.procs').read_text()==''
+    report=verify()
+    assert report['outcome']=='HOLD',report
+    assert 'required cgroup inspection unreadable' in reasons(report,'holds')
+    monkeypatch.setattr(gate.os,'scandir',original)
+    assert verify()['outcome']=='PASS'
+
+
+@pytest.mark.parametrize('extra_current',[False,True])
+def test_historical_mixed_generation_does_not_own_current_listing(fixture,monkeypatch,extra_current):
+    saved,proc,cg,data,path,verify=fixture
+    earlier=copy.deepcopy(saved)
+    earlier['containers'].append(dict(id='old-console',name='console',pid=0,running=False,state='created'))
+    earlier['down_evidence']=[dict(id='old-console',name='console',ports=[])]
+    prior=data.parent/'rollback-first';prior.mkdir()
+    (prior/'rollback-stop-capture-20261118T120000.json').write_text(json.dumps(earlier))
+    saved['containers'][0]['id']='new-engine'
+    saved['down_evidence']=[dict(id='new-engine',name='engine',ports=[])]
+    def pod(*args):
+        if args[0]=='ps':return '' if '-q' in args else 'new-engine'+(' late-console' if extra_current else '')
+        if args[0]=='container':
+            if args[-1] in ('test','old-console'):raise subprocess.CalledProcessError(1,args)
+            return ''
+        identity=args[-1]
+        if identity in ('test','old-console'):raise subprocess.CalledProcessError(1,args)
+        if args[2]==gate.CAPTURE_FORMAT:return identity+'|0|0|none|false|'
+        if args[2]=='{{json .HostConfig.PortBindings}}':return '{}'
+        return identity+'|false|0'
+    monkeypatch.setattr(gate,'pod',pod)
+    verify()
+    report=gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)
+    assert report['history'][0]['applicable']
+    assert report['outcome']==('HOLD' if extra_current else 'PASS'),report
+    assert ('container capture incomplete' in reasons(report,'holds'))==extra_current
+    if extra_current:
+        assert all('capture' not in row for row in report['holds'])
+
+
 @pytest.mark.parametrize('role,reason',[('process','recorded process survives'),('conmon','recorded process survives'),('dedicated helper','dedicated helper survives')])
 def test_recorded_survivor_refuses_with_reversal(fixture,role,reason):
     saved,proc,cg,data,path,verify=fixture

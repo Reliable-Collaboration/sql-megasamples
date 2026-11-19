@@ -222,6 +222,37 @@ python3() { echo '{"outcome":"HOLD","holds":[{"reason":"required deployment insp
     finally:server.close()
 
 
+def test_partial_exact_original_restart_persists_guard_before_first_start(tmp_path):
+    server=context(tmp_path,'rollback-stop')
+    backup=tmp_path/'retained';attempt=tmp_path/'attempt';checkout=tmp_path/'checkout'
+    (backup/'original-running-services.txt').write_text('postgres\nmysql\n')
+    (backup/'rollback-branch.txt').write_text('original')
+    (backup/'original-commit.txt').write_text('fixture')
+    checkout.mkdir();(checkout/'consoles').mkdir()
+    config=attempt/'configuration';(config/'consoles').mkdir(parents=True)
+    for name in ('.env','compose.yaml','megasamples.yaml'):(config/name).write_text('# fixture\n')
+    try:
+        script='. "$CONTEXT"\ncd "$CHECKOUT"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"\n'+r'''
+python3() {
+  if test "$1" = -; then command python3 "$@"; return; fi
+  case "$2 ${3-}" in 'wait-healthy mysql') return 37;; esac
+}
+git() { if test "$1" = rev-parse; then echo fixture; fi; }
+sha256sum() { :; }
+docker() { printf '%s\n' "$*" >> "$EVIDENCE_DIR/started"; }
+'''+block('# BEGIN retained original restart\n','# END retained original restart')
+        env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash'),CHECKOUT=str(checkout))
+        failed=subprocess.run(['bash','-eu','-c',script],env=env,capture_output=True,text=True)
+        assert failed.returncode==37,failed.stderr
+        assert 'start postgres' in (tmp_path/'evidence/started').read_text()
+        fresh='. "$CONTEXT"\npython3() { echo UNSAFE_ROUTE; exit 49; }\n'
+        fresh+=block('# BEGIN rollback route dispatch\n','# END rollback route dispatch')+'\necho UNSAFE_TEARDOWN\n'
+        resumed=subprocess.run(['bash','-eu','-c',fresh],env=env,capture_output=True,text=True)
+        assert resumed.returncode==2,resumed.stdout+resumed.stderr
+        assert 'HOLD:' in resumed.stdout and 'UNSAFE_' not in resumed.stdout
+    finally:server.close()
+
+
 def test_restart_policy_failure_blocks_capture_and_has_guarded_restore(tmp_path):
     server=context(tmp_path,'stop')
     try:
