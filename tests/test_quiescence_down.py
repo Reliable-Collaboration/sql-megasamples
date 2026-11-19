@@ -236,3 +236,60 @@ def test_mixed_capture_states_its_down_evidence_limit(down):
     report=gate.verify(out,proc=proc,cgroup_root=cg)
     assert report['outcome']=='PASS'
     assert 'Mixed' in report['assurance'] and 'outside the identified cgroups' in report['assurance']
+
+
+def test_retained_down_conmon_pid_reuse_is_not_continuity(down,monkeypatch):
+    snap,out,proc,cg,data=down
+    p=process(proc,12349,'conmon','/shell')
+    original=gate.pod
+    monkeypatch.setattr(gate,'pod',lambda *a:'test|0|12349|none|false|' if a[0]=='inspect' and a[2]==gate.CAPTURE_FORMAT else original(*a))
+    gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)
+    def removed(*args):
+        if args[0]=='ps':return ''
+        raise subprocess.CalledProcessError(1,args)
+    monkeypatch.setattr(gate,'pod',removed)
+    assert gate.verify(out,proc=proc,cgroup_root=cg)['outcome']=='REFUSE'
+    for stat in (p/'stat',p/'task/12349/stat'):stat.write_text(stat.read_text().replace('42','43'))
+    assert gate.verify(out,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+    for stat in (p/'stat',p/'task/12349/stat'):stat.write_text(stat.read_text().replace('43','42'))
+    assert gate.verify(out,proc=proc,cgroup_root=cg)['outcome']=='REFUSE'
+
+
+@pytest.mark.parametrize('site',['down-member','down-helper','shared-capture','shared-verify'])
+def test_neighbouring_proc_reads_treat_esrch_as_vanished(down,monkeypatch,site):
+    snap,out,proc,cg,data=down
+    p=process(proc,12349,'slirp4netns' if site.startswith('shared') else 'conmon','/rootless-netns-store.scope')
+    original_pod=gate.pod
+    if site=='down-member':
+        group=cg/'libpod-test.scope';group.mkdir()
+        for name in ('cgroup.procs','cgroup.threads'):(group/name).write_text('12349')
+    if site=='down-helper':
+        monkeypatch.setattr(gate,'pod',lambda *a:'test|0|12349|none|false|' if a[0]=='inspect' and a[2]==gate.CAPTURE_FORMAT else original_pod(*a))
+    if site.startswith('shared'):
+        pidfile=Path(gate.store_identity()['run'])/'networks/rootless-netns/rootless-netns-conn.pid'
+        pidfile.parent.mkdir(parents=True);pidfile.write_text('12349')
+        monkeypatch.setattr(gate,'pod',lambda *a:'test|0|0|bridge|false|' if a[0]=='inspect' and a[2]==gate.CAPTURE_FORMAT else original_pod(*a))
+    identity=gate.process_identity;alive=gate.task_alive
+    def reaped_identity(path):
+        if path==p:raise ProcessLookupError('reaped identity')
+        return identity(path)
+    def reaped_alive(path):
+        if path==p:raise ProcessLookupError('reaped task')
+        return alive(path)
+    if site in ('down-member','down-helper'):monkeypatch.setattr(gate,'task_alive',reaped_alive)
+    if site=='shared-capture':monkeypatch.setattr(gate,'process_identity',reaped_identity)
+    if site=='shared-verify':
+        pidfile.unlink()
+        assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
+        pidfile.write_text('12349');monkeypatch.setattr(gate,'process_identity',reaped_identity)
+        report=gate.verify(out,proc=proc,cgroup_root=cg)
+    else:report=gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)
+    assert report['outcome']=='PASS',report
+    # Permission denial at the same required read still holds.
+    def denied(path):
+        if path==p:raise PermissionError('required read denied')
+        return identity(path) if site.startswith('shared') else alive(path)
+    monkeypatch.setattr(gate,'process_identity' if site.startswith('shared') else 'task_alive',denied)
+    if site=='shared-verify':report=gate.verify(out,proc=proc,cgroup_root=cg)
+    else:report=gate.capture(snap,data.parent/'denied.json',proc=proc,cgroup_root=cg,allow_down=True)
+    assert report['outcome']=='HOLD',report

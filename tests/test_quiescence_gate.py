@@ -54,6 +54,25 @@ def test_required_cgroup_enumeration_denial_holds_with_readable_reversal(fixture
     assert verify()['outcome']=='PASS'
 
 
+def test_recorded_cgroup_member_esrch_is_absent(fixture,monkeypatch):
+    saved,proc,cg,data,path,verify=fixture
+    group=cg/'libpod-test.scope';group.mkdir()
+    for name in ('cgroup.procs','cgroup.threads'):(group/name).write_text('12349')
+    saved['cgroups']=[dict(line='0::/libpod-test.scope',**gate.object_identity(group))]
+    p=process(proc,12349,group='/other')
+    original=gate.task_alive
+    def reaped(path):
+        if path==p:raise ProcessLookupError('task reaped')
+        return original(path)
+    monkeypatch.setattr(gate,'task_alive',reaped)
+    assert verify()['outcome']=='PASS'
+    def denied(path):
+        if path==p:raise PermissionError('task unreadable')
+        return original(path)
+    monkeypatch.setattr(gate,'task_alive',denied)
+    assert 'required cgroup inspection unreadable' in reasons(verify(),'holds')
+
+
 @pytest.mark.parametrize('extra_current',[False,True])
 def test_historical_mixed_generation_does_not_own_current_listing(fixture,monkeypatch,extra_current):
     saved,proc,cg,data,path,verify=fixture
