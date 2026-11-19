@@ -279,6 +279,14 @@ def down_evidence(row, proc, cgroup_root, scan_cache=None):
             if found != identity or int(pid) != 0:
                 raise ValueError('container identity changed')
             evidence.update(conmon=int(conmon), mode=mode)
+            if int(conmon):
+                try:
+                    evidence['conmon_start'] = start_time(proc/conmon)
+                except OSError as error:
+                    if isinstance(error, ProcessLookupError) or (isinstance(error, FileNotFoundError) and not (proc/conmon).exists()):
+                        evidence['conmon'] = 0
+                    else:
+                        holds.append(dict(reason='down helper association unreadable', error=type(error).__name__))
             ports = json.loads(pod('inspect', '-f', '{{json .HostConfig.PortBindings}}', identity))
             evidence['ports'] = sorted({int(p['HostPort']) for bindings in (ports or {}).values() for p in bindings or []})
     except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
@@ -301,8 +309,8 @@ def down_evidence(row, proc, cgroup_root, scan_cache=None):
                 try:
                     if task_alive(proc/pid):
                         refusals.append(dict(reason='live deployment cgroup task', pid=int(pid)))
-                except OSError:
-                    if (proc/pid).exists():
+                except OSError as error:
+                    if not isinstance(error, ProcessLookupError) and (proc/pid).exists():
                         holds.append(dict(reason='down cgroup evidence unreadable'))
     except (OSError, ValueError) as error:
         holds.append(dict(reason='down cgroup evidence unreadable', error=type(error).__name__))
@@ -313,7 +321,7 @@ def down_helpers(rows, proc):
     """Positive association only; arguments and environments are never inspected."""
     refusals, holds = [], []
     ids = {r['id'] for r in rows if r.get('id')}
-    conmons = {r['conmon'] for r in rows if r.get('conmon')}
+    conmons = {r['conmon']:r.get('conmon_start') for r in rows if r.get('conmon')}
     ports = {port for r in rows for port in r.get('ports', [])}
     sockets = set()
     if ports:
@@ -330,6 +338,11 @@ def down_helpers(rows, proc):
             continue
         associated = int(process.name) in conmons
         try:
+            if associated:
+                recorded_start = conmons[int(process.name)]
+                if recorded_start is None:
+                    raise ValueError('retained conmon start time missing')
+                associated = start_time(process) == recorded_start
             comm = (process/'comm').read_text().strip()
             if associated and comm != 'conmon':
                 raise ValueError('Podman conmon association contradicted by process identity')
@@ -361,7 +374,7 @@ def down_helpers(rows, proc):
             if associated:
                 refusals.append(dict(reason='positively associated down helper survives', **process_identity(process)))
         except (OSError, ValueError) as error:
-            if associated and process.exists():
+            if associated and not isinstance(error, ProcessLookupError) and process.exists():
                 holds.append(dict(reason='down helper association unreadable', pid=int(process.name), error=type(error).__name__))
     return refusals, holds
 
@@ -494,6 +507,8 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                 if pidfile.read_text().strip() != pid:
                     raise ValueError('store helper changed during capture')
                 saved['shared_helper'] = dict(shared, role='shared helper', pidfile=str(pidfile))
+            except ProcessLookupError:
+                saved['shared_helper_absence'] = dict(pidfile=str(pidfile), reason='store helper vanished during capture')
             except FileNotFoundError as error:
                 if not down_allowed or pidfile.exists():
                     hold('shared helper association unresolved; return to deciders', error=type(error).__name__)
@@ -782,7 +797,9 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
                 report['refusals'] += refusals; report['holds'] += holds
                 # Retain the down container's known conmon and ports after removal.
                 fresh['ports'] = sorted(set(fresh['ports']) | set(row.get('ports',[])))
-                if not fresh.get('conmon'): fresh['conmon'] = row.get('conmon',0)
+                if not fresh.get('conmon'):
+                    fresh['conmon'] = row.get('conmon',0)
+                    fresh['conmon_start'] = row.get('conmon_start')
                 evidence.append(fresh)
             refusals, holds = down_helpers(evidence, proc)
             report['refusals'] += refusals; report['holds'] += holds
@@ -805,6 +822,8 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
             if pidfile.read_text().strip() != pid:
                 raise ValueError('store helper changed')
             shared['role'] = 'shared helper'
+        except ProcessLookupError:
+            pass  # A stale PID file does not keep a reaped helper alive.
         except FileNotFoundError:
             if pidfile.exists(): hold('required association unresolved')
         except (OSError, ValueError):
@@ -852,8 +871,8 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
                         try:
                             if task_alive(p):
                                 refuse('live deployment cgroup task', pid=int(pid))
-                        except OSError:
-                            if p.exists():
+                        except OSError as error:
+                            if not isinstance(error, ProcessLookupError) and p.exists():
                                 hold('required cgroup inspection unreadable')
         except (OSError, ValueError) as error:
             if not isinstance(error, FileNotFoundError) or path.exists():
