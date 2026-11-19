@@ -86,8 +86,10 @@ def admin_scope(document, engine):
         options = re.search(r'CREATE ROLE admin WITH ([^;]+)', sql).group(1)
         assert re.search(r'\bCREATEDB\b', options) and re.search(r'\bCREATEROLE\b', options)
         assert not re.search(r'\bSUPERUSER\b', options)
-        assert (('ALL',), 'datasets') in grants and not any('GRANT OPTION' in scope for _,scope in grants)
-        assert not re.search(r'GRANT[^;]+TO admin WITH GRANT OPTION;', sql)
+        assert (('ALL',), 'datasets') in grants
+        for source in (ROOT/'engines/postgres/init').glob('*.sql'):
+            grant_sql = re.sub(r'--[^\n]*', '', source.read_text())
+            assert not re.search(r'GRANT[^;]+TO\s+admin\s+WITH\s+GRANT\s+OPTION\s*;', grant_sql, re.I)
         dockerfile = (ROOT/'engines/postgres/Dockerfile').read_text()
         assert 'OWNER admin TEMPLATE template0' in dockerfile
         for clause in ('CREATEDB', 'CREATEROLE', 'owns the sample databases',
