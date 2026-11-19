@@ -762,13 +762,26 @@ fragments rely on this mechanical entry; they are not independent paste blocks.
 The complete manual cleanup also runs in plain Bash against path, nested-path,
 escaping-symlink, both missing-configuration, graph-root, listing-error,
 non-empty-listing, pause-enumeration and unset-path failures.
+Round-two D3 executes every whole fence unchanged in plain Bash, with external
+commands modeled by fail-closed fixtures. Successful baseline runs establish
+which gates are reached; each reached assertion/helper gate then rejects at its
+actual source line, preserving the intervening shell control flow. Both original
+restart and ordinary routes are exercised for bootstrap and dispatch. A console
+port refusal in retained-original restart intentionally holds only that console;
+its start remains blocked while policy restoration continues. The preparation
+control plants `set +e` immediately after entry and fails the class check on
+continued execution. The full manual-cleanup fixture remains separate.
 The whole cold-start and unchanged-volume fences run under plain `bash -c` with
 state, port and each engine-health gate rejecting in turn. No engine recreation
 follows a rejected state/port gate; no console starts after rejected engine health.
 
-C2 removes named attribution from the follow-up receipt and checks whole files
-changed by this PR against the fixed base. Pre-existing dataset provenance in
-unchanged base files is outside this check and remains unchanged.
+C2 removes named attribution from the follow-up receipt. Round-two D1 limits the
+whole-file attribution check to `docs/live-upgrade-evidence.md` and
+`docs/validation/live-upgrade*.json`. It requires neither Git nor a base commit
+object, and dataset provenance under `knowledge/` stays outside its scope. A
+fixture runs it in a directory without Git metadata, with matching dataset
+provenance present and any attempted Git call forbidden. The original receipt
+still fails this scoped check.
 
 C3 requires a positive decimal store-helper PID before interpreting a missing
 process as absence, both at capture and verification. Empty, whitespace,
