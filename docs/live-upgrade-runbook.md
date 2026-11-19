@@ -835,7 +835,8 @@ data. Reuse is judged per process/cgroup row: that superseded identity cannot
 establish continuity, while other rows from that capture remain required.
 New captures use schema 2. An older-schema current capture HOLDs: take a fresh
 capture through the applicable route. Older-schema historical endpoint evidence
-neither passes nor blocks the current attempt. The report names that limit and
+neither passes nor blocks the current attempt; the
+older capture's source and holder checks are not repeated. The report names that limit and
 still enforces independently recorded process and cgroup birth identities,
 including down-state conmon and cgroup records; a survivor refuses and unreadable
 required identity evidence holds. Never overwrite the older record.

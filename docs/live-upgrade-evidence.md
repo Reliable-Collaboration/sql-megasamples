@@ -664,7 +664,9 @@ this small round adds no new native rollback or archive rehearsal.
 
 New captures use schema 2. An older-schema current capture HOLDs until replaced
 through the applicable capture route. Schema-1 historical endpoint evidence is
-history: it neither passes nor blocks a fresh attempt. The history report says
+history: it neither passes nor blocks a fresh attempt; the
+older capture's source and holder checks are not repeated. The current capture
+still checks its sources and holders. The history report says
 that independently recorded process and cgroup identities remain enforced,
 including down-state conmon birth identities and cgroup objects. Fixtures pair
 old integer-port history with a current capture: no survivor passes, recorded
