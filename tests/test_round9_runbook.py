@@ -1,6 +1,7 @@
 """Round-nine composed recovery regressions and their successful reversals."""
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 
@@ -106,13 +107,25 @@ def test_empty_original_listing_still_refuses_policy_pause(tmp_path):
 
 def test_rollback_policy_pause_is_a_separate_guarded_step():
     text = RUNBOOK.read_text().split('## Roll back', 1)[1]
-    # Pasting the dispatch/input block must end before capture or stop.
-    before_capture = text.split('# Stop candidates BEFORE down', 1)[0]
-    after_inputs = before_capture.split('# END rollback input verification', 1)[1]
-    assert '```\n' in after_inputs and after_inputs.rstrip().endswith('```sh')
-    prose = after_inputs.split('```\n', 1)[1].rsplit('```sh', 1)[0]
-    assert 'guarded' in prose and 'pause restart automation' in prose
-    assert 'before' in prose and 'capture' in prose
+    fences = list(re.finditer(r'^```sh\n(.*?)^```$', text, re.M | re.S))
+    dispatch = next(i for i, fence in enumerate(fences)
+                    if '# BEGIN rollback route dispatch' in fence[1])
+    before = fences[dispatch][1]
+    after = fences[dispatch+1][1]
+    assert '# END rollback input verification' in before
+    assert '# Stop candidates BEFORE down' not in before
+    assert '# Stop candidates BEFORE down' in after
+    assert 'stop_project' in after and ' capture ' in after
+    prose = text[fences[dispatch].end():fences[dispatch+1].start()]
+    assert '[Final backups and cutover](#final-backups-and-cutover)' in prose
+    assert 'after dispatch/input checks and before capture or stop' in prose
+    # The separately referenced guarded step must actually list/update policies.
+    pause = block('# BEGIN pause restart automation\n', '# END pause restart automation')
+    assert 'AUTOMATION_IDS=$(podman ps -aq' in pause
+    assert 'podman update --restart=no "$id"' in pause
+    for fragment in (before, after, pause):
+        parsed = subprocess.run(['bash', '-n'], input=fragment, capture_output=True, text=True)
+        assert parsed.returncode == 0, parsed.stderr
 
 
 def test_first_port_refusal_then_fresh_shell_dispatch_completes(tmp_path):
