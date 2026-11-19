@@ -406,3 +406,58 @@ cause remains **unknown**. A transient scratch cgroup-search HOLD is not an
 explanation for it. Full live restoration, engine-size archive replay, forwarded
 live authentication/TLS and DataIntent acceptance remain unproved. As of
 2026-11-18, the acceptance hold remained DataIntent's.
+
+## Populated backup and recovery corrections (2026-11-19 UTC)
+
+The [round-six receipt](validation/live-upgrade-review-r6-2026-11-19.json)
+records X1–X4 and their focused red/green checks. Capture discovery now lists
+only the retained root and direct `rollback-*` attempt directories. It never
+walks cold-data payloads. Unreadable capture inventories still HOLD. Identifier
+reuse supersedes only the affected historical process/cgroup row; other evidence
+in that capture remains required. Current-capture reuse still HOLDs.
+
+The native replica uses the audited first-run top-level names, an attempt under
+that backup, and the runbook's `podman unshare cp -a` from stopped scratch engine
+data. PostgreSQL's populated data directory has subordinate ownership and mode
+0700. Two cold-data directories were genuinely unreadable in the host namespace.
+No live cold-data contents were read or copied. The earlier empty-directory
+rollback-gate composition is superseded by
+[`rehearse-original-restart.py`](validation/rehearse-original-restart.py) and
+[`rehearse-rollback-replica.py`](validation/rehearse-rollback-replica.py).
+
+**Passed natively:** the exact-original restart; both guarded restart-policy
+blocks on scratch IDs; fresh-shell rollback stop/down and restore gate; population
+gate and actual four-tree population; pre-up gate. The populated trees matched
+bytes, numeric ownership and modes. Each process gate verified earlier capture
+history. The old helper returned the expected history-inspection HOLD on this
+same replica. Namespace adaptation changes project/container/volume names and
+Compose paths, retaining the runbook's stop function and gate commands. This
+executes gate fragments and population; it does not replay engine-size image
+archives, the complete bootstrap, configuration rollback or a live restoration.
+
+The down-state full cgroup search is shared across rows and history checks.
+ENOENT/ENODEV on a path that does not name a recorded container means absent;
+unreadable or unresolved recorded scope still HOLDs. Mixed captures now state
+the down-evidence limit. A reaped process is vanished, while other required read
+errors remain HOLDs. Thirteen rule-removal controls each failed their targeted
+regression, as required.
+
+Unchanged-data recovery selects the saved console images and restores the
+retained CloudBeaver workspace into a stopped replacement before starting it.
+The shell regression selects CloudBeaver with a nonempty saved workspace.
+Missing candidate engine mounts refuse the unchanged-data override. Its native
+engine/console recreation remains **Not run**. Bootstrap and dispatch retain route
+HOLD reports and status; completed or partial original restart phases refuse
+teardown dispatch. The bootstrap's original-restart branch is exercised by tests.
+
+The receipt records 842 suite tests, 54 documentation checks and all three engine
+image checks Passed, plus exact isolation/cleanup comparisons. The image wrapper's
+cleanup initially Failed on an observed volume already removed by the tests.
+Creation-event association, matching creation timestamps, zero mounts and no
+remaining references proved the three remaining test volumes before removal;
+two observed volumes were already absent. Completed cleanup and isolation Passed.
+The live netns teardown cause remains **unknown**; these scratch stops and downs
+did not reproduce that error. Live restoration, forwarded live sign-ins and
+DataIntent acceptance were **Not run** here. The previously documented native
+reboot, exited-cgroup live-task and zero-shared-consumer cases remain Unsupported.
+As of 2026-11-19 UTC, no new DataIntent acceptance decision was supplied.

@@ -1,0 +1,331 @@
+{
+  "at": "2026-11-19T01:30:19.579843+00:00",
+  "checked_code_commit": "ff8bcbd11ecdd38e77dc38c313f1043c5f254b32",
+  "scope": "DL-086 round six, X1-X4. No live mutation; PR remains for coordinator review, acceptance and merge.",
+  "fixes": {
+    "X1": {
+      "test_only_commit": "2443b7d",
+      "commits": [
+        "0d2659c",
+        "d1f8fe4",
+        "7237049",
+        "ff8bcbd"
+      ],
+      "red": "x1-red.log: old discovery misses inventory denial and HOLDs on unreadable cold data",
+      "green": "Focused history tests, rule reversals, native old-helper HOLD and all three populated-replica gates"
+    },
+    "X2": {
+      "commits": [
+        "ba41389"
+      ],
+      "red": "x2-red.log: no stopped CloudBeaver creation/workspace copy",
+      "green": "Selected CloudBeaver/nonempty retained workspace; copy ordered before first start, saved image override on each Compose call"
+    },
+    "X3": {
+      "commits": [
+        "1fa6d49",
+        "7237049"
+      ],
+      "red": "x3-red.log: both unrelated ENOENT/ENODEV races HOLD",
+      "green": "Per-row recorded denial still HOLDs; unrelated disappearance PASS; one tree search across two real container rows; removal controls fail"
+    },
+    "X4": {
+      "commits": [
+        "e3125bc",
+        "3d29797",
+        "7237049",
+        "ff8bcbd"
+      ],
+      "red": [
+        "x4-helper-red.log: four reason-specific failures",
+        "x4-shell-red.log: route reports/phase guards absent",
+        "x4-policy-red.log: guarded block absent"
+      ],
+      "green": "Whole suite and 13 targeted reversals, bootstrap original-restart plus HOLD, native restart-policy blocks and original restart",
+      "notes": {
+        "3": "reuse judged per row; same path with new inode retains other survivor",
+        "4": "bootstrap original-restart test",
+        "5": "bootstrap/dispatch route reports and exit status retained in attempt",
+        "6": "independent candidate engine mount evidence mandatory",
+        "7": "saved console override (X2)",
+        "8": "stale state label removed and source read time corrected against retained receipt",
+        "9": "guarded cutover pause and post-verification restore blocks natively rehearsed",
+        "10": "mixed capture states down-evidence limit",
+        "11": "originals-restarted/rollback-starting/rollback-restored phase guard",
+        "12": "ProcessLookupError means vanished; other required errors still HOLD"
+      }
+    }
+  },
+  "replica": {
+    "top_level_names": "tests/fixtures/live-upgrade/retained-root-names.json",
+    "attempt_under_backup": true,
+    "cold_copy": "podman unshare cp -a from stopped scratch PostgreSQL, MySQL, SQLite and shared mounts",
+    "unreadable_cold_directories": 2,
+    "unreadable_classes": [
+      "PermissionError"
+    ],
+    "postgres_data_mode": "0700",
+    "postgres_data_subordinate_owner": true
+  },
+  "native_results": {
+    "rotation-port-refusal": {
+      "status": "Passed",
+      "ports": 1
+    },
+    "exact-original-restart-fresh-shell": {
+      "status": "Passed",
+      "containers": 4,
+      "engines_healthy": 3,
+      "consoles_held": 1,
+      "ids_unchanged": true,
+      "mounts_unchanged": true,
+      "sql_fingerprints_unchanged": true,
+      "sqlite_fingerprint_unchanged": true,
+      "shared_rebuilt": true,
+      "original_credentials_accepted": true,
+      "rotated_credentials_refused": true,
+      "env_digest_restored": true
+    },
+    "original-restart-refuses-running": {
+      "status": "Passed",
+      "outcome": "REFUSE",
+      "reason_class": "exact original restart eligibility"
+    },
+    "original-restart-refuses-candidate-present": {
+      "status": "Passed",
+      "outcome": "REFUSE",
+      "reason_class": "exact original restart eligibility"
+    },
+    "original-restart-refuses-missing-ID": {
+      "status": "Passed",
+      "outcome": "REFUSE",
+      "reason_class": "exact original restart eligibility"
+    },
+    "original-restart-refuses-replaced-ID": {
+      "status": "Passed",
+      "outcome": "REFUSE",
+      "reason_class": "exact original restart eligibility"
+    },
+    "replica-old-history-red": {
+      "status": "Passed",
+      "control": "Old helper HOLDs on unreadable cold payload",
+      "outcome": "HOLD",
+      "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+      "refusals": {},
+      "holds": {
+        "capture history inspection unreadable": 1
+      },
+      "counts": {
+        "inspected": 1260,
+        "other_owner": 841,
+        "vanished": 37,
+        "zombie_or_exited": 21
+      },
+      "shared_consumers": 10
+    },
+    "replica-population-content": {
+      "status": "Passed",
+      "trees": 4,
+      "numeric_ownership_modes_and_bytes_equal": true
+    },
+    "replica-restore": {
+      "status": "Passed",
+      "outcome": "PASS",
+      "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+      "refusals": {},
+      "holds": {},
+      "counts": {
+        "inspected": 1258,
+        "other_owner": 838,
+        "vanished": 33,
+        "zombie_or_exited": 21
+      },
+      "shared_consumers": 10,
+      "history_records": 1
+    },
+    "replica-populate": {
+      "status": "Passed",
+      "outcome": "PASS",
+      "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+      "refusals": {},
+      "holds": {},
+      "counts": {
+        "inspected": 1255,
+        "other_owner": 842,
+        "vanished": 44,
+        "zombie_or_exited": 21
+      },
+      "shared_consumers": 10,
+      "history_records": 2
+    },
+    "replica-pre-up": {
+      "status": "Passed",
+      "outcome": "PASS",
+      "assurance": "Down-state candidate teardown evidence: freshly inspected container states, identified cgroups and positively associated helpers, plus readable data holders. This evidence does not establish complete teardown outside the identified cgroups, prove the host quiet or prevent new writers. It is not pre-stop history.",
+      "refusals": {},
+      "holds": {},
+      "counts": {
+        "inspected": 1267,
+        "other_owner": 844,
+        "vanished": 40,
+        "zombie_or_exited": 21
+      },
+      "shared_consumers": 10,
+      "history_records": 2
+    },
+    "native-restart-policy": {
+      "status": "Passed",
+      "containers": 4,
+      "pause": "no",
+      "restore": "unless-stopped"
+    }
+  },
+  "native_cleanup": {
+    "status": "Passed",
+    "containers": 0,
+    "networks": 0,
+    "volumes": 0,
+    "isolated_unchanged": true
+  },
+  "results": {
+    "suite": {
+      "status": "Passed",
+      "tests": 842,
+      "seconds": 31.64
+    },
+    "reversals": {
+      "status": "Passed",
+      "controls": 13,
+      "artifacts": "build/dl090/reversals-i79pdael"
+    },
+    "dl088_reversals": {
+      "artifacts": "build/dl086/dl088/rule-removals-v07lbtw6",
+      "rules": 22,
+      "status": "Passed"
+    },
+    "dl089_reversals": {
+      "status": "Passed",
+      "controls": 16,
+      "artifacts": "build/dl089/reversals-nt26fuc_"
+    },
+    "documentation": {
+      "status": "Passed",
+      "summary": "54 passed in 0.95s"
+    },
+    "images": {
+      "postgres": {
+        "status": "Passed",
+        "exit_code": 0
+      },
+      "mysql": {
+        "status": "Passed",
+        "exit_code": 0
+      },
+      "sqlite": {
+        "status": "Passed",
+        "exit_code": 0
+      }
+    },
+    "image_cleanup": {
+      "status": "Passed",
+      "anonymous_volumes_removed": 3,
+      "already_absent_observed_primary": 1,
+      "remaining_event_volumes_already_absent": 1,
+      "api_service_stopped": true,
+      "evidence": "Each removed volume creation directly precedes this run's exact test-container creation at the same second; CreatedAt matches, Anonymous=true, MountCount=0, container absent and no references. Only that validated set was removed; all other listed volumes unchanged.",
+      "initial_wrapper": "Failed on a previously observed primary volume already removed by the test; final scoped cleanup Passed"
+    },
+    "isolation": {
+      "status": "Passed",
+      "isolated": {
+        "containers": 12,
+        "ids_images_states_start_times_unchanged": true
+      },
+      "live": {
+        "containers": 3,
+        "ids_images_states_start_times_unchanged": true,
+        "matches_prior_cutover_inventory": true
+      },
+      "scratch": {
+        "containers": 0,
+        "networks": 0,
+        "volumes": 0,
+        "restore_volumes": 0
+      },
+      "scope": "Live read-only inspect of three named engines only; no live exec, stop, start, signal, build, network or forwarder mutation"
+    }
+  },
+  "native_scope": "Audited real retained names with placeholder non-data inputs; only scratch engine data copied. Actual saved context/stop function and runbook stop/down, restore gate, population, pre-up checkpoint/gate; project/container/volume names and Compose paths adapted. Full bootstrap/configuration/image restore not executed natively.",
+  "retained_backup_audit": {
+    "status": "Passed",
+    "evidence": "build/dl090/backup-metadata.json",
+    "reads": "names, modes and owners only; no cold-data payloads, credential files, full inspection or dumps"
+  },
+  "netns": {
+    "reproduced": false,
+    "cause": "Unknown",
+    "evidence": "Owned scratch stop/down commands succeeded; no host or forwarder changes"
+  },
+  "not_run": [
+    "Live stop/restore, live backup bootstrap, or end-to-end live rollback",
+    "Engine-size image archive replay",
+    "Native unchanged-data engine/console recreation",
+    "Live forwarded sign-ins/TLS",
+    "New DataIntent acceptance or independent review; merge held by coordinator"
+  ],
+  "unsupported": [
+    "Actual reboot requires a separately approved disposable host",
+    "A live task retained in an exited container cgroup not safely arranged natively",
+    "Zero shared-helper consumers cannot be arranged while isolated stack remains unchanged"
+  ],
+  "failed_then_corrected": [
+    "Initial host .venv command failed because interpreter target is container-only; all tests subsequently used the existing isolated tools container",
+    "Initial tools invocation assumed /workspace; corrected to its actual configured working directory",
+    "Cold-data denial fixture initially intercepted integer descriptor cleanup; narrowed to path traversal and rerun",
+    "Intermediate helper edit accidentally altered other candidate-list predicates; corrected before successful checks",
+    "First replica run used an embedded client path from the old sibling attempt layout; corrected to nested path, cleanup Passed, native reruns Passed",
+    "An auxiliary health-field inspect query was unavailable on an image-test container without a healthcheck; the image test continued under its own readiness checks",
+    "Image-check wrapper cleanup failed when inspecting a previously observed volume already removed by the tests. Engine checks all exited zero; event-attributed cleanup removed three remaining test volumes and confirmed two observed volumes already absent; final isolation Passed",
+    "Adding guarded policy preflight required the capture-refusal fixture to return a nonempty scoped listing; corrected without weakening its expected capture refusal"
+  ],
+  "evidence_sha256": {
+    "build/dl090/x1-red.log": "52c9f2391e8943d5c3de80d973d1b759a27c6a0a562edb2ddc223486063efabe",
+    "build/dl090/x2-red.log": "06dd918054e14ee87bbca7bd7e702a20e46a68d56e822546e996a68b8e98051f",
+    "build/dl090/x3-red.log": "f183da62bfe1cad952c5d11cd79aa4a6a8d5bf16fe31ceac799bb1216a673bc4",
+    "build/dl090/x4-helper-red.log": "6e07cb079856c51d5a0574b9c2e369658baeb944e6528b32f9527346f5ec6e43",
+    "build/dl090/x4-shell-red.log": "ab2d96f76596dc7977a01dbc818f38d0b9ade71f2d116e8320af6795b7fee500",
+    "build/dl090/x4-policy-red.log": "bd3f2eec18478b7fc589faa9f8ff72f563c743dada7fde18efb7860af582f44e",
+    "build/dl090/suite-final.log": "d3ab932677515c15a92cc7931d6fed62354c8ebea06882dce129f0c3012e2f7e",
+    "build/dl090/documentation-final.log": "5221431b000b77f78ce8adf9f678a4a73aa5ddd8e0e1a34d19f536f64a438836",
+    "build/dl090/dl088-reversals.log": "e56ad41b81d499aae1148f757bb73a28d0cde07c8e2e4b87768422788ccc5a43",
+    "build/dl090/dl089-reversals.log": "6af34a8fe0591a0351d31ce92d0be73bcdd90b5daf85ea25267b134bdf91dc5c",
+    "build/dl090/focused-final.log": "d06ef884e007361c62a2212bac2f5c0fb9033021ee99707316e5a4ce2775ab4f",
+    "build/dl090/bootstrap-green.log": "51b5ffcd789ed901df9b4d800cc5646034d31eda4d72957ff1b4775ce89f5b08",
+    "build/dl090/reversals-final.log": "480ed0bb2d36fb054e0c05cef8e400388d37b85e90129f2416b0437f3958d8a3",
+    "build/dl090/native-replica-final.log": "a0e466f97e4b7340612e6bf35c3567e380a24254dfe52a0e687e94742ec02669",
+    "build/dl090/image-postgres.log": "576141433feddfd414185892e7ddb0f239178227a69bafb38f0d82cb68b70122",
+    "build/dl090/image-mysql.log": "dee2cded65dfcd0ba0bbfbb0bd3a96a54ffe3bb55568460cd5c4aa1cba2da122",
+    "build/dl090/image-sqlite.log": "19356d0415186268fb379f4125e6d42413552a9bbb01d8e73f3176d0e8a4a3e2",
+    "build/dl090/images-run.log": "42a83e0b07ddee322ffa966702d56378823d91a41b90c72488dbdbf17b8db366",
+    "build/dl090/isolation.json": "ca6a5cee08c2bd6e884b05711bda28ab7d7d09586f47dad2c517909d23f3a8d4",
+    "build/dl090/backup-metadata.json": "ee729746d12e64991c8dbae1cd6a9f018e225b69d977d8e0b32fd64af188328c",
+    "build/dl090/image-cleanup.json": "558118c61bd10ad881c564f6152b88277ee313bcd65d5ce3c8f58841f9dce27e",
+    "build/dl090/check-images.py": "97940ba83bf3e728ae4d4bcd6b7cc899f7a045d020b9aabdcf5934f5234e46dd",
+    "build/dl090/complete-image-cleanup.py": "724cf5143f75cf22328309cba64d13c6b708c232e9c0c37671bd1743f8a85c84",
+    "build/dl090/image-create-events.txt": "5b51492ee4b000d51d517c3d70387006bb6236f2945ccc3846f1acdfb49c8518",
+    "build/dl090/image-cleanup-completed.log": "d580d1072f92f3db4e01fd17362d88ec7e57645c31e2219b70074b95c71862b0",
+    "build/dl090/live-after.json": "b71960b99f39b55dd3ddee2b334728e828922ce7b97c882157d1c13d37308912",
+    "build/dl090/isolated-after.txt": "e1d58733cbc0d220a742524ef0cdd5289e9f3a2d3744f01b8fd6a298832ff66e",
+    "build/dl090/isolated-ps-after.txt": "3c443bd61cfc79247cbd168d0530430e1937f0d522070f607a7eef9471aa6b42",
+    "build/dl089-original-07jj9beg/receipt.json": "18d275f3f16303c76e3b8287cb6f3538f5856e4e6642eed64a806393dee64d19"
+  },
+  "checked_code_sha256": {
+    "docs/validation/rehearse-rollback-replica.py": "a2d51411d5e8a4171892aba8932ff957aade68b4af8bc2fd9b28b80ba2cae5bd",
+    "docs/validation/rehearse-original-restart.py": "7fe628cc20a6362845430ca6570441fa518658314289b96d5599b8acd70b686f",
+    "docs/validation/rehearse-r6-reversals.py": "40ed175f2f8157805fa20f56431256572f79e22d7ecd920fe26b6c9b1c4a1ace",
+    "docs/validation/quiescence.py": "c29a9968e3ae26d7c2409bc1b006b0d82bb5942ecf17d9bf7422d59d82a81606",
+    "docs/validation/live-upgrade.py": "c08af0da48a115ac4b848bb8ff45bfd14bd3dab07669e261c618b56ecb243636",
+    "docs/live-upgrade-runbook.md": "0945f0b3a94a884a951b7ca82e4ce85a28b91bbca21daa4718521f72d9736087",
+    "docs/live-upgrade-evidence.md": "bdba0d4703313c56b79fa64287f3d72d5396e985ba30f480a99072b6139aa502"
+  }
+}

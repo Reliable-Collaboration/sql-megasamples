@@ -20,6 +20,12 @@ including verification after full `down`, and distinguishes Unsupported native
 subcases. Its live-store exercise was a **read-only capture while running**, not
 a live stop, verification of quiescence, rollback or acceptance.
 
+The [populated-backup correction receipt](validation/live-upgrade-review-r6-2026-11-19.json)
+records fresh-shell restore, populate and pre-up gates on a structure-faithful
+scratch replica: real subordinate-owned cold data, retained top-level names and
+nested attempts. Those gates and four-tree population Passed; their old empty-data
+composition is superseded. Full live restoration remains unproved.
+
 The isolated build uses `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/env.sh`. The live commands below deliberately use the default rootless Podman store instead. Run them only in the coordinator's live maintenance session. Never run them from the isolated validation shell.
 
 The dataset candidate's cold-readiness blocker is resolved by the
