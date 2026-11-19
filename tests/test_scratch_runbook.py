@@ -8,25 +8,31 @@ import pytest
 from test_runbook_fragments import RUNBOOK, block
 
 
-def test_scratch_rehearsal_reruns_in_new_store(tmp_path):
+@pytest.mark.parametrize('listing', ['empty', 'error', 'non-empty'])
+def test_scratch_rehearsal_reruns_in_new_store(tmp_path, listing):
     script = block('# Rehearse the COMPLETE rollback set', '# Back in the original maintenance shell/store.')
     script = script.split('\n',1)[1]
     stubs = r'''
 podman() {
  case "$1 $2" in
  'info --format') printf '%s/graph\n' "$SCRATCH_DIR";;
- 'ps -aq') :;;
+ 'ps -aq')
+   if test "$LISTING" = error; then return 37; fi
+   if test "$LISTING" = non-empty; then echo owned-container; fi;;
  'image rm'|'system migrate') printf '%s\n' "$*" >> "$BACKUP_DIR/cleanup-calls";;
  *) return 42;;
  esac
 }
 python3() { if test "$2" = load-images; then :; else command python3 "$@"; fi; }
 '''
-    for attempt in range(2):
+    for attempt in range(2 if listing == 'empty' else 1):
         result = subprocess.run(['bash','-eu','-c',stubs + script],
-                                env=dict(os.environ,BACKUP_DIR=str(tmp_path),UPGRADE_HELPER='helper'),
+                                env=dict(os.environ,BACKUP_DIR=str(tmp_path),UPGRADE_HELPER='helper',LISTING=listing),
                                 capture_output=True,text=True)
-        assert result.returncode == 0, result.stderr
+        assert result.returncode == {'empty': 0, 'error': 37, 'non-empty': 1}[listing], result.stderr
+    if listing != 'empty':
+        assert not (tmp_path/'cleanup-calls').exists()
+        return
     assert len(list(tmp_path.glob('rollback-load-rehearsal-*'))) == 2
     calls = (tmp_path/'cleanup-calls').read_text()
     assert calls.count('image rm --all --force') == 2
