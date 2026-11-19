@@ -527,3 +527,30 @@ def test_legacy_ordinary_history_by_generation_or_data(capture_fixture, monkeypa
         shutil.rmtree(proc/('12345' if survivor == 'process' else '12349'))
         assert gate.verify_all(out, data.parent, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
     assert history.read_bytes() == before
+
+
+@pytest.mark.parametrize('site', ['capture', 'verify'])
+@pytest.mark.parametrize('content', ['', ' ', '\t\n', 'invalid-pid', '0', '-1', '+12349', '12/34', '１２３４９'])
+def test_malformed_shared_pidfile_holds(down, monkeypatch, site, content):
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    monkeypatch.setattr(gate, 'pod', lambda *a: 'test|0|0|bridge|false|'
+        if a[0] == 'inspect' and a[2] == gate.CAPTURE_FORMAT else original(*a))
+    pidfile = Path(gate.store_identity()['run'])/'networks/rootless-netns/rootless-netns-conn.pid'
+    pidfile.parent.mkdir(parents=True)
+    if site == 'verify':
+        assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    pidfile.write_text(content)
+    if site == 'capture':
+        report = gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)
+        reason = 'shared helper association unresolved; return to deciders'
+    else:
+        report = gate.verify(out, proc=proc, cgroup_root=cg)
+        reason = 'required association unresolved'
+    assert report['outcome'] == 'HOLD', report
+    assert any(row['reason'] == reason for row in report['holds'])
+    # Valid positive decimal PID with no process remains absence.
+    pidfile.write_text('12349\n')
+    if site == 'capture': report = gate.capture(snap, data.parent/'valid-pid.json', proc=proc, cgroup_root=cg, allow_down=True)
+    else: report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == 'PASS', report
