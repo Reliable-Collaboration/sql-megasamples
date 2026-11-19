@@ -433,3 +433,31 @@ def test_exact_restart_port_refusal_precedes_restart_checkpoint():
 def test_rollback_points_to_policy_pause_between_dispatch_and_capture():
     text=RUNBOOK.read_text().split('## Roll back',1)[1]
     assert text.index('# END rollback route dispatch') < text.index('# Pause restart automation here') < text.index('# Stop candidates BEFORE down')
+
+
+def test_workspace_restart_failure_has_fresh_shell_early_abort(tmp_path):
+    server=context(tmp_path,'')
+    text=RUNBOOK.read_text()
+    workspace=text.split('# Retain it privately before any client-image or catalogue refresh; stop it for a consistent copy.\n',1)[1].split(': > "$BACKUP_DIR/rollback-image-tags.txt"',1)[0]
+    stubs=r'''
+podman() {
+ case "$1" in
+ container) return 0;;
+ inspect) case "$3" in *State.Running*) echo true;; *Labels*) echo sql-megasamples;; *) echo original-cloudbeaver-id;; esac;;
+ cp) mkdir "$BACKUP_DIR/cloudbeaver-workspace";;
+ start) if test "$FAIL_START" = true; then return 37; fi; echo "$2" > "$EVIDENCE_DIR/started";;
+ esac
+}
+python3() { return 43; }
+'''
+    env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash'),FAIL_START='true')
+    try:
+        failed=subprocess.run(['bash','-eu','-c','. "$CONTEXT"\nTEARDOWN_SNAPSHOT=; save_context\n'+stubs+workspace],env=env,capture_output=True,text=True)
+        assert failed.returncode==37,failed.stderr
+        check=subprocess.run(['bash','-eu','-c','. "$CONTEXT"; test "$TEARDOWN_PHASE" = preparation-workspace-start'],env=env)
+        assert check.returncode==0
+        abort=block('# BEGIN abort preparation\n','# END abort preparation').replace('. "$BACKUP_DIR/resume-context.bash"','. "$CONTEXT"')
+        fresh=subprocess.run(['bash','-eu','-c',stubs+abort],env=dict(env,FAIL_START='false'),capture_output=True,text=True)
+        assert fresh.returncode==0,fresh.stderr
+        assert (tmp_path/'evidence/started').read_text()=='original-cloudbeaver-id\n'
+    finally:server.close()
