@@ -1014,7 +1014,9 @@ def verify_all(capture_path, history_dir, **kwargs):
             saved = json.loads(path.read_text())
             applicable = historical_applicability(saved, current, kwargs.get('proc', Path('/proc')), kwargs.get('cgroup_root', Path('/sys/fs/cgroup')))
             legacy = applicable and saved.get('schema') == 1
-            entry = dict(path=str(path), applicable=applicable and not legacy)
+            entry = dict(path=str(path), applicable=applicable)
+            if applicable:
+                entry['verification'] = 'identity-only' if legacy else 'full'
             if legacy:
                 entry.update(reason='older capture schema; unverifiable history neither passes nor blocks',
                              survivor_obligations='process and cgroup identities enforced')
