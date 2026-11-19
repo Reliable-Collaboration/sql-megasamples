@@ -769,9 +769,12 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
         report['assurance'] = ('' if down else 'Mixed pre-stop and down-state capture. ') + DOWN_ASSURANCE
     if saved.get('down_evidence'):
         try:
-            listed = set(pod('ps','-aq','--no-trunc','--filter','label=com.docker.compose.project='+saved['project']).split())
-            if listed - {r['id'] for r in saved['containers'] if r.get('id')}:
-                hold('container capture incomplete')
+            # The current capture owns completeness of the current generation.
+            # Historical captures still check every surviving obligation below.
+            if not _historical:
+                listed = set(pod('ps','-aq','--no-trunc','--filter','label=com.docker.compose.project='+saved['project']).split())
+                if listed - {r['id'] for r in saved['containers'] if r.get('id')}:
+                    hold('container capture incomplete')
             evidence = []
             scan_cache = {} if _down_scan is None else _down_scan
             for row in saved['down_evidence']:
