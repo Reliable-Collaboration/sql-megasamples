@@ -599,35 +599,27 @@ The [round-nine receipt](validation/live-upgrade-review-r9-2026-11-19.json)
 records reds, greens, removal/order controls and isolation. These checks do not
 establish DataIntent acceptance or independent approval of the new head.
 
-Known limits retained for later work:
+B-2 and B-3 were subsequently fixed in the follow-up:
 
-- **B-2 — dead-at-capture conmon PID reuse.** When conmon is already dead at
-  capture, its PID is lost from the capture. A later process reusing Podman's
-  recorded PID can cause REFUSE or HOLD. This fails safe. Keep the maintenance
-  hold and rerun the gate once the reusing process exits; do not kill an
-  unattributed process to clear the gate. This round does not fix that case.
-- **B-3 — scratch pause walk and failed-rehearsal cleanup.** The stricter
-  pause-PID directory walk has run only against stubbed Podman, not a native
-  rehearsal store. An enumeration failure can leave loaded duplicate images and
-  that store's pause process. There is no automated failure-cleanup route.
-  Manual cleanup, **not run in round nine**: in a fresh strict Bash shell source
-  the isolated `sql-megasamples-upgrade-env/env.sh` and check its storage/socket
-  settings. Select the exact owned failed `rollback-load-rehearsal-*` directory
-  directly under the retained backup; verify that relationship before proceeding.
-  In a subshell select its `storage.conf`, `containers.conf` and `xdg` as
-  `CONTAINERS_STORAGE_CONF`, `CONTAINERS_CONF` and `XDG_RUNTIME_DIR`, and unset
-  `CONTAINERS_CONF_OVERRIDE`, as in the runbook's rehearsal. Verify
-  `podman info --format '{{.Store.GraphRoot}}'` equals `$SCRATCH_DIR/graph`.
-  Assign `SCRATCH_CONTAINERS=$(podman ps -aq)` as a separate command, then
-  `test -z "$SCRATCH_CONTAINERS"`; a listing error or any container holds cleanup.
-  Once enumeration is readable, run the existing `PY_PAUSE_CAPTURE` inventory,
-  then `podman image rm --all --force`, then `podman system migrate`, retaining
-  their logs. Run the existing `PY_PAUSE_CHECK` after the final Podman command;
-  no Podman call follows it. Keep configuration and logs. If inventory or checks
-  still fail, preserve the store for coordinator investigation. Never substitute
-  the default or isolated stack's store, use `system reset`, delete trees blindly
-  or signal a bare PID. This describes manual recovery, not a validated cleanup
-  implementation or native proof of the stricter walk.
+- **B-2:** a dead-at-capture conmon retains its PID with an explicit absence marker.
+  A later occupant is reuse rather than continuity; separately established
+  deployment membership still refuses. Fixtures cover retained and removed
+  containers, helper and non-helper occupants, and the existing live-birth case.
+- **B-3:** the strict runtime walk ran against real scratch Podman stores in
+  `build/dl086-follow-up/native-scratch-dlraj0ea/receipt.json`, read
+  **2026-11-19 07:09:21 UTC**. The unchanged walk found one private pause PID in
+  each of two stores. The ordinary rehearsal completed; a second rehearsal was
+  deliberately interrupted after loading one small image (exit 73), leaving
+  that duplicate image in its owned store. The runbook's
+  [manual cleanup](live-upgrade-runbook.md#failed-rehearsal-store-manual-cleanup)
+  then completed (manual cleanup exit 0). Both recorded pause PIDs were absent
+  after final migrate, and both image metadata inventories were empty. No
+  subsequent Podman call recreated either pause process. Configuration, logs
+  and empty metadata remain. This proves the native walk and failed-store
+  cleanup with one small image; engine-size archives and restored-stack startup
+  remain unproved. No default-store or isolated-stack images or pause processes
+  were removed. The replay driver is
+  [rehearse-follow-up-scratch.py](validation/rehearse-follow-up-scratch.py).
 
 ### Round-eleven address attribution and account guidance
 
@@ -687,13 +679,10 @@ read **2026-11-19 UTC**; no account privileges changed and no live privilege que
 was run. The documentation also distinguishes fixture-tested wildcard cases
 from native proof and corrects the unchanged-data recovery's pointer upward.
 
-**B-8 — two thin assertions, retained backlog.** The PostgreSQL README check's
-generic sample/tables wording still searches the whole section, and the IPv6
-listener fixtures share an encoding formula with the decoder. Maintainers should
-check the init grants directly and use an independently sourced IPv6 socket
-fixture or native listener observation before extending that proof. This round
-adds the requested future-table clause check; it does not resolve those two
-older assertion limits. Account self-password changes are a separate posture
+B-8's follow-up checks bind the PostgreSQL read-grant wording to its own clause
+and use literal IPv6 proc socket rows independent of the decoder's conversion
+formula. These remain fixture checks; native wildcard publication is unproved.
+Account self-password changes are a separate posture
 item, outside this documentation correction.
 
 The [round-twelve receipt](validation/live-upgrade-review-r12-2026-11-19.json)
