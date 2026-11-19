@@ -256,8 +256,8 @@ def names_container(path, identity):
 
 
 def merge_endpoints(*groups):
-    # Keep HostIp and its family after container removal; port-only historical
-    # evidence cannot establish positive association and must hold.
+    # Keep HostIp and its family after container removal. Port-only evidence
+    # cannot establish association; older-schema history uses birth identities only.
     endpoints = set()
     for group in groups:
         for endpoint in group:
@@ -998,7 +998,7 @@ def verify_all(capture_path, history_dir, **kwargs):
         # Captures are written only at the retained root or directly in an
         # attempt. Cold data preserves subordinate ownership; never traverse it.
         # Explicit iteration propagates genuine capture-inventory errors.
-        legacy = re.compile(r'^(stop-capture|clean-stop-capture|rollback-stop-capture|capture-retry|populate-capture)-[0-9]{8}T[0-9]+Z?\.json$')
+        legacy_filename = re.compile(r'^(stop-capture|clean-stop-capture|rollback-stop-capture|capture-retry|populate-capture)-[0-9]{8}T[0-9]+Z?\.json$')
         entries = list(history_dir.iterdir())
         directories = [history_dir] + [p for p in entries if p.name.startswith('rollback-')
             and not p.name.startswith(('rollback-abort-', 'rollback-load-rehearsal-')) and stat.S_ISDIR(p.stat().st_mode)]
@@ -1006,7 +1006,7 @@ def verify_all(capture_path, history_dir, **kwargs):
             for path in (entries if directory == history_dir else directory.iterdir()):
                 if path.name.endswith('.quiescence-reference'):
                     paths.add(Path(json.loads(path.read_text())['path']))
-                elif legacy.fullmatch(path.name):
+                elif legacy_filename.fullmatch(path.name):
                     paths.add(path)
         for path in sorted(paths):
             if path.resolve() == capture_path.resolve():
