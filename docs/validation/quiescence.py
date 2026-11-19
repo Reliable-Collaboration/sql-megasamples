@@ -507,8 +507,11 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                 if pidfile.read_text().strip() != pid:
                     raise ValueError('store helper changed during capture')
                 saved['shared_helper'] = dict(shared, role='shared helper', pidfile=str(pidfile))
-            except ProcessLookupError:
-                saved['shared_helper_absence'] = dict(pidfile=str(pidfile), reason='store helper vanished during capture')
+            except ProcessLookupError as error:
+                if not down_allowed:
+                    hold('shared helper association unresolved; return to deciders', error=type(error).__name__)
+                else:
+                    saved['shared_helper_absence'] = dict(pidfile=str(pidfile), reason='store helper vanished during capture')
             except FileNotFoundError as error:
                 if not down_allowed or pidfile.exists():
                     hold('shared helper association unresolved; return to deciders', error=type(error).__name__)

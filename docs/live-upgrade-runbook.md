@@ -417,6 +417,7 @@ if ! test -S "${DOCKER_HOST#unix://}"; then
   save_context
   podman system service --time=0 "$DOCKER_HOST" > "$BACKUP_DIR/api-service.log" 2>&1 &
   MEGASAMPLES_LIVE_API_PID=$!
+  save_context
   for attempt in $(seq 1 50); do
     test -S "${DOCKER_HOST#unix://}" && break
     sleep 0.2
@@ -823,7 +824,7 @@ Every capture writes an exclusive `.quiescence-reference` beside its private rec
 Never delete these index entries or older captures. The helper also discovers the
 previous runbook's timestamped capture filenames, so retained unindexed DL-088
 records remain required. Discovery lists only the backup root and each direct `rollback-*` attempt
-directory, never the cold-data payloads. A capture-inventory error HOLDs; arbitrary
+directory except `rollback-abort-*` and `rollback-load-rehearsal-*`, never the cold-data payloads. A capture-inventory error HOLDs; arbitrary
 backup JSON is never opened to find captures. Every verification uses
 `--history-dir "$BACKUP_DIR"` to verify all applicable records alongside the current
 one, including the first stop's helpers from other engines. Applicability means
@@ -896,8 +897,9 @@ if test -n "$TEARDOWN_SNAPSHOT"; then
   # Exact IDs remain mandatory; no copy is authorized by this abort gate.
   python3 "$EVIDENCE_DIR/quiescence.py" original-eligible "$TEARDOWN_SNAPSHOT" \
     --project sql-megasamples --allow-running
-  CONTEXT_FILE="$ATTEMPT_DIR/resume-context.bash"
   TEARDOWN_PHASE=originals-restarting
+  save_context  # Preparation resumptions must see the abort before its first start.
+  CONTEXT_FILE="$ATTEMPT_DIR/resume-context.bash"
   save_context
 # BEGIN abort original start
   python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" \
@@ -935,7 +937,7 @@ substitute `up` to create a new empty volume. Verify original versions, accounts
 resuming clients. After password rotation, use the DL-089 route table: exact original
 containers restart with restored configuration; replaced originals use guarded rollback.
 A failure during abort startup/policy restoration retains `originals-restarting`
-in the abort attempt's `resume-context.bash`. Keep the maintenance hold and resume
+in both the preparation context and the abort attempt's `resume-context.bash`. Keep the maintenance hold and resume
 only the diagnosed command, as in the partial-original-restart procedure.
 A new preparation attempt needs original HEAD plus a new directory and approval window.
 
@@ -1752,11 +1754,10 @@ cp "$CONFIG_DIR/compose.yaml" ./compose.yaml
 cp "$CONFIG_DIR/megasamples.yaml" ./megasamples.yaml
 if test -f "$CONFIG_DIR/.env"; then cp "$CONFIG_DIR/.env" .env; chmod 600 .env; else rm -f .env; fi
 # Engines have individual port checks; SQLite must rebuild /shared before consoles.
-TEARDOWN_PHASE=rollback-starting
-save_context
 for engine in postgres mysql sqlite; do
   if ! test -z "$(sed -n "/^$engine$/p" "$BACKUP_DIR/original-running-services.txt")"; then
     python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" --service "$engine"
+    TEARDOWN_PHASE=rollback-starting; save_context
     docker compose -p sql-megasamples -f compose.yaml start "$engine"
     python3 "$UPGRADE_HELPER" wait-healthy "$engine" --timeout 300
   fi
@@ -1765,6 +1766,7 @@ done
 while IFS= read -r service; do
   case "$service" in postgres|mysql|sqlite) continue;; esac
   if python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" --service "$service"; then
+    TEARDOWN_PHASE=rollback-starting; save_context
     docker compose -p sql-megasamples -f compose.yaml start "$service"
   else
     printf '%s\n' "$service" >> "$ATTEMPT_DIR/original-consoles-held.txt"
@@ -1796,6 +1798,9 @@ python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
 bash -c 'set -o pipefail; actual=$(podman unshare tar --sort=name --numeric-owner --format=gnu --atime-preserve=system -C "$1" -cf - postgres mysql sqlite sqlite-shared | sha256sum); test "$actual" = "$(cat "$1/cold-copies.stream.sha256")"' sh "$BACKUP_DIR"
 test -d "$CONFIG_DIR"
 # END rollback input verification
+# Pause restart automation here: run the guarded “pause restart automation” block above
+# on this complete candidate project, after dispatch/input checks and before capture.
+# A failed pause HOLDs; do not proceed to capture or stop until it succeeds.
 # Stop candidates BEFORE down can remove evidence. Keep every failed candidate volume.
 : "${TEARDOWN_ATTEMPT:?Bootstrap a new attempt or source its saved context}"
 TEARDOWN_PHASE=rollback-stop
