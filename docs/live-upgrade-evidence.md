@@ -789,7 +789,8 @@ cleanup checks but mislabeled each failure-state field with the final process
 state; that local-variable error was corrected and the proof rerun in new stores.
 Its earlier artifacts are retained without rewriting them.
 
-The round-one receipt records the reds, greens, controls, native evidence,
+The [round-one receipt](validation/live-upgrade-follow-up-review-r1-2026-11-19.json)
+records the reds, greens, controls, native evidence,
 validation and isolation results. The first C1 guard fixture misclassified
 read-only `image inspect`; a separate test-only correction preceded the fix.
 The first C3 fix lacked its validator import, which the checks caught and a
