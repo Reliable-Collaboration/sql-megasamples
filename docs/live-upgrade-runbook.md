@@ -26,6 +26,14 @@ scratch replica: real subordinate-owned cold data, retained top-level names and
 nested attempts. Those gates and four-tree population Passed; their old empty-data
 composition is superseded. Full live restoration remains unproved.
 
+The [round-seven correction receipt](validation/live-upgrade-review-r7-2026-11-19.json)
+records the ordinary route with the scratch project running at capture, through
+dispatch, policy pause, stop, state gate, `down`, restore, population and pre-up
+verification. Each continuation used its saved context in a fresh shell. Both
+cold roots match the retained UID/GID and mode, and PostgreSQL uses `18/docker`.
+The [evidence page](live-upgrade-evidence.md#ordinary-route-and-history-corrections-2026-11-19-utc)
+states the smaller data/layout, ownership and placeholder-input differences.
+
 The isolated build uses `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/env.sh`. The live commands below deliberately use the default rootless Podman store instead. Run them only in the coordinator's live maintenance session. Never run them from the isolated validation shell.
 
 The dataset candidate's cold-readiness blocker is resolved by the
@@ -834,8 +842,10 @@ and the existing client both provide `--timeout` (references read
 2026-11-18 19:50:17 UTC; local help checked 2026-11-18 20:02 UTC).
 
 If abandoning before `.env` rotation, cold copies may not exist, so do **not** enter the full
-cold-copy rollback. If stop was attempted, complete the original recovery checks above first, using `original-restart`
-(not the cold-copy eligibility rule). Original containers/volumes still exist in this path.
+cold-copy rollback. For stopped originals, the original recovery checks above use
+`original-restart`. A pause/capture HOLD may instead leave originals running;
+the abort block checks exact original IDs while allowing that state. It restores
+their restart policy before completing. Original containers/volumes must still exist.
 Restore original source/configuration and start only the originally running containers:
 
 ```sh
@@ -901,6 +911,9 @@ is missing or its data mount cannot be proved unchanged, stop for coordinator re
 substitute `up` to create a new empty volume. Verify original versions, accounts and counts before
 resuming clients. After password rotation, use the DL-089 route table: exact original
 containers restart with restored configuration; replaced originals use guarded rollback.
+A failure during abort startup/policy restoration retains `originals-restarting`
+in the abort attempt's `resume-context.bash`. Keep the maintenance hold and resume
+only the diagnosed command, as in the partial-original-restart procedure.
 A new preparation attempt needs original HEAD plus a new directory and approval window.
 
 ## Added dataset cost and scope
@@ -1630,7 +1643,8 @@ All-down `original-stop` still HOLDs; restart originals, then capture
 across their next stop before any cold copy.
 
 For down containers, positively associated `conmon`/helpers refuse: full container
-IDs in cgroups or readable cwd/descriptor paths, Podman's conmon record, the store
+IDs in cgroups or readable cwd/descriptor paths, Podman's conmon record paired
+with the captured process start time, the store
 helper PID file, or a recorded published listening port. An indicated association
 whose live evidence is unreadable HOLDs. No process arguments/environments are
 read. Unassociated helpers remain a limitation. **Down-state evidence does not

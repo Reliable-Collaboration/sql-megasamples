@@ -345,7 +345,8 @@ retained configuration when every original ID still exists, or a distinct
 per-container evidenced down capture for candidates. Unreadable required evidence
 HOLDs. All-down original-stop capture still HOLDs before a cold copy.
 
-Earlier applicable captures remain required alongside the current record, including
+**Historical round-five policy description, superseded by the round-six and
+round-seven corrections below.** Earlier applicable captures remain required alongside the current record, including
 legacy timestamped captures without an index. Recovery cannot replace the first
 stop's obligations with a narrower capture. Current-boot/store, generation/data
 association and identifier continuity determine applicability; stale/incomplete
@@ -416,16 +417,25 @@ walks cold-data payloads. Unreadable capture inventories still HOLD. Identifier
 reuse supersedes only the affected historical process/cgroup row; other evidence
 in that capture remains required. Current-capture reuse still HOLDs.
 
-The native replica uses the audited first-run top-level names, an attempt under
+The round-six native replica used the audited first-run top-level names, an attempt under
 that backup, and the runbook's `podman unshare cp -a` from stopped scratch engine
 data. PostgreSQL's populated data directory has subordinate ownership and mode
 0700. Two cold-data directories were genuinely unreadable in the host namespace.
+Its PostgreSQL data was at `postgres/fixture`, rather than `postgres/18/docker`.
+Its MySQL cold root was subordinate-owned mode 0700, whereas the real retained
+MySQL and PostgreSQL roots are UID/GID 100998, mode 1777. The replica's PostgreSQL
+root was owned by the host user, mode 0755. It had two observed unreadable
+directories rather than the real backup's 28, different MySQL depth/ownership,
+placeholder non-data files, fewer services and different networking. The gates
+only stat cold roots and list capture locations; these differences did not test
+payload compatibility. Round seven asserts the root metadata and PostgreSQL
+path explicitly, while retaining the other stated limits.
 No live cold-data contents were read or copied. The earlier empty-directory
 rollback-gate composition is superseded by
 [`rehearse-original-restart.py`](validation/rehearse-original-restart.py) and
 [`rehearse-rollback-replica.py`](validation/rehearse-rollback-replica.py).
 
-**Passed natively:** the exact-original restart; both guarded restart-policy
+**Round-six native results:** the exact-original restart; both guarded restart-policy
 blocks on scratch IDs; fresh-shell rollback stop/down and restore gate; population
 gate and actual four-tree population; pre-up gate. The populated trees matched
 bytes, numeric ownership and modes. Each process gate verified earlier capture
@@ -434,6 +444,10 @@ same replica. Namespace adaptation changes project/container/volume names and
 Compose paths, retaining the runbook's stop function and gate commands. This
 executes gate fragments and population; it does not replay engine-size image
 archives, the complete bootstrap, configuration rollback or a live restoration.
+This replica took the down-state route. Its policy pause ran on stopped/created
+containers already set to `no`, so it did not prove the policy change required
+on running `unless-stopped` services. The round-seven ordinary-route proof
+replaces that limited policy claim.
 
 The down-state full cgroup search is shared across rows and history checks.
 ENOENT/ENODEV on a path that does not name a recorded container means absent;
@@ -461,3 +475,53 @@ did not reproduce that error. Live restoration, forwarded live sign-ins and
 DataIntent acceptance were **Not run** here. The previously documented native
 reboot, exited-cgroup live-task and zero-shared-consumer cases remain Unsupported.
 As of 2026-11-19 UTC, no new DataIntent acceptance decision was supplied.
+
+## Ordinary route and history corrections (2026-11-19 UTC)
+
+The [round-seven receipt](validation/live-upgrade-review-r7-2026-11-19.json)
+records reason-specific reds, greens and rule-removal controls. Required cgroup
+traversal now propagates enumeration errors even when membership files remain
+readable. Historical mixed captures retain their process/data obligations, but
+the current capture alone owns current-generation listing completeness. A new
+container after the current capture still HOLDs. Retained `conmon` associations
+include start time, so a reused PID alone cannot identify a survivor. ESRCH at
+neighbouring process reads means vanished; required permission denials still HOLD.
+Discovery excludes abort and image-load rehearsal directories.
+
+Every original startup route saves its phase before its first effect. A regression
+starts an original engine, fails the next health wait, reloads context in a fresh
+shell, and requires dispatch to HOLD before teardown. Abort after pause/capture
+HOLD accepts running exact originals without authorizing a copy. Both abort and
+exact-original restart restore `unless-stopped` through guarded scoped updates.
+The policy regression executes restoration and its failure branch.
+
+The ordinary-route native proof used four running scratch services. Dispatch
+selected `ordinary-capture`; the actual policy blocks changed running containers
+from `unless-stopped` to `no`, restored the policy and paused again before capture.
+The actual stop, state gate, `down`, restore gate, population and pre-up gates ran
+from fresh shells using the saved context, without per-fragment phase injection.
+All three process gates Passed with applicable history checked. Four populated
+restoration trees matched cold-copy bytes, numeric ownership and modes. The old
+history helper still HOLDs on this replica's unreadable cold data. Cleanup removed
+only the owned project and restoration volumes; the isolated stack was unchanged.
+
+The cold copies were made with the runbook's `podman unshare cp -a` while the
+scratch engines were stopped, before restarting them for the ordinary-route proof.
+The PostgreSQL and MySQL cold roots are asserted as UID/GID 100998, mode 1777;
+PostgreSQL's subordinate-owned 0700 data directory is at `postgres/18/docker`.
+The real roots were checked read-only by names/modes/owners, without contents.
+Remaining differences: seven unreadable directories versus 28 in the real backup;
+smaller fresh databases; different MySQL internal ownership and directory depth;
+four services rather than the full stack; different bridge ports; and placeholders
+for some non-data retained names. This proves the exercised bounded gates and
+population, not full bootstrap, configuration/image restoration or compatibility
+of the live payloads. No live cold contents were read or copied.
+
+The DL-089 native cases in the round-five receipt were recorded by
+2026-11-19 00:21:14 UTC, before the subsequent `down_evidence` rewrites. They remain
+historical evidence. The round-seven receipt separately records the current
+one-shot down/OOM harness reruns and their outcomes; it does not promote the older
+runs to current-head proof. The historical assertion/test gaps were repaired by
+archiving each fix's parent locally, applying only its test and retaining the red;
+a planted bug separately proves the recorded-cgroup-vanish regression. Pushed
+history was preserved. These are authoring-session checks, not independent approval.
