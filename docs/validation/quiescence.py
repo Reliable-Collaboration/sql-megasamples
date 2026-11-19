@@ -531,6 +531,7 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
         if bridge:
             try:
                 pidfile = Path(saved['store']['run'])/'networks/rootless-netns/rootless-netns-conn.pid'
+                pid = None
                 pid = pidfile.read_text().strip()
                 shared = process_identity(proc/pid)
                 if not helper_names(shared['comm']) or not any('/rootless-netns-' in g for g in shared['cgroups']):
@@ -544,10 +545,10 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                 else:
                     saved['shared_helper_absence'] = dict(pidfile=str(pidfile), reason='store helper vanished during capture')
             except FileNotFoundError as error:
-                if not down_allowed or pidfile.exists():
+                if not down_allowed or (pidfile.exists() and (pid is None or (proc/pid).exists())):
                     hold('shared helper association unresolved; return to deciders', error=type(error).__name__)
                 else:
-                    saved['shared_helper_absence'] = dict(pidfile=str(pidfile), reason='absent store PID file; no helper recorded')
+                    saved['shared_helper_absence'] = dict(pidfile=str(pidfile), reason='absent store PID file or process; no helper recorded')
             except (OSError, ValueError) as error:
                 hold('shared helper association unresolved; return to deciders', error=type(error).__name__)
         if saved['down_evidence']:
@@ -866,6 +867,7 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
     shared = saved['shared_helper']
     if not shared and saved.get('shared_helper_absence') and not _identity_only:
         pidfile = Path(saved['shared_helper_absence']['pidfile'])
+        pid = None
         try:
             pid = pidfile.read_text().strip()
             shared = process_identity(proc/pid)
@@ -877,7 +879,7 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
         except ProcessLookupError:
             pass  # A stale PID file does not keep a reaped helper alive.
         except FileNotFoundError:
-            if pidfile.exists(): hold('required association unresolved')
+            if pidfile.exists() and (pid is None or (proc/pid).exists()): hold('required association unresolved')
         except (OSError, ValueError):
             hold('required association unresolved')
     for row in saved['processes'] + ([shared] if shared else []):
