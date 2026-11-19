@@ -9,12 +9,12 @@ from test_runbook_fragments import RUNBOOK, context
 def destructive_blocks():
     # Match commands, excluding prose, --rm options and down-state labels.
     command = re.compile(
-        r"^(?!\s*#).*?(?:\brm(?:\s|$)|\bsystem (?:migrate|reset)\b|"
+        r"^(?!\s*#).*?(?:(?<![\w-])rm(?:\s|$)|\bsystem (?:migrate|reset)\b|"
         r"\b(?:docker compose|podman)\b[^\n]*\b(?:stop|down)\b|"
         r"\bstop_project(?:\s|$)|\bup\b[^\n]*--force-recreate\b|"
         r"\bpodman unshare cp -a\b)", re.M)
     return [m[1] for m in re.finditer(r'^```sh\n(.*?)^```', RUNBOOK.read_text(), re.M | re.S)
-            if command.search(m[1])]
+            if command.search(m[1].replace("\\\n", " "))]
 
 
 @pytest.mark.parametrize('body', destructive_blocks(), ids=lambda s: next(l for l in s.splitlines() if l and l != 'set -eu')[:70])
