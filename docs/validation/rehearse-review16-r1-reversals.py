@@ -69,6 +69,13 @@ def main():
     add('C5 omitted down-route PID guidance', 'DL089_RUNBOOK_SOURCE', change(runbook,
         'malformed PID file holds', 'invalid evidence is investigated'),
         ['tests/test_review_records.py::test_follow_up_wording_and_listing_record_match_behavior'])
+    for name, before, after in (
+        ('capture grammar', 'retains a dead-at-capture conmon PID with an absence marker and\nignores', 'retain a dead-at-capture conmon PID with an absence marker and\nignores'),
+        ('B-3 listing record', 'B-3 also stops before cleanup on a failed or non-empty container listing', 'Rehearsal listing checked'),
+        ('fixture correction record', '913a380', 'earlier test-only correction'),
+    ):
+        add('C5 '+name, 'DL086_EVIDENCE_SOURCE', change(evidence, before, after),
+            ['tests/test_review_records.py::test_follow_up_wording_and_listing_record_match_behavior'])
     # Exercise the real account assertion against later, credential-free init SQL.
     for number, roles in enumerate(('admin', 'other, admin', '"admin"', '"other", "admin", another')):
         fixture = out/('grant-'+str(number)); init = fixture/'engines/postgres/init'; init.mkdir(parents=True)
