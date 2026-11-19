@@ -586,3 +586,27 @@ def test_known_absent_conmon_unreadable_reuse_keeps_independent_checks(down, mon
     (p/'fd/3').unlink()
     (p/'mountinfo').write_text('1 0 0:1 / / rw - tmpfs tmpfs rw\n')
     assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+
+
+@pytest.mark.parametrize('comm,expected,reason', [
+    ('conmon', 'REFUSE', 'positively associated down helper survives'),
+    ('unrelated', 'HOLD', 'down helper association unreadable'),
+])
+def test_pre_marker_down_row_keeps_conservative_reuse_result(down, monkeypatch, comm, expected, reason):
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    monkeypatch.setattr(gate, 'pod', lambda *a: 'test|0|12349|none|false|'
+        if a[0] == 'inspect' and a[2] == gate.CAPTURE_FORMAT else original(*a))
+    assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    saved = json.loads(out.read_text())
+    # Exact pre-marker shape: already-dead conmon PID was discarded at capture.
+    saved['down_evidence'][0]['conmon'] = 0
+    saved['down_evidence'][0].pop('conmon_absent')
+    out.write_text(json.dumps(saved)); retained = out.read_bytes()
+    p = process(proc, 12349, comm, '/unrelated.scope', start='99')
+    report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == expected, report
+    assert any(row['reason'] == reason for row in report['refusals' if expected == 'REFUSE' else 'holds'])
+    assert out.read_bytes() == retained
+    shutil.rmtree(p)
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
