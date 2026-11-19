@@ -327,3 +327,45 @@ cp() { if test "${1-}" != -a || test "${2-}" != consoles; then command cp "$@"; 
         assert 'start' in (tmp_path/'evidence/started').read_text()
         assert (tmp_path/'evidence/policies').read_text().splitlines()==['update --restart=unless-stopped fixture']
     finally:server.close()
+
+
+@pytest.mark.parametrize('identity_changed',[False,True])
+def test_workspace_copy_failure_fresh_shell_abort_uses_exact_existing_id(tmp_path,identity_changed):
+    server=context(tmp_path,'')
+    backup=tmp_path/'retained'
+    # No later archive, ports or stop snapshot exists at this preparation point.
+    setup='. "$CONTEXT"\nTEARDOWN_SNAPSHOT=; CB_WAS_RUNNING=; CB_CONTAINER_ID=; save_context\n'
+    stubs=r'''
+podman() {
+ case "$1" in
+ container) return 0;;
+ inspect) case "$3" in
+   *State.Running*) echo true;;
+   *Labels*) echo sql-megasamples;;
+   *) if test "$IDENTITY_CHANGED" = True; then echo replacement-id; else echo original-cloudbeaver-id; fi;;
+ esac;;
+ stop) echo "$2" > "$EVIDENCE_DIR/stopped";;
+ cp) return 37;;
+ start) echo "$2" > "$EVIDENCE_DIR/started";;
+ esac
+}
+python3() { echo 'missing original-configurations.sha256' >&2; return 43; }
+'''
+    text=RUNBOOK.read_text()
+    workspace=text.split('# Retain it privately before any client-image or catalogue refresh; stop it for a consistent copy.\n',1)[1].split(': > "$BACKUP_DIR/rollback-image-tags.txt"',1)[0]
+    env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash'),IDENTITY_CHANGED='False')
+    try:
+        failed=subprocess.run(['bash','-eu','-c',setup+stubs+workspace],env=env,capture_output=True,text=True)
+        assert failed.returncode==37,failed.stderr
+        assert (tmp_path/'evidence/stopped').exists()
+        assert not (backup/'original-configurations.tar').exists()
+        abort=block('# BEGIN abort preparation\n','# END abort preparation').replace('. "$BACKUP_DIR/resume-context.bash"','. "$CONTEXT"')
+        fresh=subprocess.run(['bash','-eu','-c',stubs+abort],env=dict(env,IDENTITY_CHANGED=str(identity_changed)),capture_output=True,text=True)
+        if identity_changed:
+            assert fresh.returncode!=0 and not (tmp_path/'evidence/started').exists()
+        else:
+            assert fresh.returncode==0,fresh.stdout+fresh.stderr
+            assert (tmp_path/'evidence/started').read_text()=='original-cloudbeaver-id\n'
+            check=subprocess.run(['bash','-eu','-c','. "$CONTEXT"; test -z "$TEARDOWN_PHASE"'],env=env)
+            assert check.returncode==0
+    finally:server.close()
