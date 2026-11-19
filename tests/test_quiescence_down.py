@@ -47,7 +47,7 @@ def test_original_stop_all_down_still_holds(down):
     assert any(r['reason']=='deployment process capture missing; cannot capture after stop' for r in report['holds'])
 
 
-@pytest.mark.parametrize('survivor', ['none', 'process', 'cgroup'])
+@pytest.mark.parametrize('survivor', ['none', 'process', 'cgroup', 'down-conmon', 'down-cgroup'])
 def test_legacy_history_checks_survivors_without_endpoint_hold(down, survivor):
     snap,out,proc,cg,data=down
     assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
@@ -60,9 +60,16 @@ def test_legacy_history_checks_survivors_without_endpoint_hold(down, survivor):
         directory=cg/'old.scope';directory.mkdir()
         for name in ('cgroup.procs','cgroup.threads'):(directory/name).write_text('12349')
         saved['cgroups']=[gate.group_capture('0::/old.scope',cg)]
+    if survivor=='down-conmon':
+        process(proc,12349,comm='conmon',group='/old.scope')
+        saved['down_evidence'][0].update(conmon=12349,conmon_start='42')
+    if survivor=='down-cgroup':
+        directory=cg/'old.scope';directory.mkdir()
+        for name in ('cgroup.procs','cgroup.threads'):(directory/name).write_text('12349')
+        saved['down_evidence'][0]['cgroups']=[dict(path='old.scope',**gate.object_identity(directory))]
     history=data.parent/'stop-capture-20261118T123000Z.json'
     history.write_text(json.dumps(saved));before=history.read_bytes()
-    if survivor=='cgroup':process(proc,12349,group='/old.scope')
+    if survivor in ('cgroup','down-cgroup'):process(proc,12349,group='/old.scope')
     report=gate.verify_all(out,data.parent,proc=proc,cgroup_root=cg)
     assert report['outcome']==('PASS' if survivor=='none' else 'REFUSE'),report
     assert not report['holds'],report
@@ -71,10 +78,10 @@ def test_legacy_history_checks_survivors_without_endpoint_hold(down, survivor):
     assert entry['survivor_obligations']=='process and cgroup identities enforced'
     assert entry['reason']=='older capture schema; unverifiable history neither passes nor blocks'
     if survivor!='none':
-        reason='recorded process survives' if survivor=='process' else 'live deployment cgroup task'
+        reason='recorded process survives' if survivor in ('process','down-conmon') else 'live deployment cgroup task'
         assert any(row['reason']==reason and row['capture']==str(history) for row in report['refusals'])
         shutil.rmtree(proc/'12349')
-        if survivor=='cgroup':
+        if survivor in ('cgroup','down-cgroup'):
             for name in ('cgroup.procs','cgroup.threads'):(cg/'old.scope'/name).write_text('')
         assert gate.verify_all(out,data.parent,proc=proc,cgroup_root=cg)['outcome']=='PASS'
     assert history.read_bytes()==before
