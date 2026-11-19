@@ -3,7 +3,7 @@
   "checked_code_commit": "310dbdb52cfc7a03ac50f6ea41017118ba9b5156",
   "base_commit": "3bef1436852c3f63634455270b69fec02f35b7f3",
   "scope": "DL-086 B-2 through B-15 only; authoring-session checks. No live mutation; no merge or acceptance.",
-  "context": "Repository files, supplied env.sh, explicit backlog and source notes from Fable rounds 9,10,12,13,14. No persistent agent memory.",
+  "context": "Repository files, supplied env.sh, explicit backlog and source notes from the round 9, 10, 12, 13 and 14 review notes. No persistent agent memory.",
   "source_note_mapping": {
     "B-2": "r9 note 1",
     "B-3": "r9 note 6",
