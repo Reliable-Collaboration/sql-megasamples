@@ -146,7 +146,7 @@ are independent of status and exit code. An OOM is checked independently of 137.
 
 | Observed state | (a) Originals before cold copy: PostgreSQL / MySQL | (a) SQLite | (a) Consoles | (b) Candidate teardown; (c) before original `up` | Early abort on unchanged volumes | Clean-stop recovery on unchanged volumes | (c) After original `up`, selected services |
 |---|---|---|---|---|---|---|---|
-| running | Refuse | Refuse | Refuse | Refuse | Pass only with exact original IDs and unchanged mounts | Refuse | Pass: PID positive, no OOM |
+| running | Refuse | Refuse | Refuse | Refuse | Pass only with exact original IDs and consistent running/PID state | Refuse | Pass: PID positive, no OOM |
 | created (never started), PID 0 | Refuse | Refuse | Pass | Pass, record | Pass, record | Pass, record | Refuse |
 | exited 0, PID 0 | Pass | Pass | Pass | Pass, record | Pass, record | Pass, record | Refuse |
 | exited 137, PID 0 | Refuse | Pass, expected | Pass | Pass, record | Pass, record | Pass, record | Refuse |
@@ -870,8 +870,12 @@ case "$TEARDOWN_PHASE" in
   preparation-workspace-stop|preparation-workspace-start)
     test "$CB_WAS_RUNNING" = true
     : "${CB_CONTAINER_ID:?Missing recorded CloudBeaver ID; coordinator hold}"
-    test "$(podman inspect -f '{{.Id}}' megasamples-cloudbeaver)" = "$CB_CONTAINER_ID"
-    test "$(podman inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$CB_CONTAINER_ID")" = sql-megasamples
+    if test "$(podman inspect -f '{{.Id}}' megasamples-cloudbeaver)" != "$CB_CONTAINER_ID"; then
+      echo 'HOLD: CloudBeaver identity missing or replaced; keep coordinator hold.'; exit 2
+    fi
+    if test "$(podman inspect -f '{{index .Config.Labels "com.docker.compose.project"}}' "$CB_CONTAINER_ID")" != sql-megasamples; then
+      echo 'HOLD: CloudBeaver project identity missing or changed; keep coordinator hold.'; exit 2
+    fi
     TEARDOWN_PHASE=preparation-workspace-start; save_context
     podman start "$CB_CONTAINER_ID"
     TEARDOWN_PHASE=; save_context
