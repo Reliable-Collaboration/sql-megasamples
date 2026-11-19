@@ -723,7 +723,7 @@ rerun the preparation capture, or reinterpret the upgraded HEAD as the rollback 
 
 ### Failed rehearsal store: manual cleanup
 
-Use a fresh strict Bash shell with the same initial container environment as the
+Use a fresh Bash shell with the same initial container environment as the
 rehearsal (the isolated environment when rehearsing in the upgrade clone).
 Set `BACKUP_DIR` to the retained backup and `SCRATCH_DIR` to the exact owned failed
 `rollback-load-rehearsal-*` directory immediately under it. Keep its load log.

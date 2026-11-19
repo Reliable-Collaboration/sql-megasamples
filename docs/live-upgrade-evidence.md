@@ -792,7 +792,8 @@ The expanded native B-3 proof is retained in
 ordinary rehearsal, deliberate failure after loading, and deliberate failure
 before loading with a real pause process but zero images. Both failure exits
 were 73; both manual cleanup exits were 0 under plain `bash -c`. All three
-recorded pause PIDs were absent after cleanup, and all image metadata was empty.
+recorded pause PIDs were absent after cleanup. The loaded stores' image metadata
+was empty; the zero-image store's metadata file was never created.
 No Podman call followed final migrate. The first expanded proof run passed its
 cleanup checks but mislabeled each failure-state field with the final process
 state; that local-variable error was corrected and the proof rerun in new stores.
