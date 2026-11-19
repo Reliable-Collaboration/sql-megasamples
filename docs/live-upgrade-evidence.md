@@ -689,3 +689,37 @@ The [round-twelve receipt](validation/live-upgrade-review-r12-2026-11-19.json)
 retains reds, greens, reversals, suite/image results and all nine live-object
 inventory rows. These are authoring-session checks. DataIntent's dated
 acceptance hold remains separate; the netns error's root cause remains unknown.
+
+### DL-086 follow-up: B-2 through B-15
+
+The follow-up retains a dead-at-capture conmon PID with an absence marker and
+ignores later PID reuse as continuity; real deployment membership remains a
+refusal. Down-route shared-helper checks now distinguish a genuinely missing
+`/proc` entry from a present but unreadable entry. A fresh-shell empty policy
+listing prints an actionable HOLD and points back to rollback route dispatch
+and input verification. The saved context does not carry that route variable.
+
+Applicable older-schema history now reports `applicable: true` and
+`verification: identity-only`, matching its enforced survivor obligations. New
+ordinary pre-stop fixtures cover applicability through data overlap alone and
+shared-helper consumer checks. The cold-restore block starts selected engines,
+waits for each selected engine's health, and only then starts selected consoles.
+A failed SQLite health wait prevents console startup in the shell fixture.
+
+The tightened assertions check the intended error messages, real shell fence
+boundaries, PostgreSQL read-grant wording, literal IPv6 socket rows, actual grant
+options across init files, and SSLRequest bytes in the caller thread. The stale
+endpoint comment and rebound filename-matcher variable were corrected without
+changing behavior. The native scratch proof and its scope are described above;
+the resume instructions now link manual cleanup and explain the additional
+image copy a failed-store rerun can retain beyond the two-copy space budget.
+
+The [follow-up receipt](validation/live-upgrade-follow-up-2026-11-19.json)
+records each item's test and fix commits, red and green runs, defect controls,
+native scratch proof, source and evidence hashes, and remaining limits. B-13 is
+a comment/local-name change: restoring it also passes the same checks. The
+initial B-2 reversal fixture required a separate correction to supply real
+cgroup membership files; that failed run and its replay are retained. Test-only
+coverage improvements were already green on production code and are paired
+with planted-defect controls. These are authoring-session checks; independent
+review, acceptance and merge remain separate.
