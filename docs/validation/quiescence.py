@@ -415,9 +415,9 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
         raise FileExistsError(output)
     if caller_uid_mappings() != [(0,0,4294967295)]:
         report = dict(outcome='HOLD', holds=[dict(reason='host initial user namespace required')])
-        private_write(output, dict(schema=1, complete=False, holds=report['holds']))
+        private_write(output, dict(schema=2, complete=False, holds=report['holds']))
         return report
-    saved = dict(schema=1, complete=False, boot_id=boot_id(), store=store_identity(),
+    saved = dict(schema=2, complete=False, boot_id=boot_id(), store=store_identity(),
                  containers=[], processes=[], cgroups=[], sources=[], shared_helper=None, holds=[],
                  kind='ordinary', down_evidence=[], refusals=[])
     def hold(reason, **detail):
@@ -776,9 +776,9 @@ def remaining_consumers(saved, proc):
     return result
 
 
-def complete_capture(saved):
+def complete_capture(saved, schema=2):
     required = {'schema','complete','boot_id','store','containers','processes','cgroups','sources','shared_helper','holds','project'}
-    if not required <= saved.keys() or saved['schema'] != 1 or not saved['complete'] or not saved['containers'] or not saved['sources']:
+    if not required <= saved.keys() or saved['schema'] != schema or not saved['complete'] or not saved['containers'] or not saved['sources']:
         return False
     if saved.get('kind') == 'down-state':
         expected = [(row.get('name'),row.get('id')) for row in saved['containers']]
@@ -788,7 +788,7 @@ def complete_capture(saved):
     return bool(saved['processes'] and saved['cgroups'])
 
 
-def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), phase_eligible=True, _down_scan=None, _historical=False):
+def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), phase_eligible=True, _down_scan=None, _historical=False, _identity_only=False):
     report = dict(outcome='HOLD', assurance='The recorded deployment stopped using the exact recorded data; bounded by readable required evidence. This does not prove the host quiet or prevent new writers.',
                   refusals=[], holds=[], limitations=[], shared_consumers=[], counts={})
     def hold(reason, **detail): report['holds'].append(dict(reason=reason, **detail))
@@ -798,7 +798,7 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
             raise ValueError('host initial user namespace required')
         saved = json.loads(capture_path.read_text())
         down = saved.get('kind') == 'down-state'
-        if not complete_capture(saved):
+        if not complete_capture(saved, schema=1 if _identity_only else 2):
             hold('capture missing or incomplete')
             return report
         if saved['boot_id'] != boot_id():
@@ -810,23 +810,33 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
     except (OSError, ValueError, KeyError) as error:
         hold('capture missing or incomplete', error=type(error).__name__)
         return report
-    for row in saved['holds']:
+    if _identity_only:
+        # Schema 1's ports cannot establish endpoints. Its independently
+        # recorded birth identities still constrain this historical generation.
+        saved['processes'] = list(saved['processes'])
+        saved['cgroups'] = list(saved['cgroups'])
+        for row in saved.get('down_evidence', []):
+            if row.get('conmon') and row.get('conmon_start') is not None:
+                saved['processes'].append(dict(pid=row['conmon'], start=row['conmon_start'], role='conmon'))
+            saved['cgroups'] += [dict(line='0::/'+group['path'], device=group['device'], inode=group['inode'])
+                                for group in row.get('cgroups', [])]
+    for row in ([] if _identity_only else saved['holds']):
         hold('required association unresolved', evidence=row)
     if not phase_eligible:
         hold('phase state ineligible')
-    if saved.get('down_evidence'):
+    if saved.get('down_evidence') and not _identity_only:
         report['assurance'] = ('' if down else 'Mixed pre-stop and down-state capture. ') + DOWN_ASSURANCE
     # The current capture owns completeness for every current generation,
     # including an ordinary capture with no stopped rows. Historical captures
     # still check every surviving obligation below.
-    if not _historical:
+    if not _historical and not _identity_only:
         try:
             listed = set(pod('ps','-aq','--no-trunc','--filter','label=com.docker.compose.project='+saved['project']).split())
             if listed - {r['id'] for r in saved['containers'] if r.get('id')}:
                 hold('container capture incomplete')
         except (OSError, ValueError, subprocess.SubprocessError) as error:
             hold('required deployment inspection unreadable', error=type(error).__name__)
-    if saved.get('down_evidence'):
+    if saved.get('down_evidence') and not _identity_only:
         try:
             evidence = []
             scan_cache = {} if _down_scan is None else _down_scan
@@ -845,14 +855,14 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
             report['refusals'] += refusals; report['holds'] += holds
         except (OSError, ValueError, subprocess.SubprocessError) as error:
             hold('down container state unreadable', error=type(error).__name__)
-    for source in saved['sources']:
+    for source in ([] if _identity_only else saved['sources']):
         try:
             if source_identity(source['path']) != source:
                 hold('source identity changed')
         except (OSError, ValueError):
             hold('source identity changed')
     shared = saved['shared_helper']
-    if not shared and saved.get('shared_helper_absence'):
+    if not shared and saved.get('shared_helper_absence') and not _identity_only:
         pidfile = Path(saved['shared_helper_absence']['pidfile'])
         try:
             pid = pidfile.read_text().strip()
@@ -878,7 +888,7 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
                 continue
             if not task_alive(p):
                 continue
-            if current['cgroups'] != row['cgroups']:
+            if not (_identity_only and row['role'] == 'conmon') and current['cgroups'] != row['cgroups']:
                 hold('required association unresolved', pid=row['pid'])
             if row['role'] == 'shared helper':
                 try:
@@ -925,6 +935,10 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
                     refuse('live deployment cgroup task', pid=int(p.name))
             except (OSError, ValueError):
                 pass  # Recorded identities/cgroup files are independently required above.
+        if _identity_only:
+            report['assurance'] = 'Older-schema history only: independently recorded process and cgroup identities checked; obsolete evidence neither passes nor blocks.'
+            report['outcome'] = 'REFUSE' if report['refusals'] else 'HOLD' if report['holds'] else 'PASS'
+            return report
         running = pod('ps', '-q', '--filter', 'label=com.docker.compose.project='+saved['project'])
         if running:
             refuse('deployment container running')
@@ -955,7 +969,8 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
 
 def historical_applicability(saved, current, proc, cgroup_root):
     """DL-089: history cannot replace the current record or recycle identities."""
-    if not complete_capture(saved) or saved.get('boot_id') != boot_id() or saved.get('store') != store_identity():
+    schema = saved.get('schema')
+    if schema not in (1, 2) or not complete_capture(saved, schema=schema) or saved.get('boot_id') != boot_id() or saved.get('store') != store_identity():
         return False
     ids = {r['id'] for r in current['containers'] if r.get('id')}
     generation = any(r.get('id') in ids for r in saved.get('containers', []))
@@ -994,9 +1009,14 @@ def verify_all(capture_path, history_dir, **kwargs):
                 continue
             saved = json.loads(path.read_text())
             applicable = historical_applicability(saved, current, kwargs.get('proc', Path('/proc')), kwargs.get('cgroup_root', Path('/sys/fs/cgroup')))
-            report['history'].append(dict(path=str(path), applicable=applicable))
+            legacy = applicable and saved.get('schema') == 1
+            entry = dict(path=str(path), applicable=applicable and not legacy)
+            if legacy:
+                entry.update(reason='older capture schema; unverifiable history neither passes nor blocks',
+                             survivor_obligations='process and cgroup identities enforced')
+            report['history'].append(entry)
             if applicable:
-                prior = verify(path, _historical=True, **kwargs)
+                prior = verify(path, _historical=True, _identity_only=legacy, **kwargs)
                 for key in ('refusals','holds','limitations'):
                     report[key] += [dict(row, capture=str(path)) for row in prior[key]]
     except (OSError, ValueError, KeyError) as error:

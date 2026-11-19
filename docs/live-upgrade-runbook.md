@@ -833,6 +833,12 @@ one, including the first stop's helpers from other engines. Applicability means
 complete, same boot/store, and the same container generation or overlapping recorded
 data. Reuse is judged per process/cgroup row: that superseded identity cannot
 establish continuity, while other rows from that capture remain required.
+New captures use schema 2. An older-schema current capture HOLDs: take a fresh
+capture through the applicable route. Older-schema historical endpoint evidence
+neither passes nor blocks the current attempt. The report names that limit and
+still enforces independently recorded process and cgroup birth identities,
+including down-state conmon and cgroup records; a survivor refuses and unreadable
+required identity evidence holds. Never overwrite the older record.
 Stale/incomplete captures are history, never substituted for current evidence. Unreadable live evidence in an
 applicable record still blocks. Keep the whole backup/attempt tree available.
 Repeat all four checks before cold copy; repeat per crashed engine if necessary.
