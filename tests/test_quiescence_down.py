@@ -47,6 +47,49 @@ def test_original_stop_all_down_still_holds(down):
     assert any(r['reason']=='deployment process capture missing; cannot capture after stop' for r in report['holds'])
 
 
+@pytest.mark.parametrize('survivor', ['none', 'process', 'cgroup'])
+def test_legacy_history_checks_survivors_without_endpoint_hold(down, survivor):
+    snap,out,proc,cg,data=down
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
+    saved=json.loads(out.read_text());saved['schema']=1
+    saved['down_evidence'][0]['ports']=[8080]
+    if survivor=='process':
+        p=process(proc,12349,group='/old.scope')
+        saved['processes']=[dict(gate.process_identity(p),role='process')]
+    if survivor=='cgroup':
+        directory=cg/'old.scope';directory.mkdir()
+        for name in ('cgroup.procs','cgroup.threads'):(directory/name).write_text('12349')
+        saved['cgroups']=[gate.group_capture('0::/old.scope',cg)]
+    history=data.parent/'stop-capture-20261118T123000Z.json'
+    history.write_text(json.dumps(saved));before=history.read_bytes()
+    if survivor=='cgroup':process(proc,12349,group='/old.scope')
+    report=gate.verify_all(out,data.parent,proc=proc,cgroup_root=cg)
+    assert report['outcome']==('PASS' if survivor=='none' else 'REFUSE'),report
+    assert not report['holds'],report
+    entry=next(row for row in report['history'] if row['path']==str(history))
+    assert entry['applicable'] is False
+    assert entry['survivor_obligations']=='process and cgroup identities enforced'
+    assert entry['reason']=='older capture schema; unverifiable history neither passes nor blocks'
+    if survivor!='none':
+        reason='recorded process survives' if survivor=='process' else 'live deployment cgroup task'
+        assert any(row['reason']==reason and row['capture']==str(history) for row in report['refusals'])
+        shutil.rmtree(proc/'12349')
+        if survivor=='cgroup':
+            for name in ('cgroup.procs','cgroup.threads'):(cg/'old.scope'/name).write_text('')
+        assert gate.verify_all(out,data.parent,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+    assert history.read_bytes()==before
+
+
+def test_current_legacy_schema_still_holds(down):
+    snap,out,proc,cg,data=down
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
+    saved=json.loads(out.read_text());saved['schema']=1
+    out.write_text(json.dumps(saved))
+    report=gate.verify_all(out,data.parent,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='HOLD',report
+    assert any(row['reason']=='capture missing or incomplete' for row in report['holds'])
+
+
 @pytest.mark.parametrize('mode',['live-task','unreadable-group','started','conmon','path-helper','port-helper','unreadable-conmon','conmon-identity-contradicted'])
 def test_down_live_evidence_blocks_with_reversal(down,monkeypatch,mode):
     snap,out,proc,cg,data=down

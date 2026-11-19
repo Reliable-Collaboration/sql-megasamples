@@ -51,7 +51,7 @@ def test_capture_is_exclusive_private_complete_and_retains_sources(capture_fixtu
     snap,out,proc,cg,data=capture_fixture
     gate.capture(snap,out,proc=proc,cgroup_root=cg)
     saved=json.loads(out.read_text())
-    assert saved['schema']==1 and saved['complete'] and saved['boot_id']=='boot'
+    assert saved['schema']==2 and saved['complete'] and saved['boot_id']=='boot'
     assert {r['role'] for r in saved['processes']}=={'process','conmon'}
     assert {r['start'] for r in saved['processes']}=={'42'}
     assert saved['sources'][0]['canonical']==str(data.resolve())
