@@ -35,3 +35,50 @@ python3() {
         assert result.returncode == 0, result.stderr
         assert len(starts) == 2 and starts[1].endswith(' adminer dbgate'), calls
         assert calls.index(starts[1]) > calls.index('health:sqlite')
+
+
+@pytest.mark.parametrize('route', ['cold', 'unchanged'])
+@pytest.mark.parametrize('failure', ['state', 'ports', 'health:postgres', 'health:mysql', 'health:sqlite'])
+def test_real_restore_fence_failed_gate_in_plain_bash(tmp_path, route, failure):
+    import re
+    from test_runbook_fragments import RUNBOOK
+    bodies = re.findall(r'^```sh\n(.*?)^```', RUNBOOK.read_text(), re.M | re.S)
+    body = next(b for b in bodies if ('# BEGIN rollback population' if route == 'cold'
+                                      else '# BEGIN unchanged volume recovery') in b)
+    (tmp_path/'original-running-services.txt').write_text('postgres\nmysql\nsqlite\nadminer\ndbgate\n')
+    stubs = r'''
+save_context() { :; }
+python3() {
+  case " $* " in
+    *' exited '*' --phase restart-before'*) gate=state;;
+    *' ports '*) gate=ports;;
+    *' wait-healthy '*) gate="health:$3";;
+    *) gate=other;;
+  esac
+  printf '%s\n' "$gate" >> "$CALLS"
+  if test "$gate" = "$FAILURE"; then echo REJECTED >> "$CALLS"; return 73; fi
+}
+podman() {
+  case "$1 $2" in
+    'volume exists') return 1;;
+    'volume inspect') printf '%s' "$ATTEMPT_DIR/target";;
+  esac
+}
+docker() { printf 'START:%s\n' "$*" >> "$CALLS"; }
+'''
+    # Every required input exists; no accidental nounset failure may stand in for
+    # a gate rejection. Only fixture command implementations can run externally.
+    env = {name: 'fixture' for name in re.findall(r'\$\{?([A-Za-z_][A-Za-z_0-9]*)', body)}
+    env.update(BACKUP_DIR=str(tmp_path), ATTEMPT_DIR=str(tmp_path), EVIDENCE_DIR=str(tmp_path),
+               XDG_RUNTIME_DIR=str(tmp_path), CALLS=str(tmp_path/'calls'), FAILURE=failure)
+    result = subprocess.run(['bash', '-c', stubs+body], cwd=tmp_path, env=env,
+                            capture_output=True, text=True)
+    calls = (tmp_path/'calls').read_text().splitlines()
+    assert 'REJECTED' in calls, (calls, result.stderr)
+    assert result.returncode == 73, (calls, result.stderr)
+    starts = [line for line in calls if line.startswith('START:')]
+    if failure in ('state', 'ports'):
+        assert not starts, calls
+    else:
+        assert len(starts) == 1 and starts[0].endswith(' postgres mysql sqlite'), calls
+        assert not any(console in starts[0] for console in ('adminer', 'dbgate'))

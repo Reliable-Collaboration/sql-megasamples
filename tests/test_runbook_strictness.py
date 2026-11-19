@@ -3,12 +3,16 @@ import re
 import subprocess
 
 import pytest
-from test_runbook_fragments import RUNBOOK
+from test_runbook_fragments import RUNBOOK, context
 
 
 def destructive_blocks():
     # Match commands, excluding prose, --rm options and down-state labels.
-    command = re.compile(r"^(?!\s*#).*?(?:\brm -f\b|podman (?:image rm|volume rm|system migrate)\b|docker compose[^\n]*\bdown(?: |$))", re.M)
+    command = re.compile(
+        r"^(?!\s*#).*?(?:\brm(?:\s|$)|\bsystem (?:migrate|reset)\b|"
+        r"\b(?:docker compose|podman)\b[^\n]*\b(?:stop|down)\b|"
+        r"\bstop_project(?:\s|$)|\bup\b[^\n]*--force-recreate\b|"
+        r"\bpodman unshare cp -a\b)", re.M)
     return [m[1] for m in re.finditer(r'^```sh\n(.*?)^```', RUNBOOK.read_text(), re.M | re.S)
             if command.search(m[1])]
 
@@ -45,3 +49,28 @@ docker() { echo unsafe >> "$MARKER"; }
         result = subprocess.run(['bash', '-c', script], env=env, capture_output=True, text=True)
         assert result.returncode == 73, (guard, result.stderr)
         assert not (tmp_path/'unsafe').exists(), guard
+
+
+@pytest.mark.parametrize('command', [
+    'rm -rf fixture', 'podman rm fixture', 'podman system reset',
+    'docker compose up --force-recreate', 'podman unshare cp -a source/. target/',
+    'docker compose stop', 'stop_project',
+])
+def test_destructive_class_includes_all_requested_families(tmp_path, monkeypatch, command):
+    import sys
+    source = tmp_path/'runbook.md'
+    source.write_text('```sh\n'+command+'\n```\n')
+    monkeypatch.setattr(sys.modules[__name__], 'RUNBOOK', source)
+    assert destructive_blocks() == [command+'\n']
+
+
+@pytest.mark.parametrize('failure', ['false', 'printf "%s" "$DL086_UNSET_FIXTURE"'])
+def test_saved_context_supplies_strictness_in_plain_bash(tmp_path, failure):
+    server = context(tmp_path, 'rollback-down')
+    try:
+        result = subprocess.run(['bash', '-c', '. "$CONTEXT"\n'+failure+'\necho UNSAFE'],
+            env={'CONTEXT': str(tmp_path/'resume-context.bash')}, capture_output=True, text=True)
+        assert result.returncode != 0, result.stdout
+        assert 'UNSAFE' not in result.stdout
+    finally:
+        server.close()
