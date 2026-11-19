@@ -27,6 +27,11 @@ def prove(n,g,u,out,backup,attempt,project,compose,sources,receipt):
     assert os.environ['CONTAINERS_STORAGE_CONF']==str(ENV/'storage.conf')
     assert n.pod('info','--format','{{.Store.GraphRoot}}')==str(ENV/'graph')
     assert attempt.parent==backup and attempt.name.startswith('rollback-')
+    # This proof must exercise the route a running deployment takes today.
+    assert g.rollback_route(backup/'original-stop.json',project)['route']=='ordinary-capture'
+    ids=n.pod('ps','-aq','--filter','label=com.docker.compose.project='+project).split()
+    assert len(ids)==4
+    assert all(n.pod('inspect','-f','{{.State.Running}}|{{.HostConfig.RestartPolicy.Name}}',i)=='true|unless-stopped' for i in ids)
     # Repeat the runbook's own cold-copy command from stopped scratch engines.
     for name,source in sources.items():n.pod('unshare','cp','-a',source+'/.',str(backup/name)+'/')
     unreadable=[]
