@@ -369,3 +369,12 @@ python3() { echo 'missing original-configurations.sha256' >&2; return 43; }
             check=subprocess.run(['bash','-eu','-c','. "$CONTEXT"; test -z "$TEARDOWN_PHASE"'],env=env)
             assert check.returncode==0
     finally:server.close()
+
+
+def test_state_table_separates_running_abort_from_clean_stop():
+    text=RUNBOOK.read_text()
+    header=next(line for line in text.splitlines() if line.startswith('| Observed state |'))
+    row=next(line for line in text.splitlines() if line.startswith('| running |'))
+    cells=dict(zip([c.strip() for c in header.split('|')[1:-1]],[c.strip() for c in row.split('|')[1:-1]]))
+    assert cells['Early abort on unchanged volumes']=='Pass only with exact original IDs and unchanged mounts'
+    assert cells['Clean-stop recovery on unchanged volumes']=='Refuse'

@@ -13,7 +13,7 @@ from types import SimpleNamespace
 
 import pytest
 
-SPEC = importlib.util.spec_from_file_location('live_upgrade', Path(__file__).parents[1] / 'docs/validation/live-upgrade.py')
+SPEC = importlib.util.spec_from_file_location('live_upgrade', Path(os.environ.get('DL086_UPGRADE_SOURCE', Path(__file__).parents[1] / 'docs/validation/live-upgrade.py')))
 upgrade = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(upgrade)
 
@@ -560,3 +560,24 @@ def test_port_precheck_allows_closed_server_time_wait_but_refuses_listener():
     assert peer.recv(1)==b''
     peer.close();server.close()
     upgrade.check_ports([endpoint])
+
+
+def test_configuration_enumeration_denial_raises_with_readable_reversal(tmp_path,monkeypatch):
+    backup=tmp_path/'backup';backup.mkdir()
+    checkout=tmp_path/'checkout';checkout.mkdir()
+    source=tmp_path/'consoles';(source/'nested').mkdir(parents=True)
+    (source/'nested/config.json').write_text('{}')
+    with tarfile.open(backup/'original-configurations.tar','w') as out:out.add(source,arcname='consoles')
+    digest=hashlib.sha256((backup/'original-configurations.tar').read_bytes()).hexdigest()
+    (backup/'original-configurations.sha256').write_text(digest+'  original-configurations.tar\n')
+    original=upgrade.os.scandir
+    def denied(directory):
+        if Path(directory)==backup/'rollback-denied/configuration/consoles/nested':
+            raise PermissionError(13,'configuration enumeration denied',str(directory))
+        return original(directory)
+    monkeypatch.setattr(upgrade.os,'scandir',denied)
+    with pytest.raises(PermissionError,match='configuration enumeration denied'):
+        upgrade.prepare_rollback(backup,'denied',checkout)
+    monkeypatch.setattr(upgrade.os,'scandir',original)
+    restored=upgrade.prepare_rollback(backup,'readable',checkout)
+    assert (restored/'configuration/consoles/nested/config.json').read_text()=='{}'
