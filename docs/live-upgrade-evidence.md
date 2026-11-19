@@ -605,6 +605,10 @@ B-2 and B-3 were subsequently fixed in the follow-up:
   A later occupant is reuse rather than continuity; separately established
   deployment membership still refuses. Fixtures cover retained and removed
   containers, helper and non-helper occupants, and the existing live-birth case.
+  Existing captures without the absence marker cannot retroactively establish
+  that the PID was dead. They retain conservative REFUSE/HOLD behavior if the
+  missing birth evidence is needed; take a fresh capture through the applicable
+  route and preserve every historical record unchanged.
 - **B-3:** the strict runtime walk ran against real scratch Podman stores in
   `build/dl086-follow-up/native-scratch-dlraj0ea/receipt.json`, read
   **2026-11-19 07:09:21 UTC**. The unchanged walk found one private pause PID in
@@ -692,7 +696,7 @@ acceptance hold remains separate; the netns error's root cause remains unknown.
 
 ### DL-086 follow-up: B-2 through B-15
 
-The follow-up retains a dead-at-capture conmon PID with an absence marker and
+New follow-up captures retain a dead-at-capture conmon PID with an absence marker and
 ignores later PID reuse as continuity; real deployment membership remains a
 refusal. Down-route shared-helper checks now distinguish a genuinely missing
 `/proc` entry from a present but unreadable entry. A fresh-shell empty policy
