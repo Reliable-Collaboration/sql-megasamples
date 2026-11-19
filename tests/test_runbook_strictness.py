@@ -68,3 +68,13 @@ def test_class_fixture_catches_errexit_disabled_after_entry(tmp_path):
     broken = preparation.replace('set -eu\n', 'set -eu\nset +e\n', 1)
     with pytest.raises(AssertionError, match='guard did not stop|destructive command followed'):
         test_destructive_block_is_strict_in_plain_bash(broken, tmp_path)
+
+
+def test_class_ignores_disposable_option_and_joins_continuations(tmp_path, monkeypatch):
+    import sys
+    source = tmp_path/'runbook.md'
+    source.write_text('```sh\ndocker compose run --rm fixture\n```\n')
+    monkeypatch.setattr(sys.modules[__name__], 'RUNBOOK', source)
+    assert destructive_blocks() == []
+    source.write_text('```sh\ndocker compose -f fixture \\\n  stop\n```\n')
+    assert len(destructive_blocks()) == 1
