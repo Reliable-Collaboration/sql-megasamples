@@ -63,7 +63,7 @@ podman() {
  return "$LISTING_RC"
 }
 '''
-    capture = block('# Stop candidates BEFORE down', 'date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"')
+    capture = block('# Stop candidates BEFORE down can remove evidence. Keep every failed candidate volume.\n', 'date -u +%Y-%m-%dT%H:%M:%SZ >> "$EVIDENCE_DIR/rollback-stop.log.timestamps"')
     script = '. "$CONTEXT"\n' + stubs
     script += block('# BEGIN rollback route dispatch\n', '# END rollback route dispatch')
     script += block('# BEGIN pause restart automation\n', '# END pause restart automation')
