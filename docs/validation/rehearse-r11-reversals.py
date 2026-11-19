@@ -30,7 +30,11 @@ def main():
                            for endpoint in ports):"""
     add('AB1 port-only attribution', scanner, condition,
         "if any(endpoint['port'] == int(port, 16) for endpoint in ports):",
-        'DL088_GATE_SOURCE', 'tests/test_quiescence_down.py::test_down_port_helper_matches_address_and_family', 8)
+        'DL088_GATE_SOURCE', 'tests/test_quiescence_down.py::test_down_port_helper_matches_address_and_family', 12)
+    add('AB1 wildcard family guard', scanner,
+        "endpoint['family'] == address.version and endpoint['port'] == int(port, 16)",
+        "endpoint['port'] == int(port, 16)",
+        'DL088_GATE_SOURCE', 'tests/test_quiescence_down.py::test_down_port_helper_matches_address_and_family', 4)
     add('AB2 understated MySQL grant', readme,
         '`SELECT`, `SHOW VIEW` on every database (`*.*`), system schemas included, including `mysql`, where account rows live; no write privilege',
         '`SELECT`, `SHOW VIEW` on the sample data',

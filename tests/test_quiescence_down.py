@@ -326,6 +326,8 @@ def test_neighbouring_proc_reads_treat_esrch_as_vanished(down,monkeypatch,site):
     ('::', '::2', True),
     ('127.0.0.1', '::1', False),
     ('::1', '127.0.0.1', False),
+    ('0.0.0.0', '::1', False),
+    ('::', '127.0.0.1', False),
 ])
 def test_down_port_helper_matches_address_and_family(down, monkeypatch, removed, published, listener, refuses):
     import ipaddress
