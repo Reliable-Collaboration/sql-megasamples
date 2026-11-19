@@ -74,7 +74,7 @@ def test_down_live_evidence_blocks_with_reversal(down,monkeypatch,mode):
         if mode=='path-helper':(p/'cwd').unlink();(p/'cwd').symlink_to('/store/overlay-containers/test/userdata')
         if mode=='port-helper':
             # Captured published host port, then a helper owning its listener inode.
-            saved=json.loads(out.read_text());saved['down_evidence'][0]['ports']=[48080];out.write_text(json.dumps(saved))
+            monkeypatch.setattr(gate,'pod',lambda *a:json.dumps({'8080/tcp':[{'HostIp':'127.0.0.1','HostPort':'48080'}]}) if a[0]=='inspect' and a[2]=='{{json .HostConfig.PortBindings}}' else original(*a))
             (proc/'net').mkdir();(proc/'net/tcp').write_text('header\n 0: 0100007F:BBD0 00000000:0000 0A 0:0 0:0 0 0 0 123\n');(proc/'net/tcp6').write_text('header\n')
             (p/'fd/3').symlink_to('socket:[123]')
     report=gate.verify(out,proc=proc,cgroup_root=cg)
@@ -312,3 +312,51 @@ def test_neighbouring_proc_reads_treat_esrch_as_vanished(down,monkeypatch,site):
     if site=='shared-verify':report=gate.verify(out,proc=proc,cgroup_root=cg)
     else:report=gate.capture(snap,data.parent/'denied.json',proc=proc,cgroup_root=cg,allow_down=True)
     assert report['outcome']=='HOLD',report
+
+
+@pytest.mark.parametrize('removed', [False, True])
+@pytest.mark.parametrize('published,listener,refuses', [
+    ('127.0.0.1', '127.0.0.1', True),
+    ('127.0.0.1', '127.0.0.2', False),
+    ('127.0.0.1', '0.0.0.0', True),
+    ('0.0.0.0', '127.0.0.2', True),
+    ('::1', '::1', True),
+    ('::1', '::2', False),
+    ('::1', '::', True),
+    ('::', '::2', True),
+    ('127.0.0.1', '::1', False),
+    ('::1', '127.0.0.1', False),
+])
+def test_down_port_helper_matches_address_and_family(down, monkeypatch, removed, published, listener, refuses):
+    import ipaddress
+    import sys
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    def pod(*args):
+        if args[0] == 'inspect' and args[2] == '{{json .HostConfig.PortBindings}}':
+            return json.dumps({'8080/tcp': [{'HostIp': published, 'HostPort': '48080'}]})
+        return original(*args)
+    monkeypatch.setattr(gate, 'pod', pod)
+    (proc/'net').mkdir()
+    for name in ('tcp', 'tcp6'): (proc/'net'/name).write_text('header\n')
+    assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    if removed:
+        def missing(*args):
+            if args[0] == 'ps': return ''
+            raise subprocess.CalledProcessError(1, args)
+        monkeypatch.setattr(gate, 'pod', missing)
+    p = process(proc, 12349, 'rootlessport', '/unrelated.scope')
+    (p/'fd/3').symlink_to('socket:[123]')
+    address = ipaddress.ip_address(listener)
+    packed = address.packed
+    encoded = ''.join(f'{int.from_bytes(packed[i:i+4], sys.byteorder):08X}' for i in range(0, len(packed), 4))
+    table = proc/'net'/('tcp' if address.version == 4 else 'tcp6')
+    table.write_text(f'header\n 0: {encoded}:BBD0 0:0 0A 0:0 0:0 0 0 0 123\n')
+    report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == ('REFUSE' if refuses else 'PASS'), report
+    assert bool(report['refusals']) == refuses
+    if refuses:
+        assert any(r['reason'] == 'positively associated down helper survives' for r in report['refusals'])
+    # Reversal: an owned helper on an unrelated port is never attributed.
+    table.write_text(table.read_text().replace(':BBD0 ', ':BBD1 '))
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
