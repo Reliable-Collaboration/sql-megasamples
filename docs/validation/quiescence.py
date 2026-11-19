@@ -839,7 +839,10 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
                 hold('recorded cgroup identifier reused')
                 continue
             groups.append(row['line'])
-            for group in [path, *(p for p in path.rglob('*') if p.is_dir())]:
+            # os.walk must propagate enumeration failures even when immediate
+            # membership files remain readable. Path.rglob suppresses them.
+            for directory, _, _ in os.walk(path, onerror=lambda error: (_ for _ in ()).throw(error)):
+                group = Path(directory)
                 for name in ('cgroup.procs','cgroup.threads'):
                     for pid in (group/name).read_text().split():
                         p = proc/pid
