@@ -326,6 +326,11 @@ cp() { if test "${1-}" != -a || test "${2-}" != consoles; then command cp "$@"; 
         assert result.returncode==0,result.stdout+result.stderr
         assert 'start' in (tmp_path/'evidence/started').read_text()
         assert (tmp_path/'evidence/policies').read_text().splitlines()==['update --restart=unless-stopped fixture']
+        if route.startswith('abort'):
+            for saved in (tmp_path/'resume-context.bash', attempt/'resume-context.bash'):
+                fresh=subprocess.run(['bash','-eu','-c','. "$1"; test "$TEARDOWN_PHASE" = originals-restarted',
+                    'completed-abort',str(saved)],capture_output=True,text=True)
+                assert fresh.returncode==0,(saved,fresh.stdout,fresh.stderr)
     finally:server.close()
 
 
