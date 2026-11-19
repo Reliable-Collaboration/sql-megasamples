@@ -906,7 +906,6 @@ if test -n "$TEARDOWN_SNAPSHOT"; then
   TEARDOWN_PHASE=originals-restarting
   save_context  # Preparation resumptions must see the abort before its first start.
 # BEGIN abort original start
-  PREPARATION_CONTEXT_FILE="$CONTEXT_FILE"
   CONTEXT_FILE="$ATTEMPT_DIR/resume-context.bash"
   save_context
   python3 "$UPGRADE_HELPER" ports --port-config "$BACKUP_DIR/original-ports.json" \
@@ -931,7 +930,7 @@ for id in $AUTOMATION_IDS; do
 done
   TEARDOWN_PHASE=originals-restarted
   save_context
-  ( CONTEXT_FILE="$PREPARATION_CONTEXT_FILE"; save_context )
+  ( CONTEXT_FILE="$BACKUP_DIR/resume-context.bash"; save_context )
 # END abort original start
 fi
 # Before any stop attempt, leave the still-running original containers alone.
