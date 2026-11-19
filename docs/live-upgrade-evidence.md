@@ -376,8 +376,8 @@ second-process fallback; no health state was edited. Recreating removed original
 through `original-override` remains fixture-tested, not natively replayed.
 
 The read-only live capture at **2026-11-18 23:52:41 UTC** completed: eight containers,
-246 process identities, eight `conmon`, seven dedicated helpers, sixteen cgroups,
-four data sources and the shared `pasta.avx2` helper, with no capture HOLD.
+the captured roles `process`: 246, `conmon`: 8 and `dedicated helper`: 7;
+sixteen cgroups, four data sources and the shared `pasta.avx2` helper, with no capture HOLD.
 It read narrow Podman metadata, `/proc` and filesystem identity only. It did not
 stop or signal anything, read environments/arguments or credential values, write
 to the live checkout/store, or claim the running deployment was quiescent.

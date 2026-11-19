@@ -1,7 +1,7 @@
 {
   "task": "DL-086 round five / DL-089 authoring-session validation",
-  "at": "2026-11-19T00:20:18.445333+00:00",
-  "checked_code_commit": "cb580dd6a0a3e5f40dcddb80e1ffca65eb075db3",
+  "at": "2026-11-19T00:21:14.469116+00:00",
+  "checked_code_commit": "6edc3f3528d8934ff330c48089a97d8c112c0b4c",
   "acceptance": "As of 2026-11-18, DataIntent acceptance remains held. No independent blessing or live restoration is claimed.",
   "fixes": {
     "W1": {
@@ -920,7 +920,7 @@
   },
   "documentation_sha256": {
     "docs/live-upgrade-runbook.md": "8750a77897166228236d64891a0042a64314277a75692f3ae4c0a75c933ca5ae",
-    "docs/live-upgrade-evidence.md": "26a52707045efea966438c08acf9cea3da80a753a501cef50dfe725d0da31d11"
+    "docs/live-upgrade-evidence.md": "d1d4e33348bfbe870f90c5a084bbe205c8b0ae7f5763c6fa99d53d27b6937dec"
   },
   "checked_code_sha256": {
     "docs/validation/quiescence.py": "dad0f99a6725b3f5ff173217de09943d7a73561745a97de9ecf5e9a676955624",
