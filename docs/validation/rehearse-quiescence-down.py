@@ -125,36 +125,10 @@ def main():
         verify('down-holder-released',cap,'PASS')
         compose('start','a');verify('started-after-capture',cap,'REFUSE');compose('stop','-t','2','a')
         verify('started-then-stopped',cap,'PASS')
-        # Execute actual Roll back stop/down/gate commands from a fresh shell.
-        text=(ROOT/'docs/live-upgrade-runbook.md').read_text()
-        fragment=text.split('# Stop candidates BEFORE down can remove evidence.',1)[1].split('\n',1)[1].split('# END restore process gate',1)[0]
-        fragment=fragment.replace('sql-megasamples',project)
-        fragment=fragment.replace('--engine megasamples-postgres --engine megasamples-mysql --engine megasamples-sqlite',
-            '--engine '+project+'-a-1 --engine '+project+'-b-1')
-        # Project service names are determined by the actual names in the listing.
-        names=pod('ps','-a','--format','{{.Names}}','--filter','label=com.docker.compose.project='+project).splitlines()
-        fragment=re.sub(r'--engine '+re.escape(project)+r'-a-1 --engine '+re.escape(project)+r'-b-1',
-                        ' '.join('--engine '+name for name in names),fragment)
-        attempt=out/'attempt';attempt.mkdir();backup=out/'backup';backup.mkdir()
-        for engine in ('postgres','mysql','sqlite','sqlite-shared'):(backup/engine).mkdir()
-        (attempt/'quiescence.py').write_bytes(Path(__file__).with_name('quiescence.py').read_bytes())
-        context=out/'context.bash'
-        import shlex
-        values=dict(ATTEMPT_DIR=str(attempt),BACKUP_DIR=str(backup),EVIDENCE_DIR=str(attempt),UPGRADE_HELPER=str(Path(__file__).with_name('live-upgrade.py')),TEARDOWN_ATTEMPT='native-down')
-        context.write_text('\n'.join(k+'='+shlex.quote(v) for k,v in values.items())+'''\nsave_context() { :; }
-stop_project() { docker compose -p "$PROJECT" -f "$COMPOSE_FILE" stop -t 2; }
-docker() { command docker "$@"; }
-''')
-        # The namespace adaptation includes the fixture Compose file path only.
-        fragment=fragment.replace('-f compose.yaml','-f "$COMPOSE_FILE"')
-        shell='. "$1"; test "$CONTAINERS_STORAGE_CONF" = "$2"; . "$3"; '+fragment
-        result=subprocess.run(
-            ['bash','-eu','-c',shell,'native-rollback',str(ENV/'env.sh'),str(ENV/'storage.conf'),str(context)],
-            text=True,capture_output=True,timeout=120,env=dict(os.environ,PROJECT=project,COMPOSE_FILE=str(config)))
-        (out/'runbook-down.log').write_text(result.stdout+result.stderr)
-        assert result.returncode==0,result.stderr
-        reports=list(attempt.glob('process-restore-*.json'));assert len(reports)==1
-        record('actual-runbook-down-block-fresh-shell',json.loads(reports[0].read_text()),'PASS')
+        # Full-down lifecycle only. The populated cold-backup Roll back gates
+        # belong to rehearse-original-restart.py + rehearse-rollback-replica.py;
+        # empty cold-copy directories cannot prove that composition.
+        compose('down')
         # Verification after a full down retains prior running-generation evidence.
         verify('ordinary-capture-after-full-down',out/'mixed-capture.json','PASS')
         verify('down-capture-after-full-down',out/'all-down-capture.json','PASS')

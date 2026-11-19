@@ -286,15 +286,16 @@ def test_reaped_recorded_process_is_vanished_even_if_proc_entry_lingers(fixture,
     assert verify()['outcome']=='PASS'
 
 
-def test_unreadable_attempt_inventory_holds(fixture,monkeypatch):
+@pytest.mark.parametrize('operation',['iterdir','stat'])
+def test_unreadable_attempt_inventory_holds(fixture,monkeypatch,operation):
     saved,proc,cg,data,path,verify=fixture
     assert verify()['outcome']=='PASS'
     attempt=data.parent/'rollback-unreadable';attempt.mkdir()
-    original=Path.iterdir
-    def denied(root):
+    original=getattr(Path,operation)
+    def denied(root,*args,**kwargs):
         if root==attempt:raise PermissionError('attempt capture inventory denied')
-        return original(root)
-    monkeypatch.setattr(Path,'iterdir',denied)
+        return original(root,*args,**kwargs)
+    monkeypatch.setattr(Path,operation,denied)
     report=gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)
     assert report['outcome']=='HOLD'
     assert 'capture history inspection unreadable' in reasons(report,'holds')

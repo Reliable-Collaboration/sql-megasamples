@@ -344,3 +344,26 @@ def test_bootstrap_occupied_unselected_console_port(tmp_path,selected_console):
             assert (result.returncode==0)==(not selected_console),result.stderr
             assert ('occupied or unavailable port' in result.stderr)==selected_console
     finally: server.close()
+
+
+def test_bootstrap_route_hold_retains_reason_in_new_attempt(tmp_path):
+    from test_runbook_fragments import block
+    import socket
+    backup=retained(tmp_path)
+    (backup/'original-stop.json').write_text('{"containers":[{"id":"test"}]}')
+    (backup/'original-running-services.txt').write_text('postgres\n')
+    runtime=tmp_path/'runtime/podman';runtime.mkdir(parents=True)
+    server=socket.socket(socket.AF_UNIX);server.bind(str(runtime/'podman.sock'))
+    binary=tmp_path/'bin';binary.mkdir();pod=binary/'podman'
+    pod.write_text('#!/bin/sh\nexit 37\n');pod.chmod(0o755)
+    env=dict(os.environ,BACKUP_DIR=str(backup),REVIEWED_CHECKOUT=str(ROOT),
+        UPGRADE_TOOLS_CONTAINER='fixture',XDG_RUNTIME_DIR=str(runtime.parent),PATH=str(binary)+os.pathsep+os.environ['PATH'])
+    try:
+        result=subprocess.run(['bash','-eu','-c','cd() { :; }\n'+block('# BEGIN rollback bootstrap\n','# END rollback bootstrap')],cwd=tmp_path,env=env,capture_output=True,text=True)
+        assert result.returncode==2,result.stderr
+        reports=list(backup.glob('rollback-*/bootstrap-route.json'));assert len(reports)==1
+        report=json.loads(reports[0].read_text())
+        assert report['outcome']=='HOLD' and report['holds'][0]['reason']=='required deployment inspection unreadable'
+        assert reports[0].with_suffix('.exit-code').read_text().strip()=='2'
+        assert 'KeyError' not in result.stderr
+    finally:server.close()

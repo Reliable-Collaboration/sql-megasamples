@@ -45,8 +45,10 @@ def main():
     run(['git','clone','--shared','--no-hardlinks',str(ROOT),str(checkout)])
     (checkout/'consoles').mkdir(exist_ok=True)
     backup=out/'backup';backup.mkdir()
-    attempt=out/'attempt';attempt.mkdir()
+    attempt=backup/'rollback-replica';attempt.mkdir()
     for name in ('postgres','mysql','sqlite','sqlite-shared'):(backup/name).mkdir()
+    replica=n.module('replica',Path(__file__).with_name('rehearse-rollback-replica.py'))
+    replica.populate_names(backup)
     data={name:out/name for name in ('postgres','mysql','sqlite')}
     for path in data.values():path.mkdir()
     data['postgres'].chmod(0o755)  # official entrypoint traverses the PGDATA parent as postgres
@@ -94,7 +96,7 @@ def main():
     auth=out/'auth.py'
     auth.write_text('''import hashlib,json,pathlib,sys
 import psycopg,pymysql
-root=pathlib.Path(sys.argv[1]);ports=json.loads((root/'attempt/original-ports.json').read_text())['ports']
+root=pathlib.Path(sys.argv[1]);ports=json.loads((root/'backup/rollback-replica/original-ports.json').read_text())['ports']
 values=dict(line.split('=',1) for line in (root/'checkout/.env').read_text().splitlines())
 refused=sys.argv[2]=='refuse';init=sys.argv[2]=='init';out={}
 for engine in ('postgres','mysql'):
@@ -143,11 +145,11 @@ for engine in ('postgres','mysql'):
         original_ids={name:pod('inspect','-f','{{.Id}}',name) for name in names}
         mounts={name:pod('inspect','-f','{{range .Mounts}}{{.Source}}|{{.Destination}}{{"\\n"}}{{end}}',name) for name in names}
         u.snapshot(backup/'original-stop.json',project,names[:3],phase='original-stop')
-        record=g.capture(backup/'original-stop.json',out/'original-capture.json',data_only=True)
+        record=g.capture(backup/'original-stop.json',backup/'original-capture.json',data_only=True)
         assert record['outcome']=='PASS',record
         comp('stop','-t','10')
         u.exited(backup/'original-stop.json',out/'original-stopped.json',phase='original-stop')
-        report=g.verify(out/'original-capture.json');assert report['outcome']=='PASS',n.summary(report)
+        report=g.verify(backup/'original-capture.json');assert report['outcome']=='PASS',n.summary(report)
         # Execute the cutover's cold-copy shape on only this scratch project's mounts.
         sources={name:str(data[name]) for name in ('postgres','mysql','sqlite')}
         sources['sqlite-shared']=pod('volume','inspect','-f','{{.Mountpoint}}',project+'-shared')
@@ -216,10 +218,16 @@ for engine in ('postgres','mysql'):
         g.original_eligible(backup/'original-stop.json',project)
         comp('rm','-f','landing');must_refuse('original-restart-refuses-missing-ID')
         comp('create','landing');must_refuse('original-restart-refuses-replaced-ID')
+        replica.prove(n,g,u,out,backup,attempt,project,compose,sources,receipt)
         save()
     finally:
         try:
             comp('down','-v','--remove-orphans','-t','10')
+            for engine in ('postgres','mysql','sqlite','sqlite-shared'):
+                volume=project+'-rollback-'+engine+'-replica'
+                if n.run(['podman','volume','exists',volume],check=False).returncode==0:
+                    assert pod('volume','inspect','-f','{{index .Labels "dl086.rollback-attempt"}}',volume)=='replica'
+                    pod('volume','rm',volume)
             assert not pod('ps','-aq','--filter','label=com.docker.compose.project='+project)
             assert not pod('network','ls','-q','--filter','label=com.docker.compose.project='+project)
             assert not pod('volume','ls','-q','--filter','label=com.docker.compose.project='+project)
