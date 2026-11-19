@@ -234,8 +234,8 @@ def test_success_path_scanner_refusal_prevents_next_mutation(tmp_path,name):
 def test_original_startup_never_adds_dependencies(tmp_path,services):
     (tmp_path/'original-running-services.txt').write_text(''.join(n+'\n' for n in services))
     text=RUNBOOK.read_text()
-    start='set --\nRESTORE_CLOUDBEAVER=0'
-    body=start+text.split(start,1)[1].split('# Check only originally selected services',1)[0].split('```',1)[0]
+    start='# END pre-up process gate\n'
+    body=text.split(start,1)[1].split('# Check only originally selected services',1)[0].split('```',1)[0]
     stubs=r'''
 save_context() { :; }
 python3() { :; }

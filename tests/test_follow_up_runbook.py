@@ -25,6 +25,7 @@ python3() {
     calls = (tmp_path/'calls').read_text().splitlines()
     assert calls[0] == 'phase:rollback-starting'
     starts = [line for line in calls if line.startswith('compose:')]
+    assert all(' --no-deps ' in line for line in starts), calls
     assert starts[0].endswith(' postgres mysql sqlite'), calls
     assert not any(console in starts[0] for console in ('adminer', 'dbgate'))
     assert calls[2:5] == ['health:postgres', 'health:mysql', 'health:sqlite'], calls
