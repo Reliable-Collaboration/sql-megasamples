@@ -607,8 +607,10 @@ B-2 and B-3 were subsequently fixed in the follow-up:
   containers, helper and non-helper occupants, and the existing live-birth case.
   Existing captures without the absence marker cannot retroactively establish
   that the PID was dead. They retain conservative REFUSE/HOLD behavior if the
-  missing birth evidence is needed; take a fresh capture through the applicable
-  route and preserve every historical record unchanged.
+  missing birth evidence is needed. Keep the maintenance hold and rerun after
+  the reusing process exits; never kill an unattributed process to clear it.
+  A fresh current capture does not erase obligations in retained history.
+  Preserve every historical record unchanged.
 - **B-3:** the strict runtime walk ran against real scratch Podman stores in
   `build/dl086-follow-up/native-scratch-dlraj0ea/receipt.json`, read
   **2026-11-19 07:09:21 UTC**. The unchanged walk found one private pause PID in

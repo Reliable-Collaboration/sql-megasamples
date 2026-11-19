@@ -28,6 +28,9 @@ def main():
     add('B-2 original lost PID', 'DL088_GATE_SOURCE', original, [down+'test_dead_at_capture_conmon_pid_reuse_is_not_continuity'])
     add('B-2 absent PID treated as live continuity', 'DL088_GATE_SOURCE', change(scanner,
         " and not r.get('conmon_absent')", ''), [down+'test_dead_at_capture_conmon_pid_reuse_is_not_continuity'])
+    add('B-2 omitted retained-record limit', 'DL086_EVIDENCE_SOURCE', change(evidence,
+        'Existing captures without the absence marker', 'Retained old captures'),
+        ['tests/test_round12_documentation.py::test_fixed_pid_and_native_scratch_limits_are_retired'])
     add('B-5 original ENOENT hold', 'DL088_GATE_SOURCE', original, [down+'test_stale_shared_pidfile_with_missing_proc_entry_is_absent'])
     original_runbook = subprocess.check_output(['git', 'show', '3bef1436:docs/live-upgrade-runbook.md'], cwd=ROOT, text=True)
     add('B-4 and B-7 silent empty-listing exit', 'DL089_RUNBOOK_SOURCE', original_runbook,
