@@ -77,21 +77,11 @@ def main():
         assert report['outcome']==expected,(name,summary(report))
         print(name,report['outcome'],flush=True)
     def capture(name,phase='candidate-teardown'):
-        for attempt in range(3):
-            label=name+('-retry-'+str(attempt) if attempt else '')
-            snap=out/(label+'-before.json');cap=out/(label+'-capture.json')
-            names=pod('ps','-a','--format','{{.Names}}','--filter','label=com.docker.compose.project='+project).splitlines()
-            upgrade.snapshot(snap,project,names or [project+'-removed'],phase=phase)
-            result=gate.capture(snap,cap,allow_down=True,data_only=False)
-            receipt.setdefault('capture_attempts',{}).setdefault(name,[]).append(summary(result))
-            # A disappearing unrelated cgroup can interrupt a complete tree walk.
-            # Retain that HOLD and take new exclusive evidence; never clear it by
-            # acknowledgement or modify it into an empty scan. A persistent error
-            # still fails the case. Original-stop's intended HOLD is not retried.
-            saved=json.loads(cap.read_text())
-            transient=(result['outcome']=='HOLD' and saved['holds'] and all(
-                r['reason']=='down cgroup evidence unreadable' and r.get('error')=='FileNotFoundError' for r in saved['holds']))
-            if not transient:break
+        snap=out/(name+'-before.json');cap=out/(name+'-capture.json')
+        names=pod('ps','-a','--format','{{.Names}}','--filter','label=com.docker.compose.project='+project).splitlines()
+        upgrade.snapshot(snap,project,names or [project+'-removed'],phase=phase)
+        result=gate.capture(snap,cap,allow_down=True,data_only=False)
+        receipt.setdefault('capture_attempts',{})[name]=[summary(result)]
         return snap,cap,result
     def verify(name,cap,expected):
         result=run(['bash','-eu','-c','. "$1"; test "$CONTAINERS_STORAGE_CONF" = "$2"; exec python3 "$3" verify "$4"',

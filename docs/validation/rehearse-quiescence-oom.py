@@ -43,11 +43,8 @@ try:
   else:
    snapshot=work/'before.json';u.snapshot(snapshot,project,[name],phase='candidate-teardown')
    u.exited(snapshot,work/'state-gate.json',phase='candidate-teardown')
-   attempts=[]
-   for i in range(3):
-    cap=work/(f'capture-{i}.json');capture=g.capture(snapshot,cap,allow_down=True,extra_sources=[data])
-    attempts.append(dict(outcome=capture['outcome'],holds=dict(collections.Counter(r['reason'] for r in capture['holds']))))
-    if capture['outcome']=='PASS':break
+   cap=work/'capture.json';capture=g.capture(snapshot,cap,allow_down=True,extra_sources=[data])
+   attempts=[dict(outcome=capture['outcome'],holds=dict(collections.Counter(r['reason'] for r in capture['holds'])))]
    assert capture['outcome']=='PASS',attempts
    report=g.verify(cap);assert report['outcome']=='PASS',report['outcome']
    summary=dict(status='Passed',containers=1,published_loopback_ports=1,memory_limit_bytes=int(pod('inspect','-f','{{.HostConfig.Memory}}',name)),
