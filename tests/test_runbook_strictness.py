@@ -74,3 +74,10 @@ def test_saved_context_supplies_strictness_in_plain_bash(tmp_path, failure):
         assert 'UNSAFE' not in result.stdout
     finally:
         server.close()
+
+
+def test_class_fixture_catches_errexit_disabled_after_entry(tmp_path):
+    preparation = next(body for body in destructive_blocks() if 'save_context() {' in body)
+    broken = preparation.replace('set -eu\n', 'set -eu\nset +e\n', 1)
+    with pytest.raises(AssertionError):
+        test_destructive_block_is_strict_in_plain_bash(broken, tmp_path)
