@@ -412,3 +412,31 @@ def test_down_port_helper_matches_address_and_family(down, monkeypatch, removed,
     # Reversal: an owned helper on an unrelated port is never attributed.
     table.write_text(table.read_text().replace(':BBD0 ', ':BBD1 '))
     assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+
+
+@pytest.mark.parametrize('retained', [False, True])
+@pytest.mark.parametrize('comm', ['conmon', 'unrelated'])
+def test_dead_at_capture_conmon_pid_reuse_is_not_continuity(down, monkeypatch, retained, comm):
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    monkeypatch.setattr(gate, 'pod', lambda *a: 'test|0|12349|none|false|'
+        if a[0] == 'inspect' and a[2] == gate.CAPTURE_FORMAT else original(*a))
+    assert not (proc/'12349').exists()
+    assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    saved = json.loads(out.read_text())
+    assert saved['down_evidence'][0]['conmon'] == 12349
+    assert saved['down_evidence'][0]['conmon_absent'] is True
+    p = process(proc, 12349, comm, '/unrelated.scope', start='99')
+    if not retained:
+        def removed(*args):
+            if args[0] == 'ps': return ''
+            raise subprocess.CalledProcessError(1, args)
+        monkeypatch.setattr(gate, 'pod', removed)
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+    # Reuse excludes only the PID association: real deployment membership still refuses.
+    (p/'cgroup').write_text('0::/libpod-test.scope\n')
+    report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == 'REFUSE', report
+    assert any(r['reason'] == 'positively associated down helper survives' for r in report['refusals'])
+    (p/'cgroup').write_text('0::/unrelated.scope\n')
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
