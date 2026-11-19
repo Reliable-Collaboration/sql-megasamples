@@ -334,7 +334,7 @@ cp() { if test "${1-}" != -a || test "${2-}" != consoles; then command cp "$@"; 
     finally:server.close()
 
 
-@pytest.mark.parametrize('identity_changed',[False,True])
+@pytest.mark.parametrize('identity_changed',[False,True,'missing','wrong-project'])
 def test_workspace_copy_failure_fresh_shell_abort_uses_exact_existing_id(tmp_path,identity_changed):
     server=context(tmp_path,'')
     backup=tmp_path/'retained'
@@ -346,8 +346,8 @@ podman() {
  container) return 0;;
  inspect) case "$3" in
    *State.Running*) echo true;;
-   *Labels*) echo sql-megasamples;;
-   *) if test "$IDENTITY_CHANGED" = True; then echo replacement-id; else echo original-cloudbeaver-id; fi;;
+   *Labels*) if test "$IDENTITY_CHANGED" = wrong-project; then echo unrelated; else echo sql-megasamples; fi;;
+   *) case "$IDENTITY_CHANGED" in True) echo replacement-id;; missing) return 44;; *) echo original-cloudbeaver-id;; esac;;
  esac;;
  stop) echo "$2" > "$EVIDENCE_DIR/stopped";;
  cp) return 37;;
@@ -368,6 +368,7 @@ python3() { echo 'missing original-configurations.sha256' >&2; return 43; }
         fresh=subprocess.run(['bash','-eu','-c',stubs+abort],env=dict(env,IDENTITY_CHANGED=str(identity_changed)),capture_output=True,text=True)
         if identity_changed:
             assert fresh.returncode!=0 and not (tmp_path/'evidence/started').exists()
+            assert 'HOLD:' in fresh.stdout and 'coordinator' in fresh.stdout
         else:
             assert fresh.returncode==0,fresh.stdout+fresh.stderr
             assert (tmp_path/'evidence/started').read_text()=='original-cloudbeaver-id\n'
@@ -381,12 +382,12 @@ def test_state_table_separates_running_abort_from_clean_stop():
     header=next(line for line in text.splitlines() if line.startswith('| Observed state |'))
     row=next(line for line in text.splitlines() if line.startswith('| running |'))
     cells=dict(zip([c.strip() for c in header.split('|')[1:-1]],[c.strip() for c in row.split('|')[1:-1]]))
-    assert cells['Early abort on unchanged volumes']=='Pass only with exact original IDs and unchanged mounts'
+    assert cells['Early abort on unchanged volumes']=='Pass only with exact original IDs and consistent running/PID state'
     assert cells['Clean-stop recovery on unchanged volumes']=='Refuse'
 
 
-@pytest.mark.parametrize('route',['abort','clean-stop'])
-@pytest.mark.parametrize('failure',['start','identity'])
+@pytest.mark.parametrize('failure,route', [('start','abort'),('identity','abort'),('start','clean-stop')],
+                         ids=['start-abort','identity-abort','start-clean-stop'])
 def test_recovery_partial_start_fresh_preparation_context_holds(tmp_path,route,failure):
     server=context(tmp_path,'stop')
     backup=tmp_path/'retained';attempt=tmp_path/'attempt';checkout=tmp_path/'checkout'

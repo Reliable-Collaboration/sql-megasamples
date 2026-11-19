@@ -110,3 +110,52 @@ def test_rollback_policy_pause_is_a_separate_guarded_step():
     prose = after_inputs.split('```\n', 1)[1].rsplit('```sh', 1)[0]
     assert 'guarded' in prose and 'pause restart automation' in prose
     assert 'before' in prose and 'capture' in prose
+
+
+def test_first_port_refusal_then_fresh_shell_dispatch_completes(tmp_path):
+    server = context(tmp_path, 'rollback-stop')
+    backup = tmp_path/'retained'; attempt = tmp_path/'attempt'; checkout = tmp_path/'checkout'
+    checkout.mkdir(); (checkout/'consoles').mkdir()
+    config = attempt/'configuration'; (config/'consoles').mkdir(parents=True)
+    for name in ('.env', 'compose.yaml', 'megasamples.yaml'):
+        (config/name).write_text('# retained fixture\n')
+        (checkout/name).write_text('# candidate fixture\n')
+    (backup/'original-running-services.txt').write_text('postgres\nmysql\n')
+    (backup/'rollback-branch.txt').write_text('original')
+    (backup/'original-commit.txt').write_text('fixture')
+    blocked = tmp_path/'port-blocked'; blocked.touch()
+    stubs = r'''
+python3() {
+ if test "$1" = -c; then command python3 "$@"; return; fi
+ printf '%s\n' "$*" >> "$EVIDENCE_DIR/calls"
+ case "$2" in
+ rollback-route) echo '{"route":"original-restart"}';;
+ ports) if test -f "$BLOCKED"; then echo 'REFUSE: original port occupied'; return 37; fi;;
+ esac
+}
+git() { if test "$1" = rev-parse; then echo fixture; fi; }
+sha256sum() { :; }
+docker() { echo "start $*" >> "$EVIDENCE_DIR/calls"; }
+podman() { case "$1" in ps) echo exact-original-id;; inspect) echo 'exact-original-id|postgres|no';; esac; }
+'''
+    script = '. "$CONTEXT"\ncd "$CHECKOUT"\nCONFIG_DIR="$ATTEMPT_DIR/configuration"\n' + stubs
+    script += block('# BEGIN rollback route dispatch\n', '# END rollback route dispatch')
+    env = dict(os.environ, CONTEXT=str(tmp_path/'resume-context.bash'),
+               CHECKOUT=str(checkout), BLOCKED=str(blocked))
+    try:
+        refused = subprocess.run(['bash', '-eu', '-c', script], env=env, capture_output=True, text=True)
+        assert refused.returncode == 37 and 'port occupied' in refused.stdout, refused.stdout + refused.stderr
+        assert 'start compose' not in (tmp_path/'evidence/calls').read_text()
+        blocked.unlink()
+        fresh = subprocess.run(['bash', '-eu', '-c', script], env=env, capture_output=True, text=True)
+        assert fresh.returncode == 0, fresh.stdout + fresh.stderr
+        calls = (tmp_path/'evidence/calls').read_text()
+        assert calls.count(' rollback-route ') == 2
+        assert 'start compose -p sql-megasamples -f compose.yaml start postgres' in calls
+        assert 'start compose -p sql-megasamples -f compose.yaml start mysql' in calls
+        assert (attempt/'failed-candidate.env').read_text() == '# candidate fixture\n'
+        checked = subprocess.run(['bash', '-eu', '-c','. "$CONTEXT"; test "$TEARDOWN_PHASE" = originals-restarted'],
+                                 env=env, capture_output=True, text=True)
+        assert checked.returncode == 0, checked.stderr
+    finally:
+        server.close()
