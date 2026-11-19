@@ -466,7 +466,7 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
             except (OSError, ValueError) as error:
                 # Missing global evidence is diagnostic unless scope is established.
                 if belongs or int(process.name) in identities:
-                    if not isinstance(error, FileNotFoundError) or process.exists():
+                    if not isinstance(error, ProcessLookupError) and (not isinstance(error, FileNotFoundError) or process.exists()):
                         hold('required cgroup member identity unreadable', pid=int(process.name), error=type(error).__name__)
         # /proc iteration is not a membership inventory (and omits non-leader
         # threads). Reconcile independently established scope even if stat failed.
@@ -477,7 +477,7 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                         identity = process_identity(proc/pid)
                         identities.setdefault(int(pid), dict(identity, role='process'))
                     except (OSError, ValueError) as error:
-                        if not isinstance(error, FileNotFoundError) or (proc/pid).exists():
+                        if not isinstance(error, ProcessLookupError) and (not isinstance(error, FileNotFoundError) or (proc/pid).exists()):
                             hold('required cgroup member identity unreadable', pid=int(pid), error=type(error).__name__)
             except OSError as error:
                 hold('cgroup capture incomplete', error=type(error).__name__)
@@ -556,7 +556,7 @@ def original_override(capture_path, output, upgrade_id, candidate_capture):
     if not saved.get('complete'):
         raise ValueError('unchanged original data identity requires complete original evidence')
     candidates = json.loads(candidate_capture.read_text()).get('containers')
-    if not candidates:
+    if not candidates or not {dest for row in candidates for _,dest in row.get('mounts', [])} >= {'/var/lib/postgresql','/var/lib/mysql','/data'}:
         raise ValueError('independent candidate mount evidence required for unchanged originals')
     candidate_sources = [source_identity(src) for row in candidates for src, _ in row.get('mounts', [])]
     services = {}
@@ -647,7 +647,7 @@ def holder_scan(sources, groups, proc=Path('/proc')):
             counts['inspected'] += 1
             tasks = list((leader/'task').iterdir())
         except (OSError, ValueError) as error:
-            if not leader.exists():
+            if isinstance(error, ProcessLookupError) or not leader.exists():
                 counts['vanished'] += 1
                 continue
             (holds if required else limitations).append(dict(row, reason='required holder inspection unreadable' if required else 'unattributed inspection limit', operation='process', error=type(error).__name__))
@@ -660,7 +660,7 @@ def holder_scan(sources, groups, proc=Path('/proc')):
                 try:
                     return action()
                 except (OSError, ValueError) as error:
-                    if not task.exists():
+                    if isinstance(error, ProcessLookupError) or not task.exists():
                         return None
                     (holds if required else limitations).append(dict(row, reason='required holder inspection unreadable' if required else 'unattributed inspection limit', operation=operation, error=type(error).__name__))
                     return None
@@ -738,7 +738,7 @@ def complete_capture(saved):
     return bool(saved['processes'] and saved['cgroups'])
 
 
-def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), phase_eligible=True, _down_scan=None):
+def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup'), phase_eligible=True, _down_scan=None, _historical=False):
     report = dict(outcome='HOLD', assurance='The recorded deployment stopped using the exact recorded data; bounded by readable required evidence. This does not prove the host quiet or prevent new writers.',
                   refusals=[], holds=[], limitations=[], shared_consumers=[], counts={})
     def hold(reason, **detail): report['holds'].append(dict(reason=reason, **detail))
@@ -764,8 +764,8 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
         hold('required association unresolved', evidence=row)
     if not phase_eligible:
         hold('phase state ineligible')
-    if down:
-        report['assurance'] = DOWN_ASSURANCE
+    if saved.get('down_evidence'):
+        report['assurance'] = ('' if down else 'Mixed pre-stop and down-state capture. ') + DOWN_ASSURANCE
     if saved.get('down_evidence'):
         try:
             listed = set(pod('ps','-aq','--no-trunc','--filter','label=com.docker.compose.project='+saved['project']).split())
@@ -810,6 +810,7 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
         try:
             current = process_identity(p)
             if current['start'] != row['start']:
+                if _historical: continue  # Only this historical identity is superseded.
                 hold('recorded process identifier reused', pid=row['pid'])
                 continue
             if not task_alive(p):
@@ -826,13 +827,14 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
             else:
                 refuse('dedicated helper survives' if row['role'] == 'dedicated helper' else 'recorded process survives', **current)
         except (OSError, ValueError) as error:
-            if not isinstance(error, FileNotFoundError) or p.exists():
+            if not isinstance(error, ProcessLookupError) and (not isinstance(error, FileNotFoundError) or p.exists()):
                 hold('required process inspection unreadable', pid=row['pid'], error=type(error).__name__)
     groups = []  # Only continuous cgroup objects establish deployment scope.
     for row in saved['cgroups']:
         path = cgroup_root/cgroup_path(row['line']).lstrip('/')
         try:
             if object_identity(path) != {k:row[k] for k in ('device','inode')}:
+                if _historical: continue
                 hold('recorded cgroup identifier reused')
                 continue
             groups.append(row['line'])
@@ -896,22 +898,6 @@ def historical_applicability(saved, current, proc, cgroup_root):
                for a in saved.get('sources', []) for b in current['sources'])
     if not (generation or data):
         return False
-    for row in saved.get('processes', []) + ([saved['shared_helper']] if saved.get('shared_helper') else []):
-        try:
-            if start_time(proc/str(row['pid'])) != row['start']:
-                return False
-        except FileNotFoundError:
-            pass
-        except OSError:
-            pass  # Applicable but unreadable live evidence must HOLD in verify.
-    for row in saved.get('cgroups', []):
-        try:
-            if object_identity(cgroup_root/cgroup_path(row['line']).lstrip('/')) != {k:row[k] for k in ('device','inode')}:
-                return False
-        except FileNotFoundError:
-            pass
-        except OSError:
-            pass
     return True
 
 
@@ -943,7 +929,7 @@ def verify_all(capture_path, history_dir, **kwargs):
             applicable = historical_applicability(saved, current, kwargs.get('proc', Path('/proc')), kwargs.get('cgroup_root', Path('/sys/fs/cgroup')))
             report['history'].append(dict(path=str(path), applicable=applicable))
             if applicable:
-                prior = verify(path, **kwargs)
+                prior = verify(path, _historical=True, **kwargs)
                 for key in ('refusals','holds','limitations'):
                     report[key] += [dict(row, capture=str(path)) for row in prior[key]]
     except (OSError, ValueError, KeyError) as error:

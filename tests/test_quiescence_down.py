@@ -218,3 +218,15 @@ def test_recorded_cgroup_vanish_error_holds(down,monkeypatch):
     report=gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)
     assert report['outcome']=='HOLD'
     assert any(r['reason']=='down cgroup evidence unreadable' for r in report['holds'])
+
+
+def test_mixed_capture_states_its_down_evidence_limit(down):
+    snap,out,proc,cg,data=down
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
+    saved=json.loads(out.read_text());saved['kind']='ordinary'
+    saved['processes']=[dict(pid=999999999,start='1',role='process',cgroups=['0::/gone'])]
+    saved['cgroups']=[dict(line='0::/gone',device='0:1',inode=1)]
+    out.write_text(json.dumps(saved))
+    report=gate.verify(out,proc=proc,cgroup_root=cg)
+    assert report['outcome']=='PASS'
+    assert 'Mixed' in report['assurance'] and 'outside the identified cgroups' in report['assurance']

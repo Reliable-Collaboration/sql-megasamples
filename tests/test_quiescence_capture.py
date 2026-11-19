@@ -187,7 +187,7 @@ def test_original_volume_restart_override_does_not_require_copy_quiescence(captu
           dict(name='megasamples-mysql',id='my',mounts=[[str(dirs['my']),'/var/lib/mysql']]),
           dict(name='megasamples-sqlite',id='sq',mounts=[[str(dirs['sq']),'/data'],[str(dirs['shared']),'/shared']])]
     out.write_text(json.dumps(dict(complete=True,boot_id='before-reboot',containers=rows,sources=[gate.source_identity(p) for p in dirs.values()])))
-    candidate=data.parent/'candidate.json';candidate.write_text(json.dumps(dict(containers=[dict(mounts=[])])))
+    candidate=data.parent/'candidate.json';candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(data),dest] for dest in ('/var/lib/postgresql','/var/lib/mysql','/data')])])))
     override=data.parent/'unchanged.json'
     gate.original_override(out,override,'fixture',candidate)
     saved=json.loads(override.read_text())
@@ -195,10 +195,10 @@ def test_original_volume_restart_override_does_not_require_copy_quiescence(captu
     assert saved['services']['sqlite']['volumes'][1]['source']=='megasamples-sqlite'
     assert saved['services']['mysql']['image']=='localhost/sql-megasamples-mysql:rollback-fixture'
     assert all(not v['bind']['create_host_path'] for row in saved['services'].values() for v in row['volumes'] if v['type']=='bind')
-    candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(dirs['pg']),'/candidate-data']])])))
+    candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(dirs['pg']),'/candidate-data']]+[[str(data),dest] for dest in ('/var/lib/postgresql','/var/lib/mysql','/data')])])))
     with pytest.raises(ValueError,match='candidate used original data'):
         gate.original_override(out,data.parent/'used-by-candidate.json','fixture',candidate)
-    candidate.write_text(json.dumps(dict(containers=[dict(mounts=[])])))
+    candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(data),dest] for dest in ('/var/lib/postgresql','/var/lib/mysql','/data')])])))
     dirs['pg'].rename(data.parent/'retained-pg');dirs['pg'].mkdir()
     with pytest.raises(ValueError,match='unchanged original data identity'):
         gate.original_override(out,data.parent/'wrong.json','fixture',candidate)
@@ -294,7 +294,7 @@ def test_unchanged_originals_real_shared_mount_overlap_gets_fresh_volume(capture
           dict(name='megasamples-sqlite',id='sq',mounts=[[str(dirs['sq']),'/data'],[str(dirs['shared']),'/shared']])]
     out.write_text(json.dumps(dict(complete=True,containers=rows,sources=[gate.source_identity(p) for p in dirs.values()])))
     candidate=data.parent/'candidate.json'
-    candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(dirs['shared']),'/shared'],[str(data),'/data']])])) )
+    candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(dirs['shared']),'/shared']]+[[str(data),dest] for dest in ('/var/lib/postgresql','/var/lib/mysql','/data')])])) )
     target=data.parent/'unchanged.json'
     gate.original_override(out,target,'fixture',candidate)
     result=json.loads(target.read_text())
@@ -303,7 +303,7 @@ def test_unchanged_originals_real_shared_mount_overlap_gets_fresh_volume(capture
     assert result['volumes']['megasamples-sqlite']['name'].startswith('megasamples-unchanged-shared-')
     assert result['volumes']['megasamples-sqlite']['external'] is False
     assert shared['source']!=str(dirs['shared'])
-    candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(dirs['sq']),'/data']])])) )
+    candidate.write_text(json.dumps(dict(containers=[dict(mounts=[[str(dirs['sq']),'/data']]+[[str(data),dest] for dest in ('/var/lib/postgresql','/var/lib/mysql')])])) )
     with pytest.raises(ValueError,match='candidate used original data'):
         gate.original_override(out,data.parent/'refused.json','fixture',candidate)
 
@@ -322,3 +322,12 @@ def test_readable_scope_is_kept_when_comm_fails_before_identity(capture_fixture,
     assert any(r['reason']=='required cgroup member identity unreadable' and r['pid']==12349 for r in report['holds'])
     monkeypatch.setattr(Path,'read_text',original)
     assert gate.capture(snap,data.parent/'reversed.json',proc=proc,cgroup_root=cg)['outcome']=='PASS'
+
+
+def test_original_override_requires_positive_candidate_mount_evidence(capture_fixture):
+    snap,out,proc,cg,data=capture_fixture
+    out.write_text(json.dumps(dict(complete=True,containers=[],sources=[])))
+    candidate=data.parent/'candidate.json'
+    candidate.write_text(json.dumps(dict(containers=[dict(id='removed-candidate',mounts=[])])))
+    with pytest.raises(ValueError,match='independent candidate mount evidence required'):
+        gate.original_override(out,data.parent/'override.json','fixture',candidate)

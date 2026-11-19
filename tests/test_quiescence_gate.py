@@ -196,7 +196,7 @@ def test_history_applicability_is_mechanical_with_reversal(fixture,change):
     if change=='cgroup-reuse':
         group=cg/'scope';group.mkdir();saved['cgroups']=[dict(line='0::/scope',**gate.object_identity(group))];saved['cgroups'][0]['inode']+=1
     if change=='unrelated':saved['containers']=[dict(id='other')];saved['sources'][0]['root']='/other-data'
-    assert not gate.historical_applicability(saved,current,proc,cg)
+    assert gate.historical_applicability(saved,current,proc,cg) == (change in ('pid-reuse','cgroup-reuse'))
     assert gate.historical_applicability(current,current,proc,cg)
 
 
@@ -255,3 +255,32 @@ def test_legacy_unindexed_capture_is_also_required(fixture):
     assert 'dedicated helper survives' in reasons(report,'refusals')
     legacy.unlink()
     assert gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+
+
+def test_history_reuse_is_judged_per_row_not_entire_capture(fixture):
+    saved,proc,cg,data,path,verify=fixture
+    saved['cgroups'][0]['line']='0::/current-gone.scope'
+    assert verify()['outcome']=='PASS'
+    prior=copy.deepcopy(saved);helper=process(proc,comm='rootlessport')
+    prior['processes']=[dict(gate.process_identity(helper),role='dedicated helper')]
+    group=cg/'libpod-original.scope';group.mkdir()
+    for name in ('cgroup.procs','cgroup.threads'):(group/name).write_text('')
+    prior['cgroups']=[dict(line='0::/libpod-original.scope',**gate.object_identity(group))]
+    prior['cgroups'][0]['inode']+=1  # same path, new object after an original restart
+    gate.write_capture(data.parent/'prior.json',prior)
+    report=gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)
+    assert 'dedicated helper survives' in reasons(report,'refusals')
+    assert 'recorded cgroup identifier reused' not in reasons(report,'holds')
+    import shutil;shutil.rmtree(helper)
+    assert gate.verify_all(path,data.parent,proc=proc,cgroup_root=cg)['outcome']=='PASS'
+
+
+def test_reaped_recorded_process_is_vanished_even_if_proc_entry_lingers(fixture,monkeypatch):
+    saved,proc,cg,data,path,verify=fixture
+    p=process(proc);saved['processes']=[dict(gate.process_identity(p),role='process')]
+    original=gate.process_identity
+    def reaped(path):
+        if path==p:raise ProcessLookupError('reaped during read')
+        return original(path)
+    monkeypatch.setattr(gate,'process_identity',reaped)
+    assert verify()['outcome']=='PASS'
