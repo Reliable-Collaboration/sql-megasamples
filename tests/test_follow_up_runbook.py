@@ -38,20 +38,21 @@ python3() {
 
 
 @pytest.mark.parametrize('route', ['cold', 'unchanged'])
-@pytest.mark.parametrize('failure', ['snapshot', 'state', 'ports', 'health:postgres', 'health:mysql', 'health:sqlite'])
+@pytest.mark.parametrize('failure', ['snapshot', 'state', 'ports', 'health:postgres', 'health:mysql', 'health:sqlite', 'cloud-port'])
 def test_real_restore_fence_failed_gate_in_plain_bash(tmp_path, route, failure):
     import re
     from test_runbook_fragments import RUNBOOK
     bodies = re.findall(r'^```sh\n(.*?)^```', RUNBOOK.read_text(), re.M | re.S)
     body = next(b for b in bodies if ('# BEGIN rollback population' if route == 'cold'
                                       else '# BEGIN unchanged volume recovery') in b)
-    (tmp_path/'original-running-services.txt').write_text('postgres\nmysql\nsqlite\nadminer\ndbgate\n')
+    (tmp_path/'original-running-services.txt').write_text('postgres\nmysql\nsqlite\nadminer\ndbgate\ncloudbeaver\n')
     stubs = r'''
 save_context() { :; }
 python3() {
   case " $* " in
     *' snapshot '*' --phase restart-before'*) gate=snapshot;;
     *' exited '*' --phase restart-before'*) gate=state;;
+    *' ports '*' --service cloudbeaver'*) gate=cloud-port;;
     *' ports '*) gate=ports;;
     *' wait-healthy '*) gate="health:$3";;
     *) gate=other;;
@@ -80,6 +81,10 @@ docker() { printf 'START:%s\n' "$*" >> "$CALLS"; }
     starts = [line for line in calls if line.startswith('START:')]
     if failure in ('snapshot', 'state', 'ports'):
         assert not starts, calls
+    elif failure == 'cloud-port':
+        assert len(starts) == 2, calls
+        assert starts[0].endswith(' postgres mysql sqlite') and starts[1].endswith(' adminer dbgate'), calls
+        assert not any('cloudbeaver' in line for line in starts), calls
     else:
         assert len(starts) == 1 and starts[0].endswith(' postgres mysql sqlite'), calls
         assert not any(console in starts[0] for console in ('adminer', 'dbgate'))

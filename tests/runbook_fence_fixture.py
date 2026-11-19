@@ -133,7 +133,7 @@ def run_fence(body, directory, fail=None, route='original-restart'):
         (directory/name).write_text('')
     for name in ('rollback-branch.txt', 'original-commit.txt'):
         (directory/name).write_text('fixture\n')
-    (directory/'original-running-services.txt').write_text('postgres\nmysql\nsqlite\nadminer\n')
+    (directory/'original-running-services.txt').write_text('postgres\nmysql\nsqlite\nadminer\ncloudbeaver\n')
     (directory/'resume-context.bash').write_text(': # entry strictness belongs to the fence\n')
     for name in ('configuration', 'evidence', 'attempt', 'source', 'target', 'consoles'):
         (directory/name).mkdir()
