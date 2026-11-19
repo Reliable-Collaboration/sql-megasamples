@@ -60,4 +60,4 @@ finally:
  assert not pod('ps','-aq','--filter','label=com.docker.compose.project='+project)
  assert not pod('volume','ls','-q','--filter','label=com.docker.compose.project='+project)
  summary['cleanup']=dict(status='Passed',containers=0,volumes=0)
- (out/'native-oom-summary.json').write_text(json.dumps(summary,indent=2)+'\n');print(json.dumps(summary))
+ (work/'summary.json').write_text(json.dumps(summary,indent=2)+'\n');print(json.dumps(summary))
