@@ -90,8 +90,9 @@ podman() {
         server.close()
 
 
-def test_empty_original_listing_still_refuses_policy_pause(tmp_path):
-    server = context(tmp_path, 'stop')
+@pytest.mark.parametrize('phase', ['stop', 'rollback-stop'])
+def test_empty_original_listing_still_refuses_policy_pause(tmp_path, phase):
+    server = context(tmp_path, phase)
     try:
         script = '. "$CONTEXT"\npodman() { :; }\n'
         script += block('# BEGIN pause restart automation\n', '# END pause restart automation')
