@@ -96,7 +96,10 @@ def test_empty_original_listing_still_refuses_policy_pause(tmp_path):
         script += block('# BEGIN pause restart automation\n', '# END pause restart automation')
         result = subprocess.run(['bash', '-eu', '-c', script+'\necho UNSAFE\n'],
             env=dict(os.environ, CONTEXT=str(tmp_path/'resume-context.bash')), capture_output=True, text=True)
-        assert result.returncode != 0 and 'UNSAFE' not in result.stdout
+        assert result.returncode == 2, result.stdout + result.stderr
+        assert 'HOLD: empty project listing' in result.stdout
+        assert 'rerun rollback route dispatch' in result.stdout
+        assert 'UNSAFE' not in result.stdout
     finally:
         server.close()
 
