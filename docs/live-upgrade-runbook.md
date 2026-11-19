@@ -561,7 +561,8 @@ python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
   mkdir -m 700 "$XDG_RUNTIME_DIR" "$SCRATCH_DIR/tmp" "$SCRATCH_DIR/run"
   test "$(podman info --format '{{.Store.GraphRoot}}')" = "$SCRATCH_DIR/graph"
   python3 "$UPGRADE_HELPER" load-images "$BACKUP_DIR" > "$SCRATCH_DIR/load.log" 2>&1
-  test -z "$(podman ps -aq)"
+  SCRATCH_CONTAINERS=$(podman ps -aq)
+  test -z "$SCRATCH_CONTAINERS"
   # Only this freshly created scratch store: drop loaded duplicates AND its pause process.
   # Keep logs/configuration under BACKUP_DIR. Never run this in the default/isolated store.
   test "$CONTAINERS_STORAGE_CONF" = "$SCRATCH_DIR/storage.conf"
@@ -715,6 +716,61 @@ An existing complete checksum receipt is verified without rewriting it. A damage
 refuses; record its path/digest and move only that damaged file to a unique `.partial` name in the
 same private backup directory before rerunning this gate. Never replace a verified archive. Never overwrite original configuration/image mappings,
 rerun the preparation capture, or reinterpret the upgraded HEAD as the rollback source.
+
+### Failed rehearsal store: manual cleanup
+
+Use a fresh strict Bash shell with the same initial container environment as the
+rehearsal (the isolated environment when rehearsing in the upgrade clone).
+Set `BACKUP_DIR` to the retained backup and `SCRATCH_DIR` to the exact owned failed
+`rollback-load-rehearsal-*` directory immediately under it. Keep its load log.
+This block checks the path, actual graph root and successful empty container
+listing before removing images. If any check fails, retain the store and ask the
+coordinator to investigate. Once runtime enumeration is readable, run:
+
+```sh
+# BEGIN failed scratch cleanup
+(
+  python3 - "$BACKUP_DIR" "$SCRATCH_DIR" <<'PY_SCRATCH_PATH'
+import pathlib, sys
+backup, scratch = map(lambda value: pathlib.Path(value).resolve(), sys.argv[1:])
+if scratch.parent != backup or not scratch.name.startswith('rollback-load-rehearsal-'):
+    raise SystemExit('HOLD: select the exact owned failed rehearsal directory under BACKUP_DIR')
+PY_SCRATCH_PATH
+  test -f "$SCRATCH_DIR/storage.conf"
+  test -f "$SCRATCH_DIR/containers.conf"
+  export CONTAINERS_STORAGE_CONF="$SCRATCH_DIR/storage.conf" CONTAINERS_CONF="$SCRATCH_DIR/containers.conf"
+  export XDG_RUNTIME_DIR="$SCRATCH_DIR/xdg"
+  unset CONTAINERS_CONF_OVERRIDE
+  test "$(podman info --format '{{.Store.GraphRoot}}')" = "$SCRATCH_DIR/graph"
+  SCRATCH_CONTAINERS=$(podman ps -aq)
+  test -z "$SCRATCH_CONTAINERS"
+  python3 - "$SCRATCH_DIR" <<'PY_PAUSE_CAPTURE'
+import json, os, pathlib, sys
+base = pathlib.Path(sys.argv[1])
+pids = [int((pathlib.Path(root) / 'pause.pid').read_text().strip())
+        for name in ('xdg','tmp','run')
+        for root, _, files in os.walk(base / name, onerror=lambda error: (_ for _ in ()).throw(error))
+        if 'pause.pid' in files]
+(base / 'pause-pids.json').write_text(json.dumps(pids))
+PY_PAUSE_CAPTURE
+  podman image rm --all --force >> "$SCRATCH_DIR/cleanup.log" 2>&1
+  podman system migrate >> "$SCRATCH_DIR/cleanup.log" 2>&1
+  # No Podman invocation after migrate: it could create a new pause process.
+  python3 - "$SCRATCH_DIR" <<'PY_PAUSE_CHECK'
+import json, pathlib, sys
+base = pathlib.Path(sys.argv[1])
+for pid in json.loads((base / 'pause-pids.json').read_text()):
+    status = pathlib.Path(f'/proc/{pid}/stat')
+    if status.exists() and not status.read_text().split(') ', 1)[1].startswith('Z '):
+        raise SystemExit('STOP: scratch pause process survived cleanup')
+PY_PAUSE_CHECK
+)
+# END failed scratch cleanup
+```
+
+Keep configuration, logs and empty store metadata. Never substitute the default
+or isolated stack's store, use `system reset`, delete trees blindly, or signal a
+bare PID. Failure here is a coordinator hold, not permission to bypass the checks.
 
 ### Partial stop: rerun the guarded stop on the same capture
 
