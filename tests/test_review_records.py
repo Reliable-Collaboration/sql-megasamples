@@ -49,3 +49,14 @@ def test_attribution_check_uses_only_record_paths_without_git(tmp_path, monkeypa
         raise AssertionError('record attribution must work without Git or a base object')
     monkeypatch.setattr(subprocess, 'check_output', forbidden_git)
     test_committed_follow_up_files_do_not_name_reviewers()
+
+
+def test_manual_cleanup_entry_and_zero_image_metadata_wording():
+    evidence = Path(os.environ.get('DL086_EVIDENCE_SOURCE', ROOT/'docs/live-upgrade-evidence.md')).read_text()
+    runbook = Path(os.environ.get('DL089_RUNBOOK_SOURCE', ROOT/'docs/live-upgrade-runbook.md')).read_text()
+    cleanup = runbook.split('### Failed rehearsal store: manual cleanup', 1)[1].split('```sh', 1)[0]
+    assert 'Use a fresh Bash shell' in cleanup
+    assert 'fresh strict Bash shell' not in cleanup
+    native = evidence.split('The expanded native B-3 proof', 1)[1].split('The [round-one receipt]', 1)[0]
+    assert "zero-image store's metadata file was never created" in native
+    assert 'all image metadata was empty' not in native
