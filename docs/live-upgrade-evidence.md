@@ -659,3 +659,42 @@ suite, image checks, cleanup and complete nine-object live isolation inventory.
 These are authoring-session checks. Independent same-head review and DataIntent
 acceptance remain separate. The netns failure's root cause remains unknown;
 this small round adds no new native rollback or archive rehearsal.
+
+### Round-twelve capture compatibility and account corrections
+
+New captures use schema 2. An older-schema current capture HOLDs until replaced
+through the applicable capture route. Schema-1 historical endpoint evidence is
+history: it neither passes nor blocks a fresh attempt. The history report says
+that independently recorded process and cgroup identities remain enforced,
+including down-state conmon birth identities and cgroup objects. Fixtures pair
+old integer-port history with a current capture: no survivor passes, recorded
+survivors refuse, and removing each survivor reverses to PASS. Earlier evidence
+is never rewritten. This is fixture proof, not a new native rollback rehearsal.
+
+The README and environment-example comments now include PostgreSQL `demo` reads
+of tables `admin` later creates in a sample database's `public` schema, as granted
+by [the default-privileges SQL](../engines/postgres/init/20-grants.sql).
+The reset guidance and environment example describe `admin` separately per
+engine. Checks derive PostgreSQL's `CREATEDB`, `CREATEROLE`, registry-table grant
+without grant option and lack of superuser status from
+[its role SQL](../engines/postgres/init/00-users.sql), and sample-database
+ownership from [its Dockerfile](../engines/postgres/Dockerfile). MySQL's
+`ALL PRIVILEGES WITH GRANT OPTION` on `*.*` comes from
+[its grant SQL](../engines/mysql/init/00-users.sql). These committed inputs were
+read **2026-11-19 UTC**; no account privileges changed and no live privilege query
+was run. The documentation also distinguishes fixture-tested wildcard cases
+from native proof and corrects the unchanged-data recovery's pointer upward.
+
+**B-8 — two thin assertions, retained backlog.** The PostgreSQL README check's
+generic sample/tables wording still searches the whole section, and the IPv6
+listener fixtures share an encoding formula with the decoder. Maintainers should
+check the init grants directly and use an independently sourced IPv6 socket
+fixture or native listener observation before extending that proof. This round
+adds the requested future-table clause check; it does not resolve those two
+older assertion limits. Account self-password changes are a separate posture
+item, outside this documentation correction.
+
+The [round-twelve receipt](validation/live-upgrade-review-r12-2026-11-19.json)
+retains reds, greens, reversals, suite/image results and all nine live-object
+inventory rows. These are authoring-session checks. DataIntent's dated
+acceptance hold remains separate; the netns error's root cause remains unknown.
