@@ -193,3 +193,42 @@ podman() { printf 'podman %s\n' "$*" >> "$EVIDENCE_DIR/order"; }
         assert images['cloudbeaver']['image']=='localhost/sql-megasamples-cloudbeaver:rollback-fixture'
         assert images['landing']['pull_policy']=='never'
     finally:server.close()
+
+
+@pytest.mark.parametrize('phase',['originals-restarted','rollback-starting','rollback-restored'])
+def test_rollback_dispatch_never_tears_down_restarted_originals(tmp_path,phase):
+    server=context(tmp_path,phase)
+    try:
+        script='. "$CONTEXT"\npython3() { echo ROUTE_WAS_RUN; exit 49; }\n'+block('# BEGIN rollback route dispatch\n','# END rollback route dispatch')
+        result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
+        assert result.returncode==2 and 'ROUTE_WAS_RUN' not in result.stdout
+        assert 'original' in result.stdout.lower()
+    finally:server.close()
+
+
+def test_rollback_route_hold_is_retained_with_its_status(tmp_path):
+    import json
+    server=context(tmp_path,'rollback-stop')
+    try:
+        script='. "$CONTEXT"\n'+r'''
+python3() { echo '{"outcome":"HOLD","holds":[{"reason":"required deployment inspection unreadable"}]}'; return 2; }
+'''+block('# BEGIN rollback route dispatch\n','# END rollback route dispatch')
+        result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
+        assert result.returncode==2
+        reports=list((tmp_path/'attempt').glob('rollback-route-*.json'));assert len(reports)==1
+        assert json.loads(reports[0].read_text())['holds'][0]['reason']=='required deployment inspection unreadable'
+        assert reports[0].with_suffix('.exit-code').read_text().strip()=='2'
+        assert 'KeyError' not in result.stderr
+    finally:server.close()
+
+
+def test_restart_policy_failure_blocks_capture_and_has_guarded_restore(tmp_path):
+    server=context(tmp_path,'stop')
+    try:
+        script='. "$CONTEXT"\n'+r'''
+podman() { case "$1" in ps) echo fixture;; inspect) echo 'fixture|engine|unless-stopped';; update) return 37;; esac; }
+'''+block('# BEGIN pause restart automation\n','# END pause restart automation')+'\necho UNSAFE_CAPTURE\n'
+        result=subprocess.run(['bash','-eu','-c',script],env=dict(os.environ,CONTEXT=str(tmp_path/'resume-context.bash')),capture_output=True,text=True)
+        assert result.returncode==37 and 'UNSAFE_CAPTURE' not in result.stdout
+        assert block('# BEGIN restore restart automation\n','# END restore restart automation')
+    finally:server.close()

@@ -87,8 +87,8 @@ def test_truncated_archive_is_clean_refusal(tmp_path):
         upgrade.check_archive(path, 'a' * 64)
 
 
-@pytest.mark.parametrize('first_run_layout', [False, True])
-def test_bootstrap_and_abort_execute_without_mutating_retained_inputs(tmp_path, first_run_layout):
+@pytest.mark.parametrize('first_run_layout,original_restart', [(False,False),(True,False),(False,True)])
+def test_bootstrap_and_abort_execute_without_mutating_retained_inputs(tmp_path, first_run_layout, original_restart):
     from test_runbook_fragments import block
     backup = retained(tmp_path)
     if first_run_layout:
@@ -150,6 +150,12 @@ def test_bootstrap_and_abort_execute_without_mutating_retained_inputs(tmp_path, 
             (receipts.parent / name).symlink_to(ROOT / 'docs/validation' / name)
         (reviewed / 'docs/live-upgrade-runbook.md').symlink_to(ROOT / 'docs/live-upgrade-runbook.md')
         env['REVIEWED_CHECKOUT'] = str(reviewed)
+    if original_restart:
+        (backup/'original-stop.json').write_text(json.dumps(dict(containers=[dict(id='test')])))
+        binary=Path(env['PATH'].split(os.pathsep)[0])/'podman'
+        binary.write_text('#!/bin/sh\ncase "$1" in ps) case "$*" in *-aq*) echo test;; esac;; inspect) echo "test|false|0";; *) exit 42;; esac\n')
+        binary.chmod(0o755)
+        before=digests(backup)
     # Only external commands are stubbed. Actual bootstrap, extraction, function capture,
     # context save and filesystem restoration all execute.
     stubs = r'''
@@ -167,6 +173,8 @@ docker() { printf '%s\n' "$*" >> "$CHECKOUT/docker-calls"; }
         attempts = list(backup.glob('rollback-*/resume-context.bash'))
         assert len(attempts) == 1
         attempt = attempts[0].parent
+        route=json.loads((attempt/'bootstrap-route.json').read_text())
+        assert route['route']==('original-restart' if original_restart else 'ordinary-capture')
         # Freeze root and all retained inputs during the preparation-only repeat.
         # A reused attempt refuses, with no writes into the frozen tree.
         backup.chmod(0o500)

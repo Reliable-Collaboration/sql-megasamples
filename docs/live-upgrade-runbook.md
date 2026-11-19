@@ -172,24 +172,16 @@ The Compose services declare `restart: unless-stopped`; prevent automatic restar
 on only the complete recorded project list, and repeat this scoped step after any
 candidate/original recreation before another capture/copy:
 
-```sh
-# Coordinator maintenance only; never apply this to unrelated containers.
-AUTOMATION_ID=$(date -u +%Y%m%dT%H%M%S%N)
-for id in $(podman ps -aq --no-trunc --filter label=com.docker.compose.project=sql-megasamples); do
-  podman inspect -f '{{.Id}}|{{.Name}}|{{.HostConfig.RestartPolicy.Name}}' "$id" \
-    >> "$EVIDENCE_DIR/restart-policy-$AUTOMATION_ID.txt"
-  podman update --restart=no "$id"
-done
-```
-
-After all copies/restorations and post-start verification finish, restore each
-selected service's recorded restart policy on its current verified ID with
-`podman update --restart=unless-stopped "$id"` (the policy declared here), then
-have the coordinator explicitly release the maintenance hold before clients or
-DataIntent's standing start permission resume. The
+The guarded “pause restart automation” block in the cutover below records each
+policy and refuses before capture if any scoped update fails. Repeat that block
+for newly created candidates before rollback capture. After verification, use the
+guarded restore block below on the current verified project IDs, then have the
+coordinator release the maintenance hold before clients or DataIntent's standing
+start permission resume. The
 [Podman update reference](https://docs.podman.io/en/latest/markdown/podman-update.1.html)
-was read 2026-11-18 23:26:34 UTC; the isolated host's `update --help`
-also lists `--restart`. These commands are procedure, not an executed live change.
+was read 2026-11-18 23:47:19 UTC; the isolated host's `update --help`
+also lists `--restart`. The pause and restore blocks are rehearsed on the scratch
+project, not executed against the live deployment.
 
 Before each stop, capture container IDs, processes with start times and cgroups,
 `conmon`, positively associated dedicated helpers and the store's shared
@@ -942,6 +934,18 @@ test ! -e "$BACKUP_DIR/original-stop.json"
 cp "$TEARDOWN_SNAPSHOT" "$BACKUP_DIR/original-stop.json"
 chmod 600 "$BACKUP_DIR/original-stop.json"
 save_context
+# BEGIN pause restart automation
+AUTOMATION_ID=$(date -u +%Y%m%dT%H%M%S%N)
+# Listing failure must not become an empty successful loop.
+AUTOMATION_IDS=$(podman ps -aq --no-trunc --filter label=com.docker.compose.project=sql-megasamples)
+test -n "$AUTOMATION_IDS"
+for id in $AUTOMATION_IDS; do
+  podman inspect -f '{{.Id}}|{{.Name}}|{{.HostConfig.RestartPolicy.Name}}' "$id" \
+    >> "$EVIDENCE_DIR/restart-policy-$AUTOMATION_ID.txt"
+  if podman update --restart=no "$id" >> "$EVIDENCE_DIR/restart-policy-$AUTOMATION_ID.log" 2>&1; then :;
+  else POLICY_RC=$?; echo 'HOLD: restart policy update failed; do not capture or stop.'; exit "$POLICY_RC"; fi
+done
+# END pause restart automation
 # Capture copy sources and targets before stop. A missing/incomplete capture
 # HOLDs here, before downtime; never manufacture a historical capture afterward.
 for engine in postgres mysql sqlite sqlite-shared; do mkdir -p "$BACKUP_DIR/$engine"; done
@@ -1063,6 +1067,24 @@ This is a conditional manual-probe fallback; automatic scheduling in the live st
 
 The Compose stop above includes every configured console, so SQLite consumers are closed before either copy. The cutover commands recreate the configured consoles and regenerate their local help pages. The new containers receive the freshly generated `.env` credentials. Keep this file mode 0600 and do not print or source it. No password belongs in a process argument, diagnostic log, screenshot or validation receipt.
 
+After all copies/restorations and post-start checks have passed, restore the
+configured policy on the current verified project IDs. Run this once on the
+successful cutover or recovery route, before releasing the maintenance hold:
+
+```sh
+# BEGIN restore restart automation
+AUTOMATION_ID=$(date -u +%Y%m%dT%H%M%S%N)
+AUTOMATION_IDS=$(podman ps -aq --no-trunc --filter label=com.docker.compose.project=sql-megasamples)
+test -n "$AUTOMATION_IDS"
+for id in $AUTOMATION_IDS; do
+  podman inspect -f '{{.Id}}|{{.Name}}|{{.HostConfig.RestartPolicy.Name}}' "$id" \
+    >> "$EVIDENCE_DIR/restored-restart-policy-$AUTOMATION_ID.txt"
+  if podman update --restart=unless-stopped "$id" >> "$EVIDENCE_DIR/restored-restart-policy-$AUTOMATION_ID.log" 2>&1; then :;
+  else POLICY_RC=$?; echo 'HOLD: restart policy restoration failed; keep maintenance hold.'; exit "$POLICY_RC"; fi
+done
+# END restore restart automation
+```
+
 ### Conditional rootless network teardown failure (stop, rollback stop and down)
 
 The first live run saw `kill network process: permission denied` during Compose stop (SQLite)
@@ -1166,7 +1188,7 @@ requires readable positive-holder evidence and required deployment inspection.
 | Required inspection unreadable / association unresolved | Keep data unchanged; collect readable evidence in the proper owning namespace through a reviewed method. Resolve identity/association, or take the unchanged-original restart route. Do not acknowledge away a HOLD. |
 | Capture missing/incomplete, crosses reboot, store changed or identifier reused | Before downtime, retain the failed evidence and take a new complete capture while the deployment runs. After downtime, restart existing originals on unchanged volumes where available, then capture before a new stop. Otherwise hold for coordinator recovery. Never recapture stopped objects as historical proof. |
 | Source identity changed | Restore the exact retained object/path if possible and verify it, or restart originals on unchanged volumes and prepare a new capture. A changed backup is not a substitute for the verified input. |
-| Phase state ineligible | Use the state table's engine-specific clean-stop recovery; restart eligible existing originals on unchanged volumes. Never copy an unclean database. |
+| Original-stop state gate refuses | Use the state table's engine-specific clean-stop recovery; restart eligible existing originals on unchanged volumes. Never copy an unclean database. |
 | Holder match unresolved | Retain the HOLD until evidence disproves the match or confirms and removes the holder. Repeat checks; permission denials require evidence, not repetition alone. |
 
 Every copy/restore REFUSE or HOLD leaves the **unchanged-original restart** route
@@ -1450,11 +1472,24 @@ else
   PORTS_RECEIPT=${PORTS_RECEIPT:-"$REVIEWED_CHECKOUT/docs/validation/retained-backups/$UPGRADE_ID-ports.json"}
 fi
 BOOTSTRAP_ROUTE=ordinary-capture
+# Keep route evidence even if selection HOLDs before ordinary allocation.
+BOOTSTRAP_REPORT=
 if test -f "$BACKUP_DIR/original-stop.json"; then
-  BOOTSTRAP_ROUTE=$(python3 "$REVIEWED_CHECKOUT/docs/validation/quiescence.py" rollback-route \
-    "$BACKUP_DIR/original-stop.json" --project sql-megasamples | \
-    python3 -c 'import json,sys; print(json.load(sys.stdin)["route"])'
-)
+  mkdir -p build
+  BOOTSTRAP_REPORT=$(mktemp "$PWD/build/rollback-route.XXXXXXXX.json")
+  ROUTE_RC=0
+  if python3 "$REVIEWED_CHECKOUT/docs/validation/quiescence.py" rollback-route \
+    "$BACKUP_DIR/original-stop.json" --project sql-megasamples > "$BOOTSTRAP_REPORT"; then :;
+  else ROUTE_RC=$?; fi
+  if test "$ROUTE_RC" != 0; then
+    ATTEMPT_DIR="$BACKUP_DIR/rollback-$(date -u +%Y%m%dT%H%M%S%N)"
+    mkdir -m 700 "$ATTEMPT_DIR"
+    mv "$BOOTSTRAP_REPORT" "$ATTEMPT_DIR/bootstrap-route.json"
+    printf '%s\n' "$ROUTE_RC" > "$ATTEMPT_DIR/bootstrap-route.exit-code"
+    echo 'HOLD: route report retained in the new attempt; resolve its evidence.'
+    exit "$ROUTE_RC"
+  fi
+  BOOTSTRAP_ROUTE=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["route"])' "$BOOTSTRAP_REPORT")
 fi
 set -- --services-file "$BACKUP_DIR/original-running-services.txt"
 if test "$BOOTSTRAP_ROUTE" = original-restart; then
@@ -1472,6 +1507,12 @@ TEARDOWN_ATTEMPT=$(date -u +%Y%m%dT%H%M%S%N)
 ATTEMPT_DIR="$BACKUP_DIR/rollback-$TEARDOWN_ATTEMPT"
 python3 "$REVIEWED_CHECKOUT/docs/validation/live-upgrade.py" prepare-rollback \
   "$BACKUP_DIR" "$TEARDOWN_ATTEMPT" "$PWD"
+if test -n "$BOOTSTRAP_REPORT"; then
+  mv "$BOOTSTRAP_REPORT" "$ATTEMPT_DIR/bootstrap-route.json"
+else
+  printf '{"route":"ordinary-capture"}\n' > "$ATTEMPT_DIR/bootstrap-route.json"
+fi
+printf '0\n' > "$ATTEMPT_DIR/bootstrap-route.exit-code"
 EVIDENCE_DIR="$ATTEMPT_DIR"
 CONFIG_DIR="$ATTEMPT_DIR/configuration"
 CONTEXT_FILE="$ATTEMPT_DIR/resume-context.bash"
@@ -1581,10 +1622,20 @@ rollback: it restores the new image contents, including the added datasets.
 
 ```sh
 # BEGIN rollback route dispatch
-ROLLBACK_ROUTE=$(python3 "$EVIDENCE_DIR/quiescence.py" rollback-route \
-  "$BACKUP_DIR/original-stop.json" --project sql-megasamples | \
-  python3 -c 'import json,sys; print(json.load(sys.stdin)["route"])'
-)
+case "${TEARDOWN_PHASE:-}" in
+  originals-restarted|rollback-starting|rollback-restored)
+    echo 'HOLD: originals have begun restart; use the partial-original-restart procedure or completed validation.'
+    exit 2 ;;
+esac
+ROUTE_ID=$(date -u +%Y%m%dT%H%M%S%N)
+ROUTE_REPORT="$ATTEMPT_DIR/rollback-route-$ROUTE_ID.json"
+ROUTE_RC=0
+if python3 "$EVIDENCE_DIR/quiescence.py" rollback-route \
+  "$BACKUP_DIR/original-stop.json" --project sql-megasamples > "$ROUTE_REPORT"; then :;
+else ROUTE_RC=$?; fi
+printf '%s\n' "$ROUTE_RC" > "$ATTEMPT_DIR/rollback-route-$ROUTE_ID.exit-code"
+test "$ROUTE_RC" = 0 || exit "$ROUTE_RC"
+ROLLBACK_ROUTE=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["route"])' "$ROUTE_REPORT")
 if test "$ROLLBACK_ROUTE" = original-restart; then
 # BEGIN retained original restart
 # Recheck exact IDs and state before restoring configuration. No copy gate here.
@@ -1965,7 +2016,7 @@ therefore allocates a fresh named shared volume for SQLite and all its consoles;
 only that disposable copy is exempt from the overlap rule. Wait for SQLite health
 before starting consoles. Retain and record the generated volume name for cleanup. Directory identity alone
 does not prove unchanged contents. Keep all other writers prevented and retain the
-candidate mount history; unavailable mount evidence needs coordinator verification.
+candidate mount history; missing candidate engine mounts refuse this helper. Obtain independently verified mount evidence before this route; coordinator acknowledgement cannot replace it.
 A changed restoration target, surviving helper,
 or unreadable copy evidence does not bar this route. Changed original data must
 be resolved independently; never start an old binary on candidate data.
