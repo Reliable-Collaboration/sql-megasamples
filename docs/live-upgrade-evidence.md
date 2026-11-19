@@ -732,3 +732,68 @@ The receipt records that failure and links its replay. Neither commit is rewritt
 coverage improvements were already green on production code and are paired
 with planted-defect controls. These are authoring-session checks; independent
 review, acceptance and merge remain separate.
+
+### Follow-up review round 1: C1 through C5
+
+C1 gives each destructive fenced paste block its own `set -eu`. The class is:
+
+| Paste block | Destructive operation | Strict entry |
+|---|---|---|
+| Preparation and archive rehearsal | scratch `image rm`, `system migrate` | first command in fence |
+| Failed scratch cleanup | scratch `image rm`, `system migrate` | first command inside subshell |
+| Abort preparation | absent original `.env` removal | first command in fence |
+| Final backups, stop and candidate start | SQLite shared-file removal | first command in fence |
+| Rollback bootstrap | temporary bootstrap report removal in trap | first command in fence |
+| Rollback route dispatch | absent original `.env` removal | first command in fence |
+| Rollback stop, down and restore | Compose `down`, absent original `.env` removal | first command in fence |
+
+There is no executable `volume rm` in this runbook. The class test discovers
+these fences from their commands and executes their strict entry and each
+standalone `test` guard under plain `bash -c`, using failing guard and destructive
+command fixtures. Explicit status dispatch remains covered by the fragment
+fixtures. The complete manual cleanup also runs in plain Bash against path,
+nested-path, escaping-symlink, both missing-configuration, graph-root,
+listing-error, non-empty-listing, pause-enumeration and unset-path failures.
+No removal or migrate call follows a failed guard. Each fence has a separate
+strictness-removal control.
+
+C2 removes named attribution from the follow-up receipt and checks whole files
+changed by this PR against the fixed base. Pre-existing dataset provenance in
+unchanged base files is outside this check and remains unchanged.
+
+C3 requires a positive decimal store-helper PID before interpreting a missing
+process as absence, both at capture and verification. Empty, whitespace,
+non-numeric, zero, signed, slash-containing and non-ASCII contents hold. The
+valid-but-absent and present-but-unreadable cases remain covered. C4 applies a
+recorded conmon absence before requiring a reused occupant's birth evidence;
+independent cgroup tasks and source holders still refuse. Those two obligations
+have separate removal controls, as does the absence-before-birth fix.
+
+C5 restores both engine and console `--no-deps` coverage, records B-3's failed
+and non-empty listing cases, and runs pre-marker rows through the current
+helper: a conmon-named reuse refuses, an unrelated reuse holds, and removal
+returns PASS without rewriting the capture. Grant checks now include quoted and
+multi-role admin targets; the protocol fixture covers an invalid MySQL greeting
+header. Wording names conmon-named and unrelated occupants and records the
+post-fix B-2 fixture correction without rewriting its history.
+
+The expanded native B-3 proof is retained in
+`build/dl086-follow-up/native-scratch-l0u2gjf1/receipt.json`, read
+**2026-11-19 08:12:29 UTC**. It uses one small image and three owned stores:
+ordinary rehearsal, deliberate failure after loading, and deliberate failure
+before loading with a real pause process but zero images. Both failure exits
+were 73; both manual cleanup exits were 0 under plain `bash -c`. All three
+recorded pause PIDs were absent after cleanup, and all image metadata was empty.
+No Podman call followed final migrate. The first expanded proof run passed its
+cleanup checks but mislabeled each failure-state field with the final process
+state; that local-variable error was corrected and the proof rerun in new stores.
+Its earlier artifacts are retained without rewriting them.
+
+The round-one receipt records the reds, greens, controls, native evidence,
+validation and isolation results. The first C1 guard fixture misclassified
+read-only `image inspect`; a separate test-only correction preceded the fix.
+The first C3 fix lacked its validator import, which the checks caught and a
+separate fix supplied. The C4 holder fixture initially lacked the source-device
+mount mapping; its separate test-only correction was red against the unchanged
+helper before the fix passed. These are authoring-session results, with no new
+review, acceptance or merge claim. No software version or support claim changes.
