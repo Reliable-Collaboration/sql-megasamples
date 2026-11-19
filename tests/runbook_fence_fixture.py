@@ -4,7 +4,6 @@ The shell body is written unchanged. Fixtures log actual source-line calls;
 each reached assertion/helper gate is then rejected individually. Real shell
 branches, loops, substitutions, redirections and error handling remain in use.
 """
-import os
 from pathlib import Path
 import re
 import subprocess
@@ -107,7 +106,7 @@ docker() {
 '''
 
 
-def run_fence(body, directory, fail=None):
+def run_fence(body, directory, fail=None, route='original-restart'):
     directory.mkdir(parents=True)
     # PATH contains only fail-closed executable fixtures. Function stubs above
     # provide modeled commands; a forgotten external command cannot reach tools.
@@ -135,7 +134,7 @@ def run_fence(body, directory, fail=None):
     env = {name: 'fixture' for name in re.findall(r'\$\{?([A-Za-z_][A-Za-z_0-9]*)', body)}
     env.update(PATH=str(bin_dir), FIXTURE=str(directory), BODY=str(body_file),
                FAIL_LINE=str(fail[0]) if fail else '', FAIL_TOOL=fail[1] if fail else '',
-               FIXTURE_ROUTE='original-restart', TEARDOWN_PHASE='stop', CB_WAS_RUNNING='true',
+               FIXTURE_ROUTE=route, TEARDOWN_PHASE='stop', CB_WAS_RUNNING='true',
                RECOVER_ENGINE='postgres', EXTRA_RESERVE_BYTES='0')
     for name in ('BACKUP_DIR', 'EVIDENCE_DIR', 'ATTEMPT_DIR', 'CONFIG_DIR', 'XDG_RUNTIME_DIR',
                  'REVIEWED_CHECKOUT', 'METADATA_BUNDLE'):

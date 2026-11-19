@@ -23,19 +23,22 @@ def test_destructive_block_is_strict_in_plain_bash(body, tmp_path):
     lines = body.splitlines()
     first = next(i for i, line in enumerate(lines) if line.strip() and not line.startswith('#'))
     assert lines[first + (lines[first] == '(')].strip() == 'set -eu'
-    baseline, calls = run_fence(body, tmp_path/'baseline')
-    assert baseline.returncode == 0, (baseline.stderr, calls[-8:])
-    guards = guard_calls(body, calls)
-    assert guards, calls
-    for number, guard in enumerate(guards):
-        directory = tmp_path/('failure-'+str(number))
-        result, reached = run_fence(body, directory, guard)
-        assert (directory/'rejected').exists(), (guard, reached, result.stderr)
-        # A refused console port intentionally holds only that console and
-        # continues to policy restoration; no guarded start may follow it.
-        optional_console = 'if python3 ' in lines[guard[0]-1] and '--service "$service"' in lines[guard[0]-1]
-        assert result.returncode != 0 or (optional_console and 'HOLD: console adminer stays stopped' in result.stdout), ('guard did not stop', guard, result.stdout, result.stderr)
-        assert not (directory/'unsafe').exists(), ('destructive command followed', guard, (directory/'unsafe').read_text())
+    routes = ('original-restart', 'ordinary-capture') if any(
+        marker in body for marker in ('# BEGIN rollback route dispatch', '# BEGIN rollback bootstrap')) else ('original-restart',)
+    for route in routes:
+        baseline, calls = run_fence(body, tmp_path/route/'baseline', route=route)
+        assert baseline.returncode == 0, (baseline.stderr, calls[-8:])
+        guards = guard_calls(body, calls)
+        assert guards, calls
+        for number, guard in enumerate(guards):
+            directory = tmp_path/route/('failure-'+str(number))
+            result, reached = run_fence(body, directory, guard, route=route)
+            assert (directory/'rejected').exists(), (guard, reached, result.stderr)
+            # A refused console port intentionally holds only that console and
+            # continues to policy restoration; no guarded start may follow it.
+            optional_console = 'if python3 ' in lines[guard[0]-1] and '--service "$service"' in lines[guard[0]-1]
+            assert result.returncode != 0 or (optional_console and 'HOLD: console adminer stays stopped' in result.stdout), ('guard did not stop', guard, result.stdout, result.stderr)
+            assert not (directory/'unsafe').exists(), ('destructive command followed', guard, (directory/'unsafe').read_text())
 
 
 @pytest.mark.parametrize('command', [
