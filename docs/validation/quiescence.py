@@ -310,7 +310,7 @@ def down_evidence(row, proc, cgroup_root, scan_cache=None):
                     if task_alive(proc/pid):
                         refusals.append(dict(reason='live deployment cgroup task', pid=int(pid)))
                 except OSError as error:
-                    if not isinstance(error, ProcessLookupError) and (proc/pid).exists():
+                    if not isinstance(error, ProcessLookupError) and (not isinstance(error, FileNotFoundError) or (proc/pid).exists()):
                         holds.append(dict(reason='down cgroup evidence unreadable'))
     except (OSError, ValueError) as error:
         holds.append(dict(reason='down cgroup evidence unreadable', error=type(error).__name__))
@@ -374,7 +374,7 @@ def down_helpers(rows, proc):
             if associated:
                 refusals.append(dict(reason='positively associated down helper survives', **process_identity(process)))
         except (OSError, ValueError) as error:
-            if associated and not isinstance(error, ProcessLookupError) and process.exists():
+            if associated and not isinstance(error, ProcessLookupError) and (not isinstance(error, FileNotFoundError) or process.exists()):
                 holds.append(dict(reason='down helper association unreadable', pid=int(process.name), error=type(error).__name__))
     return refusals, holds
 
@@ -872,7 +872,7 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
                             if task_alive(p):
                                 refuse('live deployment cgroup task', pid=int(pid))
                         except OSError as error:
-                            if not isinstance(error, ProcessLookupError) and p.exists():
+                            if not isinstance(error, ProcessLookupError) and (not isinstance(error, FileNotFoundError) or p.exists()):
                                 hold('required cgroup inspection unreadable')
         except (OSError, ValueError) as error:
             if not isinstance(error, FileNotFoundError) or path.exists():
