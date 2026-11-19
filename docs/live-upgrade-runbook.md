@@ -1016,7 +1016,8 @@ save_context
 AUTOMATION_ID=$(date -u +%Y%m%dT%H%M%S%N)
 # Listing failure must not become an empty successful loop.
 AUTOMATION_IDS=$(podman ps -aq --no-trunc --filter label=com.docker.compose.project=sql-megasamples)
-test -n "$AUTOMATION_IDS"
+# A successful empty listing needs no policy updates on the evidenced down route.
+test -n "$AUTOMATION_IDS" || test "${ROLLBACK_ROUTE:-}" = down-capture
 for id in $AUTOMATION_IDS; do
   podman inspect -f '{{.Id}}|{{.Name}}|{{.HostConfig.RestartPolicy.Name}}' "$id" \
     >> "$EVIDENCE_DIR/restart-policy-$AUTOMATION_ID.txt"
