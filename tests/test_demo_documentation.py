@@ -47,7 +47,7 @@ def postgres_scope(document):
     assert 'sample database' in document
     # Init SQL grants demo reads; it does not revoke these inherited capabilities.
     assert all(set(privileges) <= {'SELECT', 'USAGE', 'CONNECT'} for privileges, _ in grants)
-    assert 'sample' in document and 'tables' in document
+    assert re.search(r'\breads (?:persistent )?sample tables\b', document)
     for capability in ('TEMPORARY', 'large objects', 'routines'):
         assert capability in document
 

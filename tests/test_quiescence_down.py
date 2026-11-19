@@ -401,8 +401,18 @@ def test_down_port_helper_matches_address_and_family(down, monkeypatch, removed,
     p = process(proc, 12349, 'rootlessport', '/unrelated.scope')
     (p/'fd/3').symlink_to('socket:[123]')
     address = ipaddress.ip_address(listener)
-    packed = address.packed
-    encoded = ''.join(f'{int.from_bytes(packed[i:i+4], sys.byteorder):08X}' for i in range(0, len(packed), 4))
+    # Literal proc socket rows, independent of the decoder's word-conversion formula.
+    literals = {
+        'little': {'::': '00000000000000000000000000000000',
+                   '::1': '00000000000000000000000001000000',
+                   '::2': '00000000000000000000000002000000',
+                   '127.0.0.1': '0100007F', '127.0.0.2': '0200007F', '0.0.0.0': '00000000'},
+        'big': {'::': '00000000000000000000000000000000',
+                '::1': '00000000000000000000000000000001',
+                '::2': '00000000000000000000000000000002',
+                '127.0.0.1': '7F000001', '127.0.0.2': '7F000002', '0.0.0.0': '00000000'},
+    }
+    encoded = literals[sys.byteorder][listener]
     table = proc/'net'/('tcp' if address.version == 4 else 'tcp6')
     table.write_text(f'header\n 0: {encoded}:BBD0 0:0 0A 0:0 0:0 0 0 0 123\n')
     report = gate.verify(out, proc=proc, cgroup_root=cg)
