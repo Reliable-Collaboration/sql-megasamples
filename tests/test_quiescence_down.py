@@ -166,7 +166,7 @@ def test_positive_down_conmon_refuses_even_when_descriptors_unreadable(down,monk
     assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
     original_pod=gate.pod
     monkeypatch.setattr(gate,'pod',lambda *a:'test|0|12349|none|false|' if a[0]=='inspect' and a[2]==gate.CAPTURE_FORMAT else original_pod(*a))
-    p=process(proc,12349,'conmon','/shell')
+    p=process(proc,12349,'conmon','/shell',state='Z')
     listing=Path.iterdir
     def denied(path):
         if path==p/'fd':raise PermissionError('required helper descriptors')
@@ -243,7 +243,8 @@ def test_retained_down_conmon_pid_reuse_is_not_continuity(down,monkeypatch):
     p=process(proc,12349,'conmon','/shell')
     original=gate.pod
     monkeypatch.setattr(gate,'pod',lambda *a:'test|0|12349|none|false|' if a[0]=='inspect' and a[2]==gate.CAPTURE_FORMAT else original(*a))
-    gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)
+    assert gate.capture(snap,out,proc=proc,cgroup_root=cg,allow_down=True)['outcome']=='PASS'
+    for stat in (p/'stat',p/'task/12349/stat'):stat.write_text(stat.read_text().replace(') Z ',') S '))
     def removed(*args):
         if args[0]=='ps':return ''
         raise subprocess.CalledProcessError(1,args)
