@@ -1676,6 +1676,8 @@ cp "$CONFIG_DIR/compose.yaml" ./compose.yaml
 cp "$CONFIG_DIR/megasamples.yaml" ./megasamples.yaml
 if test -f "$CONFIG_DIR/.env"; then cp "$CONFIG_DIR/.env" .env; chmod 600 .env; else rm -f .env; fi
 # Engines have individual port checks; SQLite must rebuild /shared before consoles.
+TEARDOWN_PHASE=rollback-starting
+save_context
 for engine in postgres mysql sqlite; do
   if ! test -z "$(sed -n "/^$engine$/p" "$BACKUP_DIR/original-running-services.txt")"; then
     python3 "$UPGRADE_HELPER" ports --port-config "$ATTEMPT_DIR/original-ports.json" --service "$engine"
