@@ -533,6 +533,8 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                 pidfile = Path(saved['store']['run'])/'networks/rootless-netns/rootless-netns-conn.pid'
                 pid = None
                 pid = pidfile.read_text().strip()
+                if not re.fullmatch(r'[1-9][0-9]*', pid):
+                    raise ValueError('store helper PID must be a positive decimal')
                 shared = process_identity(proc/pid)
                 if not helper_names(shared['comm']) or not any('/rootless-netns-' in g for g in shared['cgroups']):
                     raise ValueError('store PID does not identify a rootless helper')
@@ -870,6 +872,8 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
         pid = None
         try:
             pid = pidfile.read_text().strip()
+            if not re.fullmatch(r'[1-9][0-9]*', pid):
+                raise ValueError('store helper PID must be a positive decimal')
             shared = process_identity(proc/pid)
             if not helper_names(shared['comm']) or not any('/rootless-netns-' in g for g in shared['cgroups']):
                 raise ValueError('store helper association unresolved')
