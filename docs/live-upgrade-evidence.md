@@ -498,8 +498,9 @@ The policy regression executes restoration and its failure branch.
 The ordinary-route native proof used four running scratch services. Dispatch
 selected `ordinary-capture`; the actual policy blocks changed running containers
 from `unless-stopped` to `no`, restored the policy and paused again before capture.
-The actual stop, state gate, `down`, restore gate, population and pre-up gates ran
-from fresh shells using the saved context, without per-fragment phase injection.
+The actual stop, state gate, `down` and restore gate ran together in one fresh
+shell. Population and the pre-up gates each ran in another fresh shell, using the
+saved context without per-fragment phase injection.
 All three process gates Passed with applicable history checked. Four populated
 restoration trees matched cold-copy bytes, numeric ownership and modes. The old
 history helper still HOLDs on this replica's unreadable cold data. Cleanup removed
@@ -512,7 +513,10 @@ PostgreSQL's subordinate-owned 0700 data directory is at `postgres/18/docker`.
 The real roots were checked read-only by names/modes/owners, without contents.
 Remaining differences: seven unreadable directories versus 28 in the real backup;
 smaller fresh databases; different MySQL internal ownership and directory depth;
-four services rather than the full stack; different bridge ports; and placeholders
+four services rather than the full stack; engine data bind mounts rather than the
+live anonymous volumes; scratch shared slirp4netns with other consumers rather than
+live Pasta with none; SQLite cold root 0700 rather than 0755; different bridge
+ports; and placeholders
 for some non-data retained names. This proves the exercised bounded gates and
 population, not full bootstrap, configuration/image restoration or compatibility
 of the live payloads. No live cold contents were read or copied.

@@ -218,7 +218,7 @@
     {
       "route": "cutover original stop",
       "file": "docs/live-upgrade-runbook.md",
-      "line": 940,
+      "line": 965,
       "judgment": "stop phase/snapshot saved before policy pause, capture and stop_project"
     },
     {
@@ -230,7 +230,7 @@
     {
       "route": "exact-original restart",
       "file": "docs/live-upgrade-runbook.md",
-      "line": 1700,
+      "line": 1717,
       "judgment": "rollback-starting saved before first engine port check/start; dispatch guard"
     },
     {
@@ -254,7 +254,7 @@
     {
       "route": "unchanged-data originals",
       "file": "docs/live-upgrade-runbook.md",
-      "line": 2096,
+      "line": 2111,
       "judgment": "rollback-starting saved before first engine up; consoles inherit phase"
     }
   ],
@@ -897,7 +897,8 @@
   "results": {
     "suite": {
       "status": "Passed",
-      "summary": "865 passed in 31.94s"
+      "summary": "865 passed in 31.94s",
+      "log": "build/dl091/suite-verified.log"
     },
     "documentation": {
       "status": "Passed",
@@ -1287,5 +1288,6 @@
     "build/dl089-original-cac2y9w1/receipt.json": "e49c35fb54035d6e27ca838aa6110845b1112ff701fd9e28682c01c9238095fa",
     "build/dl089-proof-qy7zjzxh/receipt.json": "04275bf0736c518ebb57e4b9733f8a686ac7e29e07e86b6c75a625d1c647cab1",
     "build/dl089-oom-l72gyz1k/before.json": "5278c2852b634b67e28af9aea16dc10e7a80527c1e5b8ebbac659e23003a14b6"
-  }
+  },
+  "log_errata": "suite-final.log and reversals-final.log are earlier intermediate runs. Final 865-test and 17-control results are suite-verified.log and reversals-verified.log. Route lines identify the phase assignments in checked_code_commit, not block starts."
 }
