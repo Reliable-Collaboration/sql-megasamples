@@ -569,10 +569,12 @@ python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
   # Never use system reset: its documented scope includes machines outside this store.
   # Capture the private pause PID before cleanup; no Podman calls follow migrate.
   python3 - "$SCRATCH_DIR" <<'PY_PAUSE_CAPTURE'
-import json, pathlib, sys
+import json, os, pathlib, sys
 base = pathlib.Path(sys.argv[1])
-pids = [int(p.read_text().strip()) for name in ('xdg','tmp','run')
-        for p in (base / name).rglob('pause.pid')]
+pids = [int((pathlib.Path(root) / 'pause.pid').read_text().strip())
+        for name in ('xdg','tmp','run')
+        for root, _, files in os.walk(base / name, onerror=lambda error: (_ for _ in ()).throw(error))
+        if 'pause.pid' in files]
 (base / 'pause-pids.json').write_text(json.dumps(pids))
 PY_PAUSE_CAPTURE
   podman image rm --all --force >> "$SCRATCH_DIR/cleanup.log" 2>&1
@@ -1741,9 +1743,10 @@ git switch "$ROLLBACK_BRANCH"
 test "$(git rev-parse HEAD)" = "$(cat "$BACKUP_DIR/original-commit.txt")"
 # Preserve bound directory inodes while removing files absent from retained tree.
 python3 - "$CONFIG_DIR/consoles" consoles <<'PY_ORIGINAL_TREE'
-import pathlib, sys
+import os, pathlib, sys
 source, target = map(pathlib.Path, sys.argv[1:])
-for path in sorted(target.rglob('*'), key=lambda p: len(p.parts), reverse=True):
+for root, directories, files in os.walk(target, topdown=False, onerror=lambda error: (_ for _ in ()).throw(error)):
+  for path in (pathlib.Path(root) / name for name in files + directories):
     retained = source / path.relative_to(target)
     if not retained.exists() and not retained.is_symlink():
         if path.is_dir() and not path.is_symlink(): path.rmdir()
