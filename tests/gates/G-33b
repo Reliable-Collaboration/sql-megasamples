@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+from two_servers import CASES
+from native import run
+
+raise SystemExit(run("G-33b", CASES["G-33b"]))

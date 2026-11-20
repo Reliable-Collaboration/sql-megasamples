@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+from workers import CASES
+from native import run
+
+raise SystemExit(run("G-26p", CASES["G-26p"]))

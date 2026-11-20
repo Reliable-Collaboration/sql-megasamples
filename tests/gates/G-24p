@@ -1,0 +1,5 @@
+#!/usr/bin/env python3
+from postgres import CASES
+from native import run
+
+raise SystemExit(run("G-24p", CASES["G-24p"]))
