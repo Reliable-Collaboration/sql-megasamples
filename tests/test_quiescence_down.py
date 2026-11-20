@@ -74,7 +74,8 @@ def test_legacy_history_checks_survivors_without_endpoint_hold(down, survivor):
     assert report['outcome']==('PASS' if survivor=='none' else 'REFUSE'),report
     assert not report['holds'],report
     entry=next(row for row in report['history'] if row['path']==str(history))
-    assert entry['applicable'] is False
+    assert entry['applicable'] is True
+    assert entry['verification'] == 'identity-only'
     assert entry['survivor_obligations']=='process and cgroup identities enforced'
     assert entry['reason']=='older capture schema; unverifiable history neither passes nor blocks'
     if survivor!='none':
@@ -400,8 +401,18 @@ def test_down_port_helper_matches_address_and_family(down, monkeypatch, removed,
     p = process(proc, 12349, 'rootlessport', '/unrelated.scope')
     (p/'fd/3').symlink_to('socket:[123]')
     address = ipaddress.ip_address(listener)
-    packed = address.packed
-    encoded = ''.join(f'{int.from_bytes(packed[i:i+4], sys.byteorder):08X}' for i in range(0, len(packed), 4))
+    # Literal proc socket rows, independent of the decoder's word-conversion formula.
+    literals = {
+        'little': {'::': '00000000000000000000000000000000',
+                   '::1': '00000000000000000000000001000000',
+                   '::2': '00000000000000000000000002000000',
+                   '127.0.0.1': '0100007F', '127.0.0.2': '0200007F', '0.0.0.0': '00000000'},
+        'big': {'::': '00000000000000000000000000000000',
+                '::1': '00000000000000000000000000000001',
+                '::2': '00000000000000000000000000000002',
+                '127.0.0.1': '7F000001', '127.0.0.2': '7F000002', '0.0.0.0': '00000000'},
+    }
+    encoded = literals[sys.byteorder][listener]
     table = proc/'net'/('tcp' if address.version == 4 else 'tcp6')
     table.write_text(f'header\n 0: {encoded}:BBD0 0:0 0A 0:0 0:0 0 0 0 123\n')
     report = gate.verify(out, proc=proc, cgroup_root=cg)
@@ -411,4 +422,215 @@ def test_down_port_helper_matches_address_and_family(down, monkeypatch, removed,
         assert any(r['reason'] == 'positively associated down helper survives' for r in report['refusals'])
     # Reversal: an owned helper on an unrelated port is never attributed.
     table.write_text(table.read_text().replace(':BBD0 ', ':BBD1 '))
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+
+
+@pytest.mark.parametrize('retained', [False, True])
+@pytest.mark.parametrize('comm', ['conmon', 'unrelated'])
+def test_dead_at_capture_conmon_pid_reuse_is_not_continuity(down, monkeypatch, retained, comm):
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    monkeypatch.setattr(gate, 'pod', lambda *a: 'test|0|12349|none|false|'
+        if a[0] == 'inspect' and a[2] == gate.CAPTURE_FORMAT else original(*a))
+    assert not (proc/'12349').exists()
+    assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    saved = json.loads(out.read_text())
+    assert saved['down_evidence'][0]['conmon'] == 12349
+    assert saved['down_evidence'][0]['conmon_absent'] is True
+    p = process(proc, 12349, comm, '/unrelated.scope', start='99')
+    if not retained:
+        def removed(*args):
+            if args[0] == 'ps': return ''
+            raise subprocess.CalledProcessError(1, args)
+        monkeypatch.setattr(gate, 'pod', removed)
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+    # Reuse excludes only the PID association: real deployment membership still refuses.
+    (p/'cgroup').write_text('0::/libpod-test.scope\n')
+    group = cg/'libpod-test.scope'; group.mkdir()
+    for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('12349')
+    report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == 'REFUSE', report
+    assert any(r['reason'] == 'live deployment cgroup task' for r in report['refusals'])
+    for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('')
+    (p/'cgroup').write_text('0::/unrelated.scope\n')
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+
+
+@pytest.mark.parametrize('site', ['capture', 'verify'])
+def test_stale_shared_pidfile_with_missing_proc_entry_is_absent(down, monkeypatch, site):
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    monkeypatch.setattr(gate, 'pod', lambda *a: 'test|0|0|bridge|false|'
+        if a[0] == 'inspect' and a[2] == gate.CAPTURE_FORMAT else original(*a))
+    pidfile = Path(gate.store_identity()['run'])/'networks/rootless-netns/rootless-netns-conn.pid'
+    pidfile.parent.mkdir(parents=True)
+    if site == 'verify':
+        assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    pidfile.write_text('12349')
+    assert not (proc/'12349').exists()
+    def check(path):
+        return gate.capture(snap, path, proc=proc, cgroup_root=cg, allow_down=True) if site == 'capture' else gate.verify(out, proc=proc, cgroup_root=cg)
+    assert check(out)['outcome'] == 'PASS'
+    # A present but unreadable process is required evidence, even for ENOENT on stat.
+    (proc/'12349').mkdir()
+    report = check(data.parent/'denied.json')
+    assert report['outcome'] == 'HOLD', report
+    shutil.rmtree(proc/'12349')
+    assert check(data.parent/'absent-again.json')['outcome'] == 'PASS'
+
+
+@pytest.mark.parametrize('overlap', ['generation', 'data'])
+@pytest.mark.parametrize('survivor', ['none', 'process', 'shared-helper'])
+def test_legacy_ordinary_history_by_generation_or_data(capture_fixture, monkeypatch, overlap, survivor):
+    snap, out, proc, cg, data = capture_fixture
+    # Obtain an ordinary pre-stop record from the real capture implementation.
+    history = data.parent/'stop-capture-20261118T123000Z.json'
+    assert gate.capture(snap, history, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+    saved = json.loads(history.read_text()); assert saved['kind'] == 'ordinary'
+    saved['schema'] = 1
+    shared = process(proc, 12349, 'pasta.avx2', '/rootless-netns-old.scope')
+    if survivor == 'shared-helper':
+        saved['shared_helper'] = dict(gate.process_identity(shared), role='shared helper')
+    history.write_text(json.dumps(saved)); before = history.read_bytes()
+    for path in list(proc.iterdir()):
+        if path != shared or survivor != 'shared-helper': shutil.rmtree(path)
+    for path in list(cg.iterdir()): shutil.rmtree(path)
+    # A fresh down capture either shares IDs or applies solely through data overlap.
+    current = json.loads(snap.read_text()); current['phase'] = 'candidate-teardown'
+    identity = 'test' if overlap == 'generation' else 'new-generation'
+    current['containers'][0].update(id=identity, pid=0, running=False, state='exited')
+    snap.write_text(json.dumps(current))
+    def pod(*args):
+        if args[0] == 'ps': return '' if '-q' in args else identity
+        if args[0] == 'container': return ''
+        if args[0] == 'inspect':
+            if args[2] == gate.CAPTURE_FORMAT: return identity+'|0|0|none|false|'
+            if args[2] == '{{json .HostConfig.PortBindings}}': return '{}'
+            return identity+'|false|0'
+        raise AssertionError(args)
+    monkeypatch.setattr(gate, 'pod', pod)
+    monkeypatch.setattr(gate, 'remaining_consumers', lambda *a: [])
+    assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    if survivor == 'process': process(proc, 12345)
+    report = gate.verify_all(out, data.parent, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == ('PASS' if survivor == 'none' else 'REFUSE'), report
+    assert not report['holds'], report
+    entry = next(r for r in report['history'] if r['path'] == str(history))
+    assert entry['applicable'] and entry['verification'] == 'identity-only'
+    if survivor != 'none':
+        reason = 'recorded process survives' if survivor == 'process' else 'shared helper without verified consumer'
+        assert any(r['reason'] == reason and r['capture'] == str(history) for r in report['refusals'])
+        if survivor == 'shared-helper':
+            monkeypatch.setattr(gate, 'remaining_consumers', lambda *a: ['verified-other'])
+            assert gate.verify_all(out, data.parent, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+            monkeypatch.setattr(gate, 'remaining_consumers', lambda *a: [])
+        shutil.rmtree(proc/('12345' if survivor == 'process' else '12349'))
+        assert gate.verify_all(out, data.parent, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+    assert history.read_bytes() == before
+
+
+@pytest.mark.parametrize('site', ['capture', 'verify'])
+@pytest.mark.parametrize('content', ['', ' ', '\t\n', 'invalid-pid', '0', '-1', '+12349', '12/34', '１２３４９'])
+def test_malformed_shared_pidfile_holds(down, monkeypatch, site, content):
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    monkeypatch.setattr(gate, 'pod', lambda *a: 'test|0|0|bridge|false|'
+        if a[0] == 'inspect' and a[2] == gate.CAPTURE_FORMAT else original(*a))
+    pidfile = Path(gate.store_identity()['run'])/'networks/rootless-netns/rootless-netns-conn.pid'
+    pidfile.parent.mkdir(parents=True)
+    if site == 'verify':
+        assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    pidfile.write_text(content)
+    if site == 'capture':
+        report = gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)
+        reason = 'shared helper association unresolved; return to deciders'
+    else:
+        report = gate.verify(out, proc=proc, cgroup_root=cg)
+        reason = 'required association unresolved'
+    assert report['outcome'] == 'HOLD', report
+    assert any(row['reason'] == reason for row in report['holds'])
+    # Valid positive decimal PID with no process remains absence.
+    pidfile.write_text('12349\n')
+    if site == 'capture': report = gate.capture(snap, data.parent/'valid-pid.json', proc=proc, cgroup_root=cg, allow_down=True)
+    else: report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == 'PASS', report
+
+
+@pytest.mark.parametrize('comm', ['conmon', 'unrelated'])
+def test_known_absent_conmon_unreadable_reuse_keeps_independent_checks(down, monkeypatch, comm):
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    monkeypatch.setattr(gate, 'pod', lambda *a: 'test|0|12349|none|false|'
+        if a[0] == 'inspect' and a[2] == gate.CAPTURE_FORMAT else original(*a))
+    assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    p = process(proc, 12349, comm, '/unrelated.scope', start='99')
+    start = gate.start_time
+    def denied(path):
+        if path == p: raise PermissionError('unreadable reused PID birth')
+        return start(path)
+    monkeypatch.setattr(gate, 'start_time', denied)
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+    group = cg/'libpod-test.scope'; group.mkdir()
+    for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('12349')
+    report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == 'REFUSE', report
+    assert any(row['reason'] == 'live deployment cgroup task' for row in report['refusals'])
+    for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('')
+    # Source holder checking also remains independent of the ignored birth read.
+    source = json.loads(out.read_text())['sources'][0]
+    (p/'mountinfo').write_text(f"1 0 {source['device']} {source['root']} /held-source rw - tmpfs tmpfs rw\n")
+    (p/'fd/3').symlink_to('/held-source/held')
+    report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == 'REFUSE', report
+    assert any(row['reason'] == 'recorded data source held' for row in report['refusals'])
+    (p/'fd/3').unlink()
+    (p/'mountinfo').write_text('1 0 0:1 / / rw - tmpfs tmpfs rw\n')
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+
+
+@pytest.mark.parametrize('comm,expected,reason', [
+    ('conmon', 'REFUSE', 'positively associated down helper survives'),
+    ('unrelated', 'HOLD', 'down helper association unreadable'),
+])
+def test_pre_marker_down_row_keeps_conservative_reuse_result(down, monkeypatch, comm, expected, reason):
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    monkeypatch.setattr(gate, 'pod', lambda *a: 'test|0|12349|none|false|'
+        if a[0] == 'inspect' and a[2] == gate.CAPTURE_FORMAT else original(*a))
+    assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    saved = json.loads(out.read_text())
+    # Exact pre-marker shape: already-dead conmon PID was discarded at capture.
+    saved['down_evidence'][0]['conmon'] = 0
+    saved['down_evidence'][0].pop('conmon_absent')
+    out.write_text(json.dumps(saved)); retained = out.read_bytes()
+    p = process(proc, 12349, comm, '/unrelated.scope', start='99')
+    report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == expected, report
+    assert any(row['reason'] == reason for row in report['refusals' if expected == 'REFUSE' else 'holds'])
+    assert out.read_bytes() == retained
+    shutil.rmtree(p)
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+
+
+@pytest.mark.parametrize('comm', ['conmon', 'unrelated'])
+def test_known_absent_conmon_reuse_with_unreadable_stat(down, monkeypatch, comm):
+    snap, out, proc, cg, data = down
+    original = gate.pod
+    monkeypatch.setattr(gate, 'pod', lambda *a: 'test|0|12349|none|false|'
+        if a[0] == 'inspect' and a[2] == gate.CAPTURE_FORMAT else original(*a))
+    assert gate.capture(snap, out, proc=proc, cgroup_root=cg, allow_down=True)['outcome'] == 'PASS'
+    p = process(proc, 12349, comm, '/unrelated.scope', start='99')
+    read = Path.read_text
+    def denied(path, *args, **kwargs):
+        if path == p/'stat': raise PermissionError('reused occupant stat denied')
+        return read(path, *args, **kwargs)
+    monkeypatch.setattr(Path, 'read_text', denied)
+    assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'
+    # Required cgroup membership is still inspected and holds on that denial.
+    group = cg/'libpod-test.scope'; group.mkdir()
+    for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('12349')
+    report = gate.verify(out, proc=proc, cgroup_root=cg)
+    assert report['outcome'] == 'HOLD', report
+    assert any(row['reason'] == 'down cgroup evidence unreadable' for row in report['holds'])
+    for name in ('cgroup.procs', 'cgroup.threads'): (group/name).write_text('')
     assert gate.verify(out, proc=proc, cgroup_root=cg)['outcome'] == 'PASS'

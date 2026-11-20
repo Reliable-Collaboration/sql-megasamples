@@ -599,35 +599,33 @@ The [round-nine receipt](validation/live-upgrade-review-r9-2026-11-19.json)
 records reds, greens, removal/order controls and isolation. These checks do not
 establish DataIntent acceptance or independent approval of the new head.
 
-Known limits retained for later work:
+B-2 and B-3 were subsequently fixed in the follow-up:
 
-- **B-2 — dead-at-capture conmon PID reuse.** When conmon is already dead at
-  capture, its PID is lost from the capture. A later process reusing Podman's
-  recorded PID can cause REFUSE or HOLD. This fails safe. Keep the maintenance
-  hold and rerun the gate once the reusing process exits; do not kill an
-  unattributed process to clear the gate. This round does not fix that case.
-- **B-3 — scratch pause walk and failed-rehearsal cleanup.** The stricter
-  pause-PID directory walk has run only against stubbed Podman, not a native
-  rehearsal store. An enumeration failure can leave loaded duplicate images and
-  that store's pause process. There is no automated failure-cleanup route.
-  Manual cleanup, **not run in round nine**: in a fresh strict Bash shell source
-  the isolated `sql-megasamples-upgrade-env/env.sh` and check its storage/socket
-  settings. Select the exact owned failed `rollback-load-rehearsal-*` directory
-  directly under the retained backup; verify that relationship before proceeding.
-  In a subshell select its `storage.conf`, `containers.conf` and `xdg` as
-  `CONTAINERS_STORAGE_CONF`, `CONTAINERS_CONF` and `XDG_RUNTIME_DIR`, and unset
-  `CONTAINERS_CONF_OVERRIDE`, as in the runbook's rehearsal. Verify
-  `podman info --format '{{.Store.GraphRoot}}'` equals `$SCRATCH_DIR/graph`.
-  Assign `SCRATCH_CONTAINERS=$(podman ps -aq)` as a separate command, then
-  `test -z "$SCRATCH_CONTAINERS"`; a listing error or any container holds cleanup.
-  Once enumeration is readable, run the existing `PY_PAUSE_CAPTURE` inventory,
-  then `podman image rm --all --force`, then `podman system migrate`, retaining
-  their logs. Run the existing `PY_PAUSE_CHECK` after the final Podman command;
-  no Podman call follows it. Keep configuration and logs. If inventory or checks
-  still fail, preserve the store for coordinator investigation. Never substitute
-  the default or isolated stack's store, use `system reset`, delete trees blindly
-  or signal a bare PID. This describes manual recovery, not a validated cleanup
-  implementation or native proof of the stricter walk.
+- **B-2:** a dead-at-capture conmon retains its PID with an explicit absence marker.
+  A later occupant is reuse rather than continuity; separately established
+  deployment membership still refuses. Fixtures cover retained and removed
+  containers, conmon-named and unrelated occupants, and the existing live-birth case.
+  Existing captures without the absence marker cannot retroactively establish
+  that the PID was dead. They retain conservative REFUSE/HOLD behavior if the
+  missing birth evidence is needed. Keep the maintenance hold and rerun after
+  the reusing process exits; never kill an unattributed process to clear it.
+  A fresh current capture does not erase obligations in retained history.
+  Preserve every historical record unchanged.
+- **B-3:** the strict runtime walk ran against real scratch Podman stores in
+  `build/dl086-follow-up/native-scratch-dlraj0ea/receipt.json`, read
+  **2026-11-19 07:09:21 UTC**. The unchanged walk found one private pause PID in
+  each of two stores. The ordinary rehearsal completed; a second rehearsal was
+  deliberately interrupted after loading one small image (exit 73), leaving
+  that duplicate image in its owned store. The runbook's
+  [manual cleanup](live-upgrade-runbook.md#failed-rehearsal-store-manual-cleanup)
+  then completed (manual cleanup exit 0). Both recorded pause PIDs were absent
+  after final migrate, and both image metadata inventories were empty. No
+  subsequent Podman call recreated either pause process. Configuration, logs
+  and empty metadata remain. This proves the native walk and failed-store
+  cleanup with one small image; engine-size archives and restored-stack startup
+  remain unproved. No default-store or isolated-stack images or pause processes
+  were removed. The replay driver is
+  [rehearse-follow-up-scratch.py](validation/rehearse-follow-up-scratch.py).
 
 ### Round-eleven address attribution and account guidance
 
@@ -664,7 +662,9 @@ this small round adds no new native rollback or archive rehearsal.
 
 New captures use schema 2. An older-schema current capture HOLDs until replaced
 through the applicable capture route. Schema-1 historical endpoint evidence is
-history: it neither passes nor blocks a fresh attempt. The history report says
+history: it neither passes nor blocks a fresh attempt; the
+older capture's source and holder checks are not repeated. The current capture
+still checks its sources and holders. The history report says
 that independently recorded process and cgroup identities remain enforced,
 including down-state conmon birth identities and cgroup objects. Fixtures pair
 old integer-port history with a current capture: no survivor passes, recorded
@@ -685,16 +685,170 @@ read **2026-11-19 UTC**; no account privileges changed and no live privilege que
 was run. The documentation also distinguishes fixture-tested wildcard cases
 from native proof and corrects the unchanged-data recovery's pointer upward.
 
-**B-8 — two thin assertions, retained backlog.** The PostgreSQL README check's
-generic sample/tables wording still searches the whole section, and the IPv6
-listener fixtures share an encoding formula with the decoder. Maintainers should
-check the init grants directly and use an independently sourced IPv6 socket
-fixture or native listener observation before extending that proof. This round
-adds the requested future-table clause check; it does not resolve those two
-older assertion limits. Account self-password changes are a separate posture
+B-8's follow-up checks bind the PostgreSQL read-grant wording to its own clause
+and use literal IPv6 proc socket rows independent of the decoder's conversion
+formula. These remain fixture checks; native wildcard publication is unproved.
+Account self-password changes are a separate posture
 item, outside this documentation correction.
 
 The [round-twelve receipt](validation/live-upgrade-review-r12-2026-11-19.json)
 retains reds, greens, reversals, suite/image results and all nine live-object
 inventory rows. These are authoring-session checks. DataIntent's dated
 acceptance hold remains separate; the netns error's root cause remains unknown.
+
+### DL-086 follow-up: B-2 through B-15
+
+A new follow-up capture retains a dead-at-capture conmon PID with an absence marker and
+ignores later PID reuse as continuity; real deployment membership remains a
+refusal. Down-route shared-helper checks now distinguish a genuinely missing
+`/proc` entry from a present but unreadable entry. A fresh-shell empty policy
+listing prints an actionable HOLD and points back to rollback route dispatch
+and input verification. The saved context does not carry that route variable.
+
+Applicable older-schema history now reports `applicable: true` and
+`verification: identity-only`, matching its enforced survivor obligations. New
+ordinary pre-stop fixtures cover applicability through data overlap alone and
+shared-helper consumer checks. The cold-restore block starts selected engines,
+waits for each selected engine's health, and only then starts selected consoles.
+A failed SQLite health wait prevents console startup in the shell fixture.
+
+The tightened assertions check the intended error messages, real shell fence
+boundaries, PostgreSQL read-grant wording, literal IPv6 socket rows, actual grant
+options across init files, and SSLRequest bytes in the caller thread. The stale
+endpoint comment and rebound filename-matcher variable were corrected without
+changing behavior. The native scratch proof and its scope are described above;
+B-3 also stops before cleanup on a failed or non-empty container listing; the
+rehearsal fixtures cover both outcomes. The resume instructions now link manual cleanup and explain the additional
+image copy a failed-store rerun can retain beyond the two-copy space budget.
+
+The [follow-up receipt](validation/live-upgrade-follow-up-2026-11-19.json)
+records each item's test and fix commits, red and green runs, defect controls,
+native scratch proof, source and evidence hashes, and remaining limits. B-13 is
+a comment/local-name change: restoring it also passes the same checks. The
+initial B-2 reversal fixture required a separate correction to supply real
+cgroup membership files (test-only correction `913a380` after fix `614ecc3`).
+The first fix was red for two fixture cases; its retained replay is also red.
+The receipt records that failure and links its replay. Neither commit is rewritten. Test-only
+coverage improvements were already green on production code and are paired
+with planted-defect controls. These are authoring-session checks; independent
+review, acceptance and merge remain separate.
+
+### Follow-up review round 1: C1 through C5
+
+C1 and round-two D2 give each whole destructive fenced paste block its own
+`set -eu`. The widened class includes any `rm` form, `system migrate/reset`,
+`stop`, `down`, forced replacement and copies into data volumes:
+
+| Paste block | Destructive operation | Strict entry |
+|---|---|---|
+| Preparation and archive rehearsal | workspace stop; scratch `image rm`, `system migrate` | first command in fence |
+| Failed scratch cleanup | scratch `image rm`, `system migrate` | first command inside subshell |
+| Partial stop retry | `stop_project` | first command in fence |
+| Original clean stop | Compose `stop` | first command in fence |
+| Abort preparation | absent original `.env` removal | first command in fence |
+| Final backups, stop and candidate start | stop, data copy, SQLite shared-file removal, forced replacement | first command in fence |
+| Rollback bootstrap | temporary bootstrap report removal in trap | first command in fence |
+| Rollback route dispatch | absent original `.env` removal | first command in fence |
+| Rollback stop, down and restore | stop, Compose `down`, absent original `.env` removal | first command in fence |
+| Rollback population and cold start | copy into attempt volumes, console forced replacement | first command in fence |
+| Unchanged-volume recovery | engine and console forced replacement | first command in fence |
+| Marker continuations within these fences | including `pre-down`, `restore`, `cold-copy`, population and pre-up | context-strict: documented fresh-shell entry sources the saved context, whose first command is `set -eu` |
+
+There is no executable `volume rm` or `system reset` in this runbook. Discovery
+also recognizes `rm -rf` and `podman rm` for future fences. A plain `bash -c`
+fixture sources a context produced by the real `save_context` and independently
+checks that a failed command and an unset variable both stop execution. Marker
+fragments rely on this mechanical entry; they are not independent paste blocks.
+The complete manual cleanup also runs in plain Bash against path, nested-path,
+escaping-symlink, both missing-configuration, graph-root, listing-error,
+non-empty-listing, pause-enumeration and unset-path failures.
+Round-two D3 executes every whole fence unchanged in plain Bash, with external
+commands modeled by fail-closed fixtures. Successful baseline runs establish
+which gates are reached; each reached assertion/helper gate then rejects at its
+actual source line, preserving the intervening shell control flow. Both original
+restart and ordinary routes are exercised for bootstrap and dispatch. A console
+port refusal in retained-original restart intentionally holds only that console;
+its start remains blocked while policy restoration continues. The preparation
+control plants `set +e` immediately after entry and fails the class check on
+continued execution. The bootstrap's EXIT trap still removes its exact temporary
+route-report path on refusal; the fixture permits that bounded cleanup and
+rejects subsequent data/store operations or starts. The full manual-cleanup
+fixture remains separate.
+The whole cold-start and unchanged-volume fences run under plain `bash -c` with
+restart snapshot, exited-state, initial port, CloudBeaver port and each
+engine-health gate rejecting in turn. No engine recreation follows a rejected
+initial state/port gate; no console starts after rejected engine health. A failed
+later CloudBeaver port gate prevents its recreation/start, preserving earlier
+successful starts.
+
+C2 removes named attribution from the follow-up receipt. Round-two D1 limits the
+whole-file attribution check to `docs/live-upgrade-evidence.md` and
+`docs/validation/live-upgrade*.json`. It requires neither Git nor a base commit
+object, and dataset provenance under `knowledge/` stays outside its scope. A
+fixture runs it in a directory without Git metadata, with matching dataset
+provenance present and any attempted Git call forbidden. The original receipt
+still fails this scoped check.
+
+C3 requires a positive decimal store-helper PID before interpreting a missing
+process as absence, both at capture and verification. Empty, whitespace,
+non-numeric, zero, signed, slash-containing and non-ASCII contents hold. The
+valid-but-absent and present-but-unreadable cases remain covered. C4 applies a
+recorded conmon absence before requiring a reused occupant's birth evidence;
+independent cgroup tasks and source holders still refuse. Those two obligations
+have separate removal controls, as does the absence-before-birth fix.
+
+C5 restores both engine and console `--no-deps` coverage, records B-3's failed
+and non-empty listing cases, and runs pre-marker rows through the current
+helper: a conmon-named reuse refuses, an unrelated reuse holds, and removal
+returns PASS without rewriting the capture. Grant checks now include quoted and
+multi-role admin targets; the protocol fixture covers an invalid MySQL greeting
+header. Wording names conmon-named and unrelated occupants and records the
+post-fix B-2 fixture correction without rewriting its history.
+
+The expanded native B-3 proof is retained in
+`build/dl086-follow-up/native-scratch-l0u2gjf1/receipt.json`, read
+**2026-11-19 08:12:29 UTC**. It uses one small image and three owned stores:
+ordinary rehearsal, deliberate failure after loading, and deliberate failure
+before loading with a real pause process but zero images. Both failure exits
+were 73; both manual cleanup exits were 0 under plain `bash -c`. All three
+recorded pause PIDs were absent after cleanup. The loaded stores' image metadata
+was empty; the zero-image store's metadata file was never created.
+No Podman call followed final migrate. The first expanded proof run passed its
+cleanup checks but mislabeled each failure-state field with the final process
+state; that local-variable error was corrected and the proof rerun in new stores.
+Its earlier artifacts are retained without rewriting them.
+
+The [round-one receipt](validation/live-upgrade-follow-up-review-r1-2026-11-19.json)
+records the reds, greens, controls, native evidence,
+validation and isolation results. The first C1 guard fixture misclassified
+read-only `image inspect`; a separate test-only correction preceded the fix.
+The first C3 fix lacked its validator import, which the checks caught and a
+separate fix supplied. The C4 holder fixture initially lacked the source-device
+mount mapping; its separate test-only correction was red against the unchanged
+helper before the fix passed. These are authoring-session results, with no new
+review, acceptance or merge claim. No software version or support claim changes.
+
+
+### Follow-up review round 2: D1 through D4
+
+D1 scopes record attribution without Git, D2 widens the destructive-command class
+and checks context-supplied strictness, D3 runs the real fences with failed gates,
+and D4 corrects the cleanup entry and missing-metadata wording. The class table
+and execution details above describe the final behavior. No quiescence helper,
+engine, image, dependency or privilege behavior changes in this round.
+
+The native scratch replay is retained in
+`build/dl086-follow-up/native-scratch-9dlaewpl/receipt.json`. It again covers
+ordinary rehearsal, failure after loading one small image, and failure before
+loading with a real pause process and zero images. The failure exits were 73;
+both complete manual cleanups exited 0 under plain `bash -c`. All three recorded
+pause PIDs were absent afterward. Loaded-store image metadata was empty; the
+zero-image store had no metadata file. No Podman call followed final migrate.
+This remains small-image scratch proof, without an engine-size restore or
+restored-stack-startup claim.
+
+The [round-two receipt](validation/live-upgrade-follow-up-review-r2-2026-11-19.json)
+retains each red, green, test/fix commit, reversal, source/evidence hash and final
+validation/isolation result. These are authoring-session checks. No independent
+approval, DataIntent acceptance or merge is claimed, and no software version or
+support claim changes.

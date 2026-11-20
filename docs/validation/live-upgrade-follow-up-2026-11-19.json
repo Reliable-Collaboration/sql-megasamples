@@ -1,0 +1,1219 @@
+{
+  "at": "2026-11-19T07:48:58.976825+00:00",
+  "checked_code_commit": "310dbdb52cfc7a03ac50f6ea41017118ba9b5156",
+  "base_commit": "3bef1436852c3f63634455270b69fec02f35b7f3",
+  "scope": "DL-086 B-2 through B-15 only; authoring-session checks. No live mutation; no merge or acceptance.",
+  "context": "Repository files, supplied env.sh, explicit backlog and source notes from the round 9, 10, 12, 13 and 14 review notes. No persistent agent memory.",
+  "source_note_mapping": {
+    "B-2": "r9 note 1",
+    "B-3": "r9 note 6",
+    "B-4": "r10 note 1",
+    "B-5": "r10 note 2",
+    "B-6": "r10 note 3",
+    "B-7": "r10 note 4",
+    "B-8": "r12 note 4",
+    "B-9": "r13 note 1",
+    "B-10": "r13 note 2",
+    "B-11": "r13 note 3",
+    "B-12": "r13 note 4",
+    "B-13": "r13 note 5",
+    "B-14": "r14 note 1",
+    "B-15": "r14 note 2"
+  },
+  "items": {
+    "B-2": {
+      "test_only_commits": [
+        "27ff30a033b7291d637f51f3876e596ec61f5a8d",
+        "913a3802361cd5457b6d254447ad017b444fed1d",
+        "d151a16bef69aa46bf0551bcc765b6c31ec111ac"
+      ],
+      "fix_commits": [
+        "614ecc39efd284752262072b58cd2dfd9ca6b07e",
+        "0c5b02429de9c72beca3a5241dff6f871ee89647",
+        "f43ae00125daa0aa83f2d5e482451a43b8936d61"
+      ],
+      "red": {
+        "status": "Failed",
+        "expected": true,
+        "path": "build/dl086-follow-up/b2-red.log",
+        "summary": "4 failed in 0.17s"
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b2-green.log",
+        "summary": "74 passed in 0.80s"
+      },
+      "change": "Preserve the recorded PID with conmon_absent; later reuse is not continuity. Actual cgroup membership still refuses.",
+      "sequence_note": "Code regression 27ff30a precedes fix 614ecc3; 913a380 corrects the independent reversal fixture only. Residual-history wording test d151a16 precedes documentation fix 0c5b024; f43ae00 makes the historical-hold instruction explicit.",
+      "retained_history_limit_red": {
+        "status": "Failed",
+        "expected": true,
+        "path": "build/dl086-follow-up/b2-residual-red.log",
+        "summary": "1 failed in 0.04s"
+      },
+      "retained_history_limit_green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b2-residual-green.log",
+        "summary": "7 passed in 0.02s"
+      },
+      "planted_defect_controls": [
+        {
+          "control": "B-2 original lost PID",
+          "status": "Passed",
+          "failures": 4,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/0.log"
+        },
+        {
+          "control": "B-2 absent PID treated as live continuity",
+          "status": "Passed",
+          "failures": 4,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/1.log"
+        },
+        {
+          "control": "B-2 omitted retained-record limit",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/2.log"
+        }
+      ]
+    },
+    "B-3": {
+      "test_only_commits": [
+        "1485464b8b5eefa08493c73f28e3f1f30768315a"
+      ],
+      "fix_commits": [
+        "eb1a32e7812a966741f506bb61d35a865d9ec053"
+      ],
+      "red": {
+        "status": "Failed",
+        "expected": true,
+        "path": "build/dl086-follow-up/b3-red.log",
+        "summary": "5 failed in 0.12s"
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b3-green.log",
+        "summary": "9 passed in 0.40s"
+      },
+      "change": "Document guarded manual failed-store cleanup; run the actual pause walk and cleanup in owned native scratch stores.",
+      "planted_defect_controls": [
+        {
+          "control": "B-3 missing graph guard",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/6.log"
+        }
+      ]
+    },
+    "B-4": {
+      "test_only_commits": [
+        "3ebf8a97c614cc1b586690182266bf70d9c5d24e",
+        "05433ffd0e8105585ac946a0fb226a6b677a5dfe"
+      ],
+      "fix_commits": [
+        "c12b7298f3674a45c3858d05f55446513a1228aa"
+      ],
+      "red": {
+        "status": "Failed",
+        "expected": true,
+        "path": "build/dl086-follow-up/b4-b7-red.log",
+        "summary": "1 failed in 0.11s"
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b4-final-green.log",
+        "summary": "7 passed in 0.48s"
+      },
+      "change": "Print an actionable empty-listing HOLD in a fresh shell; require rollback dispatch and input checks again.",
+      "planted_defect_controls": [
+        {
+          "control": "B-4 and B-7 silent empty-listing exit",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/4.log"
+        }
+      ]
+    },
+    "B-5": {
+      "test_only_commits": [
+        "61412586ae2b1319624bbd9e25cc9e7e3ed84163"
+      ],
+      "fix_commits": [
+        "d17d3feee018e6fefb8deeb60198a441c3544c8e"
+      ],
+      "red": {
+        "status": "Failed",
+        "expected": true,
+        "path": "build/dl086-follow-up/b5-red.log",
+        "summary": "2 failed in 0.13s"
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b5-green.log",
+        "summary": "76 passed in 0.61s"
+      },
+      "change": "Treat ENOENT without a proc entry as absent only on the down route. Present unreadable entries still HOLD.",
+      "planted_defect_controls": [
+        {
+          "control": "B-5 original ENOENT hold",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/3.log"
+        }
+      ]
+    },
+    "B-6": {
+      "test_only_commits": [
+        "9cc6b28e4dae6bf68339f7126361a65ef3dfce7b"
+      ],
+      "fix_commits": [
+        "6e4e8cbc8fb39884ca314c0a6373fc02b9f1eef5"
+      ],
+      "red": {
+        "status": "Failed",
+        "expected": true,
+        "path": "build/dl086-follow-up/b6-red.log",
+        "summary": "1 failed in 0.03s"
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b6-green.log",
+        "summary": "6 passed in 0.02s"
+      },
+      "change": "Link manual cleanup at preparation resume; explain the third image copy against a two-copy space budget.",
+      "planted_defect_controls": [
+        {
+          "control": "B-6 missing retry space guidance",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/7.log"
+        }
+      ]
+    },
+    "B-7": {
+      "test_only_commits": [
+        "3ebf8a97c614cc1b586690182266bf70d9c5d24e",
+        "498e84fe10a919e8173b44ca35c43bab1baeaaf1"
+      ],
+      "fix_commits": [],
+      "red": {
+        "status": "Failed",
+        "expected": true,
+        "path": "build/dl086-follow-up/b4-b7-red.log",
+        "summary": "1 failed in 0.11s"
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b7-green.log",
+        "summary": "6 passed in 0.51s"
+      },
+      "change": "Require the intended HOLD code/message and compile the actual fenced dispatch and stop fragments. Boundary was already correct.",
+      "shared_fix_commit": "c12b7298f3674a45c3858d05f55446513a1228aa",
+      "planted_defect_controls": [
+        {
+          "control": "B-7 lost shell boundary",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/5.log"
+        },
+        {
+          "control": "B-4 and B-7 silent empty-listing exit",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/4.log"
+        }
+      ]
+    },
+    "B-8": {
+      "test_only_commits": [
+        "ea717959083a4c7f71d21b11171cf006ece96efd"
+      ],
+      "fix_commits": [],
+      "red": {
+        "status": "Not run",
+        "reason": "Production already satisfied the rule; assertion/coverage-only change. Defect controls below establish sensitivity."
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b8-green.log",
+        "summary": "32 passed in 0.33s"
+      },
+      "change": "Bind reads to sample tables in its clause; use literal IPv6 socket rows independent of the decoder.",
+      "planted_defect_controls": [
+        {
+          "control": "B-8 detached read grant clause",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/8.log"
+        },
+        {
+          "control": "B-8 broken IPv6 word decoding",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/9.log"
+        }
+      ]
+    },
+    "B-9": {
+      "test_only_commits": [
+        "2153579d066d31b5559d7982cb21b6fbf3f7b705"
+      ],
+      "fix_commits": [
+        "226a95228b04065625367158b22b2f615898a530"
+      ],
+      "red": {
+        "status": "Failed",
+        "expected": true,
+        "path": "build/dl086-follow-up/b9-red.log",
+        "summary": "2 failed in 0.04s"
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b9-green.log",
+        "summary": "5 passed in 0.02s"
+      },
+      "change": "State that older history repeats neither source nor holder checks; current evidence remains complete.",
+      "planted_defect_controls": [
+        {
+          "control": "B-9 omitted source/holder boundary runbook",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/10.log"
+        },
+        {
+          "control": "B-9 omitted source/holder boundary evidence",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/11.log"
+        }
+      ]
+    },
+    "B-10": {
+      "test_only_commits": [
+        "c10fcd493789b5013c32f8ec65b554f934b688ad"
+      ],
+      "fix_commits": [
+        "1a03cd6565761dce0e521438405f62b01c3a846c"
+      ],
+      "red": {
+        "status": "Failed",
+        "expected": true,
+        "path": "build/dl086-follow-up/b10-red.log",
+        "summary": "5 failed in 0.24s"
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b10-green.log",
+        "summary": "5 passed in 0.08s"
+      },
+      "change": "Report applicable=true plus verification=identity-only when legacy survivors remain enforced.",
+      "planted_defect_controls": [
+        {
+          "control": "B-10 misleading applicability flag",
+          "status": "Passed",
+          "failures": 5,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/12.log"
+        }
+      ]
+    },
+    "B-11": {
+      "test_only_commits": [
+        "d946d789d8eb9cc5d2195d5049fa68311f6e743b"
+      ],
+      "fix_commits": [],
+      "red": {
+        "status": "Not run",
+        "reason": "Production already satisfied the rule; assertion/coverage-only change. Defect controls below establish sensitivity."
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b11-green.log",
+        "summary": "6 passed in 0.16s"
+      },
+      "change": "Add ordinary pre-stop legacy captures, data-only overlap and shared helpers, including survivor/consumer/removal reversals.",
+      "planted_defect_controls": [
+        {
+          "control": "B-11 missing legacy survivors",
+          "status": "Passed",
+          "failures": 4,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/13.log"
+        },
+        {
+          "control": "B-11 lost data-only overlap",
+          "status": "Passed",
+          "failures": 3,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/14.log"
+        },
+        {
+          "control": "B-11 ignored historical shared helper",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/15.log"
+        }
+      ]
+    },
+    "B-12": {
+      "test_only_commits": [
+        "f4156c5841b0e5f4e5c75c2c13e6ec824f1bd871"
+      ],
+      "fix_commits": [],
+      "red": {
+        "status": "Not run",
+        "reason": "Production already satisfied the rule; assertion/coverage-only change. Defect controls below establish sensitivity."
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b12-green.log",
+        "summary": "8 passed in 0.04s"
+      },
+      "change": "Replace vacuous privilege-scope assertion with actual WITH GRANT OPTION checks across every PostgreSQL init file.",
+      "planted_defect_controls": [
+        {
+          "control": "B-12 later init grant option",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/16.log"
+        }
+      ]
+    },
+    "B-13": {
+      "test_only_commits": [],
+      "fix_commits": [
+        "fea6b5787b7155f6bcf9fe87ab05b3340d31a087"
+      ],
+      "red": {
+        "status": "Not run",
+        "reason": "No behavior change: comment and local variable rename only."
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b13-green.log",
+        "summary": "82 passed in 0.72s"
+      },
+      "change": "Behavior-neutral comment correction and local filename-regex variable rename; no new test required.",
+      "reversal": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b13-reversal.log",
+        "summary": "82 passed in 0.72s",
+        "source_commit": "7d6db61675a6e742aa835948c8996138edbb3a52",
+        "note": "Restoring the prior comment/variable keeps the same behavior and passes all 82 down/history checks."
+      },
+      "planted_defect_controls": []
+    },
+    "B-14": {
+      "test_only_commits": [
+        "d72d3adf921e508e7449e5ed6abd7ac13f37bab6"
+      ],
+      "fix_commits": [
+        "8a54589ddfc09a0258641b6052cc8c09f1d83c76"
+      ],
+      "red": {
+        "status": "Failed",
+        "expected": true,
+        "path": "build/dl086-follow-up/b14-red.log",
+        "summary": "2 failed in 0.06s"
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b14-green.log",
+        "summary": "2 passed in 0.03s"
+      },
+      "change": "Start and health-check restored engines before starting selected consoles; SQLite failure stops before consoles.",
+      "planted_defect_controls": [
+        {
+          "control": "B-14 original combined start",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/17.log"
+        }
+      ]
+    },
+    "B-15": {
+      "test_only_commits": [
+        "7d6db61675a6e742aa835948c8996138edbb3a52"
+      ],
+      "fix_commits": [],
+      "red": {
+        "status": "Not run",
+        "reason": "Production already satisfied the rule; assertion/coverage-only change. Defect controls below establish sensitivity."
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-follow-up/b15-green.log",
+        "summary": "49 passed in 4.62s"
+      },
+      "change": "Require exact archive/protocol errors; assert SSLRequest bytes in the caller thread for positive and negative responses.",
+      "planted_defect_controls": [
+        {
+          "control": "B-15 wrong archive refusal reason",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/18.log"
+        },
+        {
+          "control": "B-15 wrong protocol refusal reason",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/19.log"
+        },
+        {
+          "control": "B-15 wrong SSLRequest bytes",
+          "status": "Passed",
+          "failures": 4,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/20.log"
+        }
+      ]
+    }
+  },
+  "native_scratch_proof": {
+    "status": "Passed",
+    "read_at": "2026-11-19T07:09:21.003788+00:00",
+    "artifacts": "build/dl086-follow-up/native-scratch-dlraj0ea",
+    "native_real_podman": true,
+    "seed_image_id": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+    "fixture_scope": "One small real image; no engine-size archive or restored-stack startup claim",
+    "ordinary_rehearsal_exit": 0,
+    "deliberately_failed_exit": 73,
+    "manual_cleanup_exit": 0,
+    "loaded_images_before_manual_cleanup": [
+      "sha256:c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39"
+    ],
+    "stores": [
+      {
+        "path": "build/dl086-follow-up/native-scratch-dlraj0ea/backup/rollback-load-rehearsal-DpQUJhR0",
+        "pause_processes": [
+          {
+            "pid": 1305208,
+            "after": "absent"
+          }
+        ],
+        "image_metadata_empty": true,
+        "podman_after_final_migrate": false
+      },
+      {
+        "path": "build/dl086-follow-up/native-scratch-dlraj0ea/backup/rollback-load-rehearsal-fJXWwxkG",
+        "pause_processes": [
+          {
+            "pid": 1306653,
+            "after": "absent"
+          }
+        ],
+        "image_metadata_empty": true,
+        "podman_after_final_migrate": false
+      }
+    ],
+    "isolated_or_live_image_pause_mutations": "None; seed save/inspect only in isolated store",
+    "deliberate_failure": {
+      "status": "Failed",
+      "expected": true,
+      "exit_code": 73
+    }
+  },
+  "results": {
+    "tools_environment": {
+      "status": "Passed",
+      "path": "build/dl086-follow-up/tools-environment.log",
+      "summary": "Passed: tools container Docker socket and Compose project are isolated"
+    },
+    "suite": {
+      "status": "Passed",
+      "path": "build/dl086-follow-up/suite-final.log",
+      "summary": "959 passed in 34.42s"
+    },
+    "repository_gate": {
+      "status": "Passed",
+      "path": "build/dl086-follow-up/make-check.log",
+      "summary": "check: 0 failure(s)"
+    },
+    "defect_controls": {
+      "status": "Passed",
+      "follow_up": 21,
+      "round_nine_compatibility": 10,
+      "results": [
+        {
+          "control": "B-2 original lost PID",
+          "status": "Passed",
+          "failures": 4,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/0.log"
+        },
+        {
+          "control": "B-2 absent PID treated as live continuity",
+          "status": "Passed",
+          "failures": 4,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/1.log"
+        },
+        {
+          "control": "B-2 omitted retained-record limit",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/2.log"
+        },
+        {
+          "control": "B-5 original ENOENT hold",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/3.log"
+        },
+        {
+          "control": "B-4 and B-7 silent empty-listing exit",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/4.log"
+        },
+        {
+          "control": "B-7 lost shell boundary",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/5.log"
+        },
+        {
+          "control": "B-3 missing graph guard",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/6.log"
+        },
+        {
+          "control": "B-6 missing retry space guidance",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/7.log"
+        },
+        {
+          "control": "B-8 detached read grant clause",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/8.log"
+        },
+        {
+          "control": "B-8 broken IPv6 word decoding",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/9.log"
+        },
+        {
+          "control": "B-9 omitted source/holder boundary runbook",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/10.log"
+        },
+        {
+          "control": "B-9 omitted source/holder boundary evidence",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/11.log"
+        },
+        {
+          "control": "B-10 misleading applicability flag",
+          "status": "Passed",
+          "failures": 5,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/12.log"
+        },
+        {
+          "control": "B-11 missing legacy survivors",
+          "status": "Passed",
+          "failures": 4,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/13.log"
+        },
+        {
+          "control": "B-11 lost data-only overlap",
+          "status": "Passed",
+          "failures": 3,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/14.log"
+        },
+        {
+          "control": "B-11 ignored historical shared helper",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/15.log"
+        },
+        {
+          "control": "B-12 later init grant option",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/16.log"
+        },
+        {
+          "control": "B-14 original combined start",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/17.log"
+        },
+        {
+          "control": "B-15 wrong archive refusal reason",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/18.log"
+        },
+        {
+          "control": "B-15 wrong protocol refusal reason",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/19.log"
+        },
+        {
+          "control": "B-15 wrong SSLRequest bytes",
+          "status": "Passed",
+          "failures": 4,
+          "log": "build/dl086-follow-up/reversals-esgus_w3/20.log"
+        }
+      ]
+    },
+    "images": {
+      "postgres": {
+        "status": "Passed",
+        "exit_code": 0
+      },
+      "mysql": {
+        "status": "Passed",
+        "exit_code": 0
+      },
+      "sqlite": {
+        "status": "Passed",
+        "exit_code": 0
+      }
+    },
+    "image_cleanup": {
+      "status": "Passed",
+      "removed": 3,
+      "already_absent": 2,
+      "removed_ids": [
+        "571e55eb10ab07e227cea4ac4df715668c23154dae4efacc8057989cfd5d6f76",
+        "63db602211279d1da49e4639da75f02ae2e426e27b03d383b0f4a94bb5b72e6d",
+        "1cc40863ee910f14c9b6c7e06a71fffb736773f7c59fdc488517ab36b1d74526"
+      ],
+      "already_absent_ids": [
+        "74422108b045c99bb16a50b718e4bad2239b9b2e6c0299896e32efac674b9f1c",
+        "971a950dbc5700891d61fa20e41f1d51e5d03168658d4f26185b9fe222fb8307"
+      ],
+      "attribution": "Five adjacent native volume/container create pairs, reserved owned names and test labels, nanosecond deltas under 10 ms; each volume absent from baseline, anonymous, unmounted and unreferenced. Metadata creation time also checked for remaining volumes.",
+      "pairs": [
+        {
+          "volume": "74422108b045c99bb16a50b718e4bad2239b9b2e6c0299896e32efac674b9f1c",
+          "container": "megasamples-test-postgres",
+          "container_id": "0842ff1d36914ebfd211988d567d05a58087adc5b9dc5cca86e65dc2680a67e0",
+          "volume_time_ns": 1795072317276891668,
+          "container_time_ns": 1795072317282324912,
+          "delta_ns": 5433244
+        },
+        {
+          "volume": "971a950dbc5700891d61fa20e41f1d51e5d03168658d4f26185b9fe222fb8307",
+          "container": "megasamples-test-postgres2",
+          "container_id": "be96e9c025edf61035eb8cd30a54d2758b13fc1d32fb878b16ebd5a8b320ce12",
+          "volume_time_ns": 1795072460795622995,
+          "container_time_ns": 1795072460798453448,
+          "delta_ns": 2830453
+        },
+        {
+          "volume": "571e55eb10ab07e227cea4ac4df715668c23154dae4efacc8057989cfd5d6f76",
+          "container": "megasamples-test-mysql",
+          "container_id": "1ecba520ad02ba238e51ea7640725244ef08cc34e683c12e9ed8ec6f6f4836df",
+          "volume_time_ns": 1795072530456843846,
+          "container_time_ns": 1795072530459769329,
+          "delta_ns": 2925483,
+          "volume_metadata_created_at": "2026-11-19 01:15:30.454763058 -0600 CST"
+        },
+        {
+          "volume": "63db602211279d1da49e4639da75f02ae2e426e27b03d383b0f4a94bb5b72e6d",
+          "container": "megasamples-test-mysql2",
+          "container_id": "d52ea53916bc53394b981dc62d176459a2b2864582e76db1ec6eaa21a63e78c3",
+          "volume_time_ns": 1795073080998886061,
+          "container_time_ns": 1795073081000611964,
+          "delta_ns": 1725903,
+          "volume_metadata_created_at": "2026-11-19 01:24:40.9889643 -0600 CST"
+        },
+        {
+          "volume": "1cc40863ee910f14c9b6c7e06a71fffb736773f7c59fdc488517ab36b1d74526",
+          "container": "megasamples-test-sqlite",
+          "container_id": "dcf48dd7c1a9d6159349ac7c9fd2d1d2448b530728a87bbfd6827201e0683ff7",
+          "volume_time_ns": 1795073167819201212,
+          "container_time_ns": 1795073167822433069,
+          "delta_ns": 3231857,
+          "volume_metadata_created_at": "2026-11-19 01:26:07.812366612 -0600 CST"
+        }
+      ],
+      "preexisting_volumes_unchanged": true,
+      "api_socket_stopped": true,
+      "initial_observer_status": "Failed",
+      "initial_observer_reason": "Exact whole-second timestamp equality rejected a 1.7 ms create pair crossing a second boundary.",
+      "observer_timeout_count": "Not retained by original observer before its assertion",
+      "own_api_forced_termination": "Not retained by original observer before its assertion",
+      "recovery": "Exact-ID cleanup from retained detailed events, without rerunning passed image tests"
+    },
+    "isolation": {
+      "status": "Passed",
+      "isolated": {
+        "containers": 12,
+        "unchanged": true,
+        "inventory": [
+          {
+            "name": "megasamples-adminer",
+            "id": "f094743e286e5475ed47db4a335b5ebfca7d923683699fa5bcb2cf2a0ab6561b",
+            "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+            "state": "running",
+            "started_at": "2026-11-17 12:26:40.760901753 -0600 CST"
+          },
+          {
+            "name": "megasamples-build-mysql",
+            "id": "adc7ac97d80975e5c7b8d670a2d962000815ac380c95621bab6c8e39430e07e2",
+            "image": "e3c5e24cdccea30c955dfa05b9b07fdc3b62323321c1e827a563e846d7552ea5",
+            "state": "running",
+            "started_at": "2026-11-17 11:35:53.185152816 -0600 CST"
+          },
+          {
+            "name": "megasamples-build-postgres",
+            "id": "764e08b53d08300dcfd369de7dc65257f531dc3be2b7850e37efc9b2695d0e59",
+            "image": "3cccc725163a95947178f4da5e9bf16add75cb286170ac5a2cd2f6513534955d",
+            "state": "running",
+            "started_at": "2026-11-17 02:43:06.427254006 -0600 CST"
+          },
+          {
+            "name": "megasamples-cloudbeaver",
+            "id": "9a8bc77db454ed2faa7ce0cd264479166cb8a761b766a46787ce7b2f48a4f6fb",
+            "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:45.435567666 -0600 CST"
+          },
+          {
+            "name": "megasamples-dbgate",
+            "id": "9019958eba77e79dfd88fa02426d84b2b64a0a188d5b88ef97b056a9a3301634",
+            "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:45.414450726 -0600 CST"
+          },
+          {
+            "name": "megasamples-landing",
+            "id": "dbc3b188a07d6c9920d1fc7011b43e5f6958f96e2d8abee622ce9860b3f9a76d",
+            "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+            "state": "running",
+            "started_at": "2026-11-17 12:27:07.694014647 -0600 CST"
+          },
+          {
+            "name": "megasamples-mysql",
+            "id": "9507a0bf975fc7833b2aa483f9449f5d95bdceab495782c6365145dc18f13e19",
+            "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:34.007118791 -0600 CST"
+          },
+          {
+            "name": "megasamples-phpmyadmin",
+            "id": "c5f6b29fc07e06613f9c145a536e723be2fe28cc98a6e7a1d0ea71fa6c53fe47",
+            "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+            "state": "running",
+            "started_at": "2026-11-17 20:51:13.181193732 -0600 CST"
+          },
+          {
+            "name": "megasamples-postgres",
+            "id": "3ac86c34b9eb04c1d0ece86a10884816ef79d9cd0b278ae8690e651f28951b1d",
+            "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:25.12361209 -0600 CST"
+          },
+          {
+            "name": "megasamples-sqlite",
+            "id": "4dbd24f800b97d2937a47eb0b2455d67b1256d8fd55431fe340af30fa4f52734",
+            "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+            "state": "running",
+            "started_at": "2026-11-18 05:27:15.807252083 -0600 CST"
+          },
+          {
+            "name": "megasamples-upgrade-browser",
+            "id": "c1ebd848a39b3ec7a104c80185ba5ea4f8ccae1b22a53885ca0f2d611b1e53e3",
+            "image": "32cfab2f09595b0266babd6ef76ee175ef024617f4077797bcecf235fe88eb68",
+            "state": "exited",
+            "started_at": "2026-11-16 12:58:52.851855644 -0600 CST"
+          },
+          {
+            "name": "megasamples-upgrade-tools",
+            "id": "ef64d26b142c7ecbe5b0ffa3b2e223a1501b8f0c7582e8ad7baf357db7183f14",
+            "image": "8ef0c198735c09bd0434807c462f61595e3b1b1fe4c7557d441a3e2c257b6740",
+            "state": "running",
+            "started_at": "2026-11-16 12:45:13.191511277 -0600 CST"
+          }
+        ]
+      },
+      "live": {
+        "containers": 9,
+        "services": 8,
+        "tools": 1,
+        "unchanged": true,
+        "inventory": [
+          {
+            "name": "megasamples-adminer",
+            "id": "7ef317c5e2574872c447d7b2a090d91669ec61f224415ece77bde7ba4e4e8343",
+            "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.977097776 -0600 CST"
+          },
+          {
+            "name": "megasamples-cloudbeaver",
+            "id": "2c08eebb7364571e658ef56d61769ff8e0d815a54954bc7a6c5c45259d859931",
+            "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.847600394 -0600 CST"
+          },
+          {
+            "name": "megasamples-dbgate",
+            "id": "3d219c0b086d05f86e972d6f107743e4140719c67ca5dee67c20be05bd14120e",
+            "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.787017348 -0600 CST"
+          },
+          {
+            "name": "megasamples-landing",
+            "id": "10dcf6333c62c4c636272bdbf591dfc6a7cce847d2ac0c979b39d274fb2a2e29",
+            "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.809734163 -0600 CST"
+          },
+          {
+            "name": "megasamples-live-upgrade-tools-20261118T133807Z",
+            "id": "47b022120bcd10ae47db9f8113cd4b9614570c7378f044fd81a4630473fb8149",
+            "image": "9cfca77f5b88e23f25e76429d70f0c72959ff13a6d933610c58ae74da67cd710",
+            "state": "running",
+            "started_at": "2026-11-18 07:51:54.959083715 -0600 CST"
+          },
+          {
+            "name": "megasamples-mysql",
+            "id": "a3f5c1204ee44b48dedbc5d3b7d9a8981aa5ffe04988019d58864b5157eac0d6",
+            "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:10.170768484 -0600 CST"
+          },
+          {
+            "name": "megasamples-phpmyadmin",
+            "id": "044fa1e2a6ee97811efc2d0165776330493c6ef66c33c1dcad9ee4da03f08128",
+            "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.93073862 -0600 CST"
+          },
+          {
+            "name": "megasamples-postgres",
+            "id": "ba1a9f7586814467210c0a5549f02f777dbd6d32af13f4176bb3e99c613316cc",
+            "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:13.76245404 -0600 CST"
+          },
+          {
+            "name": "megasamples-sqlite",
+            "id": "7adacf6eca19046bc2d8daa1a69271ac3bd112046eb41ffc143364e60b740a5e",
+            "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+            "state": "running",
+            "started_at": "2026-11-18 08:50:55.525102141 -0600 CST"
+          }
+        ]
+      },
+      "scratch": {
+        "projects": [],
+        "containers": 0,
+        "networks": 0,
+        "volumes": 0,
+        "restore_volumes": 0
+      },
+      "api_socket_stopped": true,
+      "preexisting_volumes_networks_images_unchanged": true,
+      "scope": "Default-store read-only exact nine-object inspection; no live exec/signals/service/network/volume changes"
+    },
+    "git_diff_check": {
+      "status": "Passed",
+      "command": "git diff --check 3bef1436"
+    }
+  },
+  "pr15_proof": {
+    "status": "Passed",
+    "read_at": "2026-11-19T07:48:58.976825+00:00",
+    "local_branch": "3bef1436852c3f63634455270b69fec02f35b7f3",
+    "remote_pr": {
+      "baseRefName": "main",
+      "headRefName": "docs/dl-086-live-run-corrections",
+      "headRefOid": "3bef1436852c3f63634455270b69fec02f35b7f3",
+      "isDraft": true,
+      "number": 15,
+      "state": "OPEN",
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/pull/15"
+    },
+    "ls_remote": "3bef1436852c3f63634455270b69fec02f35b7f3\trefs/heads/docs/dl-086-live-run-corrections"
+  },
+  "failures": [
+    {
+      "status": "Failed",
+      "expected": true,
+      "detail": "Pre-fix reds and planted defects are expected failures; greens pass without weakening the intended behavior checks."
+    },
+    {
+      "status": "Failed",
+      "expected": false,
+      "corrected": true,
+      "detail": "Initial B-2 reversal expected an arbitrary process to be classified by a helper-only scan from a cgroup string alone. First fix run: 2 failed, 72 passed. The separate test-only correction supplies real cgroup membership files; replay retained.",
+      "log": {
+        "path": "build/dl086-follow-up/b2-initial-fix-replay.log",
+        "summary": "2 failed, 72 passed in 1.23s"
+      }
+    },
+    {
+      "status": "Failed",
+      "expected": false,
+      "corrected": true,
+      "detail": "First reversal-driver execution selected a nonexistent archive test name. Corrected to test_retained_live_phase_a_layout before the successful complete 20-control execution."
+    },
+    {
+      "status": "Failed",
+      "expected": false,
+      "corrected": true,
+      "detail": "The inherited image cleanup observer required adjacent create events to have equal whole-second timestamps. A native 1.7 ms MySQL pair crossed a second boundary. Detailed nanosecond events, labels, baseline absence, volume creation metadata, and mount/reference checks supported exact-ID recovery; passed image checks were not rerun.",
+      "log": {
+        "path": "build/dl086-follow-up/image-checks.log",
+        "summary": "AssertionError"
+      }
+    },
+    {
+      "status": "Failed",
+      "expected": false,
+      "category": "Inspection hygiene",
+      "detail": "Two source excerpts displayed committed factory and test-fixture credential literals. No private credential was displayed; no credential value copied into reports."
+    }
+  ],
+  "not_run": {
+    "status": "Not run",
+    "items": [
+      "Live restoration or real-backup bootstrap",
+      "Restored-stack startup and native original-override",
+      "Engine-size archive rehearsal",
+      "Native observation of stopped-container ConmonPid reuse or a stale shared-helper PID file after down (B-2/B-5 are fixture proofs)",
+      "Forwarded sign-ins and TLS",
+      "Independent review, DataIntent acceptance or merge",
+      "Fresh software version/support verification; no new version or support claims"
+    ]
+  },
+  "inherited_native_limits": {
+    "status": "Unsupported",
+    "not_reexercised_here": true,
+    "source": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/docs/validation/live-upgrade-review-r12-2026-11-19.json",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "95ace2b023ed539c134c3145482533336a25113ceb0a9baf2f6efe2a44c080e8"
+    },
+    "items": [
+      "Reboot-crossing native case",
+      "Zero-consumer shared-helper native case",
+      "Live task in exited-container cgroup native case"
+    ]
+  },
+  "wildcard_native": {
+    "status": "Not run",
+    "detail": "Wildcard publication remains fixture-only."
+  },
+  "commands": {
+    "environment": "Every container shell sources the supplied isolated env.sh and asserts storage configuration, socket and project; scratch children then assert their own graph root before mutation.",
+    "tests": "podman exec -w <clone> megasamples-upgrade-tools .venv/bin/python -m pytest -q [named tests]",
+    "suite": "same command without named tests",
+    "repository_gate": "podman exec -w <clone> megasamples-upgrade-tools make check",
+    "images": "python3 build/dl086-follow-up/check-images.py, invoking the three engine test-image checks through its owned isolated API",
+    "native": "python3 docs/validation/rehearse-follow-up-scratch.py",
+    "controls": "podman exec ... .venv/bin/python docs/validation/rehearse-follow-up-reversals.py; rehearse-r9-reversals.py",
+    "isolation": "python3 build/dl086-follow-up/prove-isolation.py; default-store operation is read-only exact-nine inspect"
+  },
+  "sources": {
+    "README.md": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/README.md",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "d39814b601a20b713fcf7797d739dcb84d3788a0d3d24b25fcb6db0a4502bd45"
+    },
+    "docs/live-upgrade-evidence.md": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/docs/live-upgrade-evidence.md",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "d04075a049bdf7fcd06f6b86796326dfa8922295f1fcbda3a665f1e694b58fa5"
+    },
+    "docs/live-upgrade-runbook.md": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/docs/live-upgrade-runbook.md",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "1538ef64dea2688c3429bf8258e3bde0092808935851b5c4ec059a7d308af811"
+    },
+    "docs/validation/live-upgrade-review-r12-2026-11-19.json": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/docs/validation/live-upgrade-review-r12-2026-11-19.json",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "95ace2b023ed539c134c3145482533336a25113ceb0a9baf2f6efe2a44c080e8"
+    },
+    "docs/validation/live-upgrade.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/docs/validation/live-upgrade.py",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "1d96eb461e1c07927e4c88f1592cc8c380bdad6462210276c15d192ccc638349"
+    },
+    "docs/validation/quiescence.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/docs/validation/quiescence.py",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "b7fa82bb6ce9db420eb35810dac5c8d1ce860946a3ed7b36f82c6877d25c2eba"
+    },
+    "docs/validation/rehearse-follow-up-reversals.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/docs/validation/rehearse-follow-up-reversals.py",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "28af0b97f6464d5724956eff9539834d9edee9152fe6320f7e56aa9f8979357e"
+    },
+    "docs/validation/rehearse-follow-up-scratch.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/docs/validation/rehearse-follow-up-scratch.py",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "e341f81cb0381e2501645fd4ca17e87b666342beda2abc17d638b98f8288f1e0"
+    },
+    "docs/validation/rehearse-r9-reversals.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/docs/validation/rehearse-r9-reversals.py",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "42ce05e18bb0d96eb299cb9d0b99b36cf3344d8cdbda53bd8a779b00e3c6c8dc"
+    },
+    "engines/postgres/Dockerfile": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/engines/postgres/Dockerfile",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "8ecf627c19c88cf20ad65310d4d71fb76ce507f139cb33c9a65bf1c6ae701433"
+    },
+    "engines/postgres/init/00-users.sql": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/engines/postgres/init/00-users.sql",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "f5acdf1663a454d3deb934ab2902512496c6742ce0e0d80b1a63462c36655edc"
+    },
+    "engines/postgres/init/20-grants.sql": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/engines/postgres/init/20-grants.sql",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "bb48b4797d93b400a84bd96d70b5b12e38a05a9b6c48416fe769d56080ddbca1"
+    },
+    "tests/test_demo_documentation.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/tests/test_demo_documentation.py",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "2def04b32ae425f9491eaae0ff18cf8ff1180cae41e60a8d305557e5e6383601"
+    },
+    "tests/test_follow_up_runbook.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/tests/test_follow_up_runbook.py",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "c6efb4ef8428c6ef24521dd9d6987145b5d7717cdfd2b9a3d53a557d24b99de9"
+    },
+    "tests/test_live_upgrade.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/tests/test_live_upgrade.py",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "051e0ce53a58924ae421dbc73c60ecc85e6b442a00f0f0562570ec5363acdb02"
+    },
+    "tests/test_quiescence_down.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/tests/test_quiescence_down.py",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "2c840705d05aa3d3a54b334f40cc9bafbf2d7bfbbf1bb459a3318cdaac048b2f"
+    },
+    "tests/test_round12_documentation.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/tests/test_round12_documentation.py",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "8fd57b632b4f70d8520af00c277a5870defa6e4c4bd3f8f7d9ead8283e60a322"
+    },
+    "tests/test_round9_runbook.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/tests/test_round9_runbook.py",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "7d9adf4b76ff0ef383b006f8321d7d3fe6ac3c15a5f1400f18d1ff29023ea46b"
+    },
+    "tests/test_scratch_runbook.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/310dbdb52cfc7a03ac50f6ea41017118ba9b5156/tests/test_scratch_runbook.py",
+      "read_at": "2026-11-19T07:48:58.976825+00:00",
+      "sha256": "b6c9e3e7be17c2bf6ce1f9c59b2ddb167a2705ce2995b30c1ac1ac86b56ef0e3"
+    }
+  },
+  "evidence_sha256": {
+    "build/dl086-follow-up/api-images.log": "de149415d528b15057f9a6746cb9f5181d43e6dabc9b43ab4c258aa68b53c6ae",
+    "build/dl086-follow-up/b10-green.log": "d1978c1eb0cd573d5cf5e8ee23d605b25cb10239a5f893264096c00592fc2bbf",
+    "build/dl086-follow-up/b10-red.log": "00bc5879c16a92f219a3bf1f6cf621b908ad277b2e2e1e48dc7bedb311c90f85",
+    "build/dl086-follow-up/b11-green.log": "ea1e061c27e6d298c1d2880db333e777f6b97cea348da885a5aca09ce6f354a2",
+    "build/dl086-follow-up/b12-green.log": "54d62a0149f447ee2867b9e102287fade45e0a057ff3b969489678c98884e9ae",
+    "build/dl086-follow-up/b13-before.py": "174322864b8fd2ea0e5cba9e6c138fc144a25870ba3d80fb34eb7cefe3dd5257",
+    "build/dl086-follow-up/b13-green.log": "fbbc35bb1ab478b538645636d7853f3dd01414c79735dbde0bf937f77ca0a8fd",
+    "build/dl086-follow-up/b13-reversal.log": "fbbc35bb1ab478b538645636d7853f3dd01414c79735dbde0bf937f77ca0a8fd",
+    "build/dl086-follow-up/b14-green.log": "149e983c325e1215d8fe411fd58fb9c0fa38bc5dfa119c4a6a92d44ee61e3e10",
+    "build/dl086-follow-up/b14-red.log": "cdb1a028ba031dc8ff939a59235e3021a03271b419afff28bfafa5594c0c8c06",
+    "build/dl086-follow-up/b15-green.log": "a664ecd42da38f38b63fd9bd52e98f386662bf7685fed956a50ccfeb3d1d3f34",
+    "build/dl086-follow-up/b2-first-fix.py": "c774f8f92839d4ab9e7fb0b28ff57982ac11f059fdb51923b83672a4aa1ad0e5",
+    "build/dl086-follow-up/b2-green.log": "6afd7657a0a85c7995fe5a64dc35944c555a71ec2e5f03fea2c56307e8740719",
+    "build/dl086-follow-up/b2-initial-fix-replay.log": "12029046e6cf307444d5313e437427cfadd7d01df88ffe90bd08c04e98e83225",
+    "build/dl086-follow-up/b2-red.log": "76de54023b5e0b3232c401a1dc13b7d09709cd6c38c4f9ca2612607bb1a08bd0",
+    "build/dl086-follow-up/b2-residual-green.log": "ee09f6debd9f81709cd5af75a47e8b1c6ed9a94b8e82a9b34c00f597199e9c17",
+    "build/dl086-follow-up/b2-residual-red.log": "de1689f697e5b98c01f43becfebd4236295f0e80dc77328b240cf5c2546154cd",
+    "build/dl086-follow-up/b3-green.log": "4e076a5dd9af08ffbce09b682258c35b3b09da88ee729f6945af01689ea33212",
+    "build/dl086-follow-up/b3-native.log": "7c85046ec640be3a7403127d93572d27eeab8600202a4230bc9f65a89313ba9f",
+    "build/dl086-follow-up/b3-red.log": "d7dc310a878897ca883c52c7aa70910ea3b7e64670d9777750bd64a76a3c4d0e",
+    "build/dl086-follow-up/b4-b7-green.log": "943dd783f8d80033ee226551f801c6e0de929c357e188cd418776fabcfde389e",
+    "build/dl086-follow-up/b4-b7-red.log": "8ba8c7c50a65cdd8e5dcd839eb209bba8bd034ac3ecdf1b30f26dbb4a693e6ad",
+    "build/dl086-follow-up/b4-final-green.log": "89ce5277a1df44291e0a5a76ad701a436208ac37531c4ee47a23dd930e2a9e4b",
+    "build/dl086-follow-up/b5-green.log": "fb925f3c4cb2d094ca60ba43c9342b0d51ecc2d59563619c65c856f1c72f7902",
+    "build/dl086-follow-up/b5-red.log": "4b5e1c710a09924d1ed39574f4dfcc5c67fd6b3765100b54482e17f2836a65c2",
+    "build/dl086-follow-up/b6-green.log": "d5be81bbe49b412357ba177be7fae47b32ba70b563d2a01ec6ee15df362cc215",
+    "build/dl086-follow-up/b6-red.log": "5643e5ccedc6688cc44d6b99da46faa858ef8f6bb310556a8b627d019ee9c17c",
+    "build/dl086-follow-up/b7-green.log": "e47c2b4a07710a12b6743639e2c35f4a5824af3a30c584242088525bc541c563",
+    "build/dl086-follow-up/b8-green.log": "523a84f2ef8e8d424c4581c4546daf004eb6d784be20fa1808a5f49f56f70b61",
+    "build/dl086-follow-up/b9-green.log": "ef0e7ef49e71fa999842be0cb8d22ec1058d3a384ed5c0a2ec6efb8f434975ac",
+    "build/dl086-follow-up/b9-red.log": "bbab634f7636aaa2dd66c06d388a8d8e0ae40b0abe3d9df764d66e9c190f55ca",
+    "build/dl086-follow-up/check-images.py": "2fa5c815b34500f78f1a5ea528f8ba5850dd5788dffacacaa8c173c5896894c4",
+    "build/dl086-follow-up/evidence-green.log": "ee09f6debd9f81709cd5af75a47e8b1c6ed9a94b8e82a9b34c00f597199e9c17",
+    "build/dl086-follow-up/evidence-red.log": "ff0766b2e6e22cf4ab5777a05e050500db1a7008e19818e817bf2f154e5d12d7",
+    "build/dl086-follow-up/finalize-evidence.sh": "3ed03469bb778c644c0aa5da9e7b498040ce0b05294d0e19db5184c4c2d0f793",
+    "build/dl086-follow-up/image-checks.log": "98a095fed2a4eebd692d9c07ca9f57417257e866d8a68a4a8720f5bf91d1e3c7",
+    "build/dl086-follow-up/image-cleanup-recovery.log": "d34fa39aecf46be197bfd92b9ca1fbe29b50838f530754f4b8aa3292f835fd78",
+    "build/dl086-follow-up/image-cleanup.json": "13fd9d7c87f1a1d6b725b60c9170ec4a88d1b7708e69d575966b897c4198ce91",
+    "build/dl086-follow-up/image-create-events-detailed.jsonl": "6532afc97c9ad8e72221710bbd2e6bc10683abb8dca042611a952ba5f76014e8",
+    "build/dl086-follow-up/image-create-events.txt": "0a7eabe250a947ab3cc249629d50ff08c685cdbe4ebb77d3bcbcd2b58d270585",
+    "build/dl086-follow-up/image-mysql.log": "3f80f614fbf57b70816a57ab0aca8efcec44237eb5570bb06f243b3e8d2e5daa",
+    "build/dl086-follow-up/image-postgres.log": "38671a4a4254a1edffba6ab42dfad5ccbca9a364ec7acb950007459ede3d39d3",
+    "build/dl086-follow-up/image-sqlite.log": "6dd79da851d0862a6f8188bfd4bc9fe7a996ab84e4f097ec0a4f270f71d90b3c",
+    "build/dl086-follow-up/images-after.txt": "1150646c5fd0f854b25f84eccc58e0b99a171cfb2345284d0b0e03f519dc57ae",
+    "build/dl086-follow-up/images-before.txt": "1150646c5fd0f854b25f84eccc58e0b99a171cfb2345284d0b0e03f519dc57ae",
+    "build/dl086-follow-up/images.json": "7e51d4ca37f1676b4c7dd5117f5d3f75637a3dbfdc0f5f518efadc864700fa9e",
+    "build/dl086-follow-up/isolated-after.txt": "0aee86b42c5d01cd9805d7ccf1b9d70a7885cab2ccd6772da1c3545b3c18fb27",
+    "build/dl086-follow-up/isolated-before.txt": "0aee86b42c5d01cd9805d7ccf1b9d70a7885cab2ccd6772da1c3545b3c18fb27",
+    "build/dl086-follow-up/isolated-ps-after.txt": "250f236cf66a2a859887f82d08ba60e2b859d15925947fe1f80afe6c68bf468f",
+    "build/dl086-follow-up/isolation.json": "7585505ea4236b87781366ec1348a794e5597afe0247ae17684c68effd0ba844",
+    "build/dl086-follow-up/isolation.log": "680589c75dd23868974e10ceccca9d59597fd54446924339f0f0ea502bd57ec5",
+    "build/dl086-follow-up/live-after-nine.txt": "c7a95c36249d9534bb9e1fb43f99f7c7712773ef2c90f2e5563a41065ac0aa34",
+    "build/dl086-follow-up/live-before-nine.txt": "c7a95c36249d9534bb9e1fb43f99f7c7712773ef2c90f2e5563a41065ac0aa34",
+    "build/dl086-follow-up/make-check.log": "1b9878a32bfd3262920e93f60bc2954532c4f94cf41c99e144cf26c177685230",
+    "build/dl086-follow-up/native-scratch-dlraj0ea/backup/rollback-load-rehearsal-DpQUJhR0/cleanup.log": "f48b03de54a293079f94e798b35854280fdd178a479ed121f9aed5ca03041ff8",
+    "build/dl086-follow-up/native-scratch-dlraj0ea/backup/rollback-load-rehearsal-DpQUJhR0/containers.conf": "44683d1cbdf2a1e02171e8584f567c87cc196b86cd96bc527fffc36893a34277",
+    "build/dl086-follow-up/native-scratch-dlraj0ea/backup/rollback-load-rehearsal-DpQUJhR0/load.log": "6378aac0a13b70bd1297e6e9f8632f3d9ac244212147de557adb64b1b73222d5",
+    "build/dl086-follow-up/native-scratch-dlraj0ea/backup/rollback-load-rehearsal-DpQUJhR0/pause-pids.json": "c268de2fe22ffe207caf46d8a9691239f5d0a050466183d7d79c8dc257947174",
+    "build/dl086-follow-up/native-scratch-dlraj0ea/backup/rollback-load-rehearsal-DpQUJhR0/storage.conf": "7d842a68f886fbebd5172e3e3b346c1a7621c83e357a0ae2a978dbba2c56b12d",
+    "build/dl086-follow-up/native-scratch-dlraj0ea/backup/rollback-load-rehearsal-fJXWwxkG/cleanup.log": "f48b03de54a293079f94e798b35854280fdd178a479ed121f9aed5ca03041ff8",
+    "build/dl086-follow-up/native-scratch-dlraj0ea/backup/rollback-load-rehearsal-fJXWwxkG/containers.conf": "a210f622c5c1161d5448a75e6a6d83ff0a8b2f2285c564b1368906b38ac413bd",
+    "build/dl086-follow-up/native-scratch-dlraj0ea/backup/rollback-load-rehearsal-fJXWwxkG/load.log": "2860c67448ba5c6772cb24f7aa45eaf0bf696130a0a19a76f45841986fc5d271",
+    "build/dl086-follow-up/native-scratch-dlraj0ea/backup/rollback-load-rehearsal-fJXWwxkG/pause-pids.json": "dacef44466fe9dc65e68e4b22d76d62b2f24116e58f1e851d556a0aa97bc0c81",
+    "build/dl086-follow-up/native-scratch-dlraj0ea/backup/rollback-load-rehearsal-fJXWwxkG/storage.conf": "16a5a4eaf868207e7dee9f43c38c921e05a5ff335c1e642b3ca2871a5f2a0226",
+    "build/dl086-follow-up/native-scratch-dlraj0ea/receipt.json": "7c85046ec640be3a7403127d93572d27eeab8600202a4230bc9f65a89313ba9f",
+    "build/dl086-follow-up/networks-after.txt": "ebf40b5322dc3e7e1de8e35c283a1e70628b5b87dfe547abc65798ddff8e1418",
+    "build/dl086-follow-up/networks-before.txt": "ebf40b5322dc3e7e1de8e35c283a1e70628b5b87dfe547abc65798ddff8e1418",
+    "build/dl086-follow-up/pr15-final.json": "013354935bde4877ba75497b35952bf1b859256b262210486ad731b556b3f0c9",
+    "build/dl086-follow-up/pr15-ls-remote.txt": "36e281e630748c79c983337eb0fa1575a4b86ba370b2a991013e4e32b5747b91",
+    "build/dl086-follow-up/prove-isolation.py": "4e50cfbb6d50a6f61d63eb7dc9cb498f14bdd23dbae29ac3998f4783f5a25abb",
+    "build/dl086-follow-up/r9-reversals.log": "98dd5b22fa57f66403501322ec7489dd3c7f38688cfb97089ce5fc6d6b4eb16f",
+    "build/dl086-follow-up/recover-image-cleanup.py": "bca23f0cf07e97e3f1288ee0f180a28c94861e1eebcabd9253dba9978a6ea0ff",
+    "build/dl086-follow-up/report.py": "893f387953dba7bd828eea78a829b55e101e6df00ffd32bd16ee85a15dbb3188",
+    "build/dl086-follow-up/reversals-esgus_w3/0.log": "d95451d92895947bca034d739756e342582ff041598a32dbd1b41858e10dd486",
+    "build/dl086-follow-up/reversals-esgus_w3/1.log": "6ffaf68482476fe4465b1e23b86f9de0646280146951b7e24e4ec011316b5670",
+    "build/dl086-follow-up/reversals-esgus_w3/10.log": "2b64635768336ea33d38dfe5f2b1a57525641cf307caf8e2dc552b3af4f422d8",
+    "build/dl086-follow-up/reversals-esgus_w3/11.log": "1a7944341d1ca1ad92258b645b82b8cc394329be8895d7fa7af9bb6b69127fd3",
+    "build/dl086-follow-up/reversals-esgus_w3/12.log": "c6c90613b6edbeea8665147ebaa6f4b6573f7930727fc16b37d5693811356d6b",
+    "build/dl086-follow-up/reversals-esgus_w3/13.log": "20f1ef6fc95bfe6659e34d8e941617cbc0c2b8426a4975e1babb951298b34ead",
+    "build/dl086-follow-up/reversals-esgus_w3/14.log": "e68c929ecba58f6c34ec740c5f61f872ab69ce1ac7a0f7aa4d7e3cb8b2b258df",
+    "build/dl086-follow-up/reversals-esgus_w3/15.log": "48267d820c2aefe3d7d6a4a651e4ff2b32d2b406f77a9a6f4bf8004eee4cd56d",
+    "build/dl086-follow-up/reversals-esgus_w3/16.log": "3fc9b8d0226699ae997f5bd8c6509f40773f910a97e179664d596cd858f4a2e2",
+    "build/dl086-follow-up/reversals-esgus_w3/17.log": "06a6f2bf5a7bfa3663cd82a54d1d054bb8ea001bd1ceb31f604f518f2ad123e2",
+    "build/dl086-follow-up/reversals-esgus_w3/18.log": "8f46bf8366e7e33b5e65490ffcdcb86d38613a99c8726e9902a4db0723eb6144",
+    "build/dl086-follow-up/reversals-esgus_w3/19.log": "bea9d11fd745b3e56ec29c4fb9b2af3929e8741305c6cc9ed786566deb640dc4",
+    "build/dl086-follow-up/reversals-esgus_w3/2.log": "f9157a4880cb4e050d110074d5d52d483f3d786f9ca2da2d861a023de5545df1",
+    "build/dl086-follow-up/reversals-esgus_w3/20.log": "9e5144aaf84863fa875e00bd3aca65436e9cd480d3c58e8b0ecbc344c5c3ac46",
+    "build/dl086-follow-up/reversals-esgus_w3/3.log": "92291d3bba81bfefadcb31f4b6458038db5803c6e3fd5ad2627d53067ea84aed",
+    "build/dl086-follow-up/reversals-esgus_w3/4.log": "5b8b0a14f6b84b214fa0903d6425571167afd51eefed00354cc885a4c9b76add",
+    "build/dl086-follow-up/reversals-esgus_w3/5.log": "35845f8994e1e5ee378fe47950634a9b0bbcbc63bb434ec4ff767c7b8fbf6fbc",
+    "build/dl086-follow-up/reversals-esgus_w3/6.log": "56ccacda03d6d509361528dacc5f394befa35e94c6521170b59012bd301b45d0",
+    "build/dl086-follow-up/reversals-esgus_w3/7.log": "a553f48c49d0cb57d71d868806384f02ef17f48104ce217dc427cdc6a3a20935",
+    "build/dl086-follow-up/reversals-esgus_w3/8.log": "8f07f556e7541c8d88b7f196b07c12e089b43c7c6a3f8f027b0b8e45dfbdcf81",
+    "build/dl086-follow-up/reversals-esgus_w3/9.log": "263fc1fdb6d19b407a69cd884e6de48edf7b5353bbe35ae7c33c62e952a27ad7",
+    "build/dl086-follow-up/reversals-esgus_w3/receipt.json": "351f56f32e9179ef7920de0ca66f85eaefb7881d8ce4d08ffc95fa9dd121189e",
+    "build/dl086-follow-up/reversals-final.log": "d2576620aa15ad659ceaf43a3a69b76c16506eae8885315ae05ac8deaafc1fe5",
+    "build/dl086-follow-up/reversals.log": "da6818c39d2b51e5ce2de95dffeac81302ba6bb96793c399cec86b5c94b74e5f",
+    "build/dl086-follow-up/sqlite-process-progress.log": "794191009c3e87fdd4f82b2b5666cc4917a676a0aa464d76f2c992c1be7780c6",
+    "build/dl086-follow-up/suite-final.log": "b0975a7bcb946a13f727cd640254a6c338eba97a5a07c9aaae965040e4a55bcb",
+    "build/dl086-follow-up/suite.log": "86000e9014beec1b2734a146dabc54944bb5c66433040a0b6b185c79816f96a3",
+    "build/dl086-follow-up/test_b2_initial.py": "fce9ab94192d262e04a707df65a73bd0e9859088f0d117c6a284559c2f9dd63c",
+    "build/dl086-follow-up/tools-environment.log": "bb18e8434b05ae143fd6efedb53e7db7272bded57b0e8e936e37ac83fea68307",
+    "build/dl086-follow-up/tools.sh": "868e39787e375f526b34f9066cb21455b7bd9b72f01afdbdf7092b366cb31ae0",
+    "build/dl086-follow-up/volumes-after.txt": "1de7429420c64d008b5fd6576c181e74a36d289e8957377c1a02c4dc0b6d0e6d",
+    "build/dl086-follow-up/volumes-before.txt": "1de7429420c64d008b5fd6576c181e74a36d289e8957377c1a02c4dc0b6d0e6d"
+  }
+}

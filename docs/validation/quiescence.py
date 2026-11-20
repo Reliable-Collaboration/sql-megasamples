@@ -12,6 +12,7 @@ import fcntl
 import ipaddress
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import stat
@@ -256,8 +257,8 @@ def names_container(path, identity):
 
 
 def merge_endpoints(*groups):
-    # Keep HostIp and its family after container removal; port-only historical
-    # evidence cannot establish positive association and must hold.
+    # Keep HostIp and its family after container removal. Port-only evidence
+    # cannot establish association; older-schema history uses birth identities only.
     endpoints = set()
     for group in groups:
         for endpoint in group:
@@ -293,12 +294,12 @@ def down_evidence(row, proc, cgroup_root, scan_cache=None):
             if found != identity or int(pid) != 0:
                 raise ValueError('container identity changed')
             evidence.update(conmon=int(conmon), mode=mode)
-            if int(conmon):
+            if int(conmon) and not (row.get('conmon_absent') and int(conmon) == row.get('conmon')):
                 try:
                     evidence['conmon_start'] = start_time(proc/conmon)
                 except OSError as error:
                     if isinstance(error, ProcessLookupError) or (isinstance(error, FileNotFoundError) and not (proc/conmon).exists()):
-                        evidence['conmon'] = 0
+                        evidence['conmon_absent'] = True
                     else:
                         holds.append(dict(reason='down helper association unreadable', error=type(error).__name__))
             ports = json.loads(pod('inspect', '-f', '{{json .HostConfig.PortBindings}}', identity))
@@ -342,7 +343,7 @@ def down_helpers(rows, proc):
     """Positive association only; arguments and environments are never inspected."""
     refusals, holds = [], []
     ids = {r['id'] for r in rows if r.get('id')}
-    conmons = {r['conmon']:r.get('conmon_start') for r in rows if r.get('conmon')}
+    conmons = {r['conmon']:r.get('conmon_start') for r in rows if r.get('conmon') and not r.get('conmon_absent')}
     ports = merge_endpoints(*(r.get('ports', []) for r in rows))
     sockets = set()
     if ports:
@@ -531,7 +532,10 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
         if bridge:
             try:
                 pidfile = Path(saved['store']['run'])/'networks/rootless-netns/rootless-netns-conn.pid'
+                pid = None
                 pid = pidfile.read_text().strip()
+                if not re.fullmatch(r'[1-9][0-9]*', pid):
+                    raise ValueError('store helper PID must be a positive decimal')
                 shared = process_identity(proc/pid)
                 if not helper_names(shared['comm']) or not any('/rootless-netns-' in g for g in shared['cgroups']):
                     raise ValueError('store PID does not identify a rootless helper')
@@ -544,10 +548,10 @@ def capture(snapshot, output, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/c
                 else:
                     saved['shared_helper_absence'] = dict(pidfile=str(pidfile), reason='store helper vanished during capture')
             except FileNotFoundError as error:
-                if not down_allowed or pidfile.exists():
+                if not down_allowed or (pidfile.exists() and (pid is None or (proc/pid).exists())):
                     hold('shared helper association unresolved; return to deciders', error=type(error).__name__)
                 else:
-                    saved['shared_helper_absence'] = dict(pidfile=str(pidfile), reason='absent store PID file; no helper recorded')
+                    saved['shared_helper_absence'] = dict(pidfile=str(pidfile), reason='absent store PID file or process; no helper recorded')
             except (OSError, ValueError) as error:
                 hold('shared helper association unresolved; return to deciders', error=type(error).__name__)
         if saved['down_evidence']:
@@ -847,9 +851,11 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
                 fresh['ports'] = merge_endpoints(fresh['ports'], row.get('ports', []))
                 if fresh.get('conmon') == row.get('conmon'):
                     fresh['conmon_start'] = row.get('conmon_start')
+                    fresh['conmon_absent'] = row.get('conmon_absent', False)
                 if not fresh.get('conmon'):
                     fresh['conmon'] = row.get('conmon',0)
                     fresh['conmon_start'] = row.get('conmon_start')
+                    fresh['conmon_absent'] = row.get('conmon_absent', False)
                 evidence.append(fresh)
             refusals, holds = down_helpers(evidence, proc)
             report['refusals'] += refusals; report['holds'] += holds
@@ -864,8 +870,11 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
     shared = saved['shared_helper']
     if not shared and saved.get('shared_helper_absence') and not _identity_only:
         pidfile = Path(saved['shared_helper_absence']['pidfile'])
+        pid = None
         try:
             pid = pidfile.read_text().strip()
+            if not re.fullmatch(r'[1-9][0-9]*', pid):
+                raise ValueError('store helper PID must be a positive decimal')
             shared = process_identity(proc/pid)
             if not helper_names(shared['comm']) or not any('/rootless-netns-' in g for g in shared['cgroups']):
                 raise ValueError('store helper association unresolved')
@@ -875,7 +884,7 @@ def verify(capture_path, *, proc=Path('/proc'), cgroup_root=Path('/sys/fs/cgroup
         except ProcessLookupError:
             pass  # A stale PID file does not keep a reaped helper alive.
         except FileNotFoundError:
-            if pidfile.exists(): hold('required association unresolved')
+            if pidfile.exists() and (pid is None or (proc/pid).exists()): hold('required association unresolved')
         except (OSError, ValueError):
             hold('required association unresolved')
     for row in saved['processes'] + ([shared] if shared else []):
@@ -994,7 +1003,7 @@ def verify_all(capture_path, history_dir, **kwargs):
         # Captures are written only at the retained root or directly in an
         # attempt. Cold data preserves subordinate ownership; never traverse it.
         # Explicit iteration propagates genuine capture-inventory errors.
-        legacy = re.compile(r'^(stop-capture|clean-stop-capture|rollback-stop-capture|capture-retry|populate-capture)-[0-9]{8}T[0-9]+Z?\.json$')
+        legacy_filename = re.compile(r'^(stop-capture|clean-stop-capture|rollback-stop-capture|capture-retry|populate-capture)-[0-9]{8}T[0-9]+Z?\.json$')
         entries = list(history_dir.iterdir())
         directories = [history_dir] + [p for p in entries if p.name.startswith('rollback-')
             and not p.name.startswith(('rollback-abort-', 'rollback-load-rehearsal-')) and stat.S_ISDIR(p.stat().st_mode)]
@@ -1002,7 +1011,7 @@ def verify_all(capture_path, history_dir, **kwargs):
             for path in (entries if directory == history_dir else directory.iterdir()):
                 if path.name.endswith('.quiescence-reference'):
                     paths.add(Path(json.loads(path.read_text())['path']))
-                elif legacy.fullmatch(path.name):
+                elif legacy_filename.fullmatch(path.name):
                     paths.add(path)
         for path in sorted(paths):
             if path.resolve() == capture_path.resolve():
@@ -1010,7 +1019,9 @@ def verify_all(capture_path, history_dir, **kwargs):
             saved = json.loads(path.read_text())
             applicable = historical_applicability(saved, current, kwargs.get('proc', Path('/proc')), kwargs.get('cgroup_root', Path('/sys/fs/cgroup')))
             legacy = applicable and saved.get('schema') == 1
-            entry = dict(path=str(path), applicable=applicable and not legacy)
+            entry = dict(path=str(path), applicable=applicable)
+            if applicable:
+                entry['verification'] = 'identity-only' if legacy else 'full'
             if legacy:
                 entry.update(reason='older capture schema; unverifiable history neither passes nor blocks',
                              survivor_obligations='process and cgroup identities enforced')

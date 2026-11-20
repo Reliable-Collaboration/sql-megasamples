@@ -561,7 +561,8 @@ python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
   mkdir -m 700 "$XDG_RUNTIME_DIR" "$SCRATCH_DIR/tmp" "$SCRATCH_DIR/run"
   test "$(podman info --format '{{.Store.GraphRoot}}')" = "$SCRATCH_DIR/graph"
   python3 "$UPGRADE_HELPER" load-images "$BACKUP_DIR" > "$SCRATCH_DIR/load.log" 2>&1
-  test -z "$(podman ps -aq)"
+  SCRATCH_CONTAINERS=$(podman ps -aq)
+  test -z "$SCRATCH_CONTAINERS"
   # Only this freshly created scratch store: drop loaded duplicates AND its pause process.
   # Keep logs/configuration under BACKUP_DIR. Never run this in the default/isolated store.
   test "$CONTAINERS_STORAGE_CONF" = "$SCRATCH_DIR/storage.conf"
@@ -705,6 +706,10 @@ copy and use the early abort below. For `preparation-workspace-start`, retry onl
 or use the same early abort. Both routes reuse the exact existing container;
 missing/replaced IDs require coordinator recovery. A successful restart clears
 the workspace phase. No workspace phase authorizes cold copying engine data.
+For a failed load rehearsal, use the [manual cleanup](#failed-rehearsal-store-manual-cleanup)
+before retrying. A rerun without cleanup loads a third image set while the space gate
+budgets two; if cleanup cannot finish, retain the store and rerun the space gate
+with that additional retained copy included in `EXTRA_RESERVE_BYTES` before allocating another.
 Rerun **only that failed gate**, then continue at its next command. A failed metadata check can
 be repaired only from the same verified bundle; a port refusal requires the unrelated listener's
 owner to release it or a separately reviewed port configuration. Do not kill it or improvise a
@@ -716,6 +721,62 @@ refuses; record its path/digest and move only that damaged file to a unique `.pa
 same private backup directory before rerunning this gate. Never replace a verified archive. Never overwrite original configuration/image mappings,
 rerun the preparation capture, or reinterpret the upgraded HEAD as the rollback source.
 
+### Failed rehearsal store: manual cleanup
+
+Use a fresh Bash shell with the same initial container environment as the
+rehearsal (the isolated environment when rehearsing in the upgrade clone).
+Set `BACKUP_DIR` to the retained backup and `SCRATCH_DIR` to the exact owned failed
+`rollback-load-rehearsal-*` directory immediately under it. Keep its load log.
+This block checks the path, actual graph root and successful empty container
+listing before removing images. If any check fails, retain the store and ask the
+coordinator to investigate. Once runtime enumeration is readable, run:
+
+```sh
+# BEGIN failed scratch cleanup
+(
+  set -eu
+  python3 - "$BACKUP_DIR" "$SCRATCH_DIR" <<'PY_SCRATCH_PATH'
+import pathlib, sys
+backup, scratch = map(lambda value: pathlib.Path(value).resolve(), sys.argv[1:])
+if scratch.parent != backup or not scratch.name.startswith('rollback-load-rehearsal-'):
+    raise SystemExit('HOLD: select the exact owned failed rehearsal directory under BACKUP_DIR')
+PY_SCRATCH_PATH
+  test -f "$SCRATCH_DIR/storage.conf"
+  test -f "$SCRATCH_DIR/containers.conf"
+  export CONTAINERS_STORAGE_CONF="$SCRATCH_DIR/storage.conf" CONTAINERS_CONF="$SCRATCH_DIR/containers.conf"
+  export XDG_RUNTIME_DIR="$SCRATCH_DIR/xdg"
+  unset CONTAINERS_CONF_OVERRIDE
+  test "$(podman info --format '{{.Store.GraphRoot}}')" = "$SCRATCH_DIR/graph"
+  SCRATCH_CONTAINERS=$(podman ps -aq)
+  test -z "$SCRATCH_CONTAINERS"
+  python3 - "$SCRATCH_DIR" <<'PY_PAUSE_CAPTURE'
+import json, os, pathlib, sys
+base = pathlib.Path(sys.argv[1])
+pids = [int((pathlib.Path(root) / 'pause.pid').read_text().strip())
+        for name in ('xdg','tmp','run')
+        for root, _, files in os.walk(base / name, onerror=lambda error: (_ for _ in ()).throw(error))
+        if 'pause.pid' in files]
+(base / 'pause-pids.json').write_text(json.dumps(pids))
+PY_PAUSE_CAPTURE
+  podman image rm --all --force >> "$SCRATCH_DIR/cleanup.log" 2>&1
+  podman system migrate >> "$SCRATCH_DIR/cleanup.log" 2>&1
+  # No Podman invocation after migrate: it could create a new pause process.
+  python3 - "$SCRATCH_DIR" <<'PY_PAUSE_CHECK'
+import json, pathlib, sys
+base = pathlib.Path(sys.argv[1])
+for pid in json.loads((base / 'pause-pids.json').read_text()):
+    status = pathlib.Path(f'/proc/{pid}/stat')
+    if status.exists() and not status.read_text().split(') ', 1)[1].startswith('Z '):
+        raise SystemExit('STOP: scratch pause process survived cleanup')
+PY_PAUSE_CHECK
+)
+# END failed scratch cleanup
+```
+
+Keep configuration, logs and empty store metadata. Never substitute the default
+or isolated stack's store, use `system reset`, delete trees blindly, or signal a
+bare PID. Failure here is a coordinator hold, not permission to bypass the checks.
+
 ### Partial stop: rerun the guarded stop on the same capture
 
 If the console or SQLite stop fails, another engine may still run. Neither the
@@ -726,6 +787,7 @@ with a snapshot of the partly stopped project. This route also applies to a
 partial rollback stop. All captures remain required at the later copy gate.
 
 ```sh
+set -eu
 # BEGIN partial stop retry
 case "$TEARDOWN_PHASE" in stop|rollback-stop) :;; *) exit 2;; esac
 save_context
@@ -779,6 +841,7 @@ with a fresh snapshot and original-stop gate. The 300-second bounds are maintena
 choices, not measured guarantees.
 
 ```sh
+set -eu
 # BEGIN original clean stop
 : "${RECOVER_ENGINE:?Set the diagnosed original engine}"
 case "$RECOVER_ENGINE" in
@@ -835,7 +898,8 @@ data. Reuse is judged per process/cgroup row: that superseded identity cannot
 establish continuity, while other rows from that capture remain required.
 New captures use schema 2. An older-schema current capture HOLDs: take a fresh
 capture through the applicable route. Older-schema historical endpoint evidence
-neither passes nor blocks the current attempt. The report names that limit and
+neither passes nor blocks the current attempt; the
+older capture's source and holder checks are not repeated. The report names that limit and
 still enforces independently recorded process and cgroup birth identities,
 including down-state conmon and cgroup records; a survivor refuses and unreadable
 required identity evidence holds. Never overwrite the older record.
@@ -868,6 +932,7 @@ their restart policy before completing. Original containers/volumes must still e
 Restore original source/configuration and start only the originally running containers:
 
 ```sh
+set -eu
 # BEGIN abort preparation
 # Abort before password rotation ONLY; original containers/volumes must still exist.
 . "$BACKUP_DIR/resume-context.bash"
@@ -982,6 +1047,7 @@ are isolated rehearsal checks; do not run them as live verification.
 The files in `containers.json` include environment credentials: restrict access, do not paste them into tickets. Take logical backups while quiesced, then cold-copy each data directory. Rollback uses the cold copies with the original engine images; never open a new-version data directory with an old binary.
 
 ```sh
+set -eu
 # BACKUP_DIR and UPGRADE_ID are the values from the preparation shell.
 PREPARATION_STAGE=final-backups
 save_context
@@ -1030,7 +1096,10 @@ AUTOMATION_ID=$(date -u +%Y%m%dT%H%M%S%N)
 # Listing failure must not become an empty successful loop.
 AUTOMATION_IDS=$(podman ps -aq --no-trunc --filter label=com.docker.compose.project=sql-megasamples)
 # A successful empty listing needs no policy updates on the evidenced down route.
-test -n "$AUTOMATION_IDS" || test "${ROLLBACK_ROUTE:-}" = down-capture
+if test -z "$AUTOMATION_IDS" && test "${ROLLBACK_ROUTE:-}" != down-capture; then
+  echo 'HOLD: empty project listing; in a fresh rollback shell rerun rollback route dispatch first, then input checks and this pause. Original stop requires existing containers.'
+  exit 2
+fi
 for id in $AUTOMATION_IDS; do
   podman inspect -f '{{.Id}}|{{.Name}}|{{.HostConfig.RestartPolicy.Name}}' "$id" \
     >> "$EVIDENCE_DIR/restart-policy-$AUTOMATION_ID.txt"
@@ -1684,6 +1753,11 @@ checked; earlier applicable captures and readable holders remain required.
 All-down `original-stop` still HOLDs; restart originals, then capture
 across their next stop before any cold copy.
 
+On the down route, a store helper file must name a positive decimal PID. A
+malformed PID file holds for investigation; a valid PID with no /proc entry is absent on the down route.
+A present but unreadable process still holds. A helper appearing later is checked
+for association and surviving consumers at verification.
+
 For down containers, positively associated `conmon`/helpers refuse: full container
 IDs in cgroups or readable cwd/descriptor paths, Podman's conmon record paired
 with the captured process start time, the store
@@ -1725,6 +1799,7 @@ datasets; the pre-upgrade cold copies cannot contain those writes. Do not use `m
 rollback: it restores the new image contents, including the added datasets.
 
 ```sh
+set -eu
 # BEGIN rollback route dispatch
 case "${TEARDOWN_PHASE:-}" in
   originals-restarting|original-clean-starting|originals-restarted|rollback-starting|rollback-restored)
@@ -1824,9 +1899,12 @@ Run the guarded “pause restart automation” block under
 [Final backups and cutover](#final-backups-and-cutover) in this same maintenance
 shell, after dispatch/input checks and before capture or stop. A successful empty
 listing is allowed on `down-capture`; a listing error or failed policy update
-HOLDs. Continue below only after that block succeeds.
+HOLDs. In a fresh shell, rerun rollback route dispatch and input verification
+first: the saved context does not carry `ROLLBACK_ROUTE`. Continue below only
+after the pause block succeeds.
 
 ```sh
+set -eu
 # Stop candidates BEFORE down can remove evidence. Keep every failed candidate volume.
 : "${TEARDOWN_ATTEMPT:?Bootstrap a new attempt or source its saved context}"
 TEARDOWN_PHASE=rollback-stop
@@ -1935,6 +2013,7 @@ the extraction parent stays private. Check console bind-tree readability before 
 For exact preservation of application writes, create four **new** named rollback volumes (the three engine data directories and SQLite shared files), populate them from the cold copies while no database has them open, and attach them to the original image IDs. The backup loop resolves the actual source of each stopped data mount and copies it without changing ownership. Both backup and restore run `cp -a` inside the native rootless user namespace ([unshare reference](https://docs.podman.io/en/latest/markdown/podman-unshare.1.html), read 2026-11-16 21:05 UTC); this command is unavailable through a remote Podman client. The cold files may require `podman unshare` to inspect because their subordinate UID/GID ownership is retained. Use a Compose override, leaving original volumes untouched:
 
 ```sh
+set -eu
 # BEGIN rollback population
 # Save BEFORE creating or filling any volume. A partial copy resumes here only.
 TEARDOWN_PHASE=rollback-populate
@@ -2048,15 +2127,33 @@ if test "$PROCESS_RC" != 0; then
 fi
 # END pre-up process gate
 set --
-RESTORE_CLOUDBEAVER=0
 while IFS= read -r service; do
-  if test "$service" = cloudbeaver; then RESTORE_CLOUDBEAVER=1; else set -- "$@" "$service"; fi
+  case "$service" in postgres|mysql|sqlite) set -- "$@" "$service";; esac
 done < "$BACKUP_DIR/original-running-services.txt"
 # BEGIN original start boundary
 # After this checkpoint, a failure is a partial-original-restart HOLD, not pre-up.
 TEARDOWN_PHASE=rollback-starting
 save_context
 # END original start boundary
+if test "$#" -gt 0; then
+  docker compose -p sql-megasamples -f compose.yaml -f "$ATTEMPT_DIR/rollback.override.yaml" \
+    -f "$ATTEMPT_DIR/rollback-consoles.override.json" up -d --no-deps --wait "$@"
+fi
+for engine in postgres mysql sqlite; do
+  case " $* " in
+    *" $engine "*) python3 "$UPGRADE_HELPER" wait-healthy "$engine" --timeout 300 ;;
+  esac
+done
+# Only after SQLite has republished /shared may its consoles start.
+set --
+RESTORE_CLOUDBEAVER=0
+while IFS= read -r service; do
+  case "$service" in
+    postgres|mysql|sqlite) :;;
+    cloudbeaver) RESTORE_CLOUDBEAVER=1;;
+    *) set -- "$@" "$service";;
+  esac
+done < "$BACKUP_DIR/original-running-services.txt"
 if test "$#" -gt 0; then
   docker compose -p sql-megasamples -f compose.yaml -f "$ATTEMPT_DIR/rollback.override.yaml" \
     -f "$ATTEMPT_DIR/rollback-consoles.override.json" up -d --no-deps --wait "$@"
@@ -2148,6 +2245,7 @@ or unreadable copy evidence does not bar this route. Changed original data must
 be resolved independently; never start an old binary on candidate data.
 
 ```sh
+set -eu
 # BEGIN unchanged volume recovery
 : "${ORIGINAL_CAPTURE:?Set retained original pre-upgrade data capture}"
 RECOVERY_ID=$(date -u +%Y%m%dT%H%M%S%N)

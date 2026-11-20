@@ -1,0 +1,1314 @@
+{
+  "at": "2026-11-19T08:49:54.963138+00:00",
+  "checked_code_commit": "9d945abfdcf013ee7ce92eebb3b358822c90df58",
+  "previous_reviewed_head": "9149ff939cf5e64420650cfc38fe1bda752622d9",
+  "base_commit": "3bef1436852c3f63634455270b69fec02f35b7f3",
+  "scope": "PR16 review round 1, C1 through C5; authoring-session checks only. No live mutation, review claim, acceptance or merge.",
+  "source_notes": "PR16 round 1 notes 1 through 9 and companion notes 1 through 3; original rounds 9, 10, 12, 13 and 14 backlog notes.",
+  "items": {
+    "C1": {
+      "test_only_commits": [
+        "0980e6303651dadc89ce55f19e94a2d88ea151e4",
+        "c2af1c47a1f2c8d9e2ebbbb99278b476db6b357f"
+      ],
+      "fix_commits": [
+        "bad1d649e5f7d867f186222ffd0a30ab74a240b0",
+        "9d945abfdcf013ee7ce92eebb3b358822c90df58"
+      ],
+      "red": {
+        "status": "Failed",
+        "path": "build/dl086-review-r1/c1-red-corrected.log",
+        "summary": "16 failed, 3 passed in 2.33s",
+        "expected": true
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-review-r1/c1-green.log",
+        "summary": "23 passed in 0.94s"
+      },
+      "change": "Own strict entry in all seven destructive paste blocks; complete manual block under plain Bash at every guard failure; class guard and strictness-removal checks.",
+      "planted_defect_controls": [
+        {
+          "control": "C1 strict entry block 2",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/0.log"
+        },
+        {
+          "control": "C1 strict entry block 3",
+          "status": "Passed",
+          "failures": 12,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/1.log"
+        },
+        {
+          "control": "C1 strict entry block 7",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/2.log"
+        },
+        {
+          "control": "C1 strict entry block 8",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/3.log"
+        },
+        {
+          "control": "C1 strict entry block 17",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/4.log"
+        },
+        {
+          "control": "C1 strict entry block 19",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/5.log"
+        },
+        {
+          "control": "C1 strict entry block 20",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/6.log"
+        }
+      ],
+      "strict_entry_note": "The bootstrap already had a strict entry. A redundant added copy was removed; final controls remove each sole strict entry. The final documentation checks pass."
+    },
+    "C2": {
+      "test_only_commits": [
+        "d157e601f687e1dee26490e2d202bfa3c574cc53",
+        "128ea3d459bf8e26489547b57227097e6173e8f7"
+      ],
+      "fix_commits": [
+        "0ea5b8f23902b481832006c7d8b759a1cd680a25"
+      ],
+      "red": {
+        "status": "Failed",
+        "path": "build/dl086-review-r1/c2-red.log",
+        "summary": "1 failed in 0.64s",
+        "expected": true
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-review-r1/c2-green.log",
+        "summary": "1 passed in 0.04s"
+      },
+      "change": "Source rounds and notes without names; whole-file check for files changed by the follow-up from the immutable base. Inherited dataset provenance remains outside this PR.",
+      "planted_defect_controls": [
+        {
+          "control": "C2 original named attribution",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/7.log"
+        }
+      ],
+      "scoped_reversal": {
+        "status": "Failed",
+        "path": "build/dl086-review-r1/c2-red-scoped-reversal.log",
+        "summary": "1 failed in 0.04s",
+        "expected": true
+      },
+      "sequence_note": "The initial check also matched inherited dataset provenance; the separate scope correction followed the receipt edit. The original receipt is red under the corrected check. History remains unchanged."
+    },
+    "C3": {
+      "test_only_commits": [
+        "af06f80c478cbeefe757fe1cc2ae4553eb691686"
+      ],
+      "fix_commits": [
+        "7a26818cca819a958101655638af8d69b074ced6",
+        "5b1f8ec8aca8af425303d1fcff4bb302c801a5d3"
+      ],
+      "red": {
+        "status": "Failed",
+        "path": "build/dl086-review-r1/c3-red.log",
+        "summary": "12 failed, 6 passed in 0.54s",
+        "expected": true
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-review-r1/c3-green-final.log",
+        "summary": "100 passed, 2 deselected in 1.24s"
+      },
+      "change": "Positive decimal PID before missing-process absence at capture and verification; malformed rows hold, valid absence passes, unreadable existing process holds.",
+      "planted_defect_controls": [
+        {
+          "control": "C3 missing capture PID validation",
+          "status": "Passed",
+          "failures": 6,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/8.log"
+        },
+        {
+          "control": "C3 missing verify PID validation",
+          "status": "Passed",
+          "failures": 6,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/9.log"
+        }
+      ]
+    },
+    "C4": {
+      "test_only_commits": [
+        "325df4baa9d0569644b90fe56a7acc3ff678e160",
+        "042136177a689702b0afba2595269514757555a6",
+        "6a3cb6dbfdad2dfe3a0e54f095befe5005f3bd11"
+      ],
+      "fix_commits": [
+        "12cda1f734256963c866933ad82823e510e8abcb"
+      ],
+      "red": {
+        "status": "Failed",
+        "path": "build/dl086-review-r1/c4-red-corrected.log",
+        "summary": "2 failed in 0.25s",
+        "expected": true
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-review-r1/c4-green-final.log",
+        "summary": "102 passed in 1.20s"
+      },
+      "change": "Apply recorded absence before reused PID birth evidence, retaining independent cgroup and holder refusals.",
+      "planted_defect_controls": [
+        {
+          "control": "C4 birth read before known absence",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/10.log"
+        },
+        {
+          "control": "C4 lost cgroup refusal",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/11.log"
+        },
+        {
+          "control": "C4 lost source holders",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/12.log"
+        }
+      ],
+      "actual_stat_read_reversal": {
+        "status": "Failed",
+        "path": "build/dl086-review-r1/c4-stat-red-reversal.log",
+        "summary": "2 failed in 0.24s",
+        "expected": true
+      },
+      "actual_stat_read_green": {
+        "status": "Passed",
+        "path": "build/dl086-review-r1/c4-stat-green.log",
+        "summary": "2 passed in 0.09s"
+      }
+    },
+    "C5": {
+      "test_only_commits": [
+        "2207d6d6786e9c5d89f6e3e0a0d70ec41a2bd087",
+        "ec997b79aef126c75f62668a5b5e260a8157559e",
+        "e9a31511bc8c6c0bf40c592a7f814ca94f75bad9",
+        "1454717d42944d6771a9c9e2a746a068d0a5cbc5",
+        "95ff7670773aafc0080aaa4088db881f7122f082",
+        "ed6a740ccd51334d9dcfe80302c4d062344d4204",
+        "215c749cd9ca4c07a44e2aecdf78dc70da385fe4",
+        "f730dc530f0f715b64f09bef70a0d2100fe500be"
+      ],
+      "fix_commits": [
+        "83b384ab9d99a16d70a50a9e3570c247f17e3674",
+        "9438b49ffff61a741be417e7e7ff7cc664575806",
+        "b1c97e02361d0a2941ba7a3abdeb116835220ee7"
+      ],
+      "red": {
+        "status": "Failed",
+        "path": "build/dl086-review-r1/c5-wording-red.log",
+        "summary": "1 failed, 1 passed in 0.06s",
+        "expected": true
+      },
+      "green": {
+        "status": "Passed",
+        "path": "build/dl086-review-r1/c5-wording-green.log",
+        "summary": "2 passed in 0.04s"
+      },
+      "change": "Both no-deps starts, B-3 listing failures, old-shape rows, native empty-image cleanup, quoted/multi-role grants, invalid greeting header, and wording/history records.",
+      "planted_defect_controls": [
+        {
+          "control": "C5 engines lose --no-deps",
+          "status": "Passed",
+          "failures": 3,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/13.log"
+        },
+        {
+          "control": "C5 B-3 listing error hidden by substitution",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/14.log"
+        },
+        {
+          "control": "C5 B-3 non-empty listing ignored",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/15.log"
+        },
+        {
+          "control": "C5 pre-marker row reinspection discarded",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/16.log"
+        },
+        {
+          "control": "C5 missing MySQL header validation",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/17.log"
+        },
+        {
+          "control": "C5 inaccurate occupant wording",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/18.log"
+        },
+        {
+          "control": "C5 omitted down-route PID guidance",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/19.log"
+        },
+        {
+          "control": "C5 capture grammar",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/20.log"
+        },
+        {
+          "control": "C5 B-3 listing record",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/21.log"
+        },
+        {
+          "control": "C5 fixture correction record",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/22.log"
+        },
+        {
+          "control": "C5 later grant role shape 0",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/23.log"
+        },
+        {
+          "control": "C5 later grant role shape 1",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/24.log"
+        },
+        {
+          "control": "C5 later grant role shape 2",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/25.log"
+        },
+        {
+          "control": "C5 later grant role shape 3",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/26.log"
+        }
+      ],
+      "coverage_greens": [
+        {
+          "status": "Passed",
+          "path": "build/dl086-review-r1/c5-start-green.log",
+          "summary": "5 passed in 0.12s"
+        },
+        {
+          "status": "Passed",
+          "path": "build/dl086-review-r1/c5-listing-green.log",
+          "summary": "3 passed in 0.21s"
+        },
+        {
+          "status": "Passed",
+          "path": "build/dl086-review-r1/c5-old-shape-green.log",
+          "summary": "2 passed in 0.26s"
+        },
+        {
+          "status": "Passed",
+          "path": "build/dl086-review-r1/c5-neighbours-green.log",
+          "summary": "17 passed in 0.12s"
+        }
+      ],
+      "test_free_scope": "Native proof harness adds assertions to real runs rather than a unit-test production fix; documentation class list records checked code and observed evidence."
+    }
+  },
+  "destructive_block_class": [
+    {
+      "block": "Preparation and archive rehearsal",
+      "commands": [
+        "image rm",
+        "system migrate"
+      ],
+      "strict": "first command in fence"
+    },
+    {
+      "block": "Failed scratch cleanup",
+      "commands": [
+        "image rm",
+        "system migrate"
+      ],
+      "strict": "first command inside subshell"
+    },
+    {
+      "block": "Abort preparation",
+      "commands": [
+        "rm -f .env"
+      ],
+      "strict": "first command in fence"
+    },
+    {
+      "block": "Final backups, stop and candidate start",
+      "commands": [
+        "SQLite shared-file rm -f"
+      ],
+      "strict": "first command in fence"
+    },
+    {
+      "block": "Rollback bootstrap",
+      "commands": [
+        "temporary report rm -f in EXIT trap"
+      ],
+      "strict": "first command in fence"
+    },
+    {
+      "block": "Rollback route dispatch",
+      "commands": [
+        "rm -f .env"
+      ],
+      "strict": "first command in fence"
+    },
+    {
+      "block": "Rollback stop, down and restore",
+      "commands": [
+        "compose down",
+        "rm -f .env"
+      ],
+      "strict": "first command in fence"
+    }
+  ],
+  "native_scratch_proof": {
+    "status": "Passed",
+    "read_at": "2026-11-19T08:12:29.299649+00:00",
+    "artifacts": "build/dl086-follow-up/native-scratch-l0u2gjf1",
+    "native_real_podman": true,
+    "seed_image_id": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+    "fixture_scope": "One small real image; no engine-size archive or restored-stack startup claim",
+    "ordinary_rehearsal_exit": 0,
+    "deliberately_failed_exit": 73,
+    "manual_cleanup_exit": 0,
+    "loaded_images_before_manual_cleanup": [
+      "sha256:c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39"
+    ],
+    "empty_store_manual_cleanup_exit": 0,
+    "manual_cleanup_shell": "bash -c; strictness supplied by the pasted block",
+    "stores": [
+      {
+        "path": "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-cY0mhOfA",
+        "failure_state": "ordinary",
+        "images_before_cleanup": 1,
+        "pause_processes": [
+          {
+            "pid": 2661802,
+            "after": "absent"
+          }
+        ],
+        "image_metadata_empty": true,
+        "podman_after_final_migrate": false
+      },
+      {
+        "path": "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-kJ0zpFVT",
+        "failure_state": "loaded",
+        "images_before_cleanup": 1,
+        "pause_processes": [
+          {
+            "pid": 2662869,
+            "after": "absent"
+          }
+        ],
+        "image_metadata_empty": true,
+        "podman_after_final_migrate": false
+      },
+      {
+        "path": "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-BCXnWUXq",
+        "failure_state": "empty",
+        "images_before_cleanup": 0,
+        "pause_processes": [
+          {
+            "pid": 2664325,
+            "after": "absent"
+          }
+        ],
+        "image_metadata_empty": true,
+        "podman_after_final_migrate": false
+      }
+    ],
+    "isolated_or_live_image_pause_mutations": "None; seed save/inspect only in isolated store"
+  },
+  "results": {
+    "suite": {
+      "status": "Passed",
+      "path": "build/dl086-review-r1/suite-final.log",
+      "summary": "1002 passed in 38.28s"
+    },
+    "repository_gate": {
+      "status": "Passed",
+      "path": "build/dl086-review-r1/make-check-final.log",
+      "summary": "check: 0 failure(s)"
+    },
+    "final_changed_document_checks": {
+      "status": "Passed",
+      "path": "build/dl086-review-r1/docs-final-green.log",
+      "summary": "34 passed in 1.15s"
+    },
+    "controls": {
+      "status": "Passed",
+      "new": 27,
+      "backlog": 21,
+      "compatibility": 10,
+      "new_results": [
+        {
+          "control": "C1 strict entry block 2",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/0.log"
+        },
+        {
+          "control": "C1 strict entry block 3",
+          "status": "Passed",
+          "failures": 12,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/1.log"
+        },
+        {
+          "control": "C1 strict entry block 7",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/2.log"
+        },
+        {
+          "control": "C1 strict entry block 8",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/3.log"
+        },
+        {
+          "control": "C1 strict entry block 17",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/4.log"
+        },
+        {
+          "control": "C1 strict entry block 19",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/5.log"
+        },
+        {
+          "control": "C1 strict entry block 20",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/6.log"
+        },
+        {
+          "control": "C2 original named attribution",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/7.log"
+        },
+        {
+          "control": "C3 missing capture PID validation",
+          "status": "Passed",
+          "failures": 6,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/8.log"
+        },
+        {
+          "control": "C3 missing verify PID validation",
+          "status": "Passed",
+          "failures": 6,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/9.log"
+        },
+        {
+          "control": "C4 birth read before known absence",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/10.log"
+        },
+        {
+          "control": "C4 lost cgroup refusal",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/11.log"
+        },
+        {
+          "control": "C4 lost source holders",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/12.log"
+        },
+        {
+          "control": "C5 engines lose --no-deps",
+          "status": "Passed",
+          "failures": 3,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/13.log"
+        },
+        {
+          "control": "C5 B-3 listing error hidden by substitution",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/14.log"
+        },
+        {
+          "control": "C5 B-3 non-empty listing ignored",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/15.log"
+        },
+        {
+          "control": "C5 pre-marker row reinspection discarded",
+          "status": "Passed",
+          "failures": 2,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/16.log"
+        },
+        {
+          "control": "C5 missing MySQL header validation",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/17.log"
+        },
+        {
+          "control": "C5 inaccurate occupant wording",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/18.log"
+        },
+        {
+          "control": "C5 omitted down-route PID guidance",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/19.log"
+        },
+        {
+          "control": "C5 capture grammar",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/20.log"
+        },
+        {
+          "control": "C5 B-3 listing record",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/21.log"
+        },
+        {
+          "control": "C5 fixture correction record",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/22.log"
+        },
+        {
+          "control": "C5 later grant role shape 0",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/23.log"
+        },
+        {
+          "control": "C5 later grant role shape 1",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/24.log"
+        },
+        {
+          "control": "C5 later grant role shape 2",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/25.log"
+        },
+        {
+          "control": "C5 later grant role shape 3",
+          "status": "Passed",
+          "failures": 1,
+          "log": "build/dl086-review-r1/reversals-vxb5fzrt/26.log"
+        }
+      ]
+    },
+    "images": {
+      "postgres": {
+        "status": "Passed",
+        "exit_code": 0
+      },
+      "mysql": {
+        "status": "Passed",
+        "exit_code": 0
+      },
+      "sqlite": {
+        "status": "Passed",
+        "exit_code": 0
+      }
+    },
+    "image_cleanup": {
+      "status": "Passed",
+      "removed": 3,
+      "already_absent": 2,
+      "observer_timeouts": 6,
+      "pairs": [
+        {
+          "volume": "7f1d99512c078d6a8c3c8d36ac0b33c3f27eb80043633c53d1d3ce13a9950cd0",
+          "container": "megasamples-test-postgres",
+          "delta_ns": 6529464,
+          "volume_time_ns": 1795075987403228959
+        },
+        {
+          "volume": "798b45b13186451267c9da96c265efd9f3947ec7c53ef2848e1d95d843498162",
+          "container": "megasamples-test-postgres2",
+          "delta_ns": 1543034,
+          "volume_time_ns": 1795076102890787573
+        },
+        {
+          "volume": "07a4e3baa6f45323ee3483ebbf237f7415617a35e78c67ff66f52ba006f8e618",
+          "container": "megasamples-test-mysql",
+          "delta_ns": 1792929,
+          "volume_time_ns": 1795076155136571852
+        },
+        {
+          "volume": "dfc0e332345ea8a3ab486b8cfbaf0cc7940ececde985e9f41ffd124c9a30dc01",
+          "container": "megasamples-test-mysql2",
+          "delta_ns": 4253337,
+          "volume_time_ns": 1795076766895185730
+        },
+        {
+          "volume": "7a1b070c0b9249be379174bc5940b044d05669ab690e8729331ea25fe9f6aa13",
+          "container": "megasamples-test-sqlite",
+          "delta_ns": 2424760,
+          "volume_time_ns": 1795076868160620085
+        }
+      ],
+      "attribution": "New anonymous volumes observed mounted by reserved test containers or adjacent nanosecond create events under 10 ms with reserved names and test labels; metadata time, unused and unreferenced checked; pre-existing volumes unchanged",
+      "own_api_forced_termination": false
+    },
+    "isolation": {
+      "status": "Passed",
+      "isolated": {
+        "containers": 12,
+        "unchanged": true,
+        "inventory": [
+          {
+            "name": "megasamples-adminer",
+            "id": "f094743e286e5475ed47db4a335b5ebfca7d923683699fa5bcb2cf2a0ab6561b",
+            "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+            "state": "running",
+            "started_at": "2026-11-17 12:26:40.760901753 -0600 CST"
+          },
+          {
+            "name": "megasamples-build-mysql",
+            "id": "adc7ac97d80975e5c7b8d670a2d962000815ac380c95621bab6c8e39430e07e2",
+            "image": "e3c5e24cdccea30c955dfa05b9b07fdc3b62323321c1e827a563e846d7552ea5",
+            "state": "running",
+            "started_at": "2026-11-17 11:35:53.185152816 -0600 CST"
+          },
+          {
+            "name": "megasamples-build-postgres",
+            "id": "764e08b53d08300dcfd369de7dc65257f531dc3be2b7850e37efc9b2695d0e59",
+            "image": "3cccc725163a95947178f4da5e9bf16add75cb286170ac5a2cd2f6513534955d",
+            "state": "running",
+            "started_at": "2026-11-17 02:43:06.427254006 -0600 CST"
+          },
+          {
+            "name": "megasamples-cloudbeaver",
+            "id": "9a8bc77db454ed2faa7ce0cd264479166cb8a761b766a46787ce7b2f48a4f6fb",
+            "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:45.435567666 -0600 CST"
+          },
+          {
+            "name": "megasamples-dbgate",
+            "id": "9019958eba77e79dfd88fa02426d84b2b64a0a188d5b88ef97b056a9a3301634",
+            "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:45.414450726 -0600 CST"
+          },
+          {
+            "name": "megasamples-landing",
+            "id": "dbc3b188a07d6c9920d1fc7011b43e5f6958f96e2d8abee622ce9860b3f9a76d",
+            "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+            "state": "running",
+            "started_at": "2026-11-17 12:27:07.694014647 -0600 CST"
+          },
+          {
+            "name": "megasamples-mysql",
+            "id": "9507a0bf975fc7833b2aa483f9449f5d95bdceab495782c6365145dc18f13e19",
+            "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:34.007118791 -0600 CST"
+          },
+          {
+            "name": "megasamples-phpmyadmin",
+            "id": "c5f6b29fc07e06613f9c145a536e723be2fe28cc98a6e7a1d0ea71fa6c53fe47",
+            "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+            "state": "running",
+            "started_at": "2026-11-17 20:51:13.181193732 -0600 CST"
+          },
+          {
+            "name": "megasamples-postgres",
+            "id": "3ac86c34b9eb04c1d0ece86a10884816ef79d9cd0b278ae8690e651f28951b1d",
+            "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:25.12361209 -0600 CST"
+          },
+          {
+            "name": "megasamples-sqlite",
+            "id": "4dbd24f800b97d2937a47eb0b2455d67b1256d8fd55431fe340af30fa4f52734",
+            "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+            "state": "running",
+            "started_at": "2026-11-18 05:27:15.807252083 -0600 CST"
+          },
+          {
+            "name": "megasamples-upgrade-browser",
+            "id": "c1ebd848a39b3ec7a104c80185ba5ea4f8ccae1b22a53885ca0f2d611b1e53e3",
+            "image": "32cfab2f09595b0266babd6ef76ee175ef024617f4077797bcecf235fe88eb68",
+            "state": "exited",
+            "started_at": "2026-11-16 12:58:52.851855644 -0600 CST"
+          },
+          {
+            "name": "megasamples-upgrade-tools",
+            "id": "ef64d26b142c7ecbe5b0ffa3b2e223a1501b8f0c7582e8ad7baf357db7183f14",
+            "image": "8ef0c198735c09bd0434807c462f61595e3b1b1fe4c7557d441a3e2c257b6740",
+            "state": "running",
+            "started_at": "2026-11-16 12:45:13.191511277 -0600 CST"
+          }
+        ]
+      },
+      "live": {
+        "containers": 9,
+        "services": 8,
+        "tools": 1,
+        "unchanged": true,
+        "inventory": [
+          {
+            "name": "megasamples-adminer",
+            "id": "7ef317c5e2574872c447d7b2a090d91669ec61f224415ece77bde7ba4e4e8343",
+            "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.977097776 -0600 CST"
+          },
+          {
+            "name": "megasamples-cloudbeaver",
+            "id": "2c08eebb7364571e658ef56d61769ff8e0d815a54954bc7a6c5c45259d859931",
+            "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.847600394 -0600 CST"
+          },
+          {
+            "name": "megasamples-dbgate",
+            "id": "3d219c0b086d05f86e972d6f107743e4140719c67ca5dee67c20be05bd14120e",
+            "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.787017348 -0600 CST"
+          },
+          {
+            "name": "megasamples-landing",
+            "id": "10dcf6333c62c4c636272bdbf591dfc6a7cce847d2ac0c979b39d274fb2a2e29",
+            "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.809734163 -0600 CST"
+          },
+          {
+            "name": "megasamples-live-upgrade-tools-20261118T133807Z",
+            "id": "47b022120bcd10ae47db9f8113cd4b9614570c7378f044fd81a4630473fb8149",
+            "image": "9cfca77f5b88e23f25e76429d70f0c72959ff13a6d933610c58ae74da67cd710",
+            "state": "running",
+            "started_at": "2026-11-18 07:51:54.959083715 -0600 CST"
+          },
+          {
+            "name": "megasamples-mysql",
+            "id": "a3f5c1204ee44b48dedbc5d3b7d9a8981aa5ffe04988019d58864b5157eac0d6",
+            "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:10.170768484 -0600 CST"
+          },
+          {
+            "name": "megasamples-phpmyadmin",
+            "id": "044fa1e2a6ee97811efc2d0165776330493c6ef66c33c1dcad9ee4da03f08128",
+            "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.93073862 -0600 CST"
+          },
+          {
+            "name": "megasamples-postgres",
+            "id": "ba1a9f7586814467210c0a5549f02f777dbd6d32af13f4176bb3e99c613316cc",
+            "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:13.76245404 -0600 CST"
+          },
+          {
+            "name": "megasamples-sqlite",
+            "id": "7adacf6eca19046bc2d8daa1a69271ac3bd112046eb41ffc143364e60b740a5e",
+            "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+            "state": "running",
+            "started_at": "2026-11-18 08:50:55.525102141 -0600 CST"
+          }
+        ]
+      },
+      "scratch": {
+        "projects": [],
+        "containers": 0,
+        "networks": 0,
+        "volumes": 0,
+        "restore_volumes": 0
+      },
+      "api_socket_stopped": true,
+      "preexisting_volumes_networks_images_unchanged": true,
+      "scope": "Default-store read-only exact nine-object inspection; no live exec/signals/service/network/volume changes"
+    },
+    "diff_check": {
+      "status": "Passed",
+      "command": "git diff --check 3bef1436"
+    }
+  },
+  "progress_correction": "A progress update inferred the final dataset too early from a log tail. The remaining configured datasets ran; no result was recorded before the actual image-test exit.",
+  "corrected_failures": [
+    {
+      "status": "Failed",
+      "corrected": true,
+      "detail": "Initial receipt builder expected per-result log keys in the older compatibility receipt. Its logs use the enclosing artifact directory instead; the reporting-only lookup was corrected without rerunning passed validations."
+    },
+    {
+      "status": "Failed",
+      "corrected": true,
+      "detail": "6 optional image-observer calls timed out. Actual image tests completed; retained nanosecond events and volume metadata completed exact-ID ownership proof and cleanup."
+    },
+    {
+      "status": "Failed",
+      "corrected": true,
+      "detail": "Initial source-note read used a nonexistent heading and was retried by its actual Backlog label."
+    },
+    {
+      "status": "Failed",
+      "corrected": true,
+      "detail": "Initial C1 fixture marked read-only image inspect as mutation; corrected test-only before fix.",
+      "log": {
+        "path": "build/dl086-review-r1/c1-red.log",
+        "summary": "17 failed, 2 passed in 1.39s"
+      }
+    },
+    {
+      "status": "Failed",
+      "corrected": true,
+      "detail": "Initial C2 check also matched inherited dataset provenance; scope corrected separately. Original receipt still fails the corrected check."
+    },
+    {
+      "status": "Failed",
+      "corrected": true,
+      "detail": "Initial C3 fix missed validator import; separate import fix followed.",
+      "log": {
+        "path": "build/dl086-review-r1/c3-green.log",
+        "summary": "23 failed, 77 passed in 2.37s"
+      }
+    },
+    {
+      "status": "Failed",
+      "corrected": true,
+      "detail": "C4 source-holder fixture lacked source-device mount mapping. Separate corrected test was red before code fix.",
+      "log": {
+        "path": "build/dl086-review-r1/c4-green.log",
+        "summary": "2 failed in 0.19s"
+      }
+    },
+    {
+      "status": "Failed",
+      "corrected": true,
+      "detail": "First expanded native cleanup succeeded but rebound its failure-state field to final process state. Fixed variable and reran in new stores; original artifacts retained.",
+      "log": {
+        "path": "build/dl086-review-r1/c5-native.log",
+        "summary": "}"
+      }
+    }
+  ],
+  "not_run": {
+    "status": "Not run",
+    "items": [
+      "Live restoration, real-backup bootstrap, live forwards, TLS or sign-ins",
+      "Restored-stack startup or native original-override",
+      "Engine-size archives",
+      "Native stopped-container PID reuse and malformed helper files; fixture proofs only",
+      "Native wildcard publications",
+      "Independent review, acceptance or merge",
+      "Software version/support refresh; no version/support claim added"
+    ]
+  },
+  "unsupported": {
+    "status": "Unsupported",
+    "items": [
+      "Reboot-crossing native case",
+      "Zero-consumer shared-helper native case",
+      "Live task in exited-container cgroup native case"
+    ]
+  },
+  "pr15_proof": {
+    "status": "Passed",
+    "read_at": "2026-11-19T08:49:54.963138+00:00",
+    "local": "3bef1436852c3f63634455270b69fec02f35b7f3",
+    "github_pr": {
+      "baseRefName": "main",
+      "headRefName": "docs/dl-086-live-run-corrections",
+      "headRefOid": "3bef1436852c3f63634455270b69fec02f35b7f3",
+      "number": 15,
+      "state": "OPEN",
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/pull/15"
+    },
+    "ls_remote": "3bef1436852c3f63634455270b69fec02f35b7f3\trefs/heads/docs/dl-086-live-run-corrections"
+  },
+  "sources": {
+    "docs/live-upgrade-evidence.md": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/docs/live-upgrade-evidence.md",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "0c49cc61a26d548b68361f7d7f921b599d280ca0ab30478a372af86ad646e6c2"
+    },
+    "docs/live-upgrade-runbook.md": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/docs/live-upgrade-runbook.md",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "0f2322b0e275171a29217eae0150552bc8620a0579dd8f5214e3ec37c4dfc8c9"
+    },
+    "docs/validation/live-upgrade-follow-up-2026-11-19.json": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/docs/validation/live-upgrade-follow-up-2026-11-19.json",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "dac840b9287dd19087c738c42f94419038a67a7a652eb06295e426435ccba3db"
+    },
+    "docs/validation/quiescence.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/docs/validation/quiescence.py",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "410c54ccb669e77b87697d6abf837d7982598f9cd27e086b2b190ce6303d4ca8"
+    },
+    "docs/validation/rehearse-follow-up-scratch.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/docs/validation/rehearse-follow-up-scratch.py",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "607356d28ad79e65a1db1e4dc5455a31b3eb861e02d313ef36c20eb22e3bec35"
+    },
+    "docs/validation/rehearse-review16-r1-reversals.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/docs/validation/rehearse-review16-r1-reversals.py",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "3f95125fc065c4d68c0472eb95f48fc0b9351118b15632bc4eb10d919fb722ca"
+    },
+    "tests/test_demo_documentation.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/tests/test_demo_documentation.py",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "553fc9d609fd81a7b8e80c6970e18f29188af2759599dc4aedbfd23fdcef3d20"
+    },
+    "tests/test_follow_up_runbook.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/tests/test_follow_up_runbook.py",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "61088e8cf4c3e190e98831a901c1bcaf50e8e67e694e231b2eb129f22b5e221e"
+    },
+    "tests/test_live_upgrade.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/tests/test_live_upgrade.py",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "f5fca95a0b1130a13020fa8e7ee98f72e8b2ce0f49d68564de9cc058451721f5"
+    },
+    "tests/test_quiescence_down.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/tests/test_quiescence_down.py",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "c31d56ecd634fe49bf8bed937e0503da5e652ee0683d345f94a2a9fe65f95178"
+    },
+    "tests/test_review_records.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/tests/test_review_records.py",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "56dcd3bc4ddd7871e10a0e04c8e775cbe6039bcb911cfff100e36267cdddf9e1"
+    },
+    "tests/test_runbook_fragments.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/tests/test_runbook_fragments.py",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "ea62b8380d52c4a510e76f0da6f67d8fbfc159f16a3a03bc15b24492a9f8846a"
+    },
+    "tests/test_runbook_strictness.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/tests/test_runbook_strictness.py",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "c55f81328961a3b03fb17cf6e1e382259cefa4f2248137c91f0dd027596fe99c"
+    },
+    "tests/test_scratch_runbook.py": {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d945abfdcf013ee7ce92eebb3b358822c90df58/tests/test_scratch_runbook.py",
+      "read_at": "2026-11-19T08:49:54.963138+00:00",
+      "sha256": "675718975107a2be7abdc693a0f3309f6aa60e1b34558055468b5f5a594e7cd6"
+    }
+  },
+  "evidence_sha256": {
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-BCXnWUXq/cleanup.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-BCXnWUXq/containers.conf": "d462d02612646213ff3700ec28b8a757f8561f21d4671e840c8ca948cc0962ae",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-BCXnWUXq/pause-pids.json": "230e036dbf7f5ac40c524c4a3bc4480c4a8c5ba8817306f1e75217459ee4c88a",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-BCXnWUXq/storage.conf": "4d7e95dfb0110c7f08293c57338fa217a79d2e4084e4a190e93e4b219c273c58",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-cY0mhOfA/cleanup.log": "f48b03de54a293079f94e798b35854280fdd178a479ed121f9aed5ca03041ff8",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-cY0mhOfA/containers.conf": "5fac057b06b62cf2f81db4839c999dae6efde8be084470f2e7599420a2b477de",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-cY0mhOfA/graph/overlay-images/images.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-cY0mhOfA/load.log": "ace6c95c888114a85436c63abd3df45a028219af97fd23a1fdfde5954741bab4",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-cY0mhOfA/pause-pids.json": "7e38b1993d24755f4636e339b6158c7a303d68a4b5578a6cee31c2196360cbcd",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-cY0mhOfA/storage.conf": "e269820f222a136c512cfbf50ed5f463bd9f3e4c7cc34db25119fb9af04e4a9b",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-kJ0zpFVT/cleanup.log": "f48b03de54a293079f94e798b35854280fdd178a479ed121f9aed5ca03041ff8",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-kJ0zpFVT/containers.conf": "63dce783541242575edd585b67c80ec5a20b6ea168b226d3cb12ad9476ecbed9",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-kJ0zpFVT/graph/overlay-images/images.json": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-kJ0zpFVT/load.log": "fc5f55c4edb937ea3b49aa6b8335cbabb3ab3937cd81c79adcca92bdf5c14029",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-kJ0zpFVT/pause-pids.json": "c0755691338f20c482e829bd127e9b1d2112618b1bc2247d993fcdff1f9c35d2",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/backup/rollback-load-rehearsal-kJ0zpFVT/storage.conf": "224a36a4111b0685fdb3d80adab7c9f1732812a3f0069be8475424768e7a7968",
+    "build/dl086-follow-up/native-scratch-l0u2gjf1/receipt.json": "324ed0249fab1626abbaa30032dd745cda2ad48e1f19ce4e9e05fe7693828fd3",
+    "build/dl086-follow-up/reversals-soh4256b/0.log": "fb3c71918a5a296505f8df2f9bab2a3737db05942cb0f6531a03e7cf065b0cf5",
+    "build/dl086-follow-up/reversals-soh4256b/1.log": "aea12b48b3d08e2ef9c898cfb88172dd48bef442dc1e823ea250b6efd0d6cf73",
+    "build/dl086-follow-up/reversals-soh4256b/10.log": "2b64635768336ea33d38dfe5f2b1a57525641cf307caf8e2dc552b3af4f422d8",
+    "build/dl086-follow-up/reversals-soh4256b/11.log": "755b681820c7f64bbf860be133afe18f620f4b2c4e174cc6fdc0c32035d4a306",
+    "build/dl086-follow-up/reversals-soh4256b/12.log": "2cd4e6d6e3a4e2a99104b7b7c4b8e291ae31ca4b9dd0724c440e598f0922308a",
+    "build/dl086-follow-up/reversals-soh4256b/13.log": "f141be8464e7fe402c9535d3a37cd59ebc105ace4e52df068855721e3437626a",
+    "build/dl086-follow-up/reversals-soh4256b/14.log": "a4fa0d12eeb8a7b180c7839ddef84d99d57fca8cc03b4dffc7b6c80547fa8d31",
+    "build/dl086-follow-up/reversals-soh4256b/15.log": "3a4965f06ff87ad790b45e158a2e76df1cb36f13feca469ec50756d9abbd6557",
+    "build/dl086-follow-up/reversals-soh4256b/16.log": "14550ca784b4c8e200e6142c7b8cb3a8dcb551765c1dd7741cd5dbea1f28843c",
+    "build/dl086-follow-up/reversals-soh4256b/17.log": "6b27d4ffd8b860fabb3bc33fdac6c40669541aa4c358e04aadf6ce6f95863c2a",
+    "build/dl086-follow-up/reversals-soh4256b/18.log": "6226bb82da8c357e438d42231378e23b1d1263485a8c410406035d14649cbbc2",
+    "build/dl086-follow-up/reversals-soh4256b/19.log": "468763dd73803fdffa191798abd08fc1ab3016f805a2221f678f7f062ee4b40b",
+    "build/dl086-follow-up/reversals-soh4256b/2.log": "57711b55e833f8803b6a8e5f81bccd963594a0df03c9254d784b14f3dda08530",
+    "build/dl086-follow-up/reversals-soh4256b/20.log": "fdb46bfca00a729336fe793d8d5ba1e10bfbc3471dc713fd8bf1e72d92521030",
+    "build/dl086-follow-up/reversals-soh4256b/3.log": "bf4739713b7949f53159aae6751ccf4c263093b5b73fed48925850e2d4342200",
+    "build/dl086-follow-up/reversals-soh4256b/4.log": "3b4a001b9235aa1815b34899747874b6d940b9afc9ea0111bf47a63a38fca310",
+    "build/dl086-follow-up/reversals-soh4256b/5.log": "2db95e6e22f2e39753c439241d25f640d41f736ba2d25e166c96c14329dec060",
+    "build/dl086-follow-up/reversals-soh4256b/6.log": "1dc341132be05df4074660284debaf094c8a56eb467d14983a903051c127103b",
+    "build/dl086-follow-up/reversals-soh4256b/7.log": "91dbae0ce05da928811fda858a5df2784ba4b2672fbf8c4139147f58d85330cd",
+    "build/dl086-follow-up/reversals-soh4256b/8.log": "f07dace3c5ed73a4a90ca6e42476192f6257a1f7194c65944b973cdaa03da8ec",
+    "build/dl086-follow-up/reversals-soh4256b/9.log": "aaf40b4acc099d13277c18d4d8570c4b446051e95f3876f8b4653f661eb45b9f",
+    "build/dl086-follow-up/reversals-soh4256b/receipt.json": "04b47fea64deeca3b13094a763ef4268f5772c0e541916b4e1d6c1e486aa5e94",
+    "build/dl086-review-r1/api-images.log": "ddb27dd61d0dadc7f289679b64aead40ad4de44af079cb7e8680ea53440c8dea",
+    "build/dl086-review-r1/backlog-reversals.log": "0e7f0c5593ea04c53902496293d2faa5e39c05b23e6abab0dfe18358d6867e73",
+    "build/dl086-review-r1/c1-green.log": "6fc41b8c6980a1b8361cb072de58835b9715461913abdab5e081fd096b0365ac",
+    "build/dl086-review-r1/c1-red-corrected.log": "b6f5d215bd97fe85a5a6b59c51adcff29a5b37c7a72d1624e5dfc078dbe3384e",
+    "build/dl086-review-r1/c1-red.log": "1e8c4a66d186502c05529b741bb60f69eb834763e5c8cf3253717d409f5bc4c6",
+    "build/dl086-review-r1/c2-green.log": "f4c77b58e2280613a49ba18da1c4a02d440e862c49a6c8fe5daaf277333ff99d",
+    "build/dl086-review-r1/c2-original-receipt.json": "ac5577fe083b3240dab44301e8baa93b35c19a286ab9e17cc02c7b4ba7987c86",
+    "build/dl086-review-r1/c2-red-scoped-reversal.log": "aeab6075780adb067e1baf2052d99fd23ae3c4407f56e017febf23e33d480c83",
+    "build/dl086-review-r1/c2-red.log": "62f75e47717388a31e44bcffc9121b57671faf1256c0efe045efcf24b9a1f4d3",
+    "build/dl086-review-r1/c3-green-final.log": "a076321d453bcda6b3d5e7a92af50ad16f82fa61f5fe94bd4eb65bd4f55af90f",
+    "build/dl086-review-r1/c3-green.log": "b3c581abd7325e628a341037c31fbd9785bb70b0b420e59659bd400e9127f828",
+    "build/dl086-review-r1/c3-red.log": "182e7335149c5e9bf4b2ea35f4b016ba894a5f468c2775653b6ba41920810e07",
+    "build/dl086-review-r1/c4-before.py": "c730c49cddfdc97965c3976dfe6b17ebafc77acb6c8089039df6357c99a63572",
+    "build/dl086-review-r1/c4-green-final.log": "ad677f2fec176a43cea3ab9b823ce50713a2c3d6d1120c6a2d151dce8d8941a6",
+    "build/dl086-review-r1/c4-green.log": "855d8bdd5b59f78f7333e8c63bd2342d21e10e5dffcd2f5a9a619221f90118b7",
+    "build/dl086-review-r1/c4-red-corrected.log": "d141945b1cf6c98e253d7d0470eca08fa4f14cfe8f8b89dea5b56282a4924726",
+    "build/dl086-review-r1/c4-red.log": "4f1d4dc36545fa6b87c286ab552205b8c513cbf2d50af631cdabaf8963af5850",
+    "build/dl086-review-r1/c4-stat-green.log": "f4c61c0ac8f55c6c9a2d6c593731bf5f8c4a6c5bebbe514284fd4f899818f9e0",
+    "build/dl086-review-r1/c4-stat-red-reversal.log": "fd9603dffb5d5ac044895305b601716692dd1060699604f63bc58e9c8260f416",
+    "build/dl086-review-r1/c5-listing-green.log": "4a6070b078e8713685bb7d423b62e85d6415f822c5c557fbcd20f48e88981629",
+    "build/dl086-review-r1/c5-native-final.log": "324ed0249fab1626abbaa30032dd745cda2ad48e1f19ce4e9e05fe7693828fd3",
+    "build/dl086-review-r1/c5-native.log": "382d5297f1e535ccaf72468bfd97c197cf5f16a8f2f3fe1e1056a2850645b639",
+    "build/dl086-review-r1/c5-neighbours-green.log": "f6ce3537e552856c89074e089ca651474ad60809a32a59ad5688b2f4b25bfa04",
+    "build/dl086-review-r1/c5-old-shape-green.log": "ed4e09caf2c123cc998a4a054db510aefa9991486486560067423d72e1530bca",
+    "build/dl086-review-r1/c5-start-green.log": "2ae8f2817e9958cc181e54334e64cdb0f822408aefd258f49af7ed61b53a91ca",
+    "build/dl086-review-r1/c5-wording-green.log": "fa9cd0e25dcc1e230610463c80c04cc48c6c326debe3521403b94a8e7f25f4ae",
+    "build/dl086-review-r1/c5-wording-red.log": "f061fd060621563f787c1eb216be9f2bd50b934269f90efa491f5b4a14aca0b2",
+    "build/dl086-review-r1/check-images.py": "f68b98723b1ddb1be642759df71ad0338c003c1a0bea575d0d12432cf9b8c266",
+    "build/dl086-review-r1/docs-final-green.log": "e623a0c5e856010be8934b10c3ce6ae629c968d835d269f1785b4a685b343236",
+    "build/dl086-review-r1/finalize.log": "45f084651145c104b16b7ecbcda2dd08cc432035f6b4b4f1b7f880bf00fe2105",
+    "build/dl086-review-r1/finalize.sh": "c383386b454e4193791e2f41a8bb695a08c956d0f41dd8b9fcbdac94d4deca5b",
+    "build/dl086-review-r1/image-checks.log": "c5e41b28cddc0608a3837e6502bc579d0ceec2329c5a1d7955800fec223908c3",
+    "build/dl086-review-r1/image-cleanup.json": "7774b92ff47de1b8b6ac4731a0c2842632b30a737b907f3e7acaac644082f7d7",
+    "build/dl086-review-r1/image-create-events-detailed.jsonl": "4ed97a422364673054f65dcb9981ee3ceaebaeb712e3d3044870049e91ef2622",
+    "build/dl086-review-r1/image-mysql.log": "a76a6ecdf352510cbd1eda13323c3401791c7772b90036c29c454a25cde9cedd",
+    "build/dl086-review-r1/image-postgres.log": "dbf58e421549da6cf6b8d75a48daa88495b90772e408c4ddaa4065a011c30bfa",
+    "build/dl086-review-r1/image-sqlite-progress.log": "0b734bf7e976944e9d90360bd95b7b9e6368ec02b6bb0180880d7b7030ef677a",
+    "build/dl086-review-r1/image-sqlite.log": "ef7308de92924a9d9a7c731634ce821927685151ef2c78aecafa4e5c7d4a0f54",
+    "build/dl086-review-r1/images-after.txt": "1150646c5fd0f854b25f84eccc58e0b99a171cfb2345284d0b0e03f519dc57ae",
+    "build/dl086-review-r1/images-before.txt": "1150646c5fd0f854b25f84eccc58e0b99a171cfb2345284d0b0e03f519dc57ae",
+    "build/dl086-review-r1/images.json": "7e51d4ca37f1676b4c7dd5117f5d3f75637a3dbfdc0f5f518efadc864700fa9e",
+    "build/dl086-review-r1/isolated-after.txt": "0aee86b42c5d01cd9805d7ccf1b9d70a7885cab2ccd6772da1c3545b3c18fb27",
+    "build/dl086-review-r1/isolated-before.txt": "0aee86b42c5d01cd9805d7ccf1b9d70a7885cab2ccd6772da1c3545b3c18fb27",
+    "build/dl086-review-r1/isolated-ps-after.txt": "d3b1f08dd3b9cb33e1f0260ec6ef83abb93edad5deee4d346ded23d2331132f5",
+    "build/dl086-review-r1/isolation-before.json": "7585505ea4236b87781366ec1348a794e5597afe0247ae17684c68effd0ba844",
+    "build/dl086-review-r1/isolation.json": "7585505ea4236b87781366ec1348a794e5597afe0247ae17684c68effd0ba844",
+    "build/dl086-review-r1/isolation.log": "680589c75dd23868974e10ceccca9d59597fd54446924339f0f0ea502bd57ec5",
+    "build/dl086-review-r1/live-after-nine.txt": "c7a95c36249d9534bb9e1fb43f99f7c7712773ef2c90f2e5563a41065ac0aa34",
+    "build/dl086-review-r1/live-before-nine.txt": "c7a95c36249d9534bb9e1fb43f99f7c7712773ef2c90f2e5563a41065ac0aa34",
+    "build/dl086-review-r1/make-check-final.log": "d0ff7147ba5af49f48f84a9aa93b7f86343f86a9fe26ecfcae04162b96aece50",
+    "build/dl086-review-r1/make-check.log": "602404aa60e019c28912c621f74d3071a56569107e85c612d71cbfe89f09448b",
+    "build/dl086-review-r1/networks-after.txt": "ebf40b5322dc3e7e1de8e35c283a1e70628b5b87dfe547abc65798ddff8e1418",
+    "build/dl086-review-r1/networks-before.txt": "ebf40b5322dc3e7e1de8e35c283a1e70628b5b87dfe547abc65798ddff8e1418",
+    "build/dl086-review-r1/pr15-before-push.json": "c9237cfd8e75557a77e188988d6c84e0fa4ff873968bf2ff54dcc20ca18c1dbc",
+    "build/dl086-review-r1/pr15-final.json": "c9237cfd8e75557a77e188988d6c84e0fa4ff873968bf2ff54dcc20ca18c1dbc",
+    "build/dl086-review-r1/pr15-ls-remote-before.txt": "36e281e630748c79c983337eb0fa1575a4b86ba370b2a991013e4e32b5747b91",
+    "build/dl086-review-r1/pr15-ls-remote.txt": "36e281e630748c79c983337eb0fa1575a4b86ba370b2a991013e4e32b5747b91",
+    "build/dl086-review-r1/pr16-body-before.json": "db71a045565c8ae0114102a9b44b2bed70140453f5210f9c4477ee5bb4944778",
+    "build/dl086-review-r1/prove-isolation.py": "a5e8bcde36d9ed5823fafe589de1be7dd4504cda870266896098f8a507482048",
+    "build/dl086-review-r1/r9-reversals.log": "b18b39d9595ccf7fe48c999f318f63728d3d5c529ce10e61ae86e50257ae5be4",
+    "build/dl086-review-r1/report.py": "90a97ab4509e74f7cb27260b11a70607469fdbd011a3579f5d1ff350da147537",
+    "build/dl086-review-r1/reversals-05twhcf0/0.log": "3fd44ad75d968462ade62bb36698b83c9d65f95705b664816c7f16ededc71c60",
+    "build/dl086-review-r1/reversals-05twhcf0/0.md": "0a52352eabbdcc1e94565285de6fc8fda8a19b56f5b61ab61aa6756e3438c2f9",
+    "build/dl086-review-r1/reversals-05twhcf0/1.log": "7cb1923ea34fe11a9c74de1b05e6e6e0a89bf23ddf7a7fd87a619a4dd913a7da",
+    "build/dl086-review-r1/reversals-05twhcf0/1.md": "48428a57f9cd4de3d1004116833f3c276ef3d0ce3f850f7b84795e13ae2959f8",
+    "build/dl086-review-r1/reversals-05twhcf0/10.log": "28e16c5039de3d7393870ec10444e3b068e660ad2a3226c5820840de224b46f9",
+    "build/dl086-review-r1/reversals-05twhcf0/10.py": "c730c49cddfdc97965c3976dfe6b17ebafc77acb6c8089039df6357c99a63572",
+    "build/dl086-review-r1/reversals-05twhcf0/11.log": "760fd41c283f682da8fc13df38eff2af87478b8c97fa2066770a931eff5115f7",
+    "build/dl086-review-r1/reversals-05twhcf0/11.py": "46fa2cd4f8ab89467453de8b60dbe95d83f165214202e0ae4d3e7c97630e87e3",
+    "build/dl086-review-r1/reversals-05twhcf0/12.log": "f1228bea59208189178e9ecaafb68175d6c202713fdbf6e8988734d217fc2f75",
+    "build/dl086-review-r1/reversals-05twhcf0/12.py": "d247837c90ff503930166db992a96366c7f230e71675f20c7d788c6b3b866553",
+    "build/dl086-review-r1/reversals-05twhcf0/13.log": "df15f64c89d790a2ef2eb720196c4954bfb7af7318ddfe0b8d3abf6c2d3c4691",
+    "build/dl086-review-r1/reversals-05twhcf0/13.md": "2172f14f0d526c5d7befc6296f0439f183a01fc17106c91b7101e16c842f61be",
+    "build/dl086-review-r1/reversals-05twhcf0/14.log": "1186492bb217cd6d1f4dd3934fbca314a56c3fd55439ed849119b9b2d836c348",
+    "build/dl086-review-r1/reversals-05twhcf0/14.md": "52450c61fb25e7714f58e5ed3a7bf7a5e6c0aba5da3e690e017df2c5dca7ead2",
+    "build/dl086-review-r1/reversals-05twhcf0/15.log": "053db219751faa69784d1332fd2372a3b8170db5f85fcbf547877185e8723901",
+    "build/dl086-review-r1/reversals-05twhcf0/15.md": "ae6ece06dd74bc414d7d1a5f4392d9b44f1d00eb31d953d281e3715a1b65f0c5",
+    "build/dl086-review-r1/reversals-05twhcf0/16.log": "1706c8066837ea04bc3ce251f8279245ee56e4840c4ad4b4aa593d978622c33b",
+    "build/dl086-review-r1/reversals-05twhcf0/16.py": "8ba5bb58ab2e376c50e9ca5ea8f9f497a86a51963ee36ba5739f6dc82e4b803d",
+    "build/dl086-review-r1/reversals-05twhcf0/17.log": "6dff283ac7a82d27653b688de064392c62e6f24019a1330425be18a663ac12c4",
+    "build/dl086-review-r1/reversals-05twhcf0/17.py": "bc0b4c4ded8984011c41b859a5e6d4233e4d559c996b369f3cfdb11d471b1c48",
+    "build/dl086-review-r1/reversals-05twhcf0/18.log": "c1e047ff3899c05e89be8fb2be5ec5983bf4c855f71780d52b38938e54e8610e",
+    "build/dl086-review-r1/reversals-05twhcf0/18.md": "45a14d2562352b6dbbd00f47be2e5d8a9ba2637907ab4180c20e5a7ddc512f1b",
+    "build/dl086-review-r1/reversals-05twhcf0/19.log": "db47ccd39254442080dae72f0deb5f246b5743e0d746f10b965be6b5fbf93172",
+    "build/dl086-review-r1/reversals-05twhcf0/19.md": "8c54c897f548b547b4b291e362a07e2cfdadd3f40b5b16a479ebc285303a1ebd",
+    "build/dl086-review-r1/reversals-05twhcf0/2.log": "a7b0167e44d3df006733d211294da1f2b36567d4c6dbb56666a57a86994dc74d",
+    "build/dl086-review-r1/reversals-05twhcf0/2.md": "ef0aec566db8be6b93d8e5f1c743afbdb01254a0e8483afe2e607d5a14545aa0",
+    "build/dl086-review-r1/reversals-05twhcf0/20.log": "cd0f42381a3683ec453a71f4a5f9b13957de9015e008effd71320c600091e6ce",
+    "build/dl086-review-r1/reversals-05twhcf0/21.log": "0a416e1394652a37e76fba5574e4ce1107f7b3045e264801e85ca0f4a586dbc8",
+    "build/dl086-review-r1/reversals-05twhcf0/22.log": "133bb2fb59c95e4b9ce7c9d44118899ba218e1e336bd4bfdbd5fbd0ae03de2b0",
+    "build/dl086-review-r1/reversals-05twhcf0/23.log": "7fbe02491478938fe3a2e3a5d3af7ffa5cfd66cecb60ad192e7bb67387cd5182",
+    "build/dl086-review-r1/reversals-05twhcf0/3.log": "b5387455ad8ac4650663a90ef0d7b2310e596df59c665afac5f1c20012f95f5f",
+    "build/dl086-review-r1/reversals-05twhcf0/3.md": "7e5cc8e62c3a417c8b3e578274493934f2fb9679da7d3e471a783840aa5a2ee6",
+    "build/dl086-review-r1/reversals-05twhcf0/4.log": "6db3c6c676d6d4b4c0c0f68ac9f8db10e4d0f66d2d640d52f18d0a4c3496b4a5",
+    "build/dl086-review-r1/reversals-05twhcf0/4.md": "0764e1bac892083ac5eff17348eeb58a490a8d71919436e81867ffc775358b8e",
+    "build/dl086-review-r1/reversals-05twhcf0/5.log": "0e5e295b0a95380d3917119d03c1f2843cc742067f8b1734ff6998aebc7ed202",
+    "build/dl086-review-r1/reversals-05twhcf0/5.md": "c88ef0d90eab07ead846977dbdbbad801fc48886da99c7b7c42b1ef8d84c9ace",
+    "build/dl086-review-r1/reversals-05twhcf0/6.log": "f495bdbd3fc5e3f3232e88225c913893bfe2687652f9b0789429c9b4aa8c706d",
+    "build/dl086-review-r1/reversals-05twhcf0/6.md": "62a603efd26a03448270aa96eee34eb508436548291ddf18e2f9d2b0eedb2557",
+    "build/dl086-review-r1/reversals-05twhcf0/7.log": "aeab6075780adb067e1baf2052d99fd23ae3c4407f56e017febf23e33d480c83",
+    "build/dl086-review-r1/reversals-05twhcf0/7.md": "ac5577fe083b3240dab44301e8baa93b35c19a286ab9e17cc02c7b4ba7987c86",
+    "build/dl086-review-r1/reversals-05twhcf0/8.log": "32d5aebc7f56635285cfbcc99d3fdcf6af4b69c90001ea4b0bc1ddd0311b4cf5",
+    "build/dl086-review-r1/reversals-05twhcf0/8.py": "ecb5e0f0793594d853066f200dfabb457c4b326d43bda23cd76a93eb0581b372",
+    "build/dl086-review-r1/reversals-05twhcf0/9.log": "8974a4d7ab93d181984035224952482a41407e48e17d6b7144959b941478e863",
+    "build/dl086-review-r1/reversals-05twhcf0/9.py": "4d70232b087babc0126bf4a74848fe81c380388c60c81f6983f60d620fae2a1e",
+    "build/dl086-review-r1/reversals-05twhcf0/receipt.json": "c76a5cf8100e0ffaf7a357b4814ccca8063352c757e7fcea0bb21b2a068f6c3c",
+    "build/dl086-review-r1/reversals-05twhcf0/test_grant_0.py": "33c784d571d2090e0b42c6eb19f672e6204b6e12e25eb5779cde914bf226f812",
+    "build/dl086-review-r1/reversals-05twhcf0/test_grant_1.py": "6286cb8d96d8ea8d21c5892839a2785fc69978d662ee691ab3176e41b05ba894",
+    "build/dl086-review-r1/reversals-05twhcf0/test_grant_2.py": "a9601270977d32f20b23b04b07f4ed579bcee3bc4bd2c1f7d023662f6e2d6e21",
+    "build/dl086-review-r1/reversals-05twhcf0/test_grant_3.py": "3ea998232e2c82451b7810119b882e521bbd743552589e9e6bcbfa5f70cd7239",
+    "build/dl086-review-r1/reversals-4_7ngast/0.log": "a70d5a1f7ab61776db321afee97d4ab3258a4a95e63abce70ba38617a64629d9",
+    "build/dl086-review-r1/reversals-4_7ngast/0.md": "c07dc9dba743f9b14bcec948a379fc2bd59ddb21ee336d3dc8fddd59509fe7f1",
+    "build/dl086-review-r1/reversals-4_7ngast/1.log": "15626c1fff62c1c580df0474c37d9c0e4941d173d22897be0224bcc4d21af1a8",
+    "build/dl086-review-r1/reversals-4_7ngast/1.md": "724eca7c15a39570b093bc5307b864d921715a21eb151a1d8611edb289f2a2e5",
+    "build/dl086-review-r1/reversals-4_7ngast/10.log": "142e31b74fa4f2944eb2167613247c4d490a7d18d9107d8a29fa47fb31a58bde",
+    "build/dl086-review-r1/reversals-4_7ngast/10.py": "c730c49cddfdc97965c3976dfe6b17ebafc77acb6c8089039df6357c99a63572",
+    "build/dl086-review-r1/reversals-4_7ngast/11.log": "b975e7814e1a5b2e60ab068f05096343deeb395d3ebc7211a61c1a8c990236d6",
+    "build/dl086-review-r1/reversals-4_7ngast/11.py": "46fa2cd4f8ab89467453de8b60dbe95d83f165214202e0ae4d3e7c97630e87e3",
+    "build/dl086-review-r1/reversals-4_7ngast/12.log": "4a467b36f82675295c5d7c216b276e867605232d5c6e4cd0e017753f0270a4f1",
+    "build/dl086-review-r1/reversals-4_7ngast/12.py": "d247837c90ff503930166db992a96366c7f230e71675f20c7d788c6b3b866553",
+    "build/dl086-review-r1/reversals-4_7ngast/13.log": "54c5e944aa017b0aa5e8c112b908c71cf30f8219a4b10a378c9e8e566ab90a76",
+    "build/dl086-review-r1/reversals-4_7ngast/13.md": "5f2d224665020fdb0ab3bfb6d75fa4e97fbf06e5e683ffa28e56ffa740add7d9",
+    "build/dl086-review-r1/reversals-4_7ngast/14.log": "fa572bd44f340338f132b65788182d8d1dd3e55fca1300e5d1da7250b3f323de",
+    "build/dl086-review-r1/reversals-4_7ngast/14.md": "1886735d732fc6c0d690d73e283aab213b2055cdc816c8489136f906990b73b9",
+    "build/dl086-review-r1/reversals-4_7ngast/15.log": "9af967ff5218e47ea33e01d432d87bde04b54a3ff016817fcedcf2f6ec029c50",
+    "build/dl086-review-r1/reversals-4_7ngast/15.md": "4dc3853490b0ec57e7b0e1ebcf2919327729d2f2a66af5b077f586863b7bf833",
+    "build/dl086-review-r1/reversals-4_7ngast/16.log": "a1645373b36b4938456da234036a3108c83ea3afe9c63ae3793d65fdfa612a1f",
+    "build/dl086-review-r1/reversals-4_7ngast/16.py": "8ba5bb58ab2e376c50e9ca5ea8f9f497a86a51963ee36ba5739f6dc82e4b803d",
+    "build/dl086-review-r1/reversals-4_7ngast/17.log": "b0406e84311a5ac6ab30883a38813f03f47da017264ea307f90514b23fb03628",
+    "build/dl086-review-r1/reversals-4_7ngast/17.py": "bc0b4c4ded8984011c41b859a5e6d4233e4d559c996b369f3cfdb11d471b1c48",
+    "build/dl086-review-r1/reversals-4_7ngast/18.log": "0e3d1a6aa299edeb1e57ecd727ade2e510c88e9bf24a0b941c64cfb551dcf18f",
+    "build/dl086-review-r1/reversals-4_7ngast/18.md": "70f7df886145fdedaf2dedc09fde9b41ba654962d932721d256d4840b56b3e3b",
+    "build/dl086-review-r1/reversals-4_7ngast/19.log": "db47ccd39254442080dae72f0deb5f246b5743e0d746f10b965be6b5fbf93172",
+    "build/dl086-review-r1/reversals-4_7ngast/19.md": "83a6a8a71846dbe7c52d8f5364424dc7bc39a4540f9582246e8a6d0c45c76a0e",
+    "build/dl086-review-r1/reversals-4_7ngast/2.log": "bb932b5b7458d02f241119b51c40add9fab88f9f463907b2ba4d47a94b7d13d0",
+    "build/dl086-review-r1/reversals-4_7ngast/2.md": "7e79c756def471cb6c9a5172c0ca003e6dd2f7afd02118bf7bab5ee5a31abe4b",
+    "build/dl086-review-r1/reversals-4_7ngast/20.log": "1e60b209d51cb7c2d4863ce742ea09b3f453a946e60528047713719689c39070",
+    "build/dl086-review-r1/reversals-4_7ngast/20.md": "2d42196d510548f73558b67b7c5177f94e16e18cd6de137c555735bc5288296a",
+    "build/dl086-review-r1/reversals-4_7ngast/21.log": "c17d87637e464ba130bdbc797a0cf282e62c21fad4b40e6104b4106770f3fc75",
+    "build/dl086-review-r1/reversals-4_7ngast/21.md": "33c9bff531623f12cbe79b313fcf2073df357972e31788194554c026e0b3f40f",
+    "build/dl086-review-r1/reversals-4_7ngast/22.log": "df77bb1379ecf43e0f3ad1a39e822c48608dbfa94a68446051da2136c14fd993",
+    "build/dl086-review-r1/reversals-4_7ngast/22.md": "b3a07d027396c1a32ead1f41271e1ee9e47c4b5f72910843874f95f0b6257b46",
+    "build/dl086-review-r1/reversals-4_7ngast/23.log": "6e58fa93f033b008a655b11aae4ef80e3197b45390ecae09e762fefcb5d489cd",
+    "build/dl086-review-r1/reversals-4_7ngast/24.log": "e1f09e2093cad2bdb04b35adbf279d076e987a2c30581f0c26e3b381580a74de",
+    "build/dl086-review-r1/reversals-4_7ngast/25.log": "3caa27d96fc72e408cdc16989fb1270fd24dfa68bd3dd3c0ded6ff3247dc1562",
+    "build/dl086-review-r1/reversals-4_7ngast/26.log": "6e77ff315fe0f488de79155a64cf34a37911e7b58d6d208dc93a53e73a0a5777",
+    "build/dl086-review-r1/reversals-4_7ngast/3.log": "10597a79d52ad24c9ac709f55abebb4631146e7688d94aafc5a019258af68a3b",
+    "build/dl086-review-r1/reversals-4_7ngast/3.md": "4088bacd41d59e5f994598f90b0771e77b18d47fba0c5b4b9a3ac15bfb3b631a",
+    "build/dl086-review-r1/reversals-4_7ngast/4.log": "0c63436782a706e0c2c4d8797b93d674f1ffb66ecdf5cae550f6125c71868271",
+    "build/dl086-review-r1/reversals-4_7ngast/4.md": "08aef8bb250dd50c19498e71b8aeccd7ec72660fb66ea9e7f75fe8e864d16006",
+    "build/dl086-review-r1/reversals-4_7ngast/5.log": "fe7d654139252462c2e98229f748a1d1a3545f0c380ff5042250360f52773604",
+    "build/dl086-review-r1/reversals-4_7ngast/5.md": "fc6e26a726bc5c2bcccdc6937bf0adeb3e1df7b6918171a5466bedb13aa275eb",
+    "build/dl086-review-r1/reversals-4_7ngast/6.log": "7a488202c6c6e3a579bd227a8799777be3daee8ad2f7f3d408ea64cc0b6fd212",
+    "build/dl086-review-r1/reversals-4_7ngast/6.md": "e36297acae81f2aa2b6380ef59071f966fa4acd42b6d9fcc73168857c9db9d44",
+    "build/dl086-review-r1/reversals-4_7ngast/7.log": "5d16e861bb5baaad8751ae0080668abddab6a100d5c9680feec5ca01dd9dbd9e",
+    "build/dl086-review-r1/reversals-4_7ngast/7.md": "ac5577fe083b3240dab44301e8baa93b35c19a286ab9e17cc02c7b4ba7987c86",
+    "build/dl086-review-r1/reversals-4_7ngast/8.log": "faad2113140930250471b288b35c20703147b686fb9d692f74f47330bff4cc91",
+    "build/dl086-review-r1/reversals-4_7ngast/8.py": "ecb5e0f0793594d853066f200dfabb457c4b326d43bda23cd76a93eb0581b372",
+    "build/dl086-review-r1/reversals-4_7ngast/9.log": "b54eb18bc6e2ac7af4d47da21e1b4b5208df426f60c3ded74b2241258ab50866",
+    "build/dl086-review-r1/reversals-4_7ngast/9.py": "4d70232b087babc0126bf4a74848fe81c380388c60c81f6983f60d620fae2a1e",
+    "build/dl086-review-r1/reversals-4_7ngast/receipt.json": "565a1acfd8b791e89b487c5240e38fb4db77e23dff571652d51d9754cb9e15c1",
+    "build/dl086-review-r1/reversals-4_7ngast/test_grant_0.py": "fddd9614d49693e7fa438f7c3a5438eb2953c0e5af184f1463a0312fa8d7779a",
+    "build/dl086-review-r1/reversals-4_7ngast/test_grant_1.py": "6ed43cb208db22594cd8c37fc6d11af00b70231ca9ff784265423f381760c830",
+    "build/dl086-review-r1/reversals-4_7ngast/test_grant_2.py": "0c6ef88f7f718e718f6e37a6cad89b82a82c26e3a93d0d5d5dfaf44d9984e09e",
+    "build/dl086-review-r1/reversals-4_7ngast/test_grant_3.py": "31ea8fbc1c2a0339693ad415819f9b710059380b91558cc961c2472d7a3c417a",
+    "build/dl086-review-r1/reversals-final.log": "439a8c1cc7d5d20000698e2d150beb4fe128471b18f538cf0647b274801526cb",
+    "build/dl086-review-r1/reversals-vxb5fzrt/0.log": "803435ec28cc42c0ecf0c0e38a4ac6065d2749e9f33195fbdeb2110d5255f28e",
+    "build/dl086-review-r1/reversals-vxb5fzrt/0.md": "7bb6c42974193107eb1bc218178c047a0f138aad44f33c6ed7fd94c08645503a",
+    "build/dl086-review-r1/reversals-vxb5fzrt/1.log": "9795be1dff83b820e71c04a5a9eb5294ec55f08df4bc580c09600fad39522ac3",
+    "build/dl086-review-r1/reversals-vxb5fzrt/1.md": "71bd6eb027d34f1caa77276c692cbe648c34ae71663121383014fa77915c31fc",
+    "build/dl086-review-r1/reversals-vxb5fzrt/10.log": "d00562754f132a3960c4d75cb1bfc4295f6d2d77dadb923323a0c9ed510a5598",
+    "build/dl086-review-r1/reversals-vxb5fzrt/10.py": "c730c49cddfdc97965c3976dfe6b17ebafc77acb6c8089039df6357c99a63572",
+    "build/dl086-review-r1/reversals-vxb5fzrt/11.log": "f87f7bda1d863b45a14810e61b5923e05f5b8b8b4aea1ebc7cfc47cd68f4c8ad",
+    "build/dl086-review-r1/reversals-vxb5fzrt/11.py": "46fa2cd4f8ab89467453de8b60dbe95d83f165214202e0ae4d3e7c97630e87e3",
+    "build/dl086-review-r1/reversals-vxb5fzrt/12.log": "4acc3399e4bffcefa6dcef2e4bb82a833041da27db2cf4708c925ba9ec4799a8",
+    "build/dl086-review-r1/reversals-vxb5fzrt/12.py": "d247837c90ff503930166db992a96366c7f230e71675f20c7d788c6b3b866553",
+    "build/dl086-review-r1/reversals-vxb5fzrt/13.log": "24444924536c12862a5e71774d698aaf3da611f945e7978537b31aaa52e2b52c",
+    "build/dl086-review-r1/reversals-vxb5fzrt/13.md": "b486f8c7b87aecf20dad239d9079cf60cf4fb3b1e04f498c52f1fa0446ab2ea7",
+    "build/dl086-review-r1/reversals-vxb5fzrt/14.log": "d5c33e59ec8fec398dc34b4a32870729517a164a21a504c3080e442afb754457",
+    "build/dl086-review-r1/reversals-vxb5fzrt/14.md": "6ccf84c6124d6b9c20332e85cdb62fbaa165f81595df40e57f41bf0e32d1c00c",
+    "build/dl086-review-r1/reversals-vxb5fzrt/15.log": "2c072a652cb68aad8dc183e2f4e1126eed6fdc847ffabc8e49e8c4ebcc39c09f",
+    "build/dl086-review-r1/reversals-vxb5fzrt/15.md": "cfcf994f6706d46706124dea2853fcec707cccd3ef755429b1e95d366d30d0da",
+    "build/dl086-review-r1/reversals-vxb5fzrt/16.log": "9d527fbad24e6d445aea49221a5658d9a72c3abde2c9df5d428fefd9ab1dddd6",
+    "build/dl086-review-r1/reversals-vxb5fzrt/16.py": "8ba5bb58ab2e376c50e9ca5ea8f9f497a86a51963ee36ba5739f6dc82e4b803d",
+    "build/dl086-review-r1/reversals-vxb5fzrt/17.log": "9a29b6c7bbd51bb464fbcb0fbb338cac05ce80f70392880c6093a12beab67987",
+    "build/dl086-review-r1/reversals-vxb5fzrt/17.py": "bc0b4c4ded8984011c41b859a5e6d4233e4d559c996b369f3cfdb11d471b1c48",
+    "build/dl086-review-r1/reversals-vxb5fzrt/18.log": "4c2d060a5d28a8e5a1842ccfdd74d7872dc063f148617ed84b8a9ee9f1da97b5",
+    "build/dl086-review-r1/reversals-vxb5fzrt/18.md": "70f7df886145fdedaf2dedc09fde9b41ba654962d932721d256d4840b56b3e3b",
+    "build/dl086-review-r1/reversals-vxb5fzrt/19.log": "4dd78ea7e150e71b3b2c7b4c1663519ec4b7174f38e580c3235c9cfe2b8ffff8",
+    "build/dl086-review-r1/reversals-vxb5fzrt/19.md": "7404736b4e897967e5c55472633184eca1a93f8c32d146f01b9b80085222e0ca",
+    "build/dl086-review-r1/reversals-vxb5fzrt/2.log": "333270da87a87e0a1ebb2bd0486138372f2a9aab9d5d3de9ec35f13846a148d2",
+    "build/dl086-review-r1/reversals-vxb5fzrt/2.md": "558004fa94ac46c7bbffaf96cd422600e7674775097d2c6cae1111d1a2694a81",
+    "build/dl086-review-r1/reversals-vxb5fzrt/20.log": "219fe9e7283b154797beaa4c095f61eaad9fa154d7666ca08e8e58673ef640bc",
+    "build/dl086-review-r1/reversals-vxb5fzrt/20.md": "2d42196d510548f73558b67b7c5177f94e16e18cd6de137c555735bc5288296a",
+    "build/dl086-review-r1/reversals-vxb5fzrt/21.log": "f15dfe2de6f1aaa9b0bca20363c20965f90db2d59ab197d293f968638db36f62",
+    "build/dl086-review-r1/reversals-vxb5fzrt/21.md": "33c9bff531623f12cbe79b313fcf2073df357972e31788194554c026e0b3f40f",
+    "build/dl086-review-r1/reversals-vxb5fzrt/22.log": "73b0f7011a1ceaaca3efaf6e0211651ecb122e3408b2f1e777483f767495c013",
+    "build/dl086-review-r1/reversals-vxb5fzrt/22.md": "b3a07d027396c1a32ead1f41271e1ee9e47c4b5f72910843874f95f0b6257b46",
+    "build/dl086-review-r1/reversals-vxb5fzrt/23.log": "46add5a6652eaae159592ccbbdfc4438030e809699d7360973c82146cac49850",
+    "build/dl086-review-r1/reversals-vxb5fzrt/24.log": "df9b22fdbdac99850672c465d05b00f0ccc97d8f1a16d0d609bf314fad88c61f",
+    "build/dl086-review-r1/reversals-vxb5fzrt/25.log": "3adf8e878236c0cda4228e473c7fcf8fc4da2504fbe9b6da93157a31d720c5bf",
+    "build/dl086-review-r1/reversals-vxb5fzrt/26.log": "fd2c5ab3cd8e35a8c9720d658bdafe95766b9d7112e6edb3597f2075a1cab15e",
+    "build/dl086-review-r1/reversals-vxb5fzrt/3.log": "f734d196d952133b0693dd51ac60ae6eeed5d077398bb4c784629e165e4289ef",
+    "build/dl086-review-r1/reversals-vxb5fzrt/3.md": "1f8bcc093b1a0dcee445672322e0a1c9d3999cf7148b2b9e614e59cb6784fc43",
+    "build/dl086-review-r1/reversals-vxb5fzrt/4.log": "35a5268aa4bceb26a0057fa422ce1ff73c7f09df2e27104bd5c16c1e388305a6",
+    "build/dl086-review-r1/reversals-vxb5fzrt/4.md": "f219393091ccb4093c490d962f4f27f17e0eb42503c43b6b2f69505945982567",
+    "build/dl086-review-r1/reversals-vxb5fzrt/5.log": "fcdb4ca2b694da34447ce394583497fa765f547d2e6bd1603b41ac68eac4739d",
+    "build/dl086-review-r1/reversals-vxb5fzrt/5.md": "7f5742eabd150e653200fa603b41238b20eb2c70a4f76038f638692ac3c534bc",
+    "build/dl086-review-r1/reversals-vxb5fzrt/6.log": "8b0951c94e83229c5fdc35572a4437ebcc31db7fc7e9a1caab0382d9186bc2bd",
+    "build/dl086-review-r1/reversals-vxb5fzrt/6.md": "ce0c262751d5cedb6bc20385067feaff9fca597f036283363c6bd8d5e9bc68d2",
+    "build/dl086-review-r1/reversals-vxb5fzrt/7.log": "582b920afd61521d66b341d208733b0bf9232f02e10304cdf3116b9cd00f4ae7",
+    "build/dl086-review-r1/reversals-vxb5fzrt/7.md": "ac5577fe083b3240dab44301e8baa93b35c19a286ab9e17cc02c7b4ba7987c86",
+    "build/dl086-review-r1/reversals-vxb5fzrt/8.log": "6f6564d382b1bf74209e9e13096febc76f4c972fa2a9c096a687817d50e9af8f",
+    "build/dl086-review-r1/reversals-vxb5fzrt/8.py": "ecb5e0f0793594d853066f200dfabb457c4b326d43bda23cd76a93eb0581b372",
+    "build/dl086-review-r1/reversals-vxb5fzrt/9.log": "876e636abd0542313c25e40f2edd3cb37826c7b471033a4ae861177b742608e9",
+    "build/dl086-review-r1/reversals-vxb5fzrt/9.py": "4d70232b087babc0126bf4a74848fe81c380388c60c81f6983f60d620fae2a1e",
+    "build/dl086-review-r1/reversals-vxb5fzrt/receipt.json": "e23a9e62efda103f4cc21356f69171f0adab309a54cadc5d9115d683bb60d740",
+    "build/dl086-review-r1/reversals-vxb5fzrt/test_grant_0.py": "37026e134fe3326693f5ce836a48aa703ced063ba607a10f5df6a17d4e828506",
+    "build/dl086-review-r1/reversals-vxb5fzrt/test_grant_1.py": "d3de4a515f90a9d17d1da167eab086a205d21a489f06351c6779fee7ea9d2503",
+    "build/dl086-review-r1/reversals-vxb5fzrt/test_grant_2.py": "93879d194ccb3c661a0f66fb4f7af4e043dd9eecc1400ddaa725b2cc35c6b3e4",
+    "build/dl086-review-r1/reversals-vxb5fzrt/test_grant_3.py": "485edea7f0b15f74a1861fd191042b12d2512b68f5a567e23c6f9aac4ee2ce25",
+    "build/dl086-review-r1/reversals.log": "0b275699c9158606e555cb29995c452e9d97f1aa0650b12192d074080f6701b3",
+    "build/dl086-review-r1/suite-final.log": "5d3d94d47f89e49d1496306bf8ac824eabb91e33d4bf3e8e31999d00aaabba80",
+    "build/dl086-review-r1/suite.log": "8f63281791ad9ccac37bdcd7ad57aea189b6731384b42964b5c96e40c711139f",
+    "build/dl086-review-r1/tools.sh": "868e39787e375f526b34f9066cb21455b7bd9b72f01afdbdf7092b366cb31ae0",
+    "build/dl086-review-r1/volumes-after.txt": "1de7429420c64d008b5fd6576c181e74a36d289e8957377c1a02c4dc0b6d0e6d",
+    "build/dl086-review-r1/volumes-before.txt": "1de7429420c64d008b5fd6576c181e74a36d289e8957377c1a02c4dc0b6d0e6d",
+    "build/dl093/reversals-o82lo3pn/0.log": "011263b775cdf594c2d863595278c5ce1e2ed09aa6f68ff6e85ff1f6955bf188",
+    "build/dl093/reversals-o82lo3pn/1.log": "d7da3c49a6d9afd1c81a06bdb0eed72e92edde6e931daf04f3b277ba2f4c17f0",
+    "build/dl093/reversals-o82lo3pn/2.log": "71a25ee3e6335b86fc2998a8394a68f2f299f4c473f1d8ccb0f363960d4c920f",
+    "build/dl093/reversals-o82lo3pn/3.log": "74948a6b14adf99dba0a5010120604068eb8044a4425e36e27b0987db57a77f7",
+    "build/dl093/reversals-o82lo3pn/4.log": "d272dba3d800abd2317dfa66c884cef2611f4544bf5ce691d82ae543146a898b",
+    "build/dl093/reversals-o82lo3pn/5.log": "ca66ad03cd4eae47605f53eb1543f1f795ce421133bf7724c06c4761315ccee3",
+    "build/dl093/reversals-o82lo3pn/6.log": "9d1d7903e546165a3df8cac419e40428daa08b9ed1bf291ceb79333385a66ce9",
+    "build/dl093/reversals-o82lo3pn/7.log": "5bf7283575adecb71b2f3458ee0322fa9d70e83e94820f004222fb28300f23fb",
+    "build/dl093/reversals-o82lo3pn/8.log": "f732fa239afb86cf5203bbef2aa41b2921f165f721dff6b457f8bf20bba22208",
+    "build/dl093/reversals-o82lo3pn/9.log": "83ea0bda981c3b5a7a86b0ddc57f75b4efef7ee6d38de10f758112cee4703d3d",
+    "build/dl093/reversals-o82lo3pn/receipt.json": "57579b1f5cc5a91de7fa843e2e7fafe463cd09df403b40dbea2131690392fdfb"
+  }
+}
