@@ -4,7 +4,7 @@
 
 - **What this is.** The design of sql-megasamples' pristine templates and per-test copies, the commands that scripts drive them with, and the account model of both server engines. It carries the strict PostgreSQL read profile of pull request #14.
 - **Rounds.** Round 1 is `2a15387`. Astra's review 1 of it found two P1s, fourteen P2s and a P3 (the coordinator's ignored `.local/megasamples-design/astra-r1.md` in DataIntent). All are fixed in this round, under DL-101. Section 12 answers each by number.
-- **Who decides what this leaves open.** The owner's direction of 2026-11-20, as the coordinator relayed it to this task: "Please let the two deciders decide how to proceed." So what round 1 would have asked the owner goes to the two deciders: section 9.
+- **Who decides what this leaves open.** The two deciders, by the owner's directions of 2026-11-20: DL-104 for the design's questions (section 9), and DL-105 with the approval MEGASAMPLES-ROLLOUT-2 for the rollout itself (5.6).
 - **Authority.** The owner's DL-076 (read or write by account), DL-077 (templates, copies and the CLI, built into sql-megasamples), DL-078 (the README), DL-101 (a problem found in a piece of work is finished in it) and DL-103 (one rollout, from a build of `main`). The two deciders' DL-079, DL-085 and DL-087. The lines register's lines 2, 4, 10 and 16.
 - **Method.** Reading only: no container, no database connection, no network, and no credential file. So no statement about how an engine behaves has been observed.
 - **Marks.** Each claim carries one:
@@ -16,7 +16,7 @@
 - **Citations.**
   - `SM:` is sql-megasamples at `main`, `e61335f`.
   - `PR14:` is its branch `fix/strict-read-account` at `2879fc4`.
-  - `DL:` is DataIntent's `docs/work/decision-log.md` at `d02f7384` (`origin/coordinator/journal-during-full`), and `LR:` is `docs/work/lines-register.md` there.
+  - `DL:` is DataIntent's `docs/work/decision-log.md` at `d02f7384` (`origin/coordinator/journal-during-full`), and `LR:` is `docs/work/lines-register.md` there. DL-104, DL-105 and `docs/bootstrap/approvals.md`'s MEGASAMPLES-ROLLOUT-2 were read on that branch at `3ada3517`.
   - `ED:` is DataIntent's `docs/work/samples-service-editing-requirements.md`, `MR:` its `docs/work/samples-service-requirements-and-architecture.md`, and `DI:` any other DataIntent file, all at `4a8aad61` (`origin/coordinator/samples-p1`).
 
 ## 0. Summary
@@ -793,7 +793,7 @@ Decided here [D: review 1's finding 10. Round 1 merged before the candidate was 
 | 8 | **The merge into `main`,** by a merge commit. | `main`'s tree is the blessed head's tree. |
 | 9 | **One build of the final `main`,** at the merge commit, in the isolated store. | Its image IDs recorded. **This is the build that is deployed;** nothing is built again after it. |
 | 10 | **That build is qualified:** the dataset matrix, the image tests and the native suites again, and DataIntent's comparison again, on it. | Complete, every case Passed. It differs from step 4's candidate only by the revision in its registry rows and labels; whether that difference could excuse any of this is the two deciders', and is not assumed here. |
-| 11 | **The approvals** of 5.6, each by whoever it names. | Recorded before any live step. |
+| 11 | **The two deciders' approval** of one exact plan and revision (5.6). | Recorded before any live step. A plan that changes afterwards goes back to them. |
 | 12 | **The rollout** (5.4), and then **DataIntent's accepting run on the live service** (5.3). | The rollout is accepted only then. The deployment's checkout moves to that `main` (DL-103 item 2). |
 
 ### 5.3 DataIntent's comparison, in full
@@ -867,17 +867,26 @@ The routes are the runbook's [R at each line]; choosing among them is as it says
 
 ### 5.6 What is approved before the rollout, and by whom
 
-Decided here [D], from DataIntent's root policy on shared services, DL-085 item 7, DL-103 item 2 and the owner's direction of 2026-11-20.
+**The two deciders give the specific approval for this rollout, on one exact plan the coordinator directs.** [R: `DL:` DL-105; `DI:docs/bootstrap/approvals.md`, MEGASAMPLES-ROLLOUT-2, at `3ada3517`] That replaces the owner's approval at the time, which DL-103 item 2 and DL-085 item 7 had asked for.
 
-| # | What | By |
+- **The coordinator's direction sets:** when it runs; which agents and runs are paused for it; the quiet window; the runbook, with its quiescence gate; and the acceptance and rollback evidence.
+- **It is one exact plan and one revision,** not a standing permission. **A plan that changes after approval goes back to the two deciders.**
+- **It comes after** DL-087's acceptance, and after the design, the build, the README and the reviews are merged (5.2).
+- **What it does not grant:** host installation, changes to the Docker daemon, credentials outside the service's own `.env`, and destructive clean-up beyond the plan. Each stays reserved as it was.
+
+**What the plan the deciders approve must state,** from this design [D]:
+
+| # | What | Where |
 |---|---|---|
-| 1 | **Stopping the shared services, replacing their images and renewing their data volumes.** It removes everything DataIntent made there. | The owner, with the exact plan, at the time (DL-103 item 2). This design does not read the direction of 2026-11-20 as covering it; if the coordinator or the deciders do, that is theirs to record. |
-| 2 | **The permission change,** with the final content: it reaches every role that is not an administrator, on PostgreSQL; and `demo` on MySQL. | As DL-085 item 7 has it, for the rollout that carries it. |
-| 3 | **A compiled hook in the PostgreSQL server,** and what it refuses (4.3), with its independent review. | With item 2. |
-| 4 | **Which credentials leave the machine,** with 4.9's table. | The two deciders: question 1. |
-| 5 | **What is accepted of MySQL passwords,** if gate G-16 made it a question. | The two deciders: question 2. |
-| 6 | **The public contract and the persisted formats** at version 1, with their policy (3.8). | The two deciders: question 3. |
-| 7 | **The storage report** of 2.6, measured on the final build, and the budget and limits chosen from it. **MySQL without a binary log.** | With item 1: they are part of the exact plan. |
+| 1 | **Stopping the shared services, replacing their images and renewing their data volumes,** at one revision of `main` and its image IDs. It removes everything DataIntent made there. | 5.1; 5.2 step 9; 5.4 |
+| 2 | **The permission change,** with the final content: it reaches every role that is not an administrator, on PostgreSQL; and `demo` on MySQL. DL-085 item 7 asked that the approval say so. | 4.1 to 4.4 |
+| 3 | **A compiled hook in the PostgreSQL server,** and what it refuses, with its independent review. | 4.3 |
+| 4 | **Which credentials leave the machine,** as the deciders answered question 1. | section 9; 4.9 |
+| 5 | **What is accepted of MySQL passwords,** if gate G-16 made it a question, as they answered question 2. | section 9; 4.5 |
+| 6 | **The public contract and the persisted formats** at version 1, as they answered question 3. | section 9; 3.8 |
+| 7 | **The storage report,** measured on the final build, with the budget and limits chosen from it. **MySQL without a binary log.** | 2.6; 2.4 |
+| 8 | **The acceptance evidence:** the final build's qualification and DataIntent's comparison on it, and the accepting run that follows the rollout. | 5.2 steps 10 and 12; 5.3 |
+| 9 | **The rollback evidence:** the routes, their rehearsal on the isolated store, and how long each rollout's inputs are kept. | 5.5; T-22 |
 
 ## 6. The test plan
 
@@ -990,7 +999,7 @@ For DL-078's writer, on the same branch, before the merge (5.2 step 3). Each is 
 
 ## 9. Questions for the deciders
 
-By the owner's direction of 2026-11-20 these go to the two deciders, Astra and a Fable decider who is not this drafter. They are only what is hard to change later: security posture, persisted formats and public contracts. One question for each decision. Everything else is decided above.
+By the owner's direction of 2026-11-20 (DL-104) these go to the two deciders, Astra and a Fable decider who is not this drafter. They are only what is hard to change later: security posture, persisted formats and public contracts. One question for each decision. Everything else is decided above.
 
 ### Question 1 · Which credentials may leave the service's machine, and shared or separate?
 
@@ -1107,7 +1116,7 @@ Every finding was to fix now (DL-101). None is declined.
 | 7 | **P2 · The working-copy editor has no durable access path.** | Enrollment: two working-copy groups hold `CONNECT` on every working copy, a reset always grants the same three lines, and who is enrolled is a membership or a named grant that a reset keeps. It is a command, built and tested now on the isolated stack. Nobody is enrolled for `write` on the live service. | 4.1; 4.6; T-5, T-6 |
 | 8 | **P2 · PostgreSQL's reach table ignores inherited connection rights.** | The rule of effective access is stated. The table says what each account holds itself, with a row for `admin` under the fixture's real topology, where it inherits an enrolled role's `CONNECT`. T-4's red is round 1's own wrong cell, and each right is tested direct, inherited once, inherited twice, and takable. | 4.7; 4.9; F-23; T-4 |
 | 9 | **P2 · The local credential fallback contradicts the no-environment contract.** | The `--env-file` route has a reader of its own that reads the file only: literal values, expansion refused, an exported value never read. Its failure when the server holds an exported value is a refused sign-in. T-13 tests a conflicting export and an expansion. The image path's in-container clients keep today's reader, and that boundary is stated. | 3.4; F-22; T-13 |
-| 10 | **P2 · The merge and rollout order violates DL-085 and DL-103.** | The order is rewritten: gates, the build, the README on the same branch, the branch's candidate, DataIntent's comparison, the reviews, DL-087's acceptance, the merge, one build of the final `main`, its qualification, the owner's approval, the rollout. Nothing merges before the comparison. The deployed build is the final `main`'s, README included. | 5.2; section 7; section 8; F-25, F-26 |
+| 10 | **P2 · The merge and rollout order violates DL-085 and DL-103.** | The order is rewritten: gates, the build, the README on the same branch, the branch's candidate, DataIntent's comparison, the reviews, DL-087's acceptance, the merge, one build of the final `main`, its qualification, the two deciders' approval of the exact plan, the rollout. Nothing merges before the comparison. The deployed build is the final `main`'s, README included. | 5.2; section 7; section 8; F-25, F-26 |
 | 11 | **P2 · The second rollout silently reduces DataIntent's comparison scope.** | All five parts, the read account's admission and comparison mode are mapped to this rollout, each with why it is needed and what it needs. A part whose prerequisite is missing waits or goes to the two deciders by name; it is not left out. The rollback inputs' retention names package 3's gate, for both rollouts' inputs. | 5.3; 5.5; F-24 |
 | 12 | **P2 · Historical core sizes are not upper bounds.** | Both totals are withdrawn as bounds. Cost is measured per selected physical database, appended datasets included, as allocated bytes. The build enforces a template budget. A storage report gives the peak during a copy and a reset, and is part of what is approved before the rollout. Disk exhaustion is two gates and a regression. | 2.6; F-8, F-9, F-21; G-9, G-17; T-18, T-27 |
 | 13 | **P2 · Owner question 1 understates the credential's authority.** | 4.9 gives each credential's effective authority from any origin, says that "kept on the machine" is policy and not enforcement, and names shared trust against separate principals. Any number of namespaces, each with its own owner, can be configured. The question is rewritten on that table, with three choices, and now goes to the two deciders. The namespace owner's grant option is gone. | 4.9; 2.1; section 9, question 1; G-22 |
@@ -1116,6 +1125,6 @@ Every finding was to fix now (DL-101). None is declined.
 | 16 | **P2 · Several planned tests cannot prove the stated behaviour.** | Feasibility gates are apart from regressions and run first; each says what happens if it fails. Each regression's red is its own, against the commit before it. A 63-byte name is accepted and 64 refused. MySQL's definers are compared as the owner's. T-15 is every ordered pair, natively, at each durable phase. **H-3 has a resolution** if the leak is reproduced, and returns to the deciders if it cannot be closed. | 6.1; 6.2; 4.3 |
 | 17 | **P3 · Narrow several factual and compatibility claims.** | F-1 is scoped to commands that contact a running engine. H-1 says which statements would be refused, and is a gate. P-5 admits an exported snapshot explicitly, as the one exception that reaches past its statement. The refusal of unmatched image and data is stated for PostgreSQL only, with what holds for the other two. | F-1; 4.3 H-1; 4.2 P-5; 5.5 |
 
-**Changed by the owner's direction of 2026-11-20,** as the coordinator relayed it: what would have been asked of the owner is asked of the two deciders. Section 9 is written for them: one question for each decision, each with its options, the authority or the policy at stake, a recommendation with its reason, and what each option makes hard to change later. The rebuild of the shared services stays the owner's to approve (5.6, item 1).
+**Changed by the owner's directions of 2026-11-20** (DL-104, DL-105): what would have been asked of the owner is asked of the two deciders. Section 9 is written for them: one question for each decision, each with its options, the authority or the policy at stake, a recommendation with its reason, and what each option makes hard to change later. The specific approval for the rollout is the two deciders' too, on one exact plan the coordinator directs (5.6).
 
 **Also changed, because the findings made it wrong:** the ledger is the same on all three engines, where round 1 used a comment alone on PostgreSQL; `copier` no longer holds the function behind `pg_stat_activity`, since a lock now says what that was for; and section 10 keeps only what nothing is built on.
