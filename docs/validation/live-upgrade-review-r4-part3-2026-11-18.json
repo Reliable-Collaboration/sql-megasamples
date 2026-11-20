@@ -1,0 +1,380 @@
+{
+  "at": "2026-11-18T22:44:57.007607+00:00",
+  "scope": "DL-086 round 4 part 3: DL-088 native cases 1 and 2 in the working isolated store",
+  "code_head": "20f967133a9e47f6afc810ec09d0489520a1eaca",
+  "branch": "docs/dl-086-live-run-corrections",
+  "acceptance": "As of 2026-11-18, DataIntent acceptance held. No independent blessing, merge or live restoration claimed.",
+  "environment": "env.sh assertions and isolated GraphRoot checked before container commands. The default store was used only for explicitly authorized read-only identity proof.",
+  "native_acceptance": {
+    "1": {
+      "status": "Passed",
+      "steps": [
+        "Compose up with bridge and loopback publication",
+        "pre-stop capture of two containers and bind/volume sources",
+        "stop and candidate phase-state gate",
+        "process gate PASS",
+        "one container removed",
+        "fresh bash and interpreter use retained capture: PASS"
+      ],
+      "stack_continuity": "Exact IDs, images, states and start times of all twelve isolated containers unchanged; live containers equal retained cutover record"
+    },
+    "2": {
+      "status": "Unsupported",
+      "scope": "Dedicated and shared helpers; the recorded-process and new-exec components were already Passed in part two and were not rerun here",
+      "passed_components": [
+        "dedicated helper deliberately survives: reason-specific REFUSE",
+        "dedicated helper released and exited: PASS",
+        "shared helper survives with ten independently verified consumers: PASS"
+      ],
+      "unsupported_components": {
+        "shared helper without another consumer": "The isolated stack must remain running and consumes this same store helper. A second scratch project cannot remove those consumers."
+      },
+      "second_scratch_project": "Cannot stand in for zero consumers: the running isolated stack would still consume the same store helper"
+    }
+  },
+  "native_receipt": {
+    "at": "2026-11-18T22:14:56.786917+00:00",
+    "results": {
+      "published-bridge-stopped": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "counts": {
+          "inspected": 1274,
+          "other_owner": 853,
+          "vanished": 19,
+          "zombie_or_exited": 21
+        },
+        "refusals": {},
+        "holds": {},
+        "limitations": {
+          "root": 1100,
+          "cwd": 1100,
+          "fd": 1552,
+          "maps": 327
+        },
+        "shared_consumers": 10
+      },
+      "partial-removal-fresh-shell": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "counts": {
+          "inspected": 1275,
+          "other_owner": 854,
+          "vanished": 15,
+          "zombie_or_exited": 21
+        },
+        "refusals": {},
+        "holds": {},
+        "limitations": {
+          "root": 1101,
+          "cwd": 1101,
+          "fd": 1553,
+          "maps": 327
+        },
+        "shared_consumers": 10
+      },
+      "shared-helper-with-consumers": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "shared_consumers": 10,
+        "helper_class": "slirp4netns",
+        "reason": "Survival reported without refusal; consumers independently inspected"
+      },
+      "shared-helper-without-consumers": {
+        "status": "Unsupported",
+        "reason": "The isolated stack must remain running and consumes this same store helper. A second scratch project cannot remove those consumers."
+      },
+      "dedicated-helper-survivor": {
+        "status": "Passed",
+        "outcome": "REFUSE",
+        "counts": {
+          "inspected": 1267,
+          "other_owner": 853,
+          "vanished": 27,
+          "zombie_or_exited": 21
+        },
+        "refusals": {
+          "dedicated helper survives": 1
+        },
+        "holds": {},
+        "limitations": {
+          "root": 1100,
+          "cwd": 1100,
+          "fd": 1552,
+          "maps": 327
+        },
+        "shared_consumers": 10
+      },
+      "dedicated-helper-released": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "counts": {
+          "inspected": 1262,
+          "other_owner": 850,
+          "vanished": 5,
+          "zombie_or_exited": 21
+        },
+        "refusals": {},
+        "holds": {},
+        "limitations": {
+          "root": 1097,
+          "cwd": 1097,
+          "fd": 1549,
+          "maps": 327
+        },
+        "shared_consumers": 10
+      }
+    },
+    "artifacts": "build/dl088-proof-yi2xf0kl",
+    "image_id": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+    "image_repo_digests": [
+      "docker.io/library/nginx@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82",
+      "docker.io/library/nginx@sha256:5cb45c65713151f856f6b64f6a9b6a96b74d6a10709a7aa18919a444fd00bffa",
+      "docker.io/library/nginx@sha256:e006e9bbd5bf962db1a7f6df14c48364464a98571edb9c6c52d5c881e30d9e8b",
+      "localhost/sql-megasamples-landing@sha256:165ddde8751e75a1c907d24ef10d9f6deb08b57e0fe56caf67512486aff76d82",
+      "localhost/sql-megasamples-landing@sha256:5cb45c65713151f856f6b64f6a9b6a96b74d6a10709a7aa18919a444fd00bffa",
+      "localhost/sql-megasamples-landing@sha256:e006e9bbd5bf962db1a7f6df14c48364464a98571edb9c6c52d5c881e30d9e8b"
+    ],
+    "port_precheck": {
+      "status": "Passed",
+      "address_class": "loopback",
+      "ports": 1
+    },
+    "unpublished-port-predicate": {
+      "status": "Passed",
+      "reason": "Exposed image ports without host bindings do not require a dedicated helper"
+    },
+    "capture": {
+      "status": "Passed",
+      "containers": 2,
+      "sources": 2,
+      "process_classes": {
+        "process": 4,
+        "conmon": 2,
+        "dedicated helper": 1
+      },
+      "shared_helper_class": "slirp4netns"
+    },
+    "helper_control": {
+      "method": "SIGSTOP before project stop; SIGCONT after REFUSE",
+      "dedicated_helpers": 1,
+      "ended": true,
+      "shared_helper_signalled": false
+    },
+    "cleanup": {
+      "status": "Passed",
+      "containers": 0,
+      "networks": 0,
+      "volumes": 0,
+      "isolated_containers": 12,
+      "unchanged": true
+    }
+  },
+  "native_compose_commands": {
+    "stop": {
+      "commands": 2,
+      "exit_code": 0
+    },
+    "down": {
+      "commands": 1,
+      "exit_code": 0
+    },
+    "netns_error_reproduced": false
+  },
+  "image_source": "Reused an image already present in the isolated store by full ID; pull_policy never; no pull or build.",
+  "regression": {
+    "reason": "Image EXPOSE entries without host bindings caused a false dedicated-helper association HOLD",
+    "red": {
+      "status": "Failed",
+      "expected": true,
+      "exit_code": 1,
+      "log": "build/dl086/dl088/native-part3-port-red.log",
+      "assertion": "exposed but unpublished ports must not require a forwarding helper"
+    },
+    "green": {
+      "status": "Passed",
+      "exit_code": 0,
+      "log": "build/dl086/dl088/native-part3-final.log"
+    },
+    "correction": "Inspect actual HostConfig.PortBindings instead of the exposed NetworkSettings.Ports map",
+    "commit": "20f967133a9e47f6afc810ec09d0489520a1eaca"
+  },
+  "results": {
+    "focused": {
+      "status": "Passed",
+      "tests_passed": 71,
+      "exit_code": 0,
+      "log": "build/dl086/dl088/part3-focused.log"
+    },
+    "suite": {
+      "status": "Passed",
+      "tests_passed": 779,
+      "exit_code": 0,
+      "log": "build/dl086/dl088/part3-suite.log"
+    },
+    "documentation": {
+      "status": "Passed",
+      "exit_code": 0,
+      "log": "build/dl086/dl088-part3/documentation.log",
+      "tests_passed": 70
+    },
+    "images": {
+      "postgres": {
+        "status": "Passed",
+        "exit_code": 0
+      },
+      "mysql": {
+        "status": "Passed",
+        "exit_code": 0
+      },
+      "sqlite": {
+        "status": "Passed",
+        "exit_code": 0
+      }
+    },
+    "image_cleanup": {
+      "anonymous_volumes_removed": 0,
+      "scope": "Only new volumes observed mounted by this run's image-test containers"
+    },
+    "isolation": {
+      "at": "2026-11-18T22:44:56.975105+00:00",
+      "status": "Passed",
+      "comparison": "Exact isolated container list/ID/image/state before and after; exact live ID/image/state/start time against retained cutover evidence",
+      "isolated": {
+        "count": 12,
+        "unchanged": true
+      },
+      "live": [
+        {
+          "name": "megasamples-adminer",
+          "id": "7ef317c5e2574872c447d7b2a090d91669ec61f224415ece77bde7ba4e4e8343",
+          "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:39.977097776 -0600 CST"
+        },
+        {
+          "name": "megasamples-cloudbeaver",
+          "id": "2c08eebb7364571e658ef56d61769ff8e0d815a54954bc7a6c5c45259d859931",
+          "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:39.847600394 -0600 CST"
+        },
+        {
+          "name": "megasamples-dbgate",
+          "id": "3d219c0b086d05f86e972d6f107743e4140719c67ca5dee67c20be05bd14120e",
+          "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:39.787017348 -0600 CST"
+        },
+        {
+          "name": "megasamples-landing",
+          "id": "10dcf6333c62c4c636272bdbf591dfc6a7cce847d2ac0c979b39d274fb2a2e29",
+          "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:39.809734163 -0600 CST"
+        },
+        {
+          "name": "megasamples-mysql",
+          "id": "a3f5c1204ee44b48dedbc5d3b7d9a8981aa5ffe04988019d58864b5157eac0d6",
+          "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:10.170768484 -0600 CST"
+        },
+        {
+          "name": "megasamples-phpmyadmin",
+          "id": "044fa1e2a6ee97811efc2d0165776330493c6ef66c33c1dcad9ee4da03f08128",
+          "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:39.93073862 -0600 CST"
+        },
+        {
+          "name": "megasamples-postgres",
+          "id": "ba1a9f7586814467210c0a5549f02f777dbd6d32af13f4176bb3e99c613316cc",
+          "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:13.76245404 -0600 CST"
+        },
+        {
+          "name": "megasamples-sqlite",
+          "id": "7adacf6eca19046bc2d8daa1a69271ac3bd112046eb41ffc143364e60b740a5e",
+          "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+          "state": "running",
+          "started_at": "2026-11-18 08:50:55.525102141 -0600 CST"
+        }
+      ],
+      "live_baseline": "/home/rcc-vstudio/working/sql-megasamples/build/live-upgrade-backups/20261118T133807Z/phase-b-6/live-end-state.json",
+      "scope": "Default store read-only identity inspection only; no live deployment mutation"
+    },
+    "syntax_and_diff": {
+      "status": "Passed",
+      "checks": [
+        "py_compile of native harness",
+        "git diff --check"
+      ]
+    }
+  },
+  "inspection_hygiene": {
+    "status": "Failed",
+    "reason": "A source read displayed code containing published factory credential literals; subsequent source inspection used narrow extraction. No private credential values were inspected, displayed or copied into the receipt."
+  },
+  "failed_then_corrected": [
+    "Initial real Compose capture held on an image EXPOSE entry without a host binding. A native predicate assertion failed before correcting the inspect format.",
+    "The new harness initially tried to update a receipt with the gate's exclusive-create writer; corrected only the harness's mutable receipt writer.",
+    "The first dedicated-survivor proof returned the required REFUSE, then its release wait raised FileNotFoundError for the helper that had exited. The final harness handles disappearance; complete replay passed.",
+    "An image-test volume monitor timed out during PostgreSQL cold population and terminated this session's API, causing the test start to fail with EOF. Removed only that run's new test container/volumes, tolerated inspection deadlines, and reran all three image checks successfully."
+  ],
+  "not_run": [
+    "Live cutover or restoration",
+    "Full revised live runbook end to end",
+    "Engine-size rollback archive replay this round",
+    "Live forwarded sign-in or TLS",
+    "Independent review of the new head",
+    "DataIntent acceptance",
+    "Native cases 3 and 4 this round: prior Passed evidence remains in the part-two receipt"
+  ],
+  "netns": "Original live teardown root cause remains unknown. Neither the earlier scratch namespace startup failure nor the image-monitor failure reproduces or explains it.",
+  "sources": [
+    {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/20f967133a9e47f6afc810ec09d0489520a1eaca/docs/validation/rehearse-quiescence-isolated.py",
+      "read_at": "2026-11-18T22:44:57.007607+00:00"
+    },
+    {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/20f967133a9e47f6afc810ec09d0489520a1eaca/docs/validation/quiescence.py",
+      "read_at": "2026-11-18T22:44:57.007607+00:00"
+    },
+    {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/3dc442177dc735eb970ebae48fda673877044133/docs/validation/live-upgrade-review-r4-part2-2026-11-18.json",
+      "read_at": "2026-11-18T22:44:57.007607+00:00"
+    }
+  ],
+  "source_notes": "No new software version or vendor support claim. Image identity is recorded from the already present isolated image; no image pull or build occurred.",
+  "artifacts_sha256": {
+    "build/dl088-proof-yi2xf0kl/receipt.json": "4c0644a867226a2ae873b498e9a26e3d5e9eb837da349001fd735ad2379647eb",
+    "build/dl088-proof-yi2xf0kl/capture.json": "d2dc95d967d5e6da2913313505d867353fd23cfc22e068264274352b7c524c4f",
+    "build/dl088-proof-yi2xf0kl/survivor-capture.json": "e5fe3af6020e24737a5bf4908813be176725398136a67cea5ea0e379c6aad0ad",
+    "build/dl088-proof-yi2xf0kl/isolated-before.json": "3a0334af1f8abb4b5f66dfcc2ef28ad18ef22398ac36987d9d541105f3327bfa",
+    "build/dl088-proof-yi2xf0kl/isolated-after.json": "3a0334af1f8abb4b5f66dfcc2ef28ad18ef22398ac36987d9d541105f3327bfa",
+    "build/dl086/dl088/part3-focused.log": "ef03108b2edbc5685333ba3091b439671e4639512ef9c4bb325e827c2fdce6d6",
+    "build/dl086/dl088/part3-suite.log": "b4f3c4dbe84696e1be51cdd57dca64d69a8c34b6efbaaf4a5579e7738d07a83a",
+    "build/dl086/dl088/native-part3-port-red.log": "c2faeb67618ef439e0db2ea1e94788e0210f3e7a405b5418e58ffa9bc9171b08",
+    "build/dl086/dl088/native-part3-final.log": "cafef5a78ceae15b30eb816990d739cedfa697b725c026d5fd5fa39a96dc675e",
+    "build/dl086/dl088-part3/documentation.log": "5171faa645ca0369eb0fec7edf54ab4a0b75d7edc574baced3789acc507ef597",
+    "build/dl086/dl088-part3/images-run.log": "c5e41b28cddc0608a3837e6502bc579d0ceec2329c5a1d7955800fec223908c3",
+    "build/dl086/dl088-part3/image-sqlite.log": "d4c5730a993cfe0dcb983799ca1e79c20bb7d0321ffa453ffb8dce9000606caf",
+    "build/dl086/dl088-part3/image-postgres.log": "71cd3a6bb6f17fa7c63b104719e5bd23e09f1136fad32c62a935c0c195ae1f93",
+    "build/dl086/dl088-part3/isolation.log": "adc8832d29cfc0beb5bbe7488b19b6bb2b4c732518b0d000a17a94b7772c57f2",
+    "build/dl086/dl088-part3/image-postgres-monitor-failed.log": "8a50cc9baceaee43ec39022bcb3644afb3260a0f5afac7f924cf629aa7cc4b81",
+    "build/dl086/dl088-part3/api-images.log": "70c3fadf0e997de4724175d24e8b8901ca5894cd7eca5935136869d48fe10e19",
+    "build/dl086/dl088-part3/image-mysql.log": "59e2666a8cde70d9b8b86c47df56fad1b2c9c2ba3885e66848056ccee7a094ad",
+    "build/dl086/dl088-part3/images-monitor-failed.log": "36994e46976ad114963f6cf6947d7f028ab1e71231bfafa3c7857a11f9458c72",
+    "build/dl086/dl088-part3/isolation.json": "8f9243d8734d96a6da376fc2f70f58f7242ef82e82744a72c9bd26e96704d2c9",
+    "build/dl086/dl088-part3/images.json": "7e51d4ca37f1676b4c7dd5117f5d3f75637a3dbfdc0f5f518efadc864700fa9e",
+    "build/dl086/dl088-part3/image-cleanup.json": "1c411b80d6863c73a740286d7516394791a2e0f50ca495dd773eb716d92029e6"
+  },
+  "checked_code_sha256": {
+    "docs/validation/quiescence.py": "d28994cd48b4d36e9b1648dc6e2c5ced155d203db646f647d94a0e5fcf89f357",
+    "docs/validation/rehearse-quiescence-isolated.py": "1d7644c471ffa0f7cfacafa20184843010c310d87d87419801eeec9970ce7408",
+    "docs/live-upgrade-runbook.md": "6153d1370bb879bbd5ae372576bbdde5a508f94def66e52cebbca1dbac401b35",
+    "docs/live-upgrade-evidence.md": "ef81e7cba6dad488db69505ff057d91e4de77ae4be1936884ad13e3944bd7447"
+  }
+}

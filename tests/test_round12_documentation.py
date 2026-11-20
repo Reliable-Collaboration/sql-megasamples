@@ -1,0 +1,23 @@
+"""Round-twelve native-evidence boundary and recovery direction."""
+import os
+from pathlib import Path
+
+import pytest
+
+ROOT = Path(__file__).parents[1]
+
+
+@pytest.mark.parametrize('name,variable', [
+    ('docs/live-upgrade-runbook.md', 'DL089_RUNBOOK_SOURCE'),
+    ('docs/live-upgrade-evidence.md', 'DL086_EVIDENCE_SOURCE'),
+])
+def test_wildcard_native_limit_is_explicit(name, variable):
+    document = Path(os.environ.get(variable, ROOT/name)).read_text()
+    assert 'wildcard cases are fixture-tested' in document
+    assert 'not natively proved' in document
+
+
+def test_original_restart_hold_pointer_points_above():
+    document = Path(os.environ.get('DL089_RUNBOOK_SOURCE', ROOT/'docs/live-upgrade-runbook.md')).read_text()
+    assert 'partial-original-restart hold above' in document
+    assert 'partial-original-restart hold below' not in document

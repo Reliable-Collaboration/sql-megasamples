@@ -1,0 +1,2220 @@
+{
+  "at": "2026-11-18T19:12:04.132632+00:00",
+  "code_head": "1b2304e650fe50ffc5c944d93614138219cff76d",
+  "scope": "DL-086 teardown/rollback design correction",
+  "acceptance": "As of 2026-11-18, held; DataIntent owns its acceptance record",
+  "design": "docs/live-upgrade-runbook.md#teardown-and-rollback-states-and-gates",
+  "findings": [
+    {
+      "findings": [
+        "A1",
+        "F4"
+      ],
+      "red": "Failed: immutable-red.log; old preparation API absent and truncated archive raises KeyError; old runbook writes existing retained files",
+      "green": "Passed: exclusive attempt; verified extraction; retained digest/name invariance with read-only files; completely read-only parent refuses unchanged",
+      "commits": [
+        "41472420c07a0e40ace0c4446c26fa7218d98637",
+        "feee621057b3ae1ecca073c992bc7a8b5df1f1e6"
+      ],
+      "tests": [
+        "test_rollback_preparation.py"
+      ]
+    },
+    {
+      "findings": [
+        "A2",
+        "A5",
+        "F1"
+      ],
+      "red": "Failed: old-state-red.log reproduces SQLite137/created-console/failed-engine refusals and OOM137 acceptance",
+      "green": "Passed: every service/state/phase cell; missing candidate snapshot; OOM independently checked",
+      "commits": [
+        "81bff994da6b623eee6ea10058546cfefcb8da59"
+      ],
+      "tests": [
+        "test_teardown_gates.py::test_state_phase_cell",
+        "test_live_original_stop_and_created_candidate"
+      ]
+    },
+    {
+      "findings": [
+        "A3",
+        "F6"
+      ],
+      "red": "Failed: context-syntax-red.log and old-fragments-red.log lose complete strict-shell recovery",
+      "green": "Passed: saved attempt, runtime and all continuation variables; real failure/fresh shell/checks/continuation; pre-up checkpoint before every gate; partial-start hold",
+      "commits": [
+        "41472420c07a0e40ace0c4446c26fa7218d98637",
+        "33005a946d2221db3a04d0749aa8de95921829f6",
+        "939a6ebf97b991d7e8b6cda8e4b2209944f714dd",
+        "b5dd6bed2702dedf0509c28b90a6f86051b3980b"
+      ],
+      "tests": [
+        "test_failure_fresh_shell_checks_then_continuation",
+        "test_actual_continuation_in_fresh_strict_shell",
+        "test_pre_up_first_refusal_already_saved_checkpoint",
+        "test_start_boundary_saves_partial_restart_hold"
+      ]
+    },
+    {
+      "findings": [
+        "A4",
+        "F3"
+      ],
+      "red": "Failed: old-fragments-red.log compiles the redirect inside Python -c",
+      "green": "Passed: redirect outside Python body; every Python heredoc/-c compiles; shell blocks bash -n",
+      "commits": [
+        "41472420c07a0e40ace0c4446c26fa7218d98637"
+      ],
+      "tests": [
+        "test_all_executable_fragments_compile"
+      ]
+    },
+    {
+      "findings": [
+        "F2"
+      ],
+      "red": "Failed: scanner-red.log; author-session-review-red.log; resume-ownership-red.log; early-checkpoint-red.log; overflow-ambiguity-red.log; owner-transition-red.log",
+      "green": "Passed: own/rootless/other/unresolved classification, aliases, nonroot filesystem roots, mappings, helper prefixes, native UID/start-time inventory and final credential recheck. Host execution Passed, host quiescence Failed; not a clean-host claim.",
+      "commits": [
+        "0134165d6a3b7e3f1bfd11216973bcc602c60141",
+        "feee621057b3ae1ecca073c992bc7a8b5df1f1e6",
+        "a6deb2ae8466e118da62dd5e134d9c497de9ed95",
+        "939a6ebf97b991d7e8b6cda8e4b2209944f714dd",
+        "bbd8d0d84d3474c465ca554b26b4600854290d87",
+        "1b2304e650fe50ffc5c944d93614138219cff76d"
+      ],
+      "tests": [
+        "test_quiescence.py",
+        "test_scanner_failure_is_saved_without_exiting_strict_shell"
+      ]
+    },
+    {
+      "findings": [
+        "F5"
+      ],
+      "red": "Failed: old-fragments-red.log changes caller umask",
+      "green": "Passed: save_context umask confined to subshell; password writer uses explicit mode",
+      "commits": [
+        "41472420c07a0e40ace0c4446c26fa7218d98637",
+        "a6deb2ae8466e118da62dd5e134d9c497de9ed95"
+      ],
+      "tests": [
+        "test_context_does_not_change_caller_umask"
+      ]
+    },
+    {
+      "findings": [
+        "F7"
+      ],
+      "red": "Failed: additional-reds.log old scratch second mkdir: File exists",
+      "green": "Passed: fresh mktemp scratch directory on every attempt; both stubbed reruns execute cleanup",
+      "commits": [
+        "7496004753de5c966e121cbe172939d926b2a5d9"
+      ],
+      "tests": [
+        "test_scratch_rehearsal_reruns_in_new_store"
+      ]
+    },
+    {
+      "findings": [
+        "F8"
+      ],
+      "red": "Failed: source audit against reset reference confirms machine scope not confined by graphroot; old scratch block hits prohibited reset stub",
+      "green": "Passed: eliminate system reset; guarded scratch image removal then migrate; final pause PID check; native archive rehearsal cleanup Passed",
+      "commits": [
+        "7496004753de5c966e121cbe172939d926b2a5d9"
+      ],
+      "tests": [
+        "test_scratch_rehearsal_reruns_in_new_store",
+        "rehearse-live-upgrade.py"
+      ]
+    },
+    {
+      "findings": [
+        "F9"
+      ],
+      "red": "Failed: additional-reds.log journal status0/stderr hint not marked Not run",
+      "green": "Passed: nonempty kernel stderr is Not run, including status0; original exit status retained",
+      "commits": [
+        "41472420c07a0e40ace0c4446c26fa7218d98637"
+      ],
+      "tests": [
+        "test_kernel_stderr_means_not_run"
+      ]
+    },
+    {
+      "findings": [
+        "F10"
+      ],
+      "red": "Failed: source audit of reviewed runbook shows nested fresh Bash and missing socket precheck; old-fragments-red.log strict recovery fails",
+      "green": "Passed: fresh shell outside block; exact saved context; socket checked before commands",
+      "commits": [
+        "41472420c07a0e40ace0c4446c26fa7218d98637",
+        "33005a946d2221db3a04d0749aa8de95921829f6"
+      ],
+      "tests": [
+        "test_failure_fresh_shell_checks_then_continuation",
+        "test_rollback_opens_with_fresh_shell_and_checks_ports"
+      ]
+    },
+    {
+      "findings": [
+        "F11"
+      ],
+      "red": "Failed: source audit found missing moved bind-mount caveat",
+      "green": "Passed: explicit caveat before preparation move; abort preserves console root and restores contents in place",
+      "commits": [
+        "41472420c07a0e40ace0c4446c26fa7218d98637"
+      ],
+      "tests": [
+        "test_bootstrap_and_abort_execute_without_mutating_retained_inputs"
+      ]
+    },
+    {
+      "findings": [
+        "F12"
+      ],
+      "red": "Failed: reviewed runbook lacked its own scratch-only limitation",
+      "green": "Passed: runbook introduction explicitly excludes end-to-end live and engine-size archive rehearsal",
+      "commits": [
+        "41472420c07a0e40ace0c4446c26fa7218d98637"
+      ],
+      "tests": [
+        "source inspection"
+      ]
+    },
+    {
+      "findings": [
+        "F13"
+      ],
+      "red": "Failed: immutable-red.log truncated archive KeyError; old bootstrap/abort were unexecuted and rollback-stop unparametrized; context-syntax-red.log",
+      "green": "Passed: clean incomplete-archive ValueError; bootstrap and abort execute; all 3 Compose guards parametrized; strict Bash context tests",
+      "commits": [
+        "41472420c07a0e40ace0c4446c26fa7218d98637",
+        "33005a946d2221db3a04d0749aa8de95921829f6",
+        "feee621057b3ae1ecca073c992bc7a8b5df1f1e6"
+      ],
+      "tests": [
+        "test_truncated_archive_is_clean_refusal",
+        "test_bootstrap_and_abort_execute_without_mutating_retained_inputs",
+        "test_runbook_teardown_preserves_compose_status"
+      ]
+    }
+  ],
+  "state_cell_tests": [
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-running-megasamples-postgres]",
+      "phase": "original-stop",
+      "state": "running",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-running-megasamples-mysql]",
+      "phase": "original-stop",
+      "state": "running",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-running-megasamples-sqlite]",
+      "phase": "original-stop",
+      "state": "running",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-running-megasamples-landing]",
+      "phase": "original-stop",
+      "state": "running",
+      "service": "megasamples-landing",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-running-megasamples-phpmyadmin]",
+      "phase": "original-stop",
+      "state": "running",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-running-megasamples-adminer]",
+      "phase": "original-stop",
+      "state": "running",
+      "service": "megasamples-adminer",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-running-megasamples-dbgate]",
+      "phase": "original-stop",
+      "state": "running",
+      "service": "megasamples-dbgate",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-running-megasamples-cloudbeaver]",
+      "phase": "original-stop",
+      "state": "running",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-created-megasamples-postgres]",
+      "phase": "original-stop",
+      "state": "created",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-created-megasamples-mysql]",
+      "phase": "original-stop",
+      "state": "created",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-created-megasamples-sqlite]",
+      "phase": "original-stop",
+      "state": "created",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-created-megasamples-landing]",
+      "phase": "original-stop",
+      "state": "created",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-created-megasamples-phpmyadmin]",
+      "phase": "original-stop",
+      "state": "created",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-created-megasamples-adminer]",
+      "phase": "original-stop",
+      "state": "created",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-created-megasamples-dbgate]",
+      "phase": "original-stop",
+      "state": "created",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-created-megasamples-cloudbeaver]",
+      "phase": "original-stop",
+      "state": "created",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-0-megasamples-postgres]",
+      "phase": "original-stop",
+      "state": "exited-0",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-0-megasamples-mysql]",
+      "phase": "original-stop",
+      "state": "exited-0",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-0-megasamples-sqlite]",
+      "phase": "original-stop",
+      "state": "exited-0",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-0-megasamples-landing]",
+      "phase": "original-stop",
+      "state": "exited-0",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-0-megasamples-phpmyadmin]",
+      "phase": "original-stop",
+      "state": "exited-0",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-0-megasamples-adminer]",
+      "phase": "original-stop",
+      "state": "exited-0",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-0-megasamples-dbgate]",
+      "phase": "original-stop",
+      "state": "exited-0",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-0-megasamples-cloudbeaver]",
+      "phase": "original-stop",
+      "state": "exited-0",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-137-megasamples-postgres]",
+      "phase": "original-stop",
+      "state": "exited-137",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-137-megasamples-mysql]",
+      "phase": "original-stop",
+      "state": "exited-137",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-137-megasamples-sqlite]",
+      "phase": "original-stop",
+      "state": "exited-137",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-137-megasamples-landing]",
+      "phase": "original-stop",
+      "state": "exited-137",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-137-megasamples-phpmyadmin]",
+      "phase": "original-stop",
+      "state": "exited-137",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-137-megasamples-adminer]",
+      "phase": "original-stop",
+      "state": "exited-137",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-137-megasamples-dbgate]",
+      "phase": "original-stop",
+      "state": "exited-137",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-137-megasamples-cloudbeaver]",
+      "phase": "original-stop",
+      "state": "exited-137",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-other-megasamples-postgres]",
+      "phase": "original-stop",
+      "state": "exited-other",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-other-megasamples-mysql]",
+      "phase": "original-stop",
+      "state": "exited-other",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-other-megasamples-sqlite]",
+      "phase": "original-stop",
+      "state": "exited-other",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-other-megasamples-landing]",
+      "phase": "original-stop",
+      "state": "exited-other",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-other-megasamples-phpmyadmin]",
+      "phase": "original-stop",
+      "state": "exited-other",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-other-megasamples-adminer]",
+      "phase": "original-stop",
+      "state": "exited-other",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-other-megasamples-dbgate]",
+      "phase": "original-stop",
+      "state": "exited-other",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-exited-other-megasamples-cloudbeaver]",
+      "phase": "original-stop",
+      "state": "exited-other",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-oom-killed-megasamples-postgres]",
+      "phase": "original-stop",
+      "state": "oom-killed",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-oom-killed-megasamples-mysql]",
+      "phase": "original-stop",
+      "state": "oom-killed",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-oom-killed-megasamples-sqlite]",
+      "phase": "original-stop",
+      "state": "oom-killed",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-oom-killed-megasamples-landing]",
+      "phase": "original-stop",
+      "state": "oom-killed",
+      "service": "megasamples-landing",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-oom-killed-megasamples-phpmyadmin]",
+      "phase": "original-stop",
+      "state": "oom-killed",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-oom-killed-megasamples-adminer]",
+      "phase": "original-stop",
+      "state": "oom-killed",
+      "service": "megasamples-adminer",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-oom-killed-megasamples-dbgate]",
+      "phase": "original-stop",
+      "state": "oom-killed",
+      "service": "megasamples-dbgate",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-oom-killed-megasamples-cloudbeaver]",
+      "phase": "original-stop",
+      "state": "oom-killed",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-missing-megasamples-postgres]",
+      "phase": "original-stop",
+      "state": "missing",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-missing-megasamples-mysql]",
+      "phase": "original-stop",
+      "state": "missing",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-missing-megasamples-sqlite]",
+      "phase": "original-stop",
+      "state": "missing",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-missing-megasamples-landing]",
+      "phase": "original-stop",
+      "state": "missing",
+      "service": "megasamples-landing",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-missing-megasamples-phpmyadmin]",
+      "phase": "original-stop",
+      "state": "missing",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-missing-megasamples-adminer]",
+      "phase": "original-stop",
+      "state": "missing",
+      "service": "megasamples-adminer",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-missing-megasamples-dbgate]",
+      "phase": "original-stop",
+      "state": "missing",
+      "service": "megasamples-dbgate",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[original-stop-missing-megasamples-cloudbeaver]",
+      "phase": "original-stop",
+      "state": "missing",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-running-megasamples-postgres]",
+      "phase": "candidate-teardown",
+      "state": "running",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-running-megasamples-mysql]",
+      "phase": "candidate-teardown",
+      "state": "running",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-running-megasamples-sqlite]",
+      "phase": "candidate-teardown",
+      "state": "running",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-running-megasamples-landing]",
+      "phase": "candidate-teardown",
+      "state": "running",
+      "service": "megasamples-landing",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-running-megasamples-phpmyadmin]",
+      "phase": "candidate-teardown",
+      "state": "running",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-running-megasamples-adminer]",
+      "phase": "candidate-teardown",
+      "state": "running",
+      "service": "megasamples-adminer",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-running-megasamples-dbgate]",
+      "phase": "candidate-teardown",
+      "state": "running",
+      "service": "megasamples-dbgate",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-running-megasamples-cloudbeaver]",
+      "phase": "candidate-teardown",
+      "state": "running",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-created-megasamples-postgres]",
+      "phase": "candidate-teardown",
+      "state": "created",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-created-megasamples-mysql]",
+      "phase": "candidate-teardown",
+      "state": "created",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-created-megasamples-sqlite]",
+      "phase": "candidate-teardown",
+      "state": "created",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-created-megasamples-landing]",
+      "phase": "candidate-teardown",
+      "state": "created",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-created-megasamples-phpmyadmin]",
+      "phase": "candidate-teardown",
+      "state": "created",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-created-megasamples-adminer]",
+      "phase": "candidate-teardown",
+      "state": "created",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-created-megasamples-dbgate]",
+      "phase": "candidate-teardown",
+      "state": "created",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-created-megasamples-cloudbeaver]",
+      "phase": "candidate-teardown",
+      "state": "created",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-0-megasamples-postgres]",
+      "phase": "candidate-teardown",
+      "state": "exited-0",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-0-megasamples-mysql]",
+      "phase": "candidate-teardown",
+      "state": "exited-0",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-0-megasamples-sqlite]",
+      "phase": "candidate-teardown",
+      "state": "exited-0",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-0-megasamples-landing]",
+      "phase": "candidate-teardown",
+      "state": "exited-0",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-0-megasamples-phpmyadmin]",
+      "phase": "candidate-teardown",
+      "state": "exited-0",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-0-megasamples-adminer]",
+      "phase": "candidate-teardown",
+      "state": "exited-0",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-0-megasamples-dbgate]",
+      "phase": "candidate-teardown",
+      "state": "exited-0",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-0-megasamples-cloudbeaver]",
+      "phase": "candidate-teardown",
+      "state": "exited-0",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-137-megasamples-postgres]",
+      "phase": "candidate-teardown",
+      "state": "exited-137",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-137-megasamples-mysql]",
+      "phase": "candidate-teardown",
+      "state": "exited-137",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-137-megasamples-sqlite]",
+      "phase": "candidate-teardown",
+      "state": "exited-137",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-137-megasamples-landing]",
+      "phase": "candidate-teardown",
+      "state": "exited-137",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-137-megasamples-phpmyadmin]",
+      "phase": "candidate-teardown",
+      "state": "exited-137",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-137-megasamples-adminer]",
+      "phase": "candidate-teardown",
+      "state": "exited-137",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-137-megasamples-dbgate]",
+      "phase": "candidate-teardown",
+      "state": "exited-137",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-137-megasamples-cloudbeaver]",
+      "phase": "candidate-teardown",
+      "state": "exited-137",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-other-megasamples-postgres]",
+      "phase": "candidate-teardown",
+      "state": "exited-other",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-other-megasamples-mysql]",
+      "phase": "candidate-teardown",
+      "state": "exited-other",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-other-megasamples-sqlite]",
+      "phase": "candidate-teardown",
+      "state": "exited-other",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-other-megasamples-landing]",
+      "phase": "candidate-teardown",
+      "state": "exited-other",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-other-megasamples-phpmyadmin]",
+      "phase": "candidate-teardown",
+      "state": "exited-other",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-other-megasamples-adminer]",
+      "phase": "candidate-teardown",
+      "state": "exited-other",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-other-megasamples-dbgate]",
+      "phase": "candidate-teardown",
+      "state": "exited-other",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-exited-other-megasamples-cloudbeaver]",
+      "phase": "candidate-teardown",
+      "state": "exited-other",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-oom-killed-megasamples-postgres]",
+      "phase": "candidate-teardown",
+      "state": "oom-killed",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-oom-killed-megasamples-mysql]",
+      "phase": "candidate-teardown",
+      "state": "oom-killed",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-oom-killed-megasamples-sqlite]",
+      "phase": "candidate-teardown",
+      "state": "oom-killed",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-oom-killed-megasamples-landing]",
+      "phase": "candidate-teardown",
+      "state": "oom-killed",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-oom-killed-megasamples-phpmyadmin]",
+      "phase": "candidate-teardown",
+      "state": "oom-killed",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-oom-killed-megasamples-adminer]",
+      "phase": "candidate-teardown",
+      "state": "oom-killed",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-oom-killed-megasamples-dbgate]",
+      "phase": "candidate-teardown",
+      "state": "oom-killed",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-oom-killed-megasamples-cloudbeaver]",
+      "phase": "candidate-teardown",
+      "state": "oom-killed",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-missing-megasamples-postgres]",
+      "phase": "candidate-teardown",
+      "state": "missing",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-missing-megasamples-mysql]",
+      "phase": "candidate-teardown",
+      "state": "missing",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-missing-megasamples-sqlite]",
+      "phase": "candidate-teardown",
+      "state": "missing",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-missing-megasamples-landing]",
+      "phase": "candidate-teardown",
+      "state": "missing",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-missing-megasamples-phpmyadmin]",
+      "phase": "candidate-teardown",
+      "state": "missing",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-missing-megasamples-adminer]",
+      "phase": "candidate-teardown",
+      "state": "missing",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-missing-megasamples-dbgate]",
+      "phase": "candidate-teardown",
+      "state": "missing",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[candidate-teardown-missing-megasamples-cloudbeaver]",
+      "phase": "candidate-teardown",
+      "state": "missing",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-running-megasamples-postgres]",
+      "phase": "restart-before",
+      "state": "running",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-running-megasamples-mysql]",
+      "phase": "restart-before",
+      "state": "running",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-running-megasamples-sqlite]",
+      "phase": "restart-before",
+      "state": "running",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-running-megasamples-landing]",
+      "phase": "restart-before",
+      "state": "running",
+      "service": "megasamples-landing",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-running-megasamples-phpmyadmin]",
+      "phase": "restart-before",
+      "state": "running",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-running-megasamples-adminer]",
+      "phase": "restart-before",
+      "state": "running",
+      "service": "megasamples-adminer",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-running-megasamples-dbgate]",
+      "phase": "restart-before",
+      "state": "running",
+      "service": "megasamples-dbgate",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-running-megasamples-cloudbeaver]",
+      "phase": "restart-before",
+      "state": "running",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-created-megasamples-postgres]",
+      "phase": "restart-before",
+      "state": "created",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-created-megasamples-mysql]",
+      "phase": "restart-before",
+      "state": "created",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-created-megasamples-sqlite]",
+      "phase": "restart-before",
+      "state": "created",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-created-megasamples-landing]",
+      "phase": "restart-before",
+      "state": "created",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-created-megasamples-phpmyadmin]",
+      "phase": "restart-before",
+      "state": "created",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-created-megasamples-adminer]",
+      "phase": "restart-before",
+      "state": "created",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-created-megasamples-dbgate]",
+      "phase": "restart-before",
+      "state": "created",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-created-megasamples-cloudbeaver]",
+      "phase": "restart-before",
+      "state": "created",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-0-megasamples-postgres]",
+      "phase": "restart-before",
+      "state": "exited-0",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-0-megasamples-mysql]",
+      "phase": "restart-before",
+      "state": "exited-0",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-0-megasamples-sqlite]",
+      "phase": "restart-before",
+      "state": "exited-0",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-0-megasamples-landing]",
+      "phase": "restart-before",
+      "state": "exited-0",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-0-megasamples-phpmyadmin]",
+      "phase": "restart-before",
+      "state": "exited-0",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-0-megasamples-adminer]",
+      "phase": "restart-before",
+      "state": "exited-0",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-0-megasamples-dbgate]",
+      "phase": "restart-before",
+      "state": "exited-0",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-0-megasamples-cloudbeaver]",
+      "phase": "restart-before",
+      "state": "exited-0",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-137-megasamples-postgres]",
+      "phase": "restart-before",
+      "state": "exited-137",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-137-megasamples-mysql]",
+      "phase": "restart-before",
+      "state": "exited-137",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-137-megasamples-sqlite]",
+      "phase": "restart-before",
+      "state": "exited-137",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-137-megasamples-landing]",
+      "phase": "restart-before",
+      "state": "exited-137",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-137-megasamples-phpmyadmin]",
+      "phase": "restart-before",
+      "state": "exited-137",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-137-megasamples-adminer]",
+      "phase": "restart-before",
+      "state": "exited-137",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-137-megasamples-dbgate]",
+      "phase": "restart-before",
+      "state": "exited-137",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-137-megasamples-cloudbeaver]",
+      "phase": "restart-before",
+      "state": "exited-137",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-other-megasamples-postgres]",
+      "phase": "restart-before",
+      "state": "exited-other",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-other-megasamples-mysql]",
+      "phase": "restart-before",
+      "state": "exited-other",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-other-megasamples-sqlite]",
+      "phase": "restart-before",
+      "state": "exited-other",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-other-megasamples-landing]",
+      "phase": "restart-before",
+      "state": "exited-other",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-other-megasamples-phpmyadmin]",
+      "phase": "restart-before",
+      "state": "exited-other",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-other-megasamples-adminer]",
+      "phase": "restart-before",
+      "state": "exited-other",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-other-megasamples-dbgate]",
+      "phase": "restart-before",
+      "state": "exited-other",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-exited-other-megasamples-cloudbeaver]",
+      "phase": "restart-before",
+      "state": "exited-other",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-oom-killed-megasamples-postgres]",
+      "phase": "restart-before",
+      "state": "oom-killed",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-oom-killed-megasamples-mysql]",
+      "phase": "restart-before",
+      "state": "oom-killed",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-oom-killed-megasamples-sqlite]",
+      "phase": "restart-before",
+      "state": "oom-killed",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-oom-killed-megasamples-landing]",
+      "phase": "restart-before",
+      "state": "oom-killed",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-oom-killed-megasamples-phpmyadmin]",
+      "phase": "restart-before",
+      "state": "oom-killed",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-oom-killed-megasamples-adminer]",
+      "phase": "restart-before",
+      "state": "oom-killed",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-oom-killed-megasamples-dbgate]",
+      "phase": "restart-before",
+      "state": "oom-killed",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-oom-killed-megasamples-cloudbeaver]",
+      "phase": "restart-before",
+      "state": "oom-killed",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-missing-megasamples-postgres]",
+      "phase": "restart-before",
+      "state": "missing",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-missing-megasamples-mysql]",
+      "phase": "restart-before",
+      "state": "missing",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-missing-megasamples-sqlite]",
+      "phase": "restart-before",
+      "state": "missing",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-missing-megasamples-landing]",
+      "phase": "restart-before",
+      "state": "missing",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-missing-megasamples-phpmyadmin]",
+      "phase": "restart-before",
+      "state": "missing",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-missing-megasamples-adminer]",
+      "phase": "restart-before",
+      "state": "missing",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-missing-megasamples-dbgate]",
+      "phase": "restart-before",
+      "state": "missing",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-before-missing-megasamples-cloudbeaver]",
+      "phase": "restart-before",
+      "state": "missing",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-running-megasamples-postgres]",
+      "phase": "restart-after",
+      "state": "running",
+      "service": "megasamples-postgres",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-running-megasamples-mysql]",
+      "phase": "restart-after",
+      "state": "running",
+      "service": "megasamples-mysql",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-running-megasamples-sqlite]",
+      "phase": "restart-after",
+      "state": "running",
+      "service": "megasamples-sqlite",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-running-megasamples-landing]",
+      "phase": "restart-after",
+      "state": "running",
+      "service": "megasamples-landing",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-running-megasamples-phpmyadmin]",
+      "phase": "restart-after",
+      "state": "running",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-running-megasamples-adminer]",
+      "phase": "restart-after",
+      "state": "running",
+      "service": "megasamples-adminer",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-running-megasamples-dbgate]",
+      "phase": "restart-after",
+      "state": "running",
+      "service": "megasamples-dbgate",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-running-megasamples-cloudbeaver]",
+      "phase": "restart-after",
+      "state": "running",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Pass",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-created-megasamples-postgres]",
+      "phase": "restart-after",
+      "state": "created",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-created-megasamples-mysql]",
+      "phase": "restart-after",
+      "state": "created",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-created-megasamples-sqlite]",
+      "phase": "restart-after",
+      "state": "created",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-created-megasamples-landing]",
+      "phase": "restart-after",
+      "state": "created",
+      "service": "megasamples-landing",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-created-megasamples-phpmyadmin]",
+      "phase": "restart-after",
+      "state": "created",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-created-megasamples-adminer]",
+      "phase": "restart-after",
+      "state": "created",
+      "service": "megasamples-adminer",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-created-megasamples-dbgate]",
+      "phase": "restart-after",
+      "state": "created",
+      "service": "megasamples-dbgate",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-created-megasamples-cloudbeaver]",
+      "phase": "restart-after",
+      "state": "created",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-0-megasamples-postgres]",
+      "phase": "restart-after",
+      "state": "exited-0",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-0-megasamples-mysql]",
+      "phase": "restart-after",
+      "state": "exited-0",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-0-megasamples-sqlite]",
+      "phase": "restart-after",
+      "state": "exited-0",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-0-megasamples-landing]",
+      "phase": "restart-after",
+      "state": "exited-0",
+      "service": "megasamples-landing",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-0-megasamples-phpmyadmin]",
+      "phase": "restart-after",
+      "state": "exited-0",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-0-megasamples-adminer]",
+      "phase": "restart-after",
+      "state": "exited-0",
+      "service": "megasamples-adminer",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-0-megasamples-dbgate]",
+      "phase": "restart-after",
+      "state": "exited-0",
+      "service": "megasamples-dbgate",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-0-megasamples-cloudbeaver]",
+      "phase": "restart-after",
+      "state": "exited-0",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-137-megasamples-postgres]",
+      "phase": "restart-after",
+      "state": "exited-137",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-137-megasamples-mysql]",
+      "phase": "restart-after",
+      "state": "exited-137",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-137-megasamples-sqlite]",
+      "phase": "restart-after",
+      "state": "exited-137",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-137-megasamples-landing]",
+      "phase": "restart-after",
+      "state": "exited-137",
+      "service": "megasamples-landing",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-137-megasamples-phpmyadmin]",
+      "phase": "restart-after",
+      "state": "exited-137",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-137-megasamples-adminer]",
+      "phase": "restart-after",
+      "state": "exited-137",
+      "service": "megasamples-adminer",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-137-megasamples-dbgate]",
+      "phase": "restart-after",
+      "state": "exited-137",
+      "service": "megasamples-dbgate",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-137-megasamples-cloudbeaver]",
+      "phase": "restart-after",
+      "state": "exited-137",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-other-megasamples-postgres]",
+      "phase": "restart-after",
+      "state": "exited-other",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-other-megasamples-mysql]",
+      "phase": "restart-after",
+      "state": "exited-other",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-other-megasamples-sqlite]",
+      "phase": "restart-after",
+      "state": "exited-other",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-other-megasamples-landing]",
+      "phase": "restart-after",
+      "state": "exited-other",
+      "service": "megasamples-landing",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-other-megasamples-phpmyadmin]",
+      "phase": "restart-after",
+      "state": "exited-other",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-other-megasamples-adminer]",
+      "phase": "restart-after",
+      "state": "exited-other",
+      "service": "megasamples-adminer",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-other-megasamples-dbgate]",
+      "phase": "restart-after",
+      "state": "exited-other",
+      "service": "megasamples-dbgate",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-exited-other-megasamples-cloudbeaver]",
+      "phase": "restart-after",
+      "state": "exited-other",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-oom-killed-megasamples-postgres]",
+      "phase": "restart-after",
+      "state": "oom-killed",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-oom-killed-megasamples-mysql]",
+      "phase": "restart-after",
+      "state": "oom-killed",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-oom-killed-megasamples-sqlite]",
+      "phase": "restart-after",
+      "state": "oom-killed",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-oom-killed-megasamples-landing]",
+      "phase": "restart-after",
+      "state": "oom-killed",
+      "service": "megasamples-landing",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-oom-killed-megasamples-phpmyadmin]",
+      "phase": "restart-after",
+      "state": "oom-killed",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-oom-killed-megasamples-adminer]",
+      "phase": "restart-after",
+      "state": "oom-killed",
+      "service": "megasamples-adminer",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-oom-killed-megasamples-dbgate]",
+      "phase": "restart-after",
+      "state": "oom-killed",
+      "service": "megasamples-dbgate",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-oom-killed-megasamples-cloudbeaver]",
+      "phase": "restart-after",
+      "state": "oom-killed",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-missing-megasamples-postgres]",
+      "phase": "restart-after",
+      "state": "missing",
+      "service": "megasamples-postgres",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-missing-megasamples-mysql]",
+      "phase": "restart-after",
+      "state": "missing",
+      "service": "megasamples-mysql",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-missing-megasamples-sqlite]",
+      "phase": "restart-after",
+      "state": "missing",
+      "service": "megasamples-sqlite",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-missing-megasamples-landing]",
+      "phase": "restart-after",
+      "state": "missing",
+      "service": "megasamples-landing",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-missing-megasamples-phpmyadmin]",
+      "phase": "restart-after",
+      "state": "missing",
+      "service": "megasamples-phpmyadmin",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-missing-megasamples-adminer]",
+      "phase": "restart-after",
+      "state": "missing",
+      "service": "megasamples-adminer",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-missing-megasamples-dbgate]",
+      "phase": "restart-after",
+      "state": "missing",
+      "service": "megasamples-dbgate",
+      "expected": "Refuse",
+      "result": "Passed"
+    },
+    {
+      "test": "tests/test_teardown_gates.py::test_state_phase_cell[restart-after-missing-megasamples-cloudbeaver]",
+      "phase": "restart-after",
+      "state": "missing",
+      "service": "megasamples-cloudbeaver",
+      "expected": "Refuse",
+      "result": "Passed"
+    }
+  ],
+  "results": {
+    "repository_check": {
+      "status": "Passed",
+      "command": "make check PY=.venv/bin/python",
+      "unit_tests": 570,
+      "failures": 0
+    },
+    "images": {
+      "mysql": {
+        "status": "Passed",
+        "log": "build/dl086/r2/image-mysql-retry.log"
+      },
+      "postgres": {
+        "status": "Passed",
+        "log": "build/dl086/r2/image-postgres-retry.log"
+      },
+      "sqlite": {
+        "status": "Passed",
+        "log": "build/dl086/r2/image-sqlite-retry.log"
+      }
+    },
+    "archive_rehearsal": {
+      "at": "2026-11-18T18:49:34.608571+00:00",
+      "artifacts": "build/dl086/rehearsal-r_0h1aon",
+      "checks": {
+        "old_archive_completeness": "Failed (expected red): second image configuration absent",
+        "old_rollback_tag_identity": "Failed (expected red): second tag points at first image",
+        "per_image_save_check_load_retag": "Passed",
+        "partial_removal_with_retained_exited_receipt": "Passed",
+        "scratch_stores_and_pause_cleanup": "Passed",
+        "isolated_containers_unchanged": "Passed"
+      },
+      "space_required_bytes": 1944590050,
+      "scratch_pause_pids": [
+        2643272,
+        2644394
+      ]
+    },
+    "netns": {
+      "status": "Passed",
+      "cycles": 3,
+      "reproduced": false,
+      "root_cause": "unknown",
+      "receipt": "build/dl086/r2/netns.json"
+    },
+    "host_scan": {
+      "at": "2026-11-18T19:09:46.138471+00:00",
+      "execution": "Passed",
+      "quiescence": "Failed",
+      "owner_recheck": "Passed",
+      "scope": "own and owned-user-namespace processes only",
+      "counts": {
+        "own": 1241,
+        "owned-user-namespace": 181,
+        "other-owner": 849,
+        "unresolved-owner": 0
+      },
+      "holders": 0,
+      "helpers": 19,
+      "unreadable": 381,
+      "unreadable_classifications": {
+        "PermissionError": 160,
+        "FileNotFoundError": 18,
+        "ValueError": 203
+      },
+      "helper_classifications": {
+        "rootlessport": 15,
+        "pasta.avx2": 3,
+        "slirp4netns": 1
+      },
+      "other_owner_inspection": "Not run: requires privilege",
+      "note": "Native-host UID/start-time inventory, unshare inspection, then native outside-owner recheck. Read only. No PID, path, argument or environment retained in this summary."
+    },
+    "isolation": {
+      "at": "2026-11-18T19:12:04.021899+00:00",
+      "status": "Passed",
+      "isolated_store": "/home/rcc-vstudio/working/sql-megasamples-upgrade-env/graph",
+      "isolated_before_after_identical": true,
+      "isolated_containers": 12,
+      "live": [
+        {
+          "name": "megasamples-mysql",
+          "id": "a3f5c1204ee44b48dedbc5d3b7d9a8981aa5ffe04988019d58864b5157eac0d6",
+          "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:10.170768484-06:00"
+        },
+        {
+          "name": "megasamples-postgres",
+          "id": "ba1a9f7586814467210c0a5549f02f777dbd6d32af13f4176bb3e99c613316cc",
+          "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:13.76245404-06:00"
+        },
+        {
+          "name": "megasamples-sqlite",
+          "id": "7adacf6eca19046bc2d8daa1a69271ac3bd112046eb41ffc143364e60b740a5e",
+          "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+          "state": "running",
+          "started_at": "2026-11-18T08:50:55.525102141-06:00"
+        },
+        {
+          "name": "megasamples-landing",
+          "id": "10dcf6333c62c4c636272bdbf591dfc6a7cce847d2ac0c979b39d274fb2a2e29",
+          "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.809734163-06:00"
+        },
+        {
+          "name": "megasamples-cloudbeaver",
+          "id": "2c08eebb7364571e658ef56d61769ff8e0d815a54954bc7a6c5c45259d859931",
+          "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.847600394-06:00"
+        },
+        {
+          "name": "megasamples-dbgate",
+          "id": "3d219c0b086d05f86e972d6f107743e4140719c67ca5dee67c20be05bd14120e",
+          "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.787017348-06:00"
+        },
+        {
+          "name": "megasamples-adminer",
+          "id": "7ef317c5e2574872c447d7b2a090d91669ec61f224415ece77bde7ba4e4e8343",
+          "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.977097776-06:00"
+        },
+        {
+          "name": "megasamples-phpmyadmin",
+          "id": "044fa1e2a6ee97811efc2d0165776330493c6ef66c33c1dcad9ee4da03f08128",
+          "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.93073862-06:00"
+        }
+      ],
+      "comparison": "Exact live ID/image/state/start time against retained cutover proof; exact isolated ID/image/name/state before/after",
+      "limitation": "Read-only inventory, no live SQL/proxy operation or active data-byte proof"
+    }
+  },
+  "not_run": [
+    "Live stop/down/full rollback",
+    "Full end-to-end revised runbook",
+    "Engine-size image archive rehearsal",
+    "Live forwarded client authentication/TLS",
+    "Kernel/AppArmor capture",
+    "DataIntent acceptance suite",
+    "Automated partial-original-restart recovery"
+  ],
+  "unsupported": [
+    "SQLite server authentication",
+    "BTS and WWI OLTP on PostgreSQL/SQLite"
+  ],
+  "limitations": [
+    "Synthetic read-only inputs retain all files read-only; the parent must permit allocating a new attempt. A fully read-only parent refuses unchanged.",
+    "Strict scanner gate refused on this shared host; no helper exemption. Other-owner FD/namespace inspection needs privilege.",
+    "Source review is distinct from operational acceptance; independent review coordination remains external."
+  ],
+  "prior_round": "docs/validation/live-upgrade-review-r1-2026-11-18.json",
+  "initial_failures": [
+    "Host .venv interpreter target absent; tests executed inside isolated tools",
+    "Initial image checks could not reach isolated API; succeeded after starting isolated-only API service",
+    "An interim suite failed a stale startup-command text assertion; corrected for --no-deps and rerun",
+    "Initial isolation comparison used wrong historical delimiter; parsed historical structured fields and verified exact equality"
+  ],
+  "artifacts_sha256": {
+    "build/dl086/r2/additional-reds.log": "38d68457d097428151bba94732fb4472269e47857ff1e325c5da669e9b098f9f",
+    "build/dl086/r2/api.log": "af84c59c846ce8759011b3f0ca7aed6a73285ac443f684cc5c9f5faf783d6a3f",
+    "build/dl086/r2/baseline.log": "fc44462626b5c1898aad47a5c0e0a37b04d75efe12b3ca00daa823b86696d81a",
+    "build/dl086/r2/check-complete.log": "40c5d932890051e553954c487e3ea80a690a323a6376f160caf11a3ba57c79de",
+    "build/dl086/r2/check-final-head.log": "3599fdd75b80cc57a0ebefc4a9c61f220adfc3387e741f1bddbf210e37ddc80e",
+    "build/dl086/r2/check-final.log": "368860b246cf69a9c5a9bafedb0e91a1932c91101a02166af7878f72c1672675",
+    "build/dl086/r2/check-validated.log": "363bb790a033a099ad19048988f5298eb26bd845beeafeefab242f4f87fd3ce2",
+    "build/dl086/r2/check.log": "ab1035db1c76221eb05d3133fbeaaecd4f6aab1084a7e7e91d39dea4fe789cf5",
+    "build/dl086/r2/context-syntax-red.log": "d99791e06ee088e64255b0cbf6b757bf2e0268e2fc3cfba80518c4d46df947a0",
+    "build/dl086/r2/continuations-green.log": "6cfb81cd439929e4e749485a362722144a59599ffda343ffee29b7b0f55e2467",
+    "build/dl086/r2/dependencies-red.log": "d1a2113129f0855e1bb930084957c0df3a75ae03a18e1360c241f8ef2cd1c2ed",
+    "build/dl086/r2/early-checkpoint-green.log": "42c34453546ab997e9532a76039e7dbeaff54204a0be7dcf754a1c81283a86cc",
+    "build/dl086/r2/early-checkpoint-red.log": "de516a5a7f5879ef3bb95193bc90d3d717ef51d7389aa111180ca4a3159a8e35",
+    "build/dl086/r2/fragments-final.log": "e11a8d55d61f616a2031f58a19cb409785bc4c867f1dff819a85e06d3405e050",
+    "build/dl086/r2/image-mysql-retry.log": "0ce4d7ae98929a4c191d614f13865377f34a36c56c946b5134b477425be2bf93",
+    "build/dl086/r2/image-mysql.log": "e9d924f12d813bbd1b96bd9d6c7b4bbcfc97a022fd83ea9790987ee26eaaac8d",
+    "build/dl086/r2/image-postgres-retry.log": "c016e179c9f06a59dc4744041afa8ca009bc4c38384a2534cecd39d30a56940b",
+    "build/dl086/r2/image-postgres.log": "2c80b17d90aa25df0ef7709a5394014ac55b34bdb36bfc5b6ef89c4baba1c3dc",
+    "build/dl086/r2/image-sqlite-retry.log": "a30dc46980fcd719646864afd2ed4b77cb15408a4385e50af606393b4c2c4027",
+    "build/dl086/r2/image-sqlite.log": "166cddf92a1a4ac239b9e9598a0d1a42e42ec5af4bb96a2af2596c04d4c61ed6",
+    "build/dl086/r2/immutable-red.log": "62cf6a8431a1ffbd6bac39e2eb5c9f86a2596cd2aef99d4ab47e729dad767eec",
+    "build/dl086/r2/author-session-review-green.log": "c40d3fd8c044d2ffc121b398c054f5b57a7fcdd82d333acc7f68a13833bd77e2",
+    "build/dl086/r2/author-session-review-red.log": "dc4e7ea239e65ba0b39e81ca1aef70694961576f3ca9c6a10d951d690025636e",
+    "build/dl086/r2/netns.log": "80f0b03d42ad7ac3597612fffdd58b6a39fb6d9ede748aa4c4af72fc0c4f1215",
+    "build/dl086/r2/new-mounts-red.log": "a835f0fd00a307da1df5e6c1cadacf1b70b6d9962a60349ed09b6fc3de3e6047",
+    "build/dl086/r2/old-fragments-red.log": "22d94954dd2997a70bd75225d8cddd94400d0ceeff4131b08d8999ff2af742d7",
+    "build/dl086/r2/old-state-red.log": "60b568a13db2b5821d83fc85e5b8d99fca7c6758c029b8d33a2d6e48ec94df8f",
+    "build/dl086/r2/other-owner-green.log": "aab22d039fd0e6d49eb81310d11623a71a520c02f90da1e8b8d2d8917810f9f8",
+    "build/dl086/r2/other-owner-red.log": "3c43ecbe5c04d7c657f2aef1c273313fa8f7efe98eb54837d314f357c7e50a4c",
+    "build/dl086/r2/overflow-ambiguity-green.log": "6ed8477a3c1091827fa32a76e0cf2af525dbc9c2a8ecd57686413eb94c47dd7e",
+    "build/dl086/r2/overflow-ambiguity-red.log": "5beae283b5b912c374276e87d0ed87c0aa97afa9fa058bc768e8b493e79e531d",
+    "build/dl086/r2/owner-transition-green.log": "a8d35d7a77904d28c1bfd48c4be3bcf4743c20717c0d6d34ab542f3fe8a41265",
+    "build/dl086/r2/owner-transition-red.log": "5e4d59bec217456a21bdbc7fefdf9b720f7acf81135068b0beb5381f587b8b2f",
+    "build/dl086/r2/recovery-green.log": "8e6b2e806410661748812812f9eafcf18c7abc22813fb1285f0639d551600af6",
+    "build/dl086/r2/recovery-progress.log": "7952c1551f0b3d8aab15c8d47274ffbb50825ac32879311bf284d5ddbef318f8",
+    "build/dl086/r2/rehearsal.log": "b6181b8b3d1628ba66d7159a6a8d3fd9737586b34cfa083eb4c5370a9a88ee03",
+    "build/dl086/r2/resume-ownership-green.log": "f9377d7dc43fc4e77f016b5130dd14b3cc9323b966761b8dc202a32c449abe79",
+    "build/dl086/r2/resume-ownership-red.log": "22398c28ed5df4dd71aae9e55280c6696fa563f6d45e205ca8d9bf95f9ac68b6",
+    "build/dl086/r2/scanner-green.log": "0127026fa52388c28c751af7383c9cfdcedb768d53987355f81395a89e7531e3",
+    "build/dl086/r2/scanner-red.log": "d0e0818ae0ce29370844dc2d5e6d3cef8f51e84220f98523f00bbc973c97048a",
+    "build/dl086/r2/scratch-green.log": "ac7c25693dfc563ad7109629a2bd23f552f2780ef9f81a003f17af0541800754",
+    "build/dl086/r2/scratch-red.log": "d5d809ad68eea3288a3ab114c847e0d9bf781ab1832698a40df815d6c697ba24",
+    "build/dl086/r2/start-boundary-green.log": "ca93702f64c610e8d45fdb6dc95cfbdbf69aac60a4df7c05ea39368a234958eb",
+    "build/dl086/r2/start-boundary-red.log": "0460df8995d33dad517a4ee25cc1e0d8ae5b616b2fba6ac9ef68d6be027d3627",
+    "build/dl086/r2/startup-green.log": "e3b5ed70339f6e7fd37062881ce10bb786760d5273efeca28262f0c881d57f0d",
+    "build/dl086/r2/state-test-ids.log": "75e2afe41e72fde7c6dbb17cbb2a277f6fc82d379782c321a11d67e2a53ba2db",
+    "build/dl086/r2/states-green.log": "f30d5a8fdde6a3133a756515de38a0bf5f32470a44facb44e019ab7f8301f0c5",
+    "build/dl086/r2/states-red.log": "0656690c26dee64273f841ff9dd8af58a78ab060c88d8dfb11e598707fec1777",
+    "build/dl086/r2/suite-complete.log": "bf9146ded3597dfba41b2df91468abb51a519516de9526aa8d25af1ad6e34ebf",
+    "build/dl086/r2/suite-final.log": "8952c8cadbfbf2dba5890c1b11229136992b28c91dc4145bed135f68d82a4ab7",
+    "build/dl086/r2/suite-release.log": "c3278e73ea1ec7c8f1766c72910c3404815fc90d377e7434360d72ca0331d3ee",
+    "build/dl086/r2/suite.log": "609368499991293de3749723591939c6723b4e4cce4817abb301d71f5b65de82",
+    "build/dl086/r2/verify-host-owners-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+}

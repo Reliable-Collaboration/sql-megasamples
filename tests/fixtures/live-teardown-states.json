@@ -1,0 +1,60 @@
+{
+  "sources": [
+    "phase-b-3/initial-stopped-checks.json",
+    "phase-b-3/failed-candidate-state.json"
+  ],
+  "originals": [
+    {
+      "name": "megasamples-postgres",
+      "status": "exited",
+      "exit_code": 0,
+      "running": false
+    },
+    {
+      "name": "megasamples-mysql",
+      "status": "exited",
+      "exit_code": 0,
+      "running": false
+    },
+    {
+      "name": "megasamples-sqlite",
+      "status": "exited",
+      "exit_code": 137,
+      "running": false
+    }
+  ],
+  "candidates": [
+    {
+      "name": "megasamples-postgres",
+      "status": "running"
+    },
+    {
+      "name": "megasamples-mysql",
+      "status": "running"
+    },
+    {
+      "name": "megasamples-sqlite",
+      "status": "running"
+    },
+    {
+      "name": "megasamples-landing",
+      "status": "created"
+    },
+    {
+      "name": "megasamples-phpmyadmin",
+      "status": "running"
+    },
+    {
+      "name": "megasamples-adminer",
+      "status": "running"
+    },
+    {
+      "name": "megasamples-dbgate",
+      "status": "running"
+    },
+    {
+      "name": "megasamples-cloudbeaver",
+      "status": "running"
+    }
+  ]
+}

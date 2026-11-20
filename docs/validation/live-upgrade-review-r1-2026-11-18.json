@@ -1,0 +1,421 @@
+{
+  "at": "2026-11-18T18:19:20.029604+00:00",
+  "scope": "DL-086 review correction follow-up",
+  "acceptance": "As of 2026-11-18, held; the acceptance record is DataIntent’s",
+  "review_inputs": "Supplied R1-R19 triage; full review files unavailable in this workspace; independent approval remains pending",
+  "findings": [
+    {
+      "finding": "R1",
+      "red": "Failed: actual phase-A service filenames and aggregate checksum rejected; ID-filename load mutation also failed",
+      "green": "Passed: full actual-layout fixture check/load/retag; original fixture files unchanged",
+      "commits": [
+        "58fe2af820c15e45f5f69e305faecd6cd31f2310",
+        "af1a1f9ff57716d35ba94dc210751dc6e1a80050",
+        "947088e0e0c486e8458696fd2a7496bd1520a7e8"
+      ]
+    },
+    {
+      "finding": "R2",
+      "red": "Failed: snapshot/exited helpers absent; real scratch exposed template escape; process race test also failed",
+      "green": "Passed: non-secret formatted snapshots, guarded exited receipt and partial removal in scratch; conservative process-evidence fixtures",
+      "commits": [
+        "a26e1d7ee296a6a7f8b242734c1acccae36c26d0",
+        "a4663bb5dd4fc9b0525a878bcb2b5e9f9cfb390b",
+        "e6044185efb18175754ee60ba0320c947026df95",
+        "1323883572df8c4c809e14936658308f7d4fd027",
+        "7be5c9b18fea58554714707378c998a2d6b773a5"
+      ]
+    },
+    {
+      "finding": "R3",
+      "red": "Failed: original-head guard absent; interrupted-save resume unsupported",
+      "green": "Passed: early context, failed-gate-only recovery, upgraded-HEAD refusal and resume-save preserving checked inputs",
+      "commits": [
+        "9f264102b315ad7eebf58126ba5c08b99d23477a",
+        "1323883572df8c4c809e14936658308f7d4fd027",
+        "015b578c8f458fc5db3a12e7942219519b0ff2d4"
+      ]
+    },
+    {
+      "finding": "R4",
+      "red": "Failed: rollback first block lacked fresh-shell context step",
+      "green": "Passed: fresh Bash and retained-context step precede rollback; legacy sidecar bootstrap documented with syntax coverage",
+      "commits": [
+        "9f264102b315ad7eebf58126ba5c08b99d23477a",
+        "947088e0e0c486e8458696fd2a7496bd1520a7e8"
+      ]
+    },
+    {
+      "finding": "R5",
+      "red": "Failed: documentation audit found independent-review attribution that never occurred",
+      "green": "Passed: authoring-session attribution; independent approval pending, no reviewer names or PR state in committed evidence",
+      "commits": [
+        "74567598ef36880d2b250f455b4631d99963f0e1",
+        "015b578c8f458fc5db3a12e7942219519b0ff2d4"
+      ]
+    },
+    {
+      "finding": "R6",
+      "red": "Failed: documentation audit found present-tense acceptance status",
+      "green": "Passed: dated 2026-11-18 statements; DataIntent owns acceptance record; PR self-references removed",
+      "commits": [
+        "74567598ef36880d2b250f455b4631d99963f0e1",
+        "1323883572df8c4c809e14936658308f7d4fd027"
+      ]
+    },
+    {
+      "finding": "R7",
+      "red": "Failed: direct verifier script raised ModuleNotFoundError",
+      "green": "Passed: exact PYTHONPATH=. .venv/bin/python command in isolated tools accepted current/refused previous credentials",
+      "commits": [
+        "74567598ef36880d2b250f455b4631d99963f0e1"
+      ]
+    },
+    {
+      "finding": "R8",
+      "red": "Failed: documentation audit found universal three-engine support claim",
+      "green": "Passed: supported-engine qualification and matrix link; BTS and WWI OLTP exceptions explicit",
+      "commits": [
+        "74567598ef36880d2b250f455b4631d99963f0e1"
+      ]
+    },
+    {
+      "finding": "R9",
+      "red": "Failed: planted first-ID-for-every-tag defect detected by stateful fake",
+      "green": "Passed: exact ID/tag mapping, mismatch, later-archive corruption before any load, eight protocol socket cases",
+      "commits": [
+        "58fe2af820c15e45f5f69e305faecd6cd31f2310"
+      ]
+    },
+    {
+      "finding": "R10",
+      "red": "Failed: commented-out port gate detected by executing preparation stubs",
+      "green": "Passed: each failed archive/metadata/port gate blocks teardown; console selection and project exemption tested",
+      "commits": [
+        "9f264102b315ad7eebf58126ba5c08b99d23477a",
+        "81c50f3c159e3ffc6434c19f15180dcd903fddb4"
+      ]
+    },
+    {
+      "finding": "R11",
+      "red": "Failed: ordinary interactive exec swallowed the next piped command",
+      "green": "Passed: non-heredoc calls close stdin; heredoc delivery remains tested",
+      "commits": [
+        "9f264102b315ad7eebf58126ba5c08b99d23477a",
+        "015b578c8f458fc5db3a12e7942219519b0ff2d4"
+      ]
+    },
+    {
+      "finding": "R12",
+      "red": "Failed: space gate absent",
+      "green": "Passed: archive+scratch duplicate budget with 25 percent allowance and extra reserve; insufficient-space refusal; private scratch runtime, migrate/reset and recorded pause PID checks",
+      "commits": [
+        "f9c494e6bb95428254474cb7f75b85da417813b5",
+        "f142c4e8c82a23f0dcd092e129843cf266676a2a"
+      ]
+    },
+    {
+      "finding": "R13",
+      "red": "Failed: retained helper could not run ports; service selection unsupported",
+      "green": "Passed: standalone JSON port snapshot without checkout dependencies, original-running-service and CloudBeaver-only startup probes",
+      "commits": [
+        "81c50f3c159e3ffc6434c19f15180dcd903fddb4",
+        "9f264102b315ad7eebf58126ba5c08b99d23477a",
+        "f142c4e8c82a23f0dcd092e129843cf266676a2a"
+      ]
+    },
+    {
+      "finding": "R14",
+      "red": "Failed: truncating-down-log mutation lost original log/status",
+      "green": "Passed: retry append test, exact status guards, explicit 137 acknowledgment, and documented pre-rotation abort; full abort/rollback Not run",
+      "commits": [
+        "e6044185efb18175754ee60ba0320c947026df95",
+        "1323883572df8c4c809e14936658308f7d4fd027",
+        "691c05e6db6ae05a78044e892275a5625c1c53a7"
+      ]
+    },
+    {
+      "finding": "R15",
+      "red": "Not run: live forwarded sign-in; documentation gap identified in supplied triage",
+      "green": "Passed: documented native clients in prepared host-network tools container and namespace/client gates; executing method remains coordinator backlog",
+      "commits": [
+        "1323883572df8c4c809e14936658308f7d4fd027"
+      ]
+    },
+    {
+      "finding": "R16",
+      "red": "Not run: kernel/AppArmor capture at a live failure; error not reproduced",
+      "green": "Passed: timestamped capture command and unavailable-diagnostics status guard documented; no host change",
+      "commits": [
+        "e6044185efb18175754ee60ba0320c947026df95",
+        "1323883572df8c4c809e14936658308f7d4fd027"
+      ]
+    },
+    {
+      "finding": "R17",
+      "red": "Failed: documentation audit found unrestricted write-refusal claim",
+      "green": "Passed: narrow table-write guidance plus TEMPORARY, large-object and routine limits; isolated transactional probe rolled back",
+      "commits": [
+        "74567598ef36880d2b250f455b4631d99963f0e1"
+      ]
+    },
+    {
+      "finding": "R18",
+      "red": "Failed: documentation audit found missing scratch/engine-size execution limit",
+      "green": "Passed: explicit scratch-only validation and no end-to-end replay claim",
+      "commits": [
+        "74567598ef36880d2b250f455b4631d99963f0e1",
+        "015b578c8f458fc5db3a12e7942219519b0ff2d4"
+      ]
+    },
+    {
+      "finding": "R19",
+      "red": "Failed: original-head guard/env command regressions; fixed bundle path and archive wording inspected",
+      "green": "Passed: approved merge validated before capture; unique metadata export/check in .venv; per-image archives and exact live rollback stopping point documented",
+      "commits": [
+        "9f264102b315ad7eebf58126ba5c08b99d23477a",
+        "1323883572df8c4c809e14936658308f7d4fd027",
+        "015b578c8f458fc5db3a12e7942219519b0ff2d4"
+      ]
+    }
+  ],
+  "results": {
+    "repository_check": {
+      "status": "Passed",
+      "command": "make check PY=.venv/bin/python",
+      "unit_tests": 296
+    },
+    "suite": {
+      "status": "Passed",
+      "command": "python -m pytest -q",
+      "tests": 296
+    },
+    "focused": {
+      "status": "Passed",
+      "tests": 38
+    },
+    "images": {
+      "mysql": {
+        "status": "Passed",
+        "failures": 0,
+        "command": "python -m megasamples test-image --engine mysql"
+      },
+      "postgres": {
+        "status": "Passed",
+        "failures": 0,
+        "command": "python -m megasamples test-image --engine postgres"
+      },
+      "sqlite": {
+        "status": "Passed",
+        "failures": 0,
+        "command": "python -m megasamples test-image --engine sqlite"
+      }
+    },
+    "archive_and_partial_removal": {
+      "at": "2026-11-18T18:11:29.328296+00:00",
+      "artifacts": "build/dl086/rehearsal-_ufols9q",
+      "checks": {
+        "old_archive_completeness": "Failed (expected red): second image configuration absent",
+        "old_rollback_tag_identity": "Failed (expected red): second tag points at first image",
+        "per_image_save_check_load_retag": "Passed",
+        "fixture_exit_137_requires_ack": "Passed",
+        "partial_removal_with_retained_exited_receipt": "Passed",
+        "scratch_stores_and_pause_cleanup": "Passed",
+        "isolated_containers_unchanged": "Passed"
+      },
+      "space_required_bytes": 1944590050,
+      "scratch_pause_pids": [
+        200617,
+        202389
+      ]
+    },
+    "netns": {
+      "status": "Passed",
+      "cycles": 3,
+      "cause": "Unknown; not reproduced with owned isolated fixture"
+    },
+    "isolation": {
+      "status": "Passed",
+      "live": [
+        {
+          "name": "megasamples-mysql",
+          "id": "a3f5c1204ee44b48dedbc5d3b7d9a8981aa5ffe04988019d58864b5157eac0d6",
+          "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:10.170768484-06:00"
+        },
+        {
+          "name": "megasamples-postgres",
+          "id": "ba1a9f7586814467210c0a5549f02f777dbd6d32af13f4176bb3e99c613316cc",
+          "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:13.76245404-06:00"
+        },
+        {
+          "name": "megasamples-sqlite",
+          "id": "7adacf6eca19046bc2d8daa1a69271ac3bd112046eb41ffc143364e60b740a5e",
+          "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+          "state": "running",
+          "started_at": "2026-11-18T08:50:55.525102141-06:00"
+        },
+        {
+          "name": "megasamples-landing",
+          "id": "10dcf6333c62c4c636272bdbf591dfc6a7cce847d2ac0c979b39d274fb2a2e29",
+          "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.809734163-06:00"
+        },
+        {
+          "name": "megasamples-cloudbeaver",
+          "id": "2c08eebb7364571e658ef56d61769ff8e0d815a54954bc7a6c5c45259d859931",
+          "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.847600394-06:00"
+        },
+        {
+          "name": "megasamples-dbgate",
+          "id": "3d219c0b086d05f86e972d6f107743e4140719c67ca5dee67c20be05bd14120e",
+          "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.787017348-06:00"
+        },
+        {
+          "name": "megasamples-adminer",
+          "id": "7ef317c5e2574872c447d7b2a090d91669ec61f224415ece77bde7ba4e4e8343",
+          "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.977097776-06:00"
+        },
+        {
+          "name": "megasamples-phpmyadmin",
+          "id": "044fa1e2a6ee97811efc2d0165776330493c6ef66c33c1dcad9ee4da03f08128",
+          "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+          "state": "running",
+          "started_at": "2026-11-18T08:51:39.93073862-06:00"
+        }
+      ],
+      "isolated": [
+        "ef64d26b142c7ecbe5b0ffa3b2e223a1501b8f0c7582e8ad7baf357db7183f14 megasamples-upgrade-tools 8ef0c198735c09bd0434807c462f61595e3b1b1fe4c7557d441a3e2c257b6740 running",
+        "c1ebd848a39b3ec7a104c80185ba5ea4f8ccae1b22a53885ca0f2d611b1e53e3 megasamples-upgrade-browser 32cfab2f09595b0266babd6ef76ee175ef024617f4077797bcecf235fe88eb68 exited",
+        "764e08b53d08300dcfd369de7dc65257f531dc3be2b7850e37efc9b2695d0e59 megasamples-build-postgres 3cccc725163a95947178f4da5e9bf16add75cb286170ac5a2cd2f6513534955d running",
+        "adc7ac97d80975e5c7b8d670a2d962000815ac380c95621bab6c8e39430e07e2 megasamples-build-mysql e3c5e24cdccea30c955dfa05b9b07fdc3b62323321c1e827a563e846d7552ea5 running",
+        "f094743e286e5475ed47db4a335b5ebfca7d923683699fa5bcb2cf2a0ab6561b megasamples-adminer 3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82 running",
+        "dbc3b188a07d6c9920d1fc7011b43e5f6958f96e2d8abee622ce9860b3f9a76d megasamples-landing c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39 running",
+        "c5f6b29fc07e06613f9c145a536e723be2fe28cc98a6e7a1d0ea71fa6c53fe47 megasamples-phpmyadmin 3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786 running",
+        "9019958eba77e79dfd88fa02426d84b2b64a0a188d5b88ef97b056a9a3301634 megasamples-dbgate 29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0 running",
+        "9a8bc77db454ed2faa7ce0cd264479166cb8a761b766a46787ce7b2f48a4f6fb megasamples-cloudbeaver 3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7 running",
+        "4dbd24f800b97d2937a47eb0b2455d67b1256d8fd55431fe340af30fa4f52734 megasamples-sqlite 090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb running",
+        "3ac86c34b9eb04c1d0ece86a10884816ef79d9cd0b278ae8690e651f28951b1d megasamples-postgres 41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3 running",
+        "9507a0bf975fc7833b2aa483f9449f5d95bdceab495782c6365145dc18f13e19 megasamples-mysql 20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134 running"
+      ],
+      "comparison": "exact live ID/image/state/start time against phase-b-6; exact isolated ID/name/image/state before/after",
+      "limitation": "No active data-byte snapshot or live SQL/proxy operation"
+    },
+    "exact_readme_verifier": {
+      "status": "Passed",
+      "command": "PYTHONPATH=. .venv/bin/python docs/validation/verify-configured-passwords.py --previous-dir build/credential-upgrade/previous-original",
+      "environment": "isolated tools container; host interpreter absent"
+    },
+    "metadata": {
+      "status": "Passed",
+      "command": "podman exec isolated tools .venv/bin/python live-upgrade.py export-metadata/check-metadata with unique absolute bundle"
+    },
+    "initial_image_attempts": {
+      "status": "Failed",
+      "reason": "isolated API unavailable; isolated service started and all checks rerun successfully"
+    },
+    "live_operations": {
+      "status": "Not run",
+      "detail": "Only scoped final identity inspection; no SQL, stop/restart, forwarder/service or live-store mutation"
+    },
+    "forwarded_signin": {
+      "status": "Not run",
+      "detail": "Coordinator backlog, including prepared host-network tools method"
+    },
+    "oracle": {
+      "status": "Not run",
+      "detail": "Terms decision pending"
+    },
+    "sqlite_authentication": {
+      "status": "Unsupported",
+      "detail": "No server accounts"
+    }
+  },
+  "limitations": [
+    "Revised runbook not executed end to end",
+    "Corrected archive helper not run on live store or engine-size image set",
+    "Actual retained backup payloads not read: fixture uses actual archive names/checksum layout with synthetic payloads",
+    "Legacy context bootstrap syntax checked, not executed on live deployment",
+    "No complete live rollback or pre-rotation abort replay",
+    "No live forwarded sign-in or TLS certificate verification",
+    "No DataIntent suites or acceptance decision",
+    "No full 95-pair fingerprint rerun",
+    "No kernel/AppArmor capture at a reproduced failure",
+    "No active live data-byte snapshot",
+    "Full review files were not found; no independent blessing claimed"
+  ],
+  "artifacts_sha256": {
+    "build/dl086/r1-api.log": "3977e1a90bc3c48cb6ac10f955f841b584cfa1b08bdb92b0863eef27309ca42d",
+    "build/dl086/r1-archives-green.log": "64b8a4d596bc17042f1832b5b0a4575439d6f9cc6ba7b5b4035c97f6c9743cf7",
+    "build/dl086/r1-archives-red.log": "60f210e8b76f506ea432ff1b3a16f901c870373e00afa3e350b5ef1a49ef3cbb",
+    "build/dl086/r1-check-complete.log": "d408b4649229772d42edeb69d8cc8555735b239e856541888f3737e7a0b9b674",
+    "build/dl086/r1-check-final.log": "a4b6f4be544f3cc3e4a28ffc3650eeabd4af51bbcc097048ae1bf39728cd6d89",
+    "build/dl086/r1-failed-scratch-cleanup.log": "df3f2be7024363fd9c8c4892b62cff1b8365de73573740c09ce5600f09e8ebb3",
+    "build/dl086/r1-image-mysql-retry.log": "c9d8554b2cdb2c50ce8eb87ccea754e3aa545bf8cfd39a565d9bf4149ddcdbe1",
+    "build/dl086/r1-image-mysql.log": "e9d924f12d813bbd1b96bd9d6c7b4bbcfc97a022fd83ea9790987ee26eaaac8d",
+    "build/dl086/r1-image-postgres-retry.log": "12f9e0fb756abc5a3feabbe6e053bbb63244776f9470b82eb40c6db53be3366e",
+    "build/dl086/r1-image-postgres.log": "2c80b17d90aa25df0ef7709a5394014ac55b34bdb36bfc5b6ef89c4baba1c3dc",
+    "build/dl086/r1-image-sqlite-retry.log": "16e08617bb288a1588b185da6b4b0e7067ecaec5e7010b43f9218cf6ab39b4f2",
+    "build/dl086/r1-image-sqlite.log": "166cddf92a1a4ac239b9e9598a0d1a42e42ec5af4bb96a2af2596c04d4c61ed6",
+    "build/dl086/r1-isolated-after.txt": "56c2e6bb08b84e3741ff0714a6c6b5cadd6db8eebf161c2a0cca180c5fb45710",
+    "build/dl086/r1-isolated-before.txt": "56c2e6bb08b84e3741ff0714a6c6b5cadd6db8eebf161c2a0cca180c5fb45710",
+    "build/dl086/r1-isolation.json": "3b2772889715726a7583ceaf8dd5c7dd5b85e24a08bee7308fa3e3f80e1f57f3",
+    "build/dl086/r1-legacy-syntax.log": "76dbbf6e7d9fd431d2ba8837f46baa7d3fac1c7a1492fb39ba97f8e829872afc",
+    "build/dl086/r1-live-after.txt": "7681504d44e4564d8dec116229288dd66710c1a660fb52479103b48303b8b330",
+    "build/dl086/r1-netns.json": "b6fce83212d985ddd22135b715cbfe13ff7c51eb6a94401de427fe0458acf2bc",
+    "build/dl086/r1-netns.log": "80f0b03d42ad7ac3597612fffdd58b6a39fb6d9ede748aa4c4af72fc0c4f1215",
+    "build/dl086/r1-pr-state.json": "50a0ba96192553f7452941e2ff97efd071a0b4dccd5071483047b2ebc5dce853",
+    "build/dl086/r1-rehearsal-final.error": "5010f803fc367022493ba9e5873fcae4a38c8fbbd7457f3cb840499106ef98ee",
+    "build/dl086/r1-rehearsal-final.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/dl086/r1-rehearsal-green.error": "826229a439f29892dea5800ecf0547f2950552702523fa16980c6794970cd2af",
+    "build/dl086/r1-rehearsal-green.log": "43654fcc0bd2c0d6e58c275ef33fdf7adef9b39f6b27baef6c8828be874ff6ae",
+    "build/dl086/r1-rehearsal-retry.error": "12031dcfbab24c7f996e5b40e53f860aea859bb23581568c6227f78dcd2a483b",
+    "build/dl086/r1-rehearsal-retry.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/dl086/r1-rehearsal.error": "b5937d4e9d54172e0c26fa147fb0b218495271d8817b4841aa10878b1e969e81",
+    "build/dl086/r1-rehearsal.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/dl086/r1-retained-load-green.log": "f041748f6b90eb7bf3163a5afa5417f95fd7d6208cc9ba512eb77e7b6ca36617",
+    "build/dl086/r1-retained-load-mutation-red.log": "53ee272950011c0efacd47eb8cedc14e9f03559fecc0f263c1211d33d5922e6a",
+    "build/dl086/r1-suite-complete.log": "5d333d721757b2b9fdb4f9e2cfe40a25752ab8231e0c07f58b0d2a8cbb81fa33",
+    "build/dl086/r1-suite.log": "3b41d0a0f549a5c7b38b5c5a95906c30d311f4b999299c9b0ffcba475ba44868",
+    "build/dl086/r1-syntax.log": "84646c8baa1966fd3dd21517c7176b2edf14949fc2ec42397023d2a680ac8215",
+    "build/dl086/r1-targeted-final.log": "b0a0e7d69822c03d6ed422288000a55b9ce9ac094b1b4e92b98bd3511b440dd1",
+    "build/dl086/r10-comment-mutation-red.log": "1ca095a4ddcf8f5dd895409df863fea77e990b3133977f2d8fa54e037f9805fd",
+    "build/dl086/r12-green.log": "1659bfa2af4de46e08e941fc3c43878097d31b6a371f87fa85053986329ee251",
+    "build/dl086/r12-private-runtime-green.error": "826229a439f29892dea5800ecf0547f2950552702523fa16980c6794970cd2af",
+    "build/dl086/r12-private-runtime-green.log": "ce47abc9f2a39c55b02453f6a9e614321a0922897be723ebeef6a06fd36becf6",
+    "build/dl086/r12-red.log": "763cad55994834d6bcea50c4267ead073f72f29f1d0918ab338858ba547f4881",
+    "build/dl086/r13-green.log": "3c5c77ae771d9e4e2c2a7779f4ad977f04cafb131264ff2e7a91de0e254f44fb",
+    "build/dl086/r13-red.log": "7a7241d9a125c7af9e988393ca54c83359031e37c429590e410ab7233e337238",
+    "build/dl086/r13-selection-green.log": "adf05ced3f78f0ef69a6e00398bd51daced8df1829421effe664ceb7c23b41cf",
+    "build/dl086/r13-selection-red.log": "b25d4527f14630620990c0cb7da5e70d0603ba4c98f252be65797fdde75814a6",
+    "build/dl086/r14-log-green.log": "58b12bb4e91962a6a23d3c387a3f8af151979750b3c9921ebbf0165e8076edee",
+    "build/dl086/r14-log-red.log": "d447ada77bfa1c9ddc14dac139db2aef14d58e2415c60c2984ef04ca73ab6cc2",
+    "build/dl086/r17-account-limits.log": "0cd71b8a58b81b8dbb4e5a36a716d0f6c94d84853d00e5a37faee5cc8694ae26",
+    "build/dl086/r19-metadata.log": "84403a0361b3feca16d213324e78070299425d00e4e39dc417f8f0b7f5563364",
+    "build/dl086/r2-green.log": "72a4afff7c4fb00a63f086ffb31fd0e66def6b5dfdde45a3ee1ea8a93e8073c8",
+    "build/dl086/r2-proc-race-green.log": "cdf8d13a3f141b449c7d92c9b86d6fd681de17445a1d661236b92f93860eafac",
+    "build/dl086/r2-proc-race-red.log": "7e399a4c5e8f8ed8be9720d68796a665de686b3f4bc929477bbe9168cfbfd494",
+    "build/dl086/r2-proc-red.log": "5d683c060393793143606062f975832f1ad7b4f2bd31a3ab29c3369a109eefda",
+    "build/dl086/r2-red.log": "99cbb54164cad7e9185038a6f065e95a4bed0608d8c7f000fe7d911889f141b4",
+    "build/dl086/r2-runbook-green.log": "58be7695083e38c26381014db874dd9ffc5220fd7e554e3327c3638d5c6fda13",
+    "build/dl086/r3-r4-r10-r11-green.log": "6647d02f29babd6887f93fdf6783d334b7bcee15339111939f86ee50d9296987",
+    "build/dl086/r3-r4-r10-r11-red.log": "dd249cbc1f587d6bcd2f6cc2e6329a908957e52b53c1f60b6d814c15fe8f6538",
+    "build/dl086/r3-resume-save-green.log": "aee3f06d5b39d389b985a7a18f2bc3ce697c74f3008ee9b308c0cdc227ac0afd",
+    "build/dl086/r3-resume-save-red.log": "41a024fcce593b6cd4285c1f952c968f15caa61be31485708ab9f8ab2b98cfe5",
+    "build/dl086/r5-r6-r8-r17-r18-r19-green.log": "ec04e63b91c3342b825730f1fe530ef27cc439a838c15595cbb4f498aae59134",
+    "build/dl086/r5-r6-r8-r17-r18-r19-red.log": "fe5b8b1cdcf27a8d52e0b97d68f1c93b803c4f300dc89af55583b4c41f39e48f",
+    "build/dl086/r7-green.log": "25c025912dd20a27b0f6811529951851ef105eac7e3b73f035017e2115374512",
+    "build/dl086/r7-red.log": "a54b428922c8447f983273307df8b49bc1c3c597f0241c791b1c6eca4ce8a264",
+    "build/dl086/r9-mutation-red.log": "1e2a90ce3201cc8e43af391d74a91ae0d7c193bb35f4c4ba56d12197dac46020"
+  }
+}

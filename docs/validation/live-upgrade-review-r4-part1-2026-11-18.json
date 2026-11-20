@@ -1,0 +1,295 @@
+{
+  "at": "2026-11-18T21:10:51.799872+00:00",
+  "code_head": "4910f6872f157dbc0d82553e11d970382c3512a6",
+  "scope": "DL-086 round 4 part 1: U1-U4 only",
+  "artifacts_directory": "build/dl086/r4",
+  "acceptance": "As of 2026-11-18, DataIntent acceptance held; no blessing or acceptance claimed.",
+  "scanner": "Unchanged; round-four scanner findings remain for deciders and part 2. No scanner execution or updated scanner proof in this part.",
+  "findings": [
+    {
+      "id": "U1",
+      "correction": "Digest-bound reviewed ports receipt for retained first-run backup; configuration/ports gate before allocation and image hashing; names-only actual-layout bootstrap including service-named archives and malformed aggregate checksum; complete retained-input inventory.",
+      "red": "u1-red.log",
+      "green": [
+        "u1-green.log",
+        "u1-layout-green.log"
+      ],
+      "commits": [
+        "6c437ee83a2c3c2a562d97717d93dc22ce1fca42",
+        "71ab234c182c697d9f30405117bb4faca78b614e"
+      ]
+    },
+    {
+      "id": "U2",
+      "correction": "Configured consoles first (10 seconds), SQLite (2 seconds), PostgreSQL/MySQL only (300 seconds); statuses preserved, historical measurement qualified.",
+      "red": "u2-red.log",
+      "green": [
+        "u2-green.log"
+      ],
+      "commits": [
+        "8ba381f8e01360bfe05399a285aae725188e185e"
+      ]
+    },
+    {
+      "id": "U3",
+      "correction": "Each state/health inspection receives remaining deadline; reject late success; delayed and deliberately nonreturning state/health fixtures; read-only native isolated health proof.",
+      "red": "u3-red.log",
+      "green": [
+        "u3-green.log",
+        "u3-native-delay-green.log"
+      ],
+      "additional_red": "u3-native-delay-red.log",
+      "commits": [
+        "4b79df6bd336d5a8b87969b25da7627c949272d8",
+        "4910f6872f157dbc0d82553e11d970382c3512a6"
+      ]
+    },
+    {
+      "id": "U4",
+      "correction": "Clean-stop preserves prior snapshot, excludes SQLite, links selected-engine manual probe; delimit digest-only resume block; correct above pointer.",
+      "red": "u4-red.log",
+      "green": [
+        "u4-green.log"
+      ],
+      "commits": [
+        "86a9e320ae428422c931b447f669e81bc3a5f54b"
+      ]
+    }
+  ],
+  "results": {
+    "repository": {
+      "status": "Passed",
+      "exit_code": 0,
+      "log": "build/dl086/r4/check-final.log",
+      "tests_passed": 743
+    },
+    "images": {
+      "postgres": {
+        "status": "Passed",
+        "exit_code": 0,
+        "log": "build/dl086/r4/image-postgres.log"
+      },
+      "mysql": {
+        "status": "Passed",
+        "exit_code": 0,
+        "log": "build/dl086/r4/image-mysql.log"
+      },
+      "sqlite": {
+        "status": "Passed",
+        "exit_code": 0,
+        "log": "build/dl086/r4/image-sqlite.log"
+      }
+    },
+    "native_health": {
+      "status": "Passed",
+      "engines": [
+        "postgres",
+        "mysql",
+        "sqlite"
+      ],
+      "timeout_seconds": 5,
+      "log": "build/dl086/r4/native-health.log"
+    },
+    "grouped_stop": {
+      "exit_code": 0,
+      "elapsed_seconds": 4.093,
+      "states": [
+        "dl086-r4-stop-mysql-1|exited|Exited (0) Less than a second ago",
+        "dl086-r4-stop-sqlite-1|exited|Exited (137) 1 second ago",
+        "dl086-r4-stop-postgres-1|exited|Exited (0) Less than a second ago",
+        "dl086-r4-stop-landing-1|exited|Exited (0) 3 seconds ago"
+      ],
+      "sqlite_exit_code": 137,
+      "cleanup_exit_code": 0
+    },
+    "retained_inputs": {
+      "at": "2026-11-18T20:46:09.001271+00:00",
+      "status": "Passed",
+      "required_present": [
+        "original-configurations.sha256",
+        "original-configurations.tar",
+        "rollback-image-ids.txt",
+        "rollback-images.sha256",
+        "phase-a-resume-receipt.json",
+        "cold-copies.stream.sha256",
+        "postgres/",
+        "mysql/",
+        "sqlite/",
+        "sqlite-shared/",
+        "rollback-branch.txt",
+        "original-commit.txt",
+        "original-tool-images.txt",
+        "rollback-image-tags.txt",
+        "original-running-services.txt",
+        "rollback-image-mysql.tar",
+        "rollback-image-postgres.tar",
+        "rollback-image-sqlite.tar",
+        "rollback-image-landing.tar",
+        "rollback-image-cloudbeaver.tar",
+        "rollback-image-dbgate.tar",
+        "rollback-image-adminer.tar",
+        "rollback-image-phpmyadmin.tar"
+      ],
+      "conditional_present": [
+        "adminer.generated.html",
+        "python-venv/",
+        "cloudbeaver-workspace-final/",
+        "cloudbeaver-workspace/"
+      ],
+      "absent_with_reviewed_fallback": [
+        "original-ports.json"
+      ],
+      "prior_attempts_present": false,
+      "configuration_archive_sha256": "adf035d3c5d3fda34fde392b9592e84c407298d76eb5e12978528dc81c48a830",
+      "ports_match_archived_configuration": true,
+      "bootstrap_native_readback_without_site_packages": true,
+      "scope": "Names, local ports and digests only; no credential values or data payloads copied"
+    }
+  },
+  "isolation": {
+    "at": "2026-11-18T21:10:51.762517+00:00",
+    "status": "Passed",
+    "comparison": "Exact isolated container list/ID/image/state before and after; exact live ID/image/state/start time against retained cutover evidence",
+    "isolated": {
+      "count": 12,
+      "unchanged": true
+    },
+    "live": [
+      {
+        "name": "megasamples-adminer",
+        "id": "7ef317c5e2574872c447d7b2a090d91669ec61f224415ece77bde7ba4e4e8343",
+        "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+        "state": "running",
+        "started_at": "2026-11-18 08:51:39.977097776 -0600 CST"
+      },
+      {
+        "name": "megasamples-cloudbeaver",
+        "id": "2c08eebb7364571e658ef56d61769ff8e0d815a54954bc7a6c5c45259d859931",
+        "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+        "state": "running",
+        "started_at": "2026-11-18 08:51:39.847600394 -0600 CST"
+      },
+      {
+        "name": "megasamples-dbgate",
+        "id": "3d219c0b086d05f86e972d6f107743e4140719c67ca5dee67c20be05bd14120e",
+        "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+        "state": "running",
+        "started_at": "2026-11-18 08:51:39.787017348 -0600 CST"
+      },
+      {
+        "name": "megasamples-landing",
+        "id": "10dcf6333c62c4c636272bdbf591dfc6a7cce847d2ac0c979b39d274fb2a2e29",
+        "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+        "state": "running",
+        "started_at": "2026-11-18 08:51:39.809734163 -0600 CST"
+      },
+      {
+        "name": "megasamples-mysql",
+        "id": "a3f5c1204ee44b48dedbc5d3b7d9a8981aa5ffe04988019d58864b5157eac0d6",
+        "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+        "state": "running",
+        "started_at": "2026-11-18 08:51:10.170768484 -0600 CST"
+      },
+      {
+        "name": "megasamples-phpmyadmin",
+        "id": "044fa1e2a6ee97811efc2d0165776330493c6ef66c33c1dcad9ee4da03f08128",
+        "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+        "state": "running",
+        "started_at": "2026-11-18 08:51:39.93073862 -0600 CST"
+      },
+      {
+        "name": "megasamples-postgres",
+        "id": "ba1a9f7586814467210c0a5549f02f777dbd6d32af13f4176bb3e99c613316cc",
+        "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+        "state": "running",
+        "started_at": "2026-11-18 08:51:13.76245404 -0600 CST"
+      },
+      {
+        "name": "megasamples-sqlite",
+        "id": "7adacf6eca19046bc2d8daa1a69271ac3bd112046eb41ffc143364e60b740a5e",
+        "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+        "state": "running",
+        "started_at": "2026-11-18 08:50:55.525102141 -0600 CST"
+      }
+    ],
+    "live_baseline": "/home/rcc-vstudio/working/sql-megasamples/build/live-upgrade-backups/20261118T133807Z/phase-b-6/live-end-state.json",
+    "scope": "Default store read-only identity inspection only; no live deployment mutation"
+  },
+  "failed_expected_reds": "U1: 3 failed; U2: 20 failed; U3: 4 failed initially plus 2 real delayed-command reds against the old helper; U4: 4 failed, 1 passed. All preceded their implementation changes.",
+  "failed_author_harness_attempts": [
+    "Initial names-fixture copy lacked its destination directory; created it and repeated the reason-specific red.",
+    "Initial bootstrap fixtures stubbed shell functions only; added executable Docker inventory stub for the helper subprocess and fixture project-port exemptions. No production port check was disabled."
+  ],
+  "limitations": [
+    "No live restoration, complete revised cutover/rollback replay, or engine-size archive replay.",
+    "No live forwarded authentication or TLS validation.",
+    "Root cause of original netns teardown error unknown. Grouped-stop scratch rehearsal succeeded; it does not establish a cause or fix.",
+    "Scanner findings remain outstanding and its evidence is unchanged.",
+    "No independent review of this new head; draft must stay open and unmerged."
+  ],
+  "unsupported": {
+    "status": "Unsupported",
+    "claims": [
+      "SQLite server authentication",
+      "BTS and WideWorldImporters OLTP on PostgreSQL/SQLite"
+    ],
+    "sources": [
+      {
+        "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/4910f6872f157dbc0d82553e11d970382c3512a6/README.md",
+        "read_at": "2026-11-18T20:47:00Z"
+      },
+      {
+        "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/4910f6872f157dbc0d82553e11d970382c3512a6/docs/live-upgrade-evidence.md",
+        "read_at": "2026-11-18T20:47:00Z"
+      }
+    ]
+  },
+  "checked_code_sha256": {
+    "docs/validation/live-upgrade.py": "a7f782b3a5effab67287753fca69c427da81f3518f31b2d832ae37bfcc14b762",
+    "docs/live-upgrade-runbook.md": "a74970c493ad1bf18182a492b084c184a142f373768e1ea819d8ab7d76a6044d",
+    "docs/validation/retained-backups/20261118T133807Z-ports.json": "93cbf86edc26f6dd8095e35e8a6ef798fda6b725549ec81f92b20d2d13a15412"
+  },
+  "artifacts_sha256": {
+    "build/dl086/r4/api-cleanup.json": "e1e8bfb32ed98422d43a62bb1d12c9deeaabcc0707f6a00ec0545ee93c51f54a",
+    "build/dl086/r4/check-final.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/r4/check-final.log": "196d043f18ddde491876feff45cddc0729f56f8a5faa96c3b8dd2a1586b24705",
+    "build/dl086/r4/check.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/r4/check.log": "c1639af940cfa2259f983d30d9f4f7f33f3c3e5184f5dbdc7e853f09c7331893",
+    "build/dl086/r4/grouped-stop-summary.log": "ef002099763249c6232f3183e038a01bde587fda781b684330751db38faaa200",
+    "build/dl086/r4/grouped-stop.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/r4/grouped-stop.json": "3da6125c3c1ccea3be3e257436eccaf514b324ee890cfbc5a88792cb002f02ed",
+    "build/dl086/r4/grouped-stop.log": "2303a8399b066f5e89225b96d37b99b7fb8825cc2205faedf382bc9f4e267149",
+    "build/dl086/r4/image-mysql.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/r4/image-mysql.log": "cb52d2e9786a7b12d56c0d146216476b9f35dc8eb7058013e49d300c20f67d20",
+    "build/dl086/r4/image-postgres.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/r4/image-postgres.log": "eef2a0761d1bcd000397e165aa0bc88d441dc0e9450602cf9e22db13ddbd66ec",
+    "build/dl086/r4/image-sqlite.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/r4/image-sqlite.log": "1444266a5fb5e2491efd2e4e05c57f26c69e2f3d15c43b5503466f333b47e626",
+    "build/dl086/r4/isolated-after.txt": "56c2e6bb08b84e3741ff0714a6c6b5cadd6db8eebf161c2a0cca180c5fb45710",
+    "build/dl086/r4/isolated-api.log": "3772d319c76c4e08b4296e3cb2a368e1ae33e1899404e9b3e5930473b8ad228a",
+    "build/dl086/r4/isolated-api.pid": "1bbc94cc0452c0f3fcfccf1e7afb194ad674a13d3d5d9bc5a521141962b85404",
+    "build/dl086/r4/isolated-before.txt": "56c2e6bb08b84e3741ff0714a6c6b5cadd6db8eebf161c2a0cca180c5fb45710",
+    "build/dl086/r4/isolation.json": "251f55970eefc86835e34bf6e31a4961937ea6145db19e7a5219dde9a967b378",
+    "build/dl086/r4/isolation.log": "adc8832d29cfc0beb5bbe7488b19b6bb2b4c732518b0d000a17a94b7772c57f2",
+    "build/dl086/r4/native-health.log": "3d9d01f0496fab1b2152db59d9f138e6a64d4e3b9ab8cd50ec00d3df6b170f4c",
+    "build/dl086/r4/old-unbounded-health.py": "7944b96bbdac647aac8b0d69fdcd4beec37e26b4469907af6ec5c27bee917853",
+    "build/dl086/r4/pr-body.md": "31d4030294054d1034e867f57d2c0e6e2f1ed7beddf683890853398dfb7cf20f",
+    "build/dl086/r4/prove-isolation.py": "5bb30e805d62d9591e5379439e5d9fc58ed0594fc37ab0e2a7616138285b3ead",
+    "build/dl086/r4/rehearse-grouped-stop.py": "72a3068dbe1f1938f82891ba24aab8f5b89e2f2211d74686f745b993d37bf771",
+    "build/dl086/r4/retained-input-audit.json": "02a4f6314a0912e35d4151ea27dcab1c80a89dffd9e7dd43254e813b63f7b20f",
+    "build/dl086/r4/retained-ports-readback.json": "18481ea95500621ff0aa54357e034938da8e044528be4117ba6c93db9b07efac",
+    "build/dl086/r4/retained-ports-readback.log": "467c36b2185fbaa882ad29bd5ef86a360369b93a185604c08a4919671c555ce8",
+    "build/dl086/r4/retained-root-names.json": "49bb4f039053f41634dd584888ee9078108771abad64e20c2aa264cafafe08d3",
+    "build/dl086/r4/u1-green.log": "3366fbd4ad32aec1b488440c5fe02b72a4b9a6424e5a8e8adb60eacd7050d633",
+    "build/dl086/r4/u1-layout-green.log": "fcfe733faf1da1fe65e6a0c33cf730878d590b4fe34624794624942df115692a",
+    "build/dl086/r4/u1-red.log": "6ed55f9ee17440abe8d93f5cce12910b785a125dc35f1216244065e27e2af1aa",
+    "build/dl086/r4/u2-green.log": "081f2d335b95ac69de121cb2c4356196e1b4ac94ff541a87617f7129637529f7",
+    "build/dl086/r4/u2-red.log": "b1f609bd5f2d6ef4f486f00082d2cbaa4591a34712aa7de51ef01b79d92e909e",
+    "build/dl086/r4/u3-green.log": "da2c93805a4dc9093b208e786ff678763ca756bd970ae1281e515727ee1e4fae",
+    "build/dl086/r4/u3-native-delay-green.log": "646b54296fed5f1ba70d9500baf8b14d6c480ccffb7b80dd00fd7b80e22f8f3a",
+    "build/dl086/r4/u3-native-delay-red.log": "a09b16629d815479fbf62e39029962beba1443aa0c73af4b896a3e24e7fb7544",
+    "build/dl086/r4/u3-red.log": "f78fef0193a964aa8e0e39b9dad9841f305e58ed199ef32f501b497574698edf",
+    "build/dl086/r4/u4-green.log": "aca5e52ef2324be9652ebbe21ca91e1d141a204a869271c4663908602b722a7a",
+    "build/dl086/r4/u4-red.log": "9b6238a8f979ef7d3ee17c977a2d4bfa8d28ea0a5fe5934881430a389af0c64d"
+  }
+}

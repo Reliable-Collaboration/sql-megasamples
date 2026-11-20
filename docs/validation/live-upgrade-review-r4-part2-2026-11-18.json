@@ -1,0 +1,738 @@
+{
+  "at": "2026-11-18T22:05:35.697813+00:00",
+  "code_head": "9d97fa388472dfef2dbf15903c4f880c83d9dacb",
+  "scope": "DL-086 round 4 part 2: DL-088 bounded quiescence",
+  "acceptance": "As of 2026-11-18, DataIntent acceptance held. No independent blessing or merge claimed.",
+  "artifacts_directory": "build/dl086/dl088",
+  "native_artifacts_directory": "build/q088-f3bmpfq8",
+  "specification": "DL-088 supplied by coordinator; read whole with round-four reviews and decision exchange. It supersedes prior scanner scope.",
+  "items": [
+    {
+      "item": 1,
+      "correction": "Bounded process/data assurance; separate mandatory phase-state gate; historical scanner policies marked; no host-wide quiescence claim.",
+      "tests": [
+        "test_quiescence_gate.py",
+        "test_quiescence_runbook.py",
+        "test_round3_documentation.py"
+      ],
+      "commits": [
+        "2260f725feb6c030de9a70321374ac1d2def3252",
+        "15ef8c85a01fdcb601003850c45cef165d093f18"
+      ]
+    },
+    {
+      "item": 2,
+      "correction": "Private exclusive pre-stop capture: container IDs, process start times/cgroups, conmon, dedicated/shared helpers, canonical filesystem identities. Boot/store continuity; missing/empty/stopped capture HOLD; source extension retains pre-stop identities; saved context survives down and fresh shells.",
+      "tests": [
+        "test_quiescence_capture.py",
+        "test_quiescence_gate.py",
+        "test_quiescence_runbook.py"
+      ],
+      "commits": [
+        "9ecae85240bb49620520360247a2de0ec92848d8",
+        "ee8d9fd7f7340bb2713d0d10488d8cbec5bd6c11",
+        "51f015c17ed8faaac09b16a18732292dff3ec0c6",
+        "9bb2d98ec9ac34c57087c8b51d153bca6d23d310",
+        "c706e569e224fea8a8298afd1d276ec9f226c5b0",
+        "b45419d2f4594565f468a5ec6ca264255f652b47"
+      ]
+    },
+    {
+      "item": 3,
+      "correction": "REFUSE/HOLD/PASS decision table, independently verified same-store consumers, cgroup descendants, process/cgroup reuse HOLD, required unreadable evidence HOLD, positive readable holders REFUSE. Focused reason assertions, reversals and actual removed-decision controls.",
+      "tests": [
+        "test_quiescence_gate.py",
+        "test_quiescence.py",
+        "rehearse-quiescence-rules.py"
+      ],
+      "rule_controls": {
+        "artifacts": "build/dl086/dl088/rule-removals-_41uc48a",
+        "rules": 22,
+        "status": "Passed"
+      },
+      "commits": [
+        "2260f725feb6c030de9a70321374ac1d2def3252",
+        "f16b201f9926b485e326afe9d23a6071060a1837",
+        "64c8529075a999736441520bbbfc33dd3a4b3453",
+        "3761cbb102b8b8c4388ea25f0494eac925af74fb"
+      ]
+    },
+    {
+      "item": 4,
+      "correction": "Canonical sources use actual stat identity and filesystem/mount-root translation; no pathname-only holder match. Recheck every actual copy path; inspect all tasks when a zombie leader retains live threads. Restart/writer exclusion is a maintenance obligation.",
+      "tests": [
+        "test_quiescence.py",
+        "test_quiescence_capture.py",
+        "test_quiescence_gate.py"
+      ],
+      "native": [
+        "cross-filesystem-alias-holder",
+        "same-path-different-filesystem",
+        "replaced-source",
+        "zombie-leader-live-thread"
+      ],
+      "commits": [
+        "2260f725feb6c030de9a70321374ac1d2def3252",
+        "7be0ec7396b1ca5ceffc4314eab7040355456ab4",
+        "64c8529075a999736441520bbbfc33dd3a4b3453"
+      ]
+    },
+    {
+      "item": 5,
+      "correction": "Discovery diagnostic runs separately with guarded status; cannot alter the process subgate or exit a strict shell. Fresh-shell umask keeps output mode 0600. Dead inventory, verify-owners and stale unshare stubs removed.",
+      "tests": [
+        "test_quiescence_runbook.py::test_diagnostic_status_never_changes_gate_or_ends_shell",
+        "test_quiescence_runbook.py::test_fresh_shell_keeps_diagnostics_private"
+      ],
+      "commits": [
+        "2260f725feb6c030de9a70321374ac1d2def3252",
+        "15ef8c85a01fdcb601003850c45cef165d093f18",
+        "4924396dc3ac4f962a9dd6df4e6f2f1017367249",
+        "c706e569e224fea8a8298afd1d276ec9f226c5b0",
+        "9d97fa388472dfef2dbf15903c4f880c83d9dacb"
+      ]
+    },
+    {
+      "item": 6,
+      "correction": "Outcome routes before downtime and after stop; exclusive capture retry; existing-original restart independent of copy gate. Alternative original-data overrides check object identity and candidate mount non-overlap, create no replacement source paths, and remain separate from cold restoration.",
+      "tests": [
+        "test_quiescence_runbook.py",
+        "test_quiescence_capture.py::test_original_volume_restart_override_does_not_require_copy_quiescence",
+        "test_rollback_preparation.py"
+      ],
+      "commits": [
+        "15ef8c85a01fdcb601003850c45cef165d093f18",
+        "0d571659ae9e896626d9bbe709a3fcedf90880de",
+        "1bc47ad215a785ee413a660c2a044e53ec39182c",
+        "b45419d2f4594565f468a5ec6ca264255f652b47",
+        "7b2d41b9844a92f9cf80802cbf6a6a5cc4a2c68d"
+      ]
+    },
+    {
+      "item": 7,
+      "correction": "Native scratch-store receipts for executed cases, explicit Unsupported for unavailable published-bridge lifecycle/network survivors. No live mutation.",
+      "commits": [
+        "64c8529075a999736441520bbbfc33dd3a4b3453"
+      ]
+    },
+    {
+      "item": 8,
+      "correction": "Shared helper identified from isolated store PID file plus comm/starttime/rootless-netns cgroup, without arguments. Unresolved association explicitly returns to deciders before downtime. Dedicated helpers use current process namespace objects rather than host-visible SandboxKey placeholders.",
+      "tests": [
+        "test_quiescence_capture.py::test_shared_helper_uses_store_pid_file_not_arguments",
+        "test_quiescence_capture.py::test_missing_shared_helper_stops_for_deciders",
+        "test_quiescence_capture.py::test_capture_namespace_object_comes_from_live_process_not_host_placeholder"
+      ],
+      "native": {
+        "at": "2026-11-18T21:40:15.312938+00:00",
+        "status": "Passed",
+        "capture_outcome": "PASS",
+        "containers": 8,
+        "process_classes": {
+          "process": 87,
+          "conmon": 8,
+          "dedicated helper": 7
+        },
+        "cgroups": 16,
+        "sources": 4,
+        "shared_helper_class": "slirp4netns",
+        "holds": {},
+        "scope": "Read-only running isolated deployment; no stop or verification PASS claimed"
+      },
+      "commits": [
+        "9ecae85240bb49620520360247a2de0ec92848d8",
+        "9bb2d98ec9ac34c57087c8b51d153bca6d23d310"
+      ]
+    }
+  ],
+  "native_acceptance": {
+    "1": {
+      "status": "Unsupported",
+      "reason": "Fresh published bridge failed: Pasta could not open scratch rootless namespace (permission denied); earlier slirp attempt timed out. Network-independent partial removal/fresh-shell PASS is a component proof, not this acceptance case.",
+      "error_digest": "e7d4f1a22291cbcaaa01bd717434ece93bd29c775aefe9fc977f2912809a83d4"
+    },
+    "2": {
+      "status": "Unsupported",
+      "passed_components": [
+        "recorded-survivors",
+        "new-exec-descendant"
+      ],
+      "unsupported_components": [
+        "dedicated helper survivor in composed scratch lifecycle",
+        "shared helper with and without another consumer in composed scratch lifecycle"
+      ],
+      "additional_proof": "Read-only capture of existing isolated stack Passed; consumer-rule fixtures and removal controls Passed."
+    },
+    "3": {
+      "status": "Passed",
+      "cases": [
+        "subordinate-uid-descriptor-only",
+        "subordinate-uid-holder-stopped",
+        "deliberately-unreadable-required-process"
+      ]
+    },
+    "4": {
+      "status": "Passed",
+      "cases": [
+        "cross-filesystem-alias-holder",
+        "cross-filesystem-alias-released",
+        "same-path-different-filesystem",
+        "replaced-source",
+        "source-restored",
+        "zombie-leader-live-thread",
+        "zombie-thread-ended"
+      ]
+    }
+  },
+  "native_receipt": {
+    "at": "2026-11-18T21:41:06.599873+00:00",
+    "results": {
+      "capture": {
+        "status": "Passed",
+        "containers": 2,
+        "process_classes": {
+          "process": 3,
+          "conmon": 2
+        },
+        "sources": 1,
+        "shared_helper_class": "none: network-independent fallback"
+      },
+      "recorded-survivors": {
+        "status": "Passed",
+        "outcome": "REFUSE",
+        "counts": {
+          "inspected": 1316,
+          "other_owner": 828,
+          "vanished": 35,
+          "zombie_or_exited": 21
+        },
+        "refusals": {
+          "recorded process survives": 5,
+          "live deployment cgroup task": 12,
+          "deployment container running": 3,
+          "recorded data source held": 2
+        },
+        "holds": {},
+        "limitations": {
+          "root": 1075,
+          "cwd": 1075,
+          "fd": 1529,
+          "maps": 327
+        },
+        "shared_consumers": 0
+      },
+      "new-exec-descendant": {
+        "status": "Passed",
+        "outcome": "REFUSE",
+        "counts": {
+          "inspected": 1318,
+          "other_owner": 827,
+          "vanished": 18,
+          "zombie_or_exited": 21
+        },
+        "refusals": {
+          "recorded process survives": 4,
+          "live deployment cgroup task": 15,
+          "deployment container running": 3,
+          "recorded data source held": 3
+        },
+        "holds": {},
+        "limitations": {
+          "root": 1074,
+          "cwd": 1074,
+          "fd": 1528,
+          "maps": 327
+        },
+        "shared_consumers": 0
+      },
+      "partial-removal-fresh-shell": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "counts": {
+          "inspected": 1316,
+          "other_owner": 831,
+          "vanished": 27,
+          "zombie_or_exited": 21
+        },
+        "refusals": {},
+        "holds": {},
+        "limitations": {
+          "root": 1078,
+          "cwd": 1078,
+          "fd": 1532,
+          "maps": 327
+        },
+        "shared_consumers": 0
+      },
+      "replaced-source": {
+        "status": "Passed",
+        "outcome": "HOLD",
+        "counts": {
+          "inspected": 1309,
+          "other_owner": 833,
+          "vanished": 22,
+          "zombie_or_exited": 21
+        },
+        "refusals": {},
+        "holds": {
+          "source identity changed": 1
+        },
+        "limitations": {
+          "root": 1080,
+          "cwd": 1080,
+          "fd": 1534,
+          "maps": 327
+        },
+        "shared_consumers": 0
+      },
+      "source-restored": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "counts": {
+          "inspected": 1312,
+          "other_owner": 836,
+          "vanished": 12,
+          "zombie_or_exited": 21
+        },
+        "refusals": {},
+        "holds": {},
+        "limitations": {
+          "root": 1083,
+          "cwd": 1083,
+          "fd": 1549,
+          "maps": 327
+        },
+        "shared_consumers": 0
+      },
+      "deliberately-unreadable-required-process": {
+        "status": "Passed",
+        "outcome": "HOLD",
+        "counts": {
+          "inspected": 1322,
+          "other_owner": 834,
+          "vanished": 18,
+          "zombie_or_exited": 21
+        },
+        "refusals": {},
+        "holds": {
+          "required process inspection unreadable": 1
+        },
+        "limitations": {
+          "root": 1081,
+          "cwd": 1081,
+          "fd": 1535,
+          "maps": 327
+        },
+        "shared_consumers": 0
+      },
+      "cross-filesystem-alias-holder": {
+        "status": "Passed",
+        "outcome": "REFUSE",
+        "counts": {
+          "inspected": 1566,
+          "other_owner": 838,
+          "vanished": 8,
+          "zombie_or_exited": 21
+        },
+        "refusals": {
+          "recorded data source held": 1
+        },
+        "holds": {},
+        "limitations": {
+          "root": 1085,
+          "cwd": 1085,
+          "fd": 1539,
+          "maps": 327
+        },
+        "shared_consumers": 0
+      },
+      "cross-filesystem-alias-released": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "counts": {
+          "inspected": 1918,
+          "other_owner": 843,
+          "vanished": 15,
+          "zombie_or_exited": 21
+        },
+        "refusals": {},
+        "holds": {},
+        "limitations": {
+          "root": 1090,
+          "cwd": 1090,
+          "fd": 1544,
+          "maps": 327
+        },
+        "shared_consumers": 0
+      },
+      "subordinate-uid-descriptor-only": {
+        "status": "Passed",
+        "outcome": "REFUSE",
+        "counts": {
+          "inspected": 2230,
+          "other_owner": 843,
+          "vanished": 25,
+          "zombie_or_exited": 21
+        },
+        "refusals": {
+          "recorded process survives": 2,
+          "live deployment cgroup task": 3,
+          "deployment container running": 2
+        },
+        "holds": {
+          "required holder inspection unreadable": 1
+        },
+        "limitations": {
+          "root": 1090,
+          "cwd": 1090,
+          "fd": 1544,
+          "maps": 327
+        },
+        "shared_consumers": 0
+      },
+      "subordinate-uid-holder-stopped": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "counts": {
+          "inspected": 2240,
+          "other_owner": 843,
+          "vanished": 24,
+          "zombie_or_exited": 21
+        },
+        "refusals": {},
+        "holds": {},
+        "limitations": {
+          "root": 1090,
+          "cwd": 1090,
+          "fd": 1544,
+          "maps": 327
+        },
+        "shared_consumers": 0
+      },
+      "same-path-different-filesystem": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "counts": {
+          "inspected": 2244,
+          "other_owner": 844,
+          "vanished": 14,
+          "zombie_or_exited": 21
+        },
+        "refusals": {},
+        "holds": {},
+        "limitations": {
+          "root": 1091,
+          "cwd": 1091,
+          "fd": 1545,
+          "maps": 327
+        },
+        "shared_consumers": 0
+      },
+      "zombie-leader-live-thread": {
+        "status": "Passed",
+        "outcome": "REFUSE",
+        "counts": {
+          "inspected": 2237,
+          "other_owner": 847,
+          "vanished": 26,
+          "zombie_or_exited": 21
+        },
+        "refusals": {
+          "recorded process survives": 1,
+          "recorded data source held": 1
+        },
+        "holds": {},
+        "limitations": {
+          "root": 1094,
+          "cwd": 1094,
+          "fd": 1548,
+          "maps": 327,
+          "mountinfo": 1
+        },
+        "shared_consumers": 0
+      },
+      "zombie-thread-ended": {
+        "status": "Passed",
+        "outcome": "PASS",
+        "counts": {
+          "inspected": 2234,
+          "other_owner": 845,
+          "vanished": 13,
+          "zombie_or_exited": 21
+        },
+        "refusals": {},
+        "holds": {},
+        "limitations": {
+          "root": 1092,
+          "cwd": 1092,
+          "fd": 1546,
+          "maps": 327
+        },
+        "shared_consumers": 0
+      }
+    },
+    "unsupported": {
+      "published-bridge-lifecycle-and-network-survivors": {
+        "status": "Unsupported",
+        "failure_class": "CalledProcessError",
+        "stage": "scratch published bridge startup",
+        "reason": "Scratch bridge startup failed or exceeded its command deadline; network-independent cases do not pass this acceptance case"
+      }
+    },
+    "isolation_unchanged": true
+  },
+  "results": {
+    "repository": {
+      "status": "Passed",
+      "tests_passed": 778,
+      "exit_code": 0,
+      "log": "check-final.log"
+    },
+    "compose_bind_schema": {
+      "status": "Passed",
+      "exit_code": 0
+    },
+    "images": {
+      "postgres": {
+        "status": "Passed",
+        "exit_code": 0,
+        "log": "image-postgres.log"
+      },
+      "mysql": {
+        "status": "Passed",
+        "exit_code": 0,
+        "log": "image-mysql.log"
+      },
+      "sqlite": {
+        "status": "Passed",
+        "exit_code": 0,
+        "log": "image-sqlite.log"
+      }
+    },
+    "reversal_controls": {
+      "status": "Passed",
+      "artifacts": "build/dl086/dl088/rule-removals-_41uc48a",
+      "rules": 22
+    },
+    "isolation": {
+      "at": "2026-11-18T22:05:35.662333+00:00",
+      "status": "Passed",
+      "comparison": "Exact isolated container list/ID/image/state before and after; exact live ID/image/state/start time against retained cutover evidence",
+      "isolated": {
+        "count": 12,
+        "unchanged": true
+      },
+      "live": [
+        {
+          "name": "megasamples-adminer",
+          "id": "7ef317c5e2574872c447d7b2a090d91669ec61f224415ece77bde7ba4e4e8343",
+          "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:39.977097776 -0600 CST"
+        },
+        {
+          "name": "megasamples-cloudbeaver",
+          "id": "2c08eebb7364571e658ef56d61769ff8e0d815a54954bc7a6c5c45259d859931",
+          "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:39.847600394 -0600 CST"
+        },
+        {
+          "name": "megasamples-dbgate",
+          "id": "3d219c0b086d05f86e972d6f107743e4140719c67ca5dee67c20be05bd14120e",
+          "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:39.787017348 -0600 CST"
+        },
+        {
+          "name": "megasamples-landing",
+          "id": "10dcf6333c62c4c636272bdbf591dfc6a7cce847d2ac0c979b39d274fb2a2e29",
+          "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:39.809734163 -0600 CST"
+        },
+        {
+          "name": "megasamples-mysql",
+          "id": "a3f5c1204ee44b48dedbc5d3b7d9a8981aa5ffe04988019d58864b5157eac0d6",
+          "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:10.170768484 -0600 CST"
+        },
+        {
+          "name": "megasamples-phpmyadmin",
+          "id": "044fa1e2a6ee97811efc2d0165776330493c6ef66c33c1dcad9ee4da03f08128",
+          "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:39.93073862 -0600 CST"
+        },
+        {
+          "name": "megasamples-postgres",
+          "id": "ba1a9f7586814467210c0a5549f02f777dbd6d32af13f4176bb3e99c613316cc",
+          "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+          "state": "running",
+          "started_at": "2026-11-18 08:51:13.76245404 -0600 CST"
+        },
+        {
+          "name": "megasamples-sqlite",
+          "id": "7adacf6eca19046bc2d8daa1a69271ac3bd112046eb41ffc143364e60b740a5e",
+          "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+          "state": "running",
+          "started_at": "2026-11-18 08:50:55.525102141 -0600 CST"
+        }
+      ],
+      "live_baseline": "/home/rcc-vstudio/working/sql-megasamples/build/live-upgrade-backups/20261118T133807Z/phase-b-6/live-end-state.json",
+      "scope": "Default store read-only identity inspection only; no live deployment mutation"
+    },
+    "final_unit_suite": {
+      "status": "Passed",
+      "tests_passed": 779,
+      "exit_code": 0,
+      "log": "unit-final.log",
+      "scope": "Final suite after diagnostic-before-verify ordering regression; generated-record checks previously Passed"
+    }
+  },
+  "expected_failed_controls": "Initial missing-feature reds retained; each decision removal/inversion failed its focused reason assertion before restoration. See rule-removals receipt.",
+  "failed_then_corrected": [
+    "Initial capture test command referenced absent host venv; reran in existing isolated tools container.",
+    "Native capture revealed short ps IDs and shared conmon cgroups; reason-specific red/green fixtures added before fixes.",
+    "Native harness initially wrapped missing-container errors as RuntimeError; corrected to preserve CalledProcessError.",
+    "Native subordinate fixture directory modes were masked by private umask; applied explicit fixture directory modes and proved descriptor access before capture.",
+    "Read-only isolated capture held on dedicated helpers because host SandboxKey placeholders differ from namespace objects; regression red/green and corrected native capture Passed.",
+    "Whole rollback test found alternative restart block in the normal restore sequence; moved it to a separate section without weakening immutable-input test.",
+    "Final check was interrupted when author stopped only its isolated API before SQL-reading stage completed; restarted that API and reran complete check."
+  ],
+  "not_run": [
+    "Live cutover or restoration",
+    "Engine-size archive replay this round",
+    "Whole revised live procedure end to end",
+    "Native recreation on retained original data volumes",
+    "Live forwarded authentication/TLS",
+    "Independent review of new head",
+    "DataIntent acceptance"
+  ],
+  "netns": "Original live teardown root cause unknown. Scratch startup failures do not reproduce or explain that teardown failure.",
+  "historical_evidence": [
+    "live-upgrade-corrections-2026-11-18.json",
+    "live-upgrade-review-r1-2026-11-18.json",
+    "live-upgrade-review-r2-2026-11-18.json",
+    "live-upgrade-review-r3-2026-11-18.json",
+    "live-upgrade-review-r4-part1-2026-11-18.json"
+  ],
+  "sources": [
+    {
+      "url": "https://man7.org/linux/man-pages/man5/proc_pid_stat.5.html",
+      "read_at": "2026-11-18T21:34:50Z"
+    },
+    {
+      "url": "https://man7.org/linux/man-pages/man5/proc_pid_mountinfo.5.html",
+      "read_at": "2026-11-18T21:34:50Z"
+    },
+    {
+      "url": "https://man7.org/linux/man-pages/man5/proc_pid_task.5.html",
+      "read_at": "2026-11-18T21:34:50Z"
+    },
+    {
+      "url": "https://docs.kernel.org/admin-guide/cgroup-v2.html",
+      "read_at": "2026-11-18T21:34:50Z"
+    },
+    {
+      "url": "https://github.com/Reliable-Collaboration/sql-megasamples/blob/9d97fa388472dfef2dbf15903c4f880c83d9dacb/docs/validation/quiescence.py",
+      "read_at": "2026-11-18T22:05:35.697813+00:00"
+    },
+    {
+      "url": "https://docs.docker.com/reference/compose-file/services/#long-syntax",
+      "read_at": "2026-11-18T22:01:30Z"
+    }
+  ],
+  "checked_code_sha256": {
+    "docs/validation/quiescence.py": "06fbcccb0cde7044da6ee4dabd436881da8bf2baac76b9b74769f35e8c6af0f3",
+    "docs/live-upgrade-runbook.md": "ae90b09bcf76df9ffcac121da90b5a41b92cad01105680bf577c69ffa1d31dbb",
+    "docs/validation/rehearse-quiescence.py": "a2bafd96f66a93937f75f4503c4e70b3f8c0e898c7d50c9b50cc41c00e6cd2f9",
+    "docs/validation/rehearse-quiescence-rules.py": "4bac3a9c4c51f1c741fb35ee2b4c8c7ca1924a7206ccda7766f73eaca7a00014"
+  },
+  "artifacts_sha256": {
+    "build/dl086/dl088/capture-retry-green.log": "7171cd8e4dcf45cdcb5945e14d49ac1db753c77209eeab4d250c06d0f8684f2f",
+    "build/dl086/dl088/unchanged-route-red.log": "b1f389abd07b3a48b1270b1f96a38c75c5f6227f98f7c18ffd7954cf7f2c0f3d",
+    "build/dl086/dl088/check.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/dl088/private-red.log": "8286b9a98e0e2b4cc7aed9e1608018692ba74c8377beb3c65ceac6f43abb431d",
+    "build/dl086/dl088/empty-capture-red.log": "e36c269451f2b168f7adc36471499ab06979680163a40f7248810425cd0f409e",
+    "build/dl086/dl088/native-final.log": "d9fd726ce8a1b177c13342e621dee3417ec4b0c29caa0463ba1bfee28dff9d62",
+    "build/dl086/dl088/unchanged-bind-schema.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/dl088/image-sqlite.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/dl088/failed-start-cleanup.json": "47962230e47ecbf04cc4dab3abc422c4bc6fdcf453ccedd8d0f240a3554eb6a3",
+    "build/dl086/dl088/native-pasta.log": "8b7e46ef98f21a3f92f508d05fc56cd56421476822f5ba676ab7d76ff4db287f",
+    "build/dl086/dl088/gate-green.log": "1e8aebeca5fc16a05f0430c959c8913ad1d7a1bed19ec1b4af3a2f5db4253172",
+    "build/dl086/dl088/reused-original-data-green.log": "7732d4b51b9b9c84cf220160549184ba2a1838ddf625ff8a58c2dbef11408d02",
+    "build/dl086/dl088/rule-reversals-final.log": "f4af8e0ef420d6b091562ee7c9b9c957fc58897334daab7a45dc59510145e735",
+    "build/dl086/dl088/diagnostic-order-red.log": "98639726fabda743f8c5a27a8992f3f718a5e70a02f5ef86dd0a790592968e0a",
+    "build/dl086/dl088/unit-final.log": "64c510dcbb8e5ba771cd1da4c5246b1c82fb8b1a6f3ee06ab239396e463c5866",
+    "build/dl086/dl088/isolated-native-before-2.json": "c0e78f10cbe5e599ddfb339ef5a46bf5a66505efb44d5d4598061b4fc3e57d15",
+    "build/dl086/dl088/alternative-route-placement-red.log": "3be516b89f9247beea2bdf23a7d048379996c0fe98e013255d13e43672327409",
+    "build/dl086/dl088/isolated-native-capture-2.json": "bd43deafba57949094a7c900ec33f1c0d0b0e0ca45d1fe4f82a64843229e225f",
+    "build/dl086/dl088/capture-red.log": "51c77bfb98032e0756892bcb24840757e8c9283a1e76ce652398b910afdac7b1",
+    "build/dl086/dl088/extensions-green.log": "a3db4d27122711e4952c14b0a65925f8db713d3e19123089194bc87b7fec0af9",
+    "build/dl086/dl088/image-sqlite.log": "741849a54f8501aac004c78a045250d8633833da4b2b0a64c979bf34a6d993d2",
+    "build/dl086/dl088/isolated-api.log": "9e350ca87bae3df38f5e75a3d016261f7ead055da045047712e398fe206c9eaa",
+    "build/dl086/dl088/write-receipt.py": "158d07f86af31c5a8df1acc890e3b38f7cb3895d0d1f476103947dace1393271",
+    "build/dl086/dl088/host-namespace-green.log": "6443d3b1b75487326853acbb213d6303bd08678e426bb422bb3d179bcb81d5aa",
+    "build/dl086/dl088/isolated-before.txt": "087c3f4d7338e7e11d0531794dc3f02ac11fa6412b461d957126f4dfb5f03372",
+    "build/dl086/dl088/host-namespace-red.log": "e11e40489ed2cc3ae34cea1d6c704ca729e8f9e8c60e54f46b53de384b4ae6c6",
+    "build/dl086/dl088/cleanup-api.py": "d0b88bb126416c16606fb2cd6f68fee4be5c9504ca2fb62d629359e5b671bb69",
+    "build/dl086/dl088/copy-path-green.log": "169b0df4ba61180f2eb0fae6c4bee925b62e84979430e9ad139a376634e9b856",
+    "build/dl086/dl088/runbook-green.log": "d5c7f45ee264fda1549c86b2afd93471d5d18ff9a14ef787bb3c3568b1652ed7",
+    "build/dl086/dl088/schema-override.json": "9d01993bda9a247c35415b98fd2b86070fd841a9a9e57ca5d03de2019cbdeed1",
+    "build/dl086/dl088/isolated-native-capture-receipt-2.json": "aeeaf5d879744eb1851b3f052d78a25a42ead1d9c077c4065fdd35df2cf966b2",
+    "build/dl086/dl088/capture-functions.txt": "0c05911da3b077dc3a7079933bcb9d14e22829362456c4fdc5b6ee1e29b79704",
+    "build/dl086/dl088/capture-retry-red.log": "02c79635ff9ddad7f3f738d95d6e795e9c773f0cce548fd972515bc04d633e99",
+    "build/dl086/dl088/native-capture-green.log": "7474ceadbf236f2f96abb9d157bc2f85f23209b3bab819f09b121200ba3b4f5d",
+    "build/dl086/dl088/check-final.log": "d2d07a0cf4348aae2dfbd9c3f71121306ce6bf8268526536499d776991af3122",
+    "build/dl086/dl088/unchanged-route-green.log": "4f64fc62166abd00c96dd53e0cefebede36af3851ae951ec1596439349272aa3",
+    "build/dl086/dl088/native-cases-second.log": "259051dfc8138fa63906c3edd6ccb4a1dd710ae07f2c57a4a5335076e5342be3",
+    "build/dl086/dl088/empty-capture-green.log": "551d3f6f9cd1ce1fc6713052e28ef9a35c4bd7be2f4cebb0450f3b3ea829f558",
+    "build/dl086/dl088/holders-red.log": "504c5490d9d74bb32167f4fc7597c251d24284d232bcef8abdff2fa6d63cbb80",
+    "build/dl086/dl088/image-postgres.log": "63449efce0dff29f00cb04c3f02a96560b9096979766698bb916fdda5cefd8a4",
+    "build/dl086/dl088/native-second.log": "2414f1ca8cca9fb88e1695de2460f39fc8ddbf5571329f5a23adcabcccb64e17",
+    "build/dl086/dl088/isolation.log": "adc8832d29cfc0beb5bbe7488b19b6bb2b4c732518b0d000a17a94b7772c57f2",
+    "build/dl086/dl088/isolated-api-cleanup.json": "fc583eb8d5f562e905e75690adbf04c9692e4c6ebc1ead3be185f2b0030cb203",
+    "build/dl086/dl088/reused-original-data-red.log": "68934356bc5ac06819c3c43eed5694cde92a3ab981345d844ae4011e43cf1ce3",
+    "build/dl086/dl088/isolation.json": "24ce1d034259b858e1d7b2c6569db56c35a1efffcc998f4d43f06a3c24854c00",
+    "build/dl086/dl088/native-capture-red.log": "ab858c407c7ff04ab64dda50d78e3ef91d235c118c2ffdf5228bacdbb611c67a",
+    "build/dl086/dl088/isolated-capture-2.log": "1c086c055c58cb28047a558a332d1b2a2fcf1910d34b962197eef7ccd75a690b",
+    "build/dl086/dl088/native-cases.log": "12475a03406675f9d94aa2c632e16087b6315dfa1e997f1fa05746461ffa01ef",
+    "build/dl086/dl088/copy-path-red.log": "9c78fcabe36f32b7f6cfb7eb11ce77fc4fcc8dafb788182c0c6ae739fa9fbfb8",
+    "build/dl086/dl088/isolated-api-first-cleanup.json": "fc583eb8d5f562e905e75690adbf04c9692e4c6ebc1ead3be185f2b0030cb203",
+    "build/dl086/dl088/consumer-inspection-green.log": "56ff4027d5513e94a3b946749c85aa7548dc35f1048a83e06906c7b21f3bbbf5",
+    "build/dl086/dl088/alternative-route-placement-green.log": "6ea27da31b22b66950b62621f1aeb167afce24ac089dceeb1d1d89283ed3b79e",
+    "build/dl086/dl088/check-final.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/dl088/isolated-native-before.json": "c0e78f10cbe5e599ddfb339ef5a46bf5a66505efb44d5d4598061b4fc3e57d15",
+    "build/dl086/dl088/native.log": "2d86ce2466b0af936895c053c13d1183d4ecb0e1713693d7c8671c99c6332206",
+    "build/dl086/dl088/isolated-after.txt": "087c3f4d7338e7e11d0531794dc3f02ac11fa6412b461d957126f4dfb5f03372",
+    "build/dl086/dl088/native-cases-third.log": "46b3c699e56c61a99c9abd927bf92df3ee2b8f9af630ebdae373386f5d8fbe12",
+    "build/dl086/dl088/extensions-red.log": "19b8f638061912f5fd88d12eb40e93779e41e2cf0fe2ef1d3e2ebca3c724268f",
+    "build/dl086/dl088/diagnostic-order-green.log": "577017a618e1ce92a89e82dae5198f68026abeede59ac7ff308c7ff047f9bc5b",
+    "build/dl086/dl088/isolated-native-capture-receipt.json": "b432f95d3967dcf4f35054fa5c548a25d26c35ec10fbfb5ec386ec61a99bcc42",
+    "build/dl086/dl088/cgroup-reuse-red.log": "2849282346e5939fec90ab34654fcf03b3115fc2406a004af2863bcecda44179",
+    "build/dl086/dl088/private-green.log": "6656eba2a61abf0556cda20f4cb661a28e40e098217239f0814fc08b4b20a1d3",
+    "build/dl086/dl088/schema-base.json": "d9ec07d4f6247a07a22b611d013a60858c57c739cd860e14b05b303207c61521",
+    "build/dl086/dl088/gate-red.log": "5a9fc3a3f4219ff61a5d5acf370584e9d2759b9863354760c23b5f8a6f08c171",
+    "build/dl086/dl088/capture-running-isolated.py": "fa864fa025c75697f285275d8c64c513413d8fefc0706a25228799d81143114c",
+    "build/dl086/dl088/isolated-api-final.log": "97aa8d57f5a42959d345aa1e28639c2133c7a8ec94df3722081c8eaf9a74e528",
+    "build/dl086/dl088/unit-final.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/dl088/runbook-red.log": "0194a05c2443bb89da3477c3672757211bf674f5ff377dc2f0ec79b893aa565a",
+    "build/dl086/dl088/rule-reversals.log": "0fcba617e9cd3850807dc39f094a3f105608cc54c7e4e8acf44a629d796f68f0",
+    "build/dl086/dl088/namespace-object-green.log": "aab22d039fd0e6d49eb81310d11623a71a520c02f90da1e8b8d2d8917810f9f8",
+    "build/dl086/dl088/unchanged-bind-schema.log": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "build/dl086/dl088/image-mysql.log": "612cabf606a9fd966c4012e3cf696c58840f6e50645d5cba9e3d1fd890e5033c",
+    "build/dl086/dl088/isolated-native-capture.json": "eca62fb1b39ee4350b3b1d5c6fef4a5e270c31daffc55e306b704b61789d13f9",
+    "build/dl086/dl088/capture-green.log": "ed12499504fb433a657b31ced875e7369343bf9696d2544d97d223e4f49c7d34",
+    "build/dl086/dl088/image-postgres.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/dl088/check-api-interruption-failed.log": "ff3c3aa319bdb7d98a067f871c00bb40258e19b4e0f1303979816ca6d744a43e",
+    "build/dl086/dl088/image-mysql.exit-code": "9a271f2a916b0b6ee6cecb2426f0b3206ef074578be55d9bc94f6f3fe3ab86aa",
+    "build/dl086/dl088/namespace-object-red.log": "7bb72e688f62a5d5ccadb11fcd6a35199240f5ed833df8ac517baae192bf4240",
+    "build/dl086/dl088/check.log": "5b492dc91ab04b1c3aaf2665f6cc21fd53563ed13527d22221edf148ecb99c98",
+    "build/dl086/dl088/prove-isolation.py": "8639d4186d52f8e8d1bb32f13501af202f68a58d2109afb200fe3fee767eeb64",
+    "build/dl086/dl088/cgroup-reuse-green.log": "b411c023c70b8479e9c4dc98b4a317930ed647ad5f3b6f0ea8bcb3a01496dd08",
+    "build/q088-f3bmpfq8/receipt.json": "7b3771fbc66a32208b2c1027193b737593f080373d9ff90c06e8a1506ecd9a0c",
+    "build/q088-f3bmpfq8/bridge-start-error.txt": "e7d4f1a22291cbcaaa01bd717434ece93bd29c775aefe9fc977f2912809a83d4"
+  }
+}

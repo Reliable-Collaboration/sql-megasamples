@@ -1,5 +1,11 @@
 # Configured reset credentials and cutover prerequisite (DL-079)
 
+**2026-11-18 follow-up:** this page records the earlier isolated prerequisite. The
+[first live-run evidence](live-upgrade-evidence.md) records the subsequent execution,
+the corrected per-image rollback archives, metadata/port gates and host forward checks.
+As of **2026-11-18**, the deployment used its private mode-0600 `.env` and acceptance
+was held; the acceptance record is DataIntent’s. Historical Not run statements below describe this prerequisite's scope.
+
 The configured-credential reset, password propagation and full corrected-build rehearsal
 **Passed** in the isolated stack. The [machine-readable receipt](validation/credential-prerequisite-2026-11-18.json)
 records commands, outcomes, timings, counts, canonical fingerprints, image IDs and evidence digests.
@@ -108,9 +114,9 @@ The canonical isolated credential file is
 `/home/rcc-vstudio/working/sql-megasamples-upgrade/.env`, mode 0600. MySQL listens only at
 `127.0.0.1:13306`, PostgreSQL at `127.0.0.1:15432`, and consoles at ports 18080–18084.
 Give DataIntent the file location and merged revision privately, never password values in notes.
-The [live runbook](live-upgrade-runbook.md) specifies the future live `.env` location, all four
+The [live runbook](live-upgrade-runbook.md) specifies the live `.env` location, all four
 password overrides, native new/previous-password verification, and rollback inputs retained by
-digest: the original 9.7.2 image archive and image IDs, private configuration archive, and cold
+digest: the original 9.7.2 per-image archives and image IDs, private configuration archive, and cold
 copies with deterministic stream digests including ownership/modes and symlink targets.
 Actual live backups have not been created by this task.
 

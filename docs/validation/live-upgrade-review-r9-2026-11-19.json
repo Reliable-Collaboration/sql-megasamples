@@ -1,0 +1,420 @@
+{
+  "at": "2026-11-19T04:55:48.200427+00:00",
+  "checked_code_commit": "a72355dc1d1d3472aaa0fb706e53ae03df1532f8",
+  "scope": "DL-086 round nine AA1-AA4 only. Authoring-session checks. Draft and DataIntent acceptance/merge hold retained. No live mutation.",
+  "sources": {
+    "repository": "https://github.com/Reliable-Collaboration/sql-megasamples/tree/a72355dc1d1d3472aaa0fb706e53ae03df1532f8",
+    "read_at": "2026-11-19T04:55:48.200427+00:00",
+    "context": "This clone and the two supplied round-nine reviews, read whole. No persistent memory or cross-project stores.",
+    "version_support_claims": "No new software version or support claims in this round."
+  },
+  "fixes": {
+    "AA1": {
+      "test_only_commits": [
+        "70fa8d6",
+        "6def82e"
+      ],
+      "fix_commits": [
+        "1794141"
+      ],
+      "red": "aa1-final-red.log: real dispatch selects down-capture; successful empty pause listing exits 1 before capture",
+      "green": "aa1-green.log: three pass; real snapshot/down capture completes on empty listing; listing error 37 refuses; empty originals refuse",
+      "reversal": "Controls 0-2 remove the down exception, swallow listing errors, or allow empty originals; each regression fails"
+    },
+    "AA2": {
+      "test_only_commits": [
+        "26f4357"
+      ],
+      "fix_commits": [
+        "a7a9424"
+      ],
+      "red": "aa2-red.log: rollback dispatch/input block has no fence before capture",
+      "green": "aa2-green.log: two pass; separate guarded prose step and dispatch/pause/capture order",
+      "reversal": "Control 3 removes the fence/prose boundary; regression fails"
+    },
+    "AA3": {
+      "test_only_commits": [
+        "d6d4ff7",
+        "0263f0a"
+      ],
+      "fix_commits": [
+        "691c9ab",
+        "8bc09a8"
+      ],
+      "red": "aa3-red.log: abort-running and abort-stopped leave preparation context at originals-restarting; aa3-completion-red.log: fresh-shell completion fails on transient PREPARATION_CONTEXT_FILE",
+      "green": "aa3-green.log: eight pass at initial fix; aa3-completion-green.log: four pass with canonical preparation context and fresh-shell completion; final suite retains interrupted-start guards",
+      "reversal": "Control 4 removes final preparation save and control 9 requires a transient variable during fresh-shell completion; both regressions fail"
+    },
+    "AA4": {
+      "test_only_commits": [
+        "c35c068"
+      ],
+      "fix_commits": [
+        "ee4f72c"
+      ],
+      "red": "aa4-red.log: three early identity refusal messages missing, and table overstates mount comparison (four failures)",
+      "green": "aa4-green.log: nine pass; first port refusal then fresh-shell dispatch completes; exact candidate configuration retained; missing/replaced/project mismatch names coordinator hold",
+      "reversal": "Controls 5-8 move checkpoint before first port check, restore inaccurate table, or remove either coordinator message; each regression fails",
+      "already_correct_port_order": "The composed port case already passed on the current implementation; its red is the planted premature checkpoint in control 5.",
+      "duplicate": "Removed identity-clean-stop parameter, which repeated the start case; retained independent start-clean-stop and abort-identity cases with stable node IDs."
+    }
+  },
+  "backlog": {
+    "B-2": {
+      "status": "Known limit; not fixed",
+      "evidence": "docs/live-upgrade-evidence.md, Known limits retained for later work",
+      "limit": "Already-dead conmon loses captured PID; later reuse of Podman-recorded PID can REFUSE/HOLD. Fails safe.",
+      "interim": "Keep maintenance hold; rerun once the reusing process exits. Do not kill an unattributed process to clear the gate."
+    },
+    "B-3": {
+      "status": "Known limit; not fixed",
+      "evidence": "docs/live-upgrade-evidence.md, Known limits retained for later work",
+      "limit": "Stricter scratch pause-PID walk exercised with stubbed Podman only; enumeration failure may leave duplicate image set and pause process; no automatic failure-cleanup route.",
+      "native_stricter_walk": "Not run",
+      "manual_cleanup_status": "Not run; instructions only",
+      "manual_cleanup": [
+        "Fresh strict Bash: source isolated env.sh and check isolated storage/socket settings.",
+        "Select exact owned failed rollback-load-rehearsal-* directory directly under BACKUP_DIR; verify the relationship.",
+        "Subshell: set CONTAINERS_STORAGE_CONF to its storage.conf, CONTAINERS_CONF to its containers.conf and XDG_RUNTIME_DIR to its xdg; unset CONTAINERS_CONF_OVERRIDE.",
+        "Require podman info GraphRoot == SCRATCH_DIR/graph. Assign SCRATCH_CONTAINERS=$(podman ps -aq) separately; listing must succeed and test -z must pass.",
+        "Once enumeration is readable, rerun existing PY_PAUSE_CAPTURE; run podman image rm --all --force and podman system migrate, retaining logs.",
+        "Run existing PY_PAUSE_CHECK after final Podman call; make no subsequent Podman call. Retain logs/configuration.",
+        "On unreadable inventory or failed checks preserve the store for coordinator investigation. Never target default/isolated stack stores, system reset, blindly delete trees or signal a bare PID."
+      ]
+    }
+  },
+  "commands": {
+    "suite": "With sourced/checked env.sh: podman exec -w <clone> megasamples-upgrade-tools .venv/bin/python -m pytest -q",
+    "reversals": "With sourced/checked env.sh: tools .venv/bin/python docs/validation/rehearse-r9-reversals.py",
+    "images": "With sourced/checked env.sh: python3 build/dl093/check-images.py (all three test-image engines in existing isolated tools)",
+    "isolation": "With sourced/checked env.sh: python3 build/dl093/prove-isolation.py; exact nine default-store objects inspected read-only with store overrides removed",
+    "other": "git fetch origin main; gh pr view 15 scoped to Reliable-Collaboration/sql-megasamples; git diff --check"
+  },
+  "results": {
+    "suite": {
+      "status": "Passed",
+      "summary": "892 passed in 33.29s",
+      "log": "build/dl093/suite.log"
+    },
+    "removal_order_controls": {
+      "status": "Passed",
+      "controls": 10,
+      "artifacts": "build/dl093/reversals-edridzcv"
+    },
+    "images": {
+      "postgres": {
+        "status": "Passed",
+        "exit_code": 0
+      },
+      "mysql": {
+        "status": "Passed",
+        "exit_code": 0
+      },
+      "sqlite": {
+        "status": "Passed",
+        "exit_code": 0
+      }
+    },
+    "image_cleanup": {
+      "status": "Passed",
+      "removed": 3,
+      "already_absent": 2,
+      "observer_timeouts": 5,
+      "attribution": "New anonymous volumes observed mounted by reserved test containers or adjacent same-time create events; unused and unreferenced; all pre-existing volumes unchanged",
+      "own_api_forced_termination": false
+    },
+    "isolation": {
+      "status": "Passed",
+      "isolated": {
+        "containers": 12,
+        "unchanged": true,
+        "inventory": [
+          {
+            "name": "megasamples-adminer",
+            "id": "f094743e286e5475ed47db4a335b5ebfca7d923683699fa5bcb2cf2a0ab6561b",
+            "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+            "state": "running",
+            "started_at": "2026-11-17 12:26:40.760901753 -0600 CST"
+          },
+          {
+            "name": "megasamples-build-mysql",
+            "id": "adc7ac97d80975e5c7b8d670a2d962000815ac380c95621bab6c8e39430e07e2",
+            "image": "e3c5e24cdccea30c955dfa05b9b07fdc3b62323321c1e827a563e846d7552ea5",
+            "state": "running",
+            "started_at": "2026-11-17 11:35:53.185152816 -0600 CST"
+          },
+          {
+            "name": "megasamples-build-postgres",
+            "id": "764e08b53d08300dcfd369de7dc65257f531dc3be2b7850e37efc9b2695d0e59",
+            "image": "3cccc725163a95947178f4da5e9bf16add75cb286170ac5a2cd2f6513534955d",
+            "state": "running",
+            "started_at": "2026-11-17 02:43:06.427254006 -0600 CST"
+          },
+          {
+            "name": "megasamples-cloudbeaver",
+            "id": "9a8bc77db454ed2faa7ce0cd264479166cb8a761b766a46787ce7b2f48a4f6fb",
+            "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:45.435567666 -0600 CST"
+          },
+          {
+            "name": "megasamples-dbgate",
+            "id": "9019958eba77e79dfd88fa02426d84b2b64a0a188d5b88ef97b056a9a3301634",
+            "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:45.414450726 -0600 CST"
+          },
+          {
+            "name": "megasamples-landing",
+            "id": "dbc3b188a07d6c9920d1fc7011b43e5f6958f96e2d8abee622ce9860b3f9a76d",
+            "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+            "state": "running",
+            "started_at": "2026-11-17 12:27:07.694014647 -0600 CST"
+          },
+          {
+            "name": "megasamples-mysql",
+            "id": "9507a0bf975fc7833b2aa483f9449f5d95bdceab495782c6365145dc18f13e19",
+            "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:34.007118791 -0600 CST"
+          },
+          {
+            "name": "megasamples-phpmyadmin",
+            "id": "c5f6b29fc07e06613f9c145a536e723be2fe28cc98a6e7a1d0ea71fa6c53fe47",
+            "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+            "state": "running",
+            "started_at": "2026-11-17 20:51:13.181193732 -0600 CST"
+          },
+          {
+            "name": "megasamples-postgres",
+            "id": "3ac86c34b9eb04c1d0ece86a10884816ef79d9cd0b278ae8690e651f28951b1d",
+            "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+            "state": "running",
+            "started_at": "2026-11-18 05:28:25.12361209 -0600 CST"
+          },
+          {
+            "name": "megasamples-sqlite",
+            "id": "4dbd24f800b97d2937a47eb0b2455d67b1256d8fd55431fe340af30fa4f52734",
+            "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+            "state": "running",
+            "started_at": "2026-11-18 05:27:15.807252083 -0600 CST"
+          },
+          {
+            "name": "megasamples-upgrade-browser",
+            "id": "c1ebd848a39b3ec7a104c80185ba5ea4f8ccae1b22a53885ca0f2d611b1e53e3",
+            "image": "32cfab2f09595b0266babd6ef76ee175ef024617f4077797bcecf235fe88eb68",
+            "state": "exited",
+            "started_at": "2026-11-16 12:58:52.851855644 -0600 CST"
+          },
+          {
+            "name": "megasamples-upgrade-tools",
+            "id": "ef64d26b142c7ecbe5b0ffa3b2e223a1501b8f0c7582e8ad7baf357db7183f14",
+            "image": "8ef0c198735c09bd0434807c462f61595e3b1b1fe4c7557d441a3e2c257b6740",
+            "state": "running",
+            "started_at": "2026-11-16 12:45:13.191511277 -0600 CST"
+          }
+        ]
+      },
+      "live": {
+        "containers": 9,
+        "services": 8,
+        "tools": 1,
+        "unchanged": true,
+        "inventory": [
+          {
+            "name": "megasamples-adminer",
+            "id": "7ef317c5e2574872c447d7b2a090d91669ec61f224415ece77bde7ba4e4e8343",
+            "image": "3a48cfdb299a2541aa6d570535f85396eea449d7749ec2c7db24e58d07140e82",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.977097776 -0600 CST"
+          },
+          {
+            "name": "megasamples-cloudbeaver",
+            "id": "2c08eebb7364571e658ef56d61769ff8e0d815a54954bc7a6c5c45259d859931",
+            "image": "3af94f60cac3af90b64ff2325e996458f07ef4707de0fc2a0c16b2fd6b38d9d7",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.847600394 -0600 CST"
+          },
+          {
+            "name": "megasamples-dbgate",
+            "id": "3d219c0b086d05f86e972d6f107743e4140719c67ca5dee67c20be05bd14120e",
+            "image": "29180897f3811183a74f209aa6979508c577a78994233c4f3c0d79eb490e76a0",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.787017348 -0600 CST"
+          },
+          {
+            "name": "megasamples-landing",
+            "id": "10dcf6333c62c4c636272bdbf591dfc6a7cce847d2ac0c979b39d274fb2a2e29",
+            "image": "c05939e13a616cd46ade6515e869aa24451ce7dc28d6f4f9ee8c6b1ec03fbf39",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.809734163 -0600 CST"
+          },
+          {
+            "name": "megasamples-live-upgrade-tools-20261118T133807Z",
+            "id": "47b022120bcd10ae47db9f8113cd4b9614570c7378f044fd81a4630473fb8149",
+            "image": "9cfca77f5b88e23f25e76429d70f0c72959ff13a6d933610c58ae74da67cd710",
+            "state": "running",
+            "started_at": "2026-11-18 07:51:54.959083715 -0600 CST"
+          },
+          {
+            "name": "megasamples-mysql",
+            "id": "a3f5c1204ee44b48dedbc5d3b7d9a8981aa5ffe04988019d58864b5157eac0d6",
+            "image": "20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:10.170768484 -0600 CST"
+          },
+          {
+            "name": "megasamples-phpmyadmin",
+            "id": "044fa1e2a6ee97811efc2d0165776330493c6ef66c33c1dcad9ee4da03f08128",
+            "image": "3d38bde7079f465b655199e0d7d76313a5fdaa392ad51e4313a66ae55d880786",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:39.93073862 -0600 CST"
+          },
+          {
+            "name": "megasamples-postgres",
+            "id": "ba1a9f7586814467210c0a5549f02f777dbd6d32af13f4176bb3e99c613316cc",
+            "image": "41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3",
+            "state": "running",
+            "started_at": "2026-11-18 08:51:13.76245404 -0600 CST"
+          },
+          {
+            "name": "megasamples-sqlite",
+            "id": "7adacf6eca19046bc2d8daa1a69271ac3bd112046eb41ffc143364e60b740a5e",
+            "image": "090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb",
+            "state": "running",
+            "started_at": "2026-11-18 08:50:55.525102141 -0600 CST"
+          }
+        ]
+      },
+      "scratch": {
+        "projects": [],
+        "containers": 0,
+        "networks": 0,
+        "volumes": 0,
+        "restore_volumes": 0
+      },
+      "api_socket_stopped": true,
+      "scope": "Default-store read-only exact nine-object inspection; no live exec/signals/service/network/volume changes"
+    }
+  },
+  "netns": "Live teardown cause remains unknown. Round nine does not claim to reproduce or explain it.",
+  "not_run": [
+    "B-3 native stricter scratch pause walk and manual failed-rehearsal cleanup",
+    "New ordinary-route native replica rerun in this deliberately small round; round-eight receipt remains the dated native evidence",
+    "Live restoration, real-backup bootstrap/input verification, restored-stack startup, live forwarded sign-ins, engine-size archive replay, native original-override",
+    "Independent same-head approval, DataIntent acceptance, merge"
+  ],
+  "unsupported": [
+    "Actual reboot while both running stacks remain unchanged",
+    "Live task retained in a native exited container cgroup was not safely arranged",
+    "Zero shared-helper consumers: the isolated stack must remain running; a second scratch project cannot remove its consumers"
+  ],
+  "failed_then_corrected": [
+    "Initial AA1 regression correctly stopped at the nonempty assertion; after the fix, an incomplete comment-boundary extraction in its test produced command-not-found. Test-only commit 6def82e corrected extraction; aa1-final-red.log reran against the unchanged old runbook before final green.",
+    "Initial AA3 completion depended on transient shell state; final review added a failing fresh-shell completion regression in test-only commit 0263f0a and fixed it in 8bc09a8.",
+    "Expected AA1-AA4 pre-fix failures and ten planted-defect failures are retained as red evidence, not successful production runs."
+  ],
+  "inspection_incidents": [
+    "An early repository file discovery recursed into clone build scratch stores and reported permission-denied directories. No protected contents were read; subsequent discovery was bounded to tracked/specified paths.",
+    "A source lookup named two absent clone files and returned exit 2; no nonexistent file was read.",
+    "One attempted patch used a mismatched full table line and was refused without modifying it; the subsequent exact phrase update succeeded."
+  ],
+  "inspection_hygiene": "Only clone files and explicitly supplied reviews/environment were used. No private environment values, full inspect records, dumps or cold-copy contents were opened for inspection or printed. Default-store access was exact nine-object non-secret read-only inventory; no exec/signals or live changes.",
+  "source_sha256": {
+    "docs/live-upgrade-evidence.md": "b0d550914d7f721b6e0620684a4e997834f342e33c1d3c095f37f6bbf0fc9bf5",
+    "docs/live-upgrade-runbook.md": "058d3f569644203a7812e553fde27093375bf6be362ca5a28bae5d8d487063f4",
+    "docs/validation/live-upgrade-review-r7-2026-11-19.json": "b37e4bc5dea503b94ffa57ebd59784c2b02d341e95b2cc5a270db05b7bc6e4d0",
+    "docs/validation/live-upgrade-review-r8-2026-11-19.json": "46efcc4992c2102f14ce182ea8e54abf76b7fb7e6b62e76908ea36e05cb0f947",
+    "docs/validation/live-upgrade.py": "1d96eb461e1c07927e4c88f1592cc8c380bdad6462210276c15d192ccc638349",
+    "docs/validation/quiescence.py": "2715f5795e1ca0b5cfc53e3e8079ded5a63d9b27fd0e6a8d2a82ea620922b7a9",
+    "docs/validation/rehearse-original-restart.py": "35a7575ae7c1fd7e64fcf89a0ceb850cf752be49890913b1debdd954853e34ff",
+    "docs/validation/rehearse-r7-reversals.py": "5ff86175d06de25a54151a996e896474ce5d49bd57e8acc0089def2ba4032221",
+    "docs/validation/rehearse-r8-reversals.py": "b7855220271943aa451def382e734a5da9af296e37ff8266cd73479433685717",
+    "docs/validation/rehearse-r9-reversals.py": "ddeea10bde319a5363b9c143a99accaedd4d9cda352da7bc37d88d4f3a104e84",
+    "docs/validation/rehearse-rollback-replica.py": "e2ddc7d205752003f25b584ce907b744eb93729c06cb3996cf0e9fcb23fa6446",
+    "tests/test_live_upgrade.py": "50699657d57c0b31090ade14844f1f67d86bae6063e14b20ceb0d8df88e86618",
+    "tests/test_quiescence.py": "a5e7b786ed7763c6a2305257d014e7be4b29c22b176b5bac01c9c1b40827f620",
+    "tests/test_quiescence_capture.py": "8076b3e7a1d9dbeefb9930dba7d910d9412f6f73810a424302abe7fda6612c17",
+    "tests/test_quiescence_down.py": "dfbff3577827f822bb655338f98772d098b316c7c325eaf6bc5c46ab964b4e3e",
+    "tests/test_quiescence_gate.py": "deec0c2f9ad8e789cee2c21d194a1e09f14215bf2a4f3d3811a93ce95b364336",
+    "tests/test_quiescence_runbook.py": "614046bac9c9dfee78fd90345eed9f3a2c529496f36da1de06fe76d035e8280a",
+    "tests/test_round9_runbook.py": "ef32fa434ba63a6685f7d62137e2fc44ad52fac10ea80baf605e56acff07aa65",
+    "tests/test_runbook_fragments.py": "c62dae7d38614d2816c92181a1fb80034d80fb2cb621f26076075a7fd15c183f"
+  },
+  "evidence_sha256": {
+    "build/dl093/aa1-final-red.log": "01bbc9458dffc4ded91a4f267c7349132f39814ee8aca74d5998e720ed72605b",
+    "build/dl093/aa1-green.log": "441fa3ff21f91fef6d50280527131685cabe73e90b727fd811df906828be0ab1",
+    "build/dl093/aa1-old.md": "89fc5d30de3a19555c40a81a880bd00629cd69bc2c37b993b861a1fccf7caf22",
+    "build/dl093/aa1-red.log": "49cc6fa72ff282d7abcb4d25ac52eb3756d5a348ebd0556a5e4e4be80a96c132",
+    "build/dl093/aa2-green.log": "149e983c325e1215d8fe411fd58fb9c0fa38bc5dfa119c4a6a92d44ee61e3e10",
+    "build/dl093/aa2-red.log": "57c73069db6675c4b2ce0c445f232b54475369c390715d5ea9df973c4a87e21f",
+    "build/dl093/aa3-completion-green.log": "1d8ffad0923de5090d49e3a0c4a0f4b335ba9be952f2fa07d733934811fce836",
+    "build/dl093/aa3-completion-red.log": "c7b2cff6cef7211b9770726c9063ecfbdf2f4ace5cf2a927ee70df67a3dbf39d",
+    "build/dl093/aa3-green.log": "91eb7251eeee51f87d2b3889fa1aad927177276f19509aa4bda0655657c3cf0c",
+    "build/dl093/aa3-red.log": "439a26a21dd1625665c4be849918876dd06c5960b3d6664b3b8e83ef47e9f676",
+    "build/dl093/aa4-green.log": "4326a6149a721258a65f0bb6017df2bef4fecac91560bf07f2f16de8517a5865",
+    "build/dl093/aa4-red.log": "ac609248d1c53ae507411848985733613b4f605be7b44e90537b4a0303e15a06",
+    "build/dl093/api-images.log": "f547051303124ea91477b3a8788a207026acd47ae216d79e0f6316dbdf6f161a",
+    "build/dl093/check-images.py": "b0f4b86c790661de27016d4d396c88140af2783e820e94aaec820b667935addb",
+    "build/dl093/image-checks.log": "c5e41b28cddc0608a3837e6502bc579d0ceec2329c5a1d7955800fec223908c3",
+    "build/dl093/image-cleanup.json": "bc17bb1525793ad4120695f4a49ab0d2d997c7a62433a1f6ad60bbfac662cdf8",
+    "build/dl093/image-create-events.txt": "493ba584dd785298842fb64d7b1acddcb22c65ca456dad4586a9f69059d776ac",
+    "build/dl093/image-mysql.log": "218d6c15a79e2070ea3cdec9a5d58d1d6f5c5c02858aaa1d065385bf29e9efa5",
+    "build/dl093/image-postgres.log": "2051e464e5d1f2f1ebeda969dedfbede472520a6ff57f6be79e0c637309a2ae9",
+    "build/dl093/image-sqlite.log": "3972a68336b6d6449197e0fc6969ec71f6ee8259d6ef6926552a011485d2d1ed",
+    "build/dl093/images.json": "7e51d4ca37f1676b4c7dd5117f5d3f75637a3dbfdc0f5f518efadc864700fa9e",
+    "build/dl093/isolated-after.txt": "0aee86b42c5d01cd9805d7ccf1b9d70a7885cab2ccd6772da1c3545b3c18fb27",
+    "build/dl093/isolated-before.txt": "0aee86b42c5d01cd9805d7ccf1b9d70a7885cab2ccd6772da1c3545b3c18fb27",
+    "build/dl093/isolated-ps-after.txt": "3371ca8c48fb2a13a137656f47c8b130dccc1c9b71cc51d5a82084ca81aa8409",
+    "build/dl093/isolation.json": "5ae3f71c5c383876db395f3c027ffd0b21fb78237ef082e82e81a28a362b60cc",
+    "build/dl093/live-after-nine.txt": "c7a95c36249d9534bb9e1fb43f99f7c7712773ef2c90f2e5563a41065ac0aa34",
+    "build/dl093/live-before-nine.txt": "c7a95c36249d9534bb9e1fb43f99f7c7712773ef2c90f2e5563a41065ac0aa34",
+    "build/dl093/prove-isolation.py": "8c6aef55639a05f303ad3a51862fe24962856448ab2cf28708d71ac38f210306",
+    "build/dl093/reversals-before-completion.log": "e859cf0adaf7d1889f5465e33e99be63d4b2f1c6745d8329a5d53ccd25a92acf",
+    "build/dl093/reversals-edridzcv/0.log": "f39b4d587b72e25c5994804edfbcaf9bce9400d734f74d156856ee1409e4386e",
+    "build/dl093/reversals-edridzcv/0.md": "12fc614777ad7acdf41510cd43046f6ae1d178441d0a9dd0e13f569cf5c9afeb",
+    "build/dl093/reversals-edridzcv/1.log": "ea68d4754072884228f93fb72cdebe8641dba1452bb85e9b12d4c7013feb87e9",
+    "build/dl093/reversals-edridzcv/1.md": "c241643634902a4f5fdb146ce9e226498aba721493f007a9ce2c1171d53c61c3",
+    "build/dl093/reversals-edridzcv/2.log": "312f8ed1d82371e089b06b93638c0640369dfe4cdce6ea25f7740684b3ffcf55",
+    "build/dl093/reversals-edridzcv/2.md": "b45fa07c3d9ef7d6dd23996f17e0d54d051d5135adaada854e4f917ce54292e6",
+    "build/dl093/reversals-edridzcv/3.log": "259ce1aec6dc9b95c58bb3f9f7ed8e6e3f593e0a90ae202a993dc3391fd976a5",
+    "build/dl093/reversals-edridzcv/3.md": "e409d20a151da592aa3abd8f8117709497fe018614a8bf20722b1190c0426eff",
+    "build/dl093/reversals-edridzcv/4.log": "daef593fdcea4435eb2d144476399f76551be65584422675da04d5c871a8a325",
+    "build/dl093/reversals-edridzcv/4.md": "e6faaca2ab9d6ca1eca5b7b55ae8e69da52734727794d7491d0d6da37a7c3118",
+    "build/dl093/reversals-edridzcv/5.log": "a1089530958bd2c509cad7093ca46860349ef08c17c5a1ab2d9eb738ca38865b",
+    "build/dl093/reversals-edridzcv/5.md": "63ca58f8e6bcc217f5c414ea0a28605a3a8627d510ac254294c1ad8719a5cdc9",
+    "build/dl093/reversals-edridzcv/6.log": "559dcdc2209d73553a16ce8feb7b932f60526629fde3cec55d031307958d46cc",
+    "build/dl093/reversals-edridzcv/6.md": "6af0c46a34a11db12dbdc6a2973116329c3b593ab40c53b8eb9e7aec7125c5e0",
+    "build/dl093/reversals-edridzcv/7.log": "839acf243ac39195d73da7746f8f11f31f4bcc79e5001166e398c820422373cb",
+    "build/dl093/reversals-edridzcv/7.md": "998d3ce8e76c1c7a8628ef44cd2a0fa90ce2f05645efce590ab7c7f82552f8e0",
+    "build/dl093/reversals-edridzcv/8.log": "17074780158d5f212cc771882e61268aa5645ac1da73a4963bcf5f0b79875742",
+    "build/dl093/reversals-edridzcv/8.md": "1642f68555840b47c4c97f8a75c570a8ac3426ca35ca2398ee256f836e2ae179",
+    "build/dl093/reversals-edridzcv/9.log": "946f892ff8031c022230f204ee53ec02c3ae772b4225a11bed918f693f0c63f2",
+    "build/dl093/reversals-edridzcv/9.md": "9f5a49ebb458cbaa032b26ad82e563f4707543a4511c23efc321fab790b7a79b",
+    "build/dl093/reversals-edridzcv/receipt.json": "57579b1f5cc5a91de7fa843e2e7fafe463cd09df403b40dbea2131690392fdfb",
+    "build/dl093/reversals-t6kaip54/0.log": "a6b0877e2ed1d222a76d0e244dbc76d9eefb5f1b16e9571500ec3a0c00823617",
+    "build/dl093/reversals-t6kaip54/0.md": "6bd8db5ef773e1064960d217ab573ee20c20e626ffcacaf1396fd0cb741b3ae4",
+    "build/dl093/reversals-t6kaip54/1.log": "d0220e33a36e52cbec0a0e76696e131a4b040544c031773e59eb00468660cd03",
+    "build/dl093/reversals-t6kaip54/1.md": "4b03e2d425fc53521d3c397f18056bed7fafd7e7695f45decb909cd6ae225add",
+    "build/dl093/reversals-t6kaip54/2.log": "aaae64acb0200ab0723ac4a257b17ca7a7f72a72b44452bfd5feb3e2c6181de8",
+    "build/dl093/reversals-t6kaip54/2.md": "961dd5fa921a1bd94269473fd8a49e9b77fe3b67f41742c270d9efcb6ad1f710",
+    "build/dl093/reversals-t6kaip54/3.log": "259ce1aec6dc9b95c58bb3f9f7ed8e6e3f593e0a90ae202a993dc3391fd976a5",
+    "build/dl093/reversals-t6kaip54/3.md": "eeec9bd7ea3255ed95dca44b0fa9941f4fd70faae8531876cac8b013580232b2",
+    "build/dl093/reversals-t6kaip54/4.log": "2c7fc49d8a913a6f8ba283115be3d2290e81876fda5b9e5b9ad7c9fb757509a1",
+    "build/dl093/reversals-t6kaip54/4.md": "ec2ba90300ecf2fded214312f29c7b5b9b7227a67c86cd7113398fa4ff36ab96",
+    "build/dl093/reversals-t6kaip54/5.log": "09e8dba690108cba3c8f196c8d8c5079e74d50d01e7adea6e807e11b4af196e5",
+    "build/dl093/reversals-t6kaip54/5.md": "819fee2c2e5f4beb75e602b7633e7d90b45df89451449cdde72c8ea425037744",
+    "build/dl093/reversals-t6kaip54/6.log": "559dcdc2209d73553a16ce8feb7b932f60526629fde3cec55d031307958d46cc",
+    "build/dl093/reversals-t6kaip54/6.md": "138f266d79ea81dabd77a0d53680afa20764224683faa924c13413cb0bb782fa",
+    "build/dl093/reversals-t6kaip54/7.log": "fe0dc9c592a57c072ed9015be26d979bba7c5cd691d83ceb3a5831da6125819e",
+    "build/dl093/reversals-t6kaip54/7.md": "a4939a45f2fa697eab9fa8d133bb53bc7eee3ebfba01778578fe1029deb3b609",
+    "build/dl093/reversals-t6kaip54/8.log": "1897f6a4f4049683cfccc7138755858360811f8ca450b6b53173fd39a39744d1",
+    "build/dl093/reversals-t6kaip54/8.md": "5bf45068132f4ed6bedbc8643541c4373ffa9b85c51337b6c01f36f1c36abc59",
+    "build/dl093/reversals-t6kaip54/receipt.json": "9cb51e146fcf4019d036d1198d345f45e47bc0c4978bc53b66c4c3c414d498e1",
+    "build/dl093/reversals.log": "3fba378154d0892e04a0942f19c46613414a78321cfc3a4596b9a799d0c9fd7c",
+    "build/dl093/suite-before-completion.log": "d8c63bfd831f0f59a8933fc6c971b4e195f07fa4870fd3df684b9142faec8321",
+    "build/dl093/suite.log": "8fdb357084cfb7e0c0fce20ffe7907aa16b96fd11e707c874415a28aea621f35",
+    "build/dl093/write-pr-body.py": "c94c10d1ffdf1f940dfaaaa9455941a7a76cfae354d9ad9a7b953e7a1bd432d6",
+    "build/dl093/write-receipt.py": "0e7fc3553cda49fb54ed9be55d229baa91fae663823b11bd4ae527b34d799d63"
+  }
+}

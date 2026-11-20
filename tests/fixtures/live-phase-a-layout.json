@@ -1,0 +1,38 @@
+{
+  "source": "phase-a-resume-receipt.json, read 2026-11-18",
+  "archives": [
+    {
+      "service": "postgres",
+      "archive": "rollback-image-postgres.tar"
+    },
+    {
+      "service": "mysql",
+      "archive": "rollback-image-mysql.tar"
+    },
+    {
+      "service": "sqlite",
+      "archive": "rollback-image-sqlite.tar"
+    },
+    {
+      "service": "landing",
+      "archive": "rollback-image-landing.tar"
+    },
+    {
+      "service": "cloudbeaver",
+      "archive": "rollback-image-cloudbeaver.tar"
+    },
+    {
+      "service": "dbgate",
+      "archive": "rollback-image-dbgate.tar"
+    },
+    {
+      "service": "adminer",
+      "archive": "rollback-image-adminer.tar"
+    },
+    {
+      "service": "phpmyadmin",
+      "archive": "rollback-image-phpmyadmin.tar"
+    }
+  ],
+  "checksum_file": "ff4d36f9f89cefca988240e8c4be8b4d39a6bf6c3b191b89c2c131991061871f  rollback-images.tar\n"
+}
