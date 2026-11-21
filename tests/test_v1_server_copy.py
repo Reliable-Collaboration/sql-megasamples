@@ -45,7 +45,7 @@ def removed_names(reply):
     return [item["name"] for item in reply["result"]["removed"]]
 
 
-def copy_command(server, *args, status=0, stdin=False, fault=None):
+def copy_command(server, *args, status=0, stdin=False, fault=None, volume_read=True):
     password = Path(server["password_file"]).read_text() if stdin else None
     password_args = ["--password-stdin"] if stdin else ["--password-file", server["password_file"]]
     cli = ["-m", "megasamples", "copy"]
@@ -61,7 +61,8 @@ def copy_command(server, *args, status=0, stdin=False, fault=None):
     assert result.returncode == status, result.stdout + result.stderr
     assert len(result.stdout.splitlines()) == 1
     reply = json.loads(result.stdout)
-    assert reply["volume"] == server["volume"] and reply["exit"] == status
+    # A command that stops before reading the service metadata cannot name the volume.
+    assert reply["volume"] == (server["volume"] if volume_read else None) and reply["exit"] == status
     return reply
 
 
@@ -240,7 +241,8 @@ def test_lost_connection_during_metadata_is_exit_3_with_the_identity(server):
     row = copy_command(server, "create", engine + ":chinook", "--prefix", "copy", "--label", "metadata")["result"]
     target, proof = engine + ":" + row["name"], ("--identity", row["identity"])
     try:
-        reply = copy_command(server, "renew", target, *proof, "--lease", "7d", status=3, fault=("metadata", "-"))
+        reply = copy_command(server, "renew", target, *proof, "--lease", "7d", status=3, fault=("metadata", "-"),
+                             volume_read=False)
         assert reply["error"]["code"] == "connection" and reply["error"]["identity"] == row["identity"]
         assert copy_command(server, "show", target)["result"]["revision"] == row["revision"]
     finally:
