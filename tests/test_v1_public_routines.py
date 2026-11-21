@@ -55,6 +55,11 @@ def test_pr14_evidence_files_still_match_their_receipt():
     # Round 9 (Opus 2, Sol 2): one path the receipt hashed was never tracked, the generated PR body. Every
     # other path is compared, so a deleted or untracked evidence file fails as an overwritten one does.
     assert {entry["path"] for entry in receipt["files"] if entry["path"] not in tracked} == {UNTRACKED}
+    # Sol round 10, 4: every tracked path exists, so a working-tree deletion of a file changed on purpose
+    # is not taken for its expected change.
+    missing = [entry["path"] for entry in receipt["files"]
+               if entry["path"] != UNTRACKED and not (ROOT / entry["path"]).is_file()]
+    assert missing == [], missing
     changed = {entry["path"] for entry in receipt["files"] if entry["path"] != UNTRACKED and (
         not (ROOT / entry["path"]).is_file() or sha256(entry["path"]) != entry["sha256"])}
     assert changed == CHANGED_SINCE_PR14, sorted(changed ^ CHANGED_SINCE_PR14)
