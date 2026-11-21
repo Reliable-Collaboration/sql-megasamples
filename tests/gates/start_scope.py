@@ -3,8 +3,11 @@
 Every container and volume a test makes carries the scope's label and is registered before the command
 that makes it, so a command that creates its resource and then fails is still cleaned up. Cleanup runs
 through the test's addCleanup, so a failure in the body is reported, not replaced; it removes containers
-with their anonymous volumes, and fails the test when a removal fails, a labeled resource remains, or the
-store's volume count differs from its count when the scope opened (an anonymous volume has no label).
+with their anonymous volumes, and fails the test when a removal fails, an inventory query fails, a labeled
+resource remains, or the store holds a volume it did not hold when the scope opened (an anonymous volume
+has no label). Comparing volume sets, not counts, means a volume someone else removes meanwhile cannot hide
+a leak; a volume someone else creates meanwhile would be reported, so the store is assumed to be used by one
+test at a time, as the task's runs are.
 """
 
 from uuid import uuid4
@@ -15,11 +18,14 @@ class Scope:
         self.podman = podman
         self.label = "org.sql-megasamples.start-test=" + uuid4().hex
         self.containers, self.volumes = [], []
-        self.before = self._volume_count()
+        self.before = self._inventory("volume", "ls", "-q")
         test.addCleanup(self.close)
 
-    def _volume_count(self):
-        return len(self.podman("volume", "ls", "-q").stdout.split())
+    def _inventory(self, *arguments):
+        result = self.podman(*arguments, check=False)
+        if result.returncode:
+            raise AssertionError(f"teardown: inventory query {' '.join(arguments[:2])} exited {result.returncode}")
+        return set(result.stdout.split())
 
     def volume(self, name):
         self.volumes.append(name)
@@ -47,13 +53,17 @@ class Scope:
             result = self.podman("volume", "rm", *present, check=False)
             if result.returncode:
                 problems.append(f"volume removal exited {result.returncode}: {result.stderr[-300:]}")
-        containers = self.podman("ps", "-aq", "--filter", "label=" + self.label, check=False).stdout.split()
-        volumes = self.podman("volume", "ls", "-q", "--filter", "label=" + self.label, check=False).stdout.split()
-        if containers or volumes:
-            problems.append(f"labeled leftovers: {len(containers)} containers, {len(volumes)} volumes")
-        after = self._volume_count()
-        if after != self.before:
-            problems.append(f"store volume count {self.before} before, {after} after")
+        try:
+            containers = self._inventory("ps", "-aq", "--filter", "label=" + self.label)
+            volumes = self._inventory("volume", "ls", "-q", "--filter", "label=" + self.label)
+            if containers or volumes:
+                problems.append(f"labeled leftovers: {len(containers)} containers, {len(volumes)} volumes")
+            after = self._inventory("volume", "ls", "-q")
+            if after - self.before:
+                problems.append(f"store volume count {len(self.before)} before, {len(after)} after; "
+                                f"new volumes: {sorted(after - self.before)}")
+        except AssertionError as failed:
+            problems.append(str(failed))
         if problems:
             raise AssertionError("teardown: " + "; ".join(problems))
 
