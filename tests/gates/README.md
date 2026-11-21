@@ -39,6 +39,7 @@ filesystem and uses only the manifest's filesystem path there.
 | `postgres_pr14` | PostgreSQL image built from PR #14 at `2879fc4`. |
 | `postgres_hook`, `postgres_hook_unloaded` | Two fresh volumes with the same PostgreSQL 18 test image. Build the test library under `prototype/` with matching server headers and PGXS. Preload `dl077_gate_hook` in the first target only. |
 | `mysql_no_binlog` | Same MySQL image as `mysql`, with `--skip-log-bin` and the same existing server limits. |
+| `mysql`, `mysql_replacement` for G-33a | Build a fixture from a scratch copy of `engines/mysql/Dockerfile`. Remove `/var/lib/mysql/auto.cnf` in the builder immediately after its final MySQL shutdown. Seed each container from that fixture into a distinct fresh volume. |
 | `postgres_small`, `mysql_small` | Small fixtures on separate data filesystems up to 2 GiB. The test fills and frees space on the data filesystem inside the container. |
 | `postgres_replacement`, `mysql_replacement`, `sqlite_replacement` | Created and stopped, using the corresponding fixture's image and a distinct fresh data volume. For G-33b use the same loopback publications as the old targets. |
 | `postgres_reference`, `mysql_reference` | Independent fixtures supplying source data or the untouched image fingerprint. |

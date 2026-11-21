@@ -162,6 +162,13 @@ def mysql_copy_pressure(target):
         same(mysql_value(target, f"SELECT count(*) FROM {schema}.bulk", key=key), "32768")
 
 
+def mysql_reset_fingerprint(target, key):
+    count = mysql_value(target, "SELECT count(*) FROM gate_working.bulk", key=key)
+    checksum = mysql_value(target, "CHECKSUM TABLE gate_working.bulk EXTENDED", key=key).split("\t")[-1]
+    require(count.isdecimal() and checksum.isdecimal(), "reset fingerprint was unavailable")
+    return count, checksum
+
+
 def mysql_reset_pressure(target):
     key = "mysql_small"
     reference = "mysql_reference"
@@ -171,6 +178,7 @@ def mysql_reset_pressure(target):
         INSERT INTO gate_working.bulk SELECT * FROM gate_start.bulk;
         DROP TABLE gate_working.gate_data;
     """, key=reference)
+    expected = mysql_reset_fingerprint(target, reference)
     dump = target.mysql_dump(reference, "gate_working")
     prefix, first_insert, tail = dump.partition(b"INSERT INTO `bulk`")
     require(first_insert and b"DROP DATABASE" in prefix, "dump has no load boundary after the drop")
@@ -185,28 +193,27 @@ def mysql_reset_pressure(target):
     checked(target.podman(*target.mysql_args(key=key), stdin=prefix, show_input=False))
     same(mysql_value(target, "SELECT count(*) FROM gate_working.bulk", key=key), "0")
     before = mysql_fingerprint(target, key, ("gate_working",))
-    update = "UPDATE megasamples.gate_operations SET phase='done' WHERE phase='loading'"
     with pressure(target, key, "/var/lib/mysql", 2048):
         disk_error(target.podman(*target.mysql_args("gate_working", key=key),
                                  stdin=load + b"\n", show_input=False))
         checked(target.podman("exec", target.container(key), "df", "-Pk", "/var/lib/mysql"))
-        phase_write = target.mysql(update, key=key)
+        phase_write = target.mysql(
+            "UPDATE megasamples.gate_operations SET phase='failed' WHERE phase='loading'", key=key,
+        )
         phase = mysql_value(target, "SELECT phase FROM megasamples.gate_operations", key=key)
+        same(phase, "failed" if phase_write.returncode == 0 else "loading")
         same(mysql_value(target, "SELECT 1", key=key), "1")
+        partial = mysql_reset_fingerprint(target, key)
+    require(partial[0] != expected[0], "the failed load has the reference row count")
+    require(partial[1] != expected[1], "the failed load has the reference checksum")
     after = mysql_fingerprint(target, key, ("gate_working",))
-    if phase_write.returncode == 0:
-        # Compare the other data independently of the observed change to the operation's row.
-        del before["megasamples"]["gate_operations"]
-        del after["megasamples"]["gate_operations"]
+    # The probe row is verified separately. The operation table's presence still participates.
+    del before["megasamples"]["gate_operations"]
+    del after["megasamples"]["gate_operations"]
     same(after, before)
     checked(target.podman(*target.mysql_args(key=key), stdin=dump, show_input=False))
-    image = mysql_value(target, "CHECKSUM TABLE gate_working.bulk EXTENDED", key=reference).split("\t")[1]
-    same(mysql_value(target, "CHECKSUM TABLE gate_working.bulk EXTENDED", key=key).split("\t")[1], image)
-    target.observed_control("reload with free space matched the reference checksum")
-    require(phase_write.returncode != 0,
-            f"the operation row update succeeded during disk exhaustion; phase read {phase!r}")
-    disk_error(phase_write)
-    same(phase, "loading")
+    same(mysql_reset_fingerprint(target, key), expected)
+    target.observed_control("reload with free space matched the reference count and checksum")
 
 
 CASES = {"G-9": postgres_copy_pressure, "G-17a": mysql_copy_pressure, "G-17b": mysql_reset_pressure}

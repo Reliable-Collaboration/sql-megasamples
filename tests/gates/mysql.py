@@ -176,14 +176,25 @@ def create_sql(target, db, kind, name, column, key):
     return re.sub(r"\bDEFINER\s*=\s*`[^`]+`@`[^`]+`\s*", "", fields[column], flags=re.I)
 
 
+def set_replay_trust(target, key, enabled):
+    warnings = value(target, f"""
+        SET GLOBAL log_bin_trust_function_creators={enabled};
+        SHOW WARNINGS;
+    """, key=key)
+    print(f"{key}: setting log_bin_trust_function_creators={enabled} warnings: {warnings or 'none'}",
+          flush=True)
+    same(value(target, "SELECT @@global.log_bin_trust_function_creators", key=key), str(enabled))
+
+
 def replay_mode(target, key, binlog):
     definitions = (
         ("TABLE", "gate_data", 1), ("TABLE", "gate_child", 1), ("TABLE", "gate_audit", 1),
-        ("PROCEDURE", "gate_routine", 2), ("VIEW", "gate_view", 1),
+        ("PROCEDURE", "gate_routine", 2), ("FUNCTION", "gate_function", 2), ("VIEW", "gate_view", 1),
         ("TRIGGER", "gate_trigger", 2), ("EVENT", "gate_event", 3),
     )
     same(value(target, "SELECT @@global.log_bin", key=key), binlog)
     grant_namespace(target, COPY_USER, "gate_copy", key)
+    set_replay_trust(target, key, 1)
     value(target, f"""
         CREATE DATABASE {SOURCE};
         GRANT SELECT ON `gate\\_work\\_start`.* TO '{COPY_USER}'@'localhost';
@@ -198,6 +209,8 @@ def replay_mode(target, key, binlog):
         );
         CREATE TABLE gate_audit (payload varchar(40));
         CREATE PROCEDURE gate_routine() SELECT payload FROM gate_data WHERE id=1;
+        CREATE FUNCTION gate_function() RETURNS varchar(40)
+            RETURN (SELECT payload FROM gate_data WHERE id=1);
         CREATE VIEW gate_view AS SELECT payload FROM gate_data WHERE id=1;
         CREATE TRIGGER gate_trigger AFTER INSERT ON gate_data FOR EACH ROW
             INSERT INTO gate_audit SELECT payload FROM gate_data WHERE id=NEW.id;
@@ -222,17 +235,33 @@ def replay_mode(target, key, binlog):
         INSERT INTO gate_child SELECT * FROM {SOURCE}.gate_child;
         SET FOREIGN_KEY_CHECKS=1;
     """, user=COPY_USER, key=key)
+
+    set_replay_trust(target, key, 0)
+    for kind, name, code in (("TRIGGER", "gate_trigger", "1419"), ("FUNCTION", "gate_function", "1418")):
+        control = target.mysql(replay[name], DEST, COPY_USER, key)
+        if binlog == "1":
+            denied(control, code)
+        else:
+            checked(control)
+            value(target, f"DROP {kind} {name}", DEST, COPY_USER, key)
+    target.observed_control(f"binary log {binlog} replay with trust disabled matched the expected outcomes")
+
+    grants = f"SHOW GRANTS FOR '{COPY_USER}'@'localhost'"
+    before = value(target, grants, key=key)
+    set_replay_trust(target, key, 1)
+    same(value(target, grants, key=key), before)
     refused = {}
-    for name in ("gate_routine", "gate_view", "gate_trigger", "gate_event"):
+    for name in ("gate_routine", "gate_function", "gate_view", "gate_trigger", "gate_event"):
         result = target.mysql(replay[name], DEST, COPY_USER, key)
         if result.returncode:
             code = re.search(r"ERROR (\d+) \(", result.stderr)
             refused[name] = code[1] if code else f"exit {result.returncode}"
-    print(f"binary log {binlog}: replay refusals {refused}")
+    print(f"binary log {binlog}, trust enabled: replay refusals {refused}", flush=True)
     same(checksum(target, DEST, key=key), checksum(target, SOURCE, key=key))
     value(target, f"UPDATE {SOURCE}.gate_data SET payload='source-only' WHERE id=1", key=key)
     for name, statement in (("gate_view", "SELECT payload FROM gate_view"),
-                            ("gate_routine", "CALL gate_routine()")):
+                            ("gate_routine", "CALL gate_routine()"),
+                            ("gate_function", "SELECT gate_function()")):
         same(value(target, statement, SOURCE, key=key), "source-only")
         if name not in refused:
             same(value(target, statement, DEST, COPY_USER, key), "initial")
@@ -252,6 +281,13 @@ def replay_mode(target, key, binlog):
             WHERE event_schema=DATABASE() AND event_name='gate_event'
         """, DEST, key=key), "DISABLED")
     require(not refused, f"replay refused {refused}")
+    same(value(target, """
+        SELECT DEFINER FROM information_schema.routines
+        WHERE ROUTINE_SCHEMA=DATABASE() AND ROUTINE_NAME IN ('gate_routine','gate_function')
+        UNION ALL
+        SELECT DEFINER FROM information_schema.triggers
+        WHERE TRIGGER_SCHEMA=DATABASE() AND TRIGGER_NAME='gate_trigger'
+    """, DEST, key=key), "\n".join([COPY_USER + "@localhost"] * 3))
 
 
 def replay_into_copy(target):

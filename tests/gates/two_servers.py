@@ -101,18 +101,21 @@ def volume_identities(target):
         "run", "--rm", "--pull=never", "--network=none", "--memory=2g", "--image-volume=ignore",
         "--label", "org.sql-megasamples.gates.owner=" + target.owner,
         "--entrypoint", "sh", image, "-ec",
-        'if test -e /var/lib/mysql/auto.cnf; then echo present; else echo absent; fi',
+        'test ! -e /var/lib/mysql/auto.cnf && test ! -L /var/lib/mysql/auto.cnf && echo absent',
         timeout=180,
     )
     query = "SELECT @@server_uuid"
+    uuid_pattern = r"[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}"
     first = mysql_value(target, query)
-    require(re.fullmatch(r"[0-9a-f-]{36}", first), "missing initial MySQL server UUID")
+    require(re.fullmatch(uuid_pattern, first), "missing initial MySQL server UUID")
     target.restart("mysql", lambda: target.mysql("SELECT 1"))
     same(mysql_value(target, query), first)
     replace(target, "mysql", "mysql_replacement",
             lambda: target.mysql("SELECT 1", key="mysql_replacement"))
     second = mysql_value(target, query, key="mysql_replacement")
-    require(re.fullmatch(r"[0-9a-f-]{36}", second), "missing replacement MySQL server UUID")
+    require(re.fullmatch(uuid_pattern, second), "missing replacement MySQL server UUID")
+    target.restart("mysql_replacement", lambda: target.mysql("SELECT 1", key="mysql_replacement"))
+    same(mysql_value(target, query, key="mysql_replacement"), second)
 
     old_sqlite = target.container("sqlite")
     sqlite = lambda key, command: target.podman("exec", target.container(key), "sh", "-ec", command)
@@ -125,9 +128,10 @@ def volume_identities(target):
             lambda: sqlite("sqlite_replacement", "test -f /shared/.complete"))
     checked(sqlite("sqlite_replacement", "test ! -e /shared/.dl077-volume"))
 
-    target.observed_control("untouched control identities survived each restart")
-    require(checked(baked_uuid) == "absent" and first != second,
-            f"MySQL baked auto.cnf: {checked(baked_uuid)}; fresh volume changed UUID: {first != second}")
+    target.observed_control("both MySQL UUIDs and the PostgreSQL and SQLite identities survived restart")
+    require(baked_uuid.returncode == 0 and baked_uuid.stdout.strip() == "absent",
+            "the fixture image did not prove auto.cnf absent")
+    require(first != second, f"both fresh MySQL volumes reported server UUID {first}")
 
 
 def after_volume_replacement(target):

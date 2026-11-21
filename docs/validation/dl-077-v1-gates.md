@@ -2,7 +2,7 @@
 
 DL-108 item 12 · design revision `0896ebc8205f3b04063afcd1e11d7b09ab146c7a`
 
-Run concluded 2026-11-21 00:43:58 UTC. **55 Passed, 3 Failed, 0 Not run, 0 Unsupported.**
+The initial run concluded 2026-11-21 00:43:58 UTC. **55 Passed, 3 Failed, 0 Not run, 0 Unsupported.** See the [DL-111 re-run](#dl-111-re-run) for the current results of G-17b, G-33a and G-13.
 
 The 58 launchers cover 52 engine-only gates and six hook gates. This record supersedes the earlier sandbox attempt in full. G-19b was run again. The design remains at the reviewed revision. The failures below return their affected capabilities to the deciders under section 8.1.
 
@@ -136,3 +136,33 @@ The before live listing was captured read-only at 2026-11-20 23:43 UTC. The afte
 | megasamples-sqlite | `7adacf6eca19` | Up, healthy |
 
 The isolated `podman ps -a` under `env.sh` contained 12 pre-existing exited containers initially and the same 12 IDs and states at the end. The ownership-filtered after list had exactly eight task-owned containers, all running. The unfiltered request to show only task containers cannot hold in this store because the 12 inherited entries had to remain. The live container inventory, the isolated inventories, the image digests and the fingerprint ledgers are under `build/dl077-evidence/`. All eight restored image IDs and digests matched the initial image inventory.
+
+## DL-111 re-run
+
+The rows below supersede the three original results. Each used `DL077_GATE_TARGET=<private manifest> tests/gates/<gate-id>` with fresh, task-owned fixtures. The run logs, exit codes, image receipt and inventory comparisons are under the ignored `build/dl111-evidence/` directory. `out-gates.md` was absent from the clone. The original validation record and `build/dl077-evidence/` supplied the prior results.
+
+| Gate | Re-run result | Engine observation and control |
+|---|---|---|
+| [G-17b](../../tests/gates/G-17b) | Passed | The original launcher on a fresh fixture failed when its own probe wrote `done`. The corrected launcher got `1114 (HY000)` on the bulk load and measured 0 KiB free on the data mount. Its phase UPDATE exited 0 and the row read `failed`, the last phase written successfully. `SELECT 1` still returned `1` and the other schemas matched. The failed load left 0 rows and checksum `0`, compared with the reference's 32,768 rows and checksum `967631497`. Reloading after space was freed matched both reference values. |
+| [G-33a](../../tests/gates/G-33a) | Passed | The unmounted image check exited 0 and reported `auto.cnf` absent. Two fresh volumes seeded from the fixture reported `a84d5b1c-e549-11f1-9dfa-9349b3a72be0` and `fdc2cfc2-e549-11f1-b743-c207d92c500c`. Each returned its own UUID again after restart. The PostgreSQL row and SQLite file controls also survived their respective restarts and were absent on replacement. |
+| [G-13](../../tests/gates/G-13) | Passed | With binary logging on and trust disabled, the namespace owner got `1419` for the trigger and `1418` for the function. With binary logging off, both definitions replayed with trust disabled. With `log_bin_trust_function_creators=1`, the trigger, function, procedure, view and event all replayed in both modes. MySQL emitted `1287` on every assignment in each mode, identifying the variable as deprecated and slated for removal. `SHOW GRANTS` matched before and after enabling trust, and `gate_owner@localhost` was the trigger and routines' definer. The source view, procedure and function returned `source-only` after the source update while the copy returned `initial`. The copy's insert wrote `copy-only` into its audit table and the source audit stayed empty. |
+
+G-13 supplies evidence for the DL-111 deciders. Oracle's documentation describes the trigger and stored-function checks and marks the trust setting deprecated. The release notes and manual were read at 2026-11-21 00:55:57–00:55:58 UTC. [MySQL 9.7.4 release notes](https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html), [stored program binary logging](https://dev.mysql.com/doc/refman/9.7/en/stored-programs-logging.html), [trust setting](https://dev.mysql.com/doc/refman/9.7/en/replication-options-binary-log.html#sysvar_log_bin_trust_function_creators), [server UUID](https://dev.mysql.com/doc/refman/9.7/en/replication-options.html#sysvar_server_uuid)
+
+The G-33a fixture used a scratch copy of the product recipe and its staged dumps. The build log records MySQL 9.7.4 shutting down, `rm /var/lib/mysql/auto.cnf`, then the final stage copying the data directory. The resulting image ID was `88aeb35488756b03d59ca2cc032113892e81cbe843015c47e83d9fcee227342e`. The recipe was read from the clone at 2026-11-21 01:14:24 UTC. The release notes were read at 2026-11-21 00:55:57–00:55:58 UTC. [Product image recipe](https://github.com/Reliable-Collaboration/sql-megasamples/blob/e61335fdd067be33b83c86d029999555d8c241b7/engines/mysql/Dockerfile), [MySQL release notes](https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html)
+
+| Check | Result | Observation |
+|---|---|---|
+| Original launchers on fresh disposable targets | Failed | Each exited 1 and reproduced its earlier observation. Those runs preceded edits to the respective gate. |
+| Re-run launchers | Passed | All three exited 0 with controls shown. |
+| Initial snapshot command | Failed | The existing `.venv/bin/python` symlink could not be executed. The snapshot passed when repeated with `python3`. |
+| Isolated store and capacity preflight | Passed | Resolved GraphRoot and RunRoot matched the isolated environment. The before snapshot recorded 18,399,320 KiB available. Starts and restarts checked the 15 GiB minimum. |
+| Gate syntax, `git diff --check`, comparison of the product Dockerfile to `bffdce0b` | Passed | All 72 launcher and Python files parsed, and both Git checks exited 0. |
+| `python3 -m pytest -q tests/test_mysql_image_startup.py tests/test_catalogue_validation.py tests/test_lts_validation.py` with existing repository packages | Passed | 10 tests passed. |
+| Full product regression suite | Not run | This run covered the three DL-111 gates and the listed regression tests. |
+
+### DL-111 restoration and isolation
+
+**Passed.** The isolated `e61335f` stack kept its eight running containers, their start times, image IDs and digests, mounts and memory limits. Both engine health checks passed, their loopback publications matched, and all five console endpoints returned HTTP `200`. The before and after PostgreSQL, MySQL and SQLite fingerprint ledgers matched byte for byte and matched the retained ledgers above, covering 95 configured dataset IDs. SQLite's `/data` and `/shared` checksums matched in both snapshots. The baseline receipt was read from the clone at 2026-11-21 01:24:34 UTC. [Baseline image receipt](https://github.com/Reliable-Collaboration/sql-megasamples/blob/e61335fdd067be33b83c86d029999555d8c241b7/docs/credential-prerequisite-evidence.md)
+
+**Passed.** The read-only live inventories at 2026-11-21 00:52:19 and 01:24:05 UTC matched all nine entries by name, ID, state, health or exit status, and exact container start time. The three live engines were healthy at `ba1a9f758681` (PostgreSQL), `a3f5c1204ee4` (MySQL) and `7adacf6eca19` (SQLite). The isolated inventory also matched all 20 entries, including the 12 inherited exited containers. The isolated images, volumes and networks matched. `podman image exists` exited 1 for both the removed G-33a fixture tag and image ID. The comparison output is in `build/dl111-evidence/logs/isolation-proof.log`.
