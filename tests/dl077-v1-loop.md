@@ -1,10 +1,10 @@
 # Version 1, slices 1 and 2: review loop status
 
-This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5 to 12 are below.
+This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5 to 13 are below.
 
 ## Stop count
 
-**0 of 2.** Round 12 found a P2 (Sol), so the count stays at 0, the coordinator's decision; both reviewers found the stopgaps remove their harms. Round 11 had found a P2 (both reviewers). Round 10 had found two P2s, fix-now, and returned it to 0, the coordinator's decision. Round 9 had counted clean (1 of 2); rounds 6, 7 and 8 had kept it at 0. The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
+**1 of 2.** Round 13 counts clean, the coordinator's decision: its one P2 (Sol P2-1) is in WS4's area, a WS4 input with no stopgap, and nothing else was fix-now outside the five areas. Round 12 had found a P2 (Sol) and kept the count at 0. Round 11 had found a P2 (both reviewers). Round 10 had found two P2s, fix-now, and returned it to 0, the coordinator's decision. Round 9 had counted clean (1 of 2); rounds 6, 7 and 8 had kept it at 0. The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
 
 **Scope from round 8, the coordinator's decision:** a workstream brief is an input to that workstream's own design, which is reviewed in its own loop after this one ends. So findings about a brief's content are recorded there as that workstream's inputs, not fixed now here. That covers its facts, its test plan's coverage and its questions.
 
@@ -63,6 +63,7 @@ Each row can wait: there is no realistic route to harm, or the harm is stated as
 | `test_quiescence_gate` unrelated-holder case fails, also at `e61335f` | rounds 1–5 | A baseline failure; its cause is not isolated. |
 | MySQL `/*+ */` optimizer hints are treated as comments, so a schema name inside one is not rewritten | round 8, S8-8's class check | Not checked on a server. A hint names tables and query blocks, and no shipped template carries one. Reopens if a template does. |
 | A versioned executable comment above the server's version (`/*!99999 x*/`) is read as code by the replay, though MySQL ignores its content, so `source/*!99999 x*/.t` keeps `source` | round 10, Opus N3 | Constructed; no shipped template carries one. It sits with the optimizer-hint row and reopens with it. |
+| The catalogue generator's docstring and generated header say it reads `megasamples.datasets` from a running image; it reads the repository | round 13, S13-6 | The README is corrected; the header is in `CATALOGUE.md`, which a change would regenerate. Reopens with the next catalogue change. |
 | Design 8.3's claims not yet made | rounds 2–5 | T-11 `verify`, T-15 and the kill points, the full disk, and the wider account matrix. The merge waits for each. |
 
 ## Round 5's runs
@@ -135,8 +136,8 @@ The orphan, start, MySQL-off image and native runs were first refused for memory
 | 10 | WS3 | What is the result field for an unsettled cleanup step: `ledger: unsettled`, or one that names the step? |
 | 11 | WS3 | Is there a third per-copy outcome (unknown or partial), and a list for the copies a stopped sweep never reached? Any change to a public exit or to `removed`/`kept`. |
 | 12 | WS4 | **Security posture:** may the suite authenticate to a listener it has not yet proved to be the checked instance? |
-| 13 | WS5 | **What a person sees:** what `make down` and `make clean-all` promise about working data, and whether discarding changes asks first or offers a keep option |
-| 14 | WS5 | **On a shared daemon:** what ownership evidence permits removal, and what happens to a pre-label name match |
+| 13 | WS5 | **What a person sees, in the interim until slice 3** (which decides that `down` keeps named data volumes, [114-2F]): whether today's `make down` should warn or refuse before discarding changes; this does not reopen [114-2F] |
+| 14 | WS5 | **On a shared daemon, applying U-5 until slice 3:** what ownership evidence permits `status clean` to remove a container, and whether a pre-label match is listed with a hint or removed when its image is megasamples' own |
 
 ## Round 6's runs
 
@@ -314,11 +315,11 @@ These are the reviews of `5a75c237`: Sol (`S11-*`) and Opus (`O11-*`, with its n
 
 ## Round 12: each finding's disposition
 
-These are the reviews of `9fe11377`: Sol (`S12-*`) and Opus (`O12-*`, with its notes `O12-N*`). Sol's P2 keeps the stop count at 0 of 2. Both reviewers find the stopgaps remove their harms, with no new harm.
+These are the reviews of `9fe11377`: Sol (`S12-*`) and Opus (`O12-*`, with its notes `O12-N*`). Sol's P2 keeps the stop count at 0 of 2. **What the reviews found of the stopgaps at `9fe11377`** (corrected in round 13): Opus found stopgaps 1 and 2 remove their harms with no new harm, and stopgap 3 only partly, since the help still said "stop" (O12-2). Sol found stopgap 2 could still discard data when Compose's resolution failed (S12-3). Both are closed by this round's fixes below.
 
 | ID | Sev. | Area | Disposition | Commit or brief |
 |---|---|---|---|---|
-| S12-1, O12-1 | P2 | — | **Fixed now**: the native selection check compares per database (`unique_databases`), with a host table (a base with its append dataset, without it, a base missing on either side). The guide and README say the registry is per database. Run natively on PostgreSQL and, for the first time, MySQL | `94a7b65` (test), `a10d1eb` |
+| S12-1 (P2), O12-1 (P3) | P2, P3 | — | **Fixed now**: the native selection check compares per database (`unique_databases`), with a host table (a base with its append dataset, without it, a base missing on either side). The guide and README say the registry is per database. Run natively on PostgreSQL and, for the first time, MySQL | `94a7b65` (test), `a10d1eb` |
 | O12-2 | P3 | 5 | **Fixed now**: `make help`, the CLI list, `down`'s description and workspace's usage name each engine's working data, under the README's test. The runbook's list is a WS5 input (question 2): DL-086's procedure, unchanged by version 1, never runs `make down` | `63a29fb` (test), `3067e07`, `4aebac5` (the test's own index corrected) |
 | S12-3 | P3 | 5 | **Stopgap** extended: no renewal for a service whose image Compose cannot resolve, with a message; a row with distinct IDs and exactly one stale service | `54e792c` (test), `922ee62` |
 | S12-6 | P3 | — | **Fixed now**: PostgreSQL `test-image`'s write probes name a real column and need a permission refusal. Run natively | `3cf1f10` (refactor), `70405d9` (test), `8eb964b` |
@@ -330,6 +331,22 @@ These are the reviews of `9fe11377`: Sol (`S12-*`) and Opus (`O12-*`, with its n
 | O12-N1 to N4 | P3 | 5 | WS5 inputs | WS5 |
 | S12-8 | P3 | 1 | **Fixed now** (faithfulness): WS1 carries S7-8 and O7-P3-3 | the brief |
 | O12-N6 | P3 | — | **Fixed now**: the selection test's MySQL row ran natively | `a10d1eb` |
+
+## Round 13: each finding's disposition
+
+These are the reviews of `6ddb40de`: Sol (`S13-*`) and Opus (`O13-*`, with its notes `O13-N*`). **The coordinator's decision: Sol's P2-1 is in WS4's area** (fact T: on a single-engine stack, the native suite indexes the absent engine's target), and its harm is a visible test error, not data. So it is a WS4 input with no stopgap. **Nothing else was fix-now outside the five areas, so round 13 counts clean: stop count 1 of 2.**
+
+| ID | Sev. | Area | Disposition | Commit or brief |
+|---|---|---|---|---|
+| S13-1 | P2 | 4 | **WS4 input, no stopgap** (the coordinator's decision) | WS4 |
+| O13-3, S13-2 | P3 | — | **Fixed now** (in hand): MySQL `test-image`'s write probes need MySQL's refusal (1142, 1370 or "denied"); PostgreSQL's gain a zero-row INSERT probe; the fake checks each probe's database and account. Run natively on both engines | `e6786e5` (refactor), `4a54c2f` (test), `ba78dee` |
+| S13-3 | P3 | 5 | **Fixed now** (in hand): the top-level listing and `clean --help` name the working data and the named SQLite volume, under a test of the rendered help | `c047fe7` (test), `8b81c46` |
+| S13-5 | P3 | — | **Fixed now** (in hand): a parity case with an escaped underscore on every selection; `batch_text`'s docstring says it emulates only backslash doubling (O13-N1) | `fdbe661` |
+| S13-6 | P3 | — | **Fixed now** (in hand): the README describes the catalogue as the repository's, and databases per database. The generator's own header is a backlog row | `a19c037` (test), `16521d0` |
+| O13-2, S13-9 | P3 | — | **Fixed now**: the round 12 record says what each review found of the stopgaps at `9fe11377`; S12-1 and O12-1 keep their own ratings; owner question 13 (and 14) use WS5's narrowed wording | this file |
+| O13-1, S13-7 | P3 | 5 | **Fixed now** (faithfulness): WS5's "decided elsewhere" states slice 3's rule exactly (U-3 refused without `--discard engine` and replaced only with it, U-4, U-5, the replacement rules [114-2A] [114-2B] [115-7] [115-W]); questions 1 and 4 say they apply it | the brief |
+| S13-4, S13-8, O13-N2 to N4 | P3 | 5, 1 | **Workstream inputs**: WS5 the staleness cases, the teardown controls of rounds 6 to 9, the warning's noise, SQLite siblings, the O12-N2 credit; WS1 S8-5 | the briefs |
+| O13-N1 | P3 | — | **Fixed now**, with S13-5 | `fdbe661` |
 
 ## Round 8: the class check for overwritten evidence
 
@@ -545,6 +562,31 @@ These were focused runs, one at a time, each after the 15 GiB check. Each names 
 - A real recreate whose `--wait` fails (WS5).
 
 ## Round 12: restoration and isolation
+
+- **Isolation** (`isolation-check.sh`, read-only): the live entries and engines are unchanged. The store holds the same 20 containers and 37 volumes.
+- **Every task container** this round started is removed. The socket service is stopped.
+- **The retained stack** was not addressed. Its last proof is round 9's.
+
+## Round 13's runs
+
+These were focused runs, one at a time, each after the 15 GiB check. Each names its revision.
+
+**Passed**
+- **`test-image`, natively,** with the new write probes at `ba78dee`'s tree. MySQL on `58d4b695a90c` and PostgreSQL on `ce3b539fb522`: each probe refused, 0 failures, the store's volume set unchanged (`image-test-r13-*-write-probes.log`).
+- **MySQL parity, natively,** at `fdbe661`'s tree, on `58d4b695a90c`.
+  - Green: 1 passed.
+  - Reversal: without the normalisation and without `SHOW GRANTS`, the fixed escaped-underscore case fails (1 failed).
+- **Host tests,** each at its own commit as the commits record:
+  - the write probes, 16, or 34 with the image-test host tests;
+  - the rendered help and README, 14.
+
+**Failed**
+- **The host-only full suite,** at `16521d0` with this file's edits: 2 failed, the two baselines; 1,209 passed, 347 skipped (`pytest-r14.log`).
+
+**Not run**
+- A single-engine native run. It is WS4's input (S13-1).
+
+## Round 13: restoration and isolation
 
 - **Isolation** (`isolation-check.sh`, read-only): the live entries and engines are unchanged. The store holds the same 20 containers and 37 volumes.
 - **Every task container** this round started is removed. The socket service is stopped.

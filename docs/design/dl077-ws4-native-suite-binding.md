@@ -47,6 +47,7 @@ The outcomes to decide are to run or stop, and where the stop is raised.
 | 7 | Opus 2 | the table test spans only A to D | **input**: the table spans S, T, A, P, B, C and D under a stated coverage criterion, with controls for each value of P (reaches another, nothing listens, copied with the volume) and each timing of C |
 | 7 | Sol 4 | the proof and its oracle disagree: a copied marker is untested, and the absence of a probe database cannot show that no read, authentication or cleanup reached the replacement | **input**: authentication, bootstrap, proof reads and test SQL as separate steps; each replacement boundary, the direct parity connection included; evidence that detects each prohibited operation; authentication before proof stays an owner decision; H-3's manifest graph check and exec-by-ID reconciled with N1 and N3 |
 | 9 | Sol P3-7 | round 6 S6-2 was in the loop but not in these inputs | **input**: the S6-2 row above |
+| 13 | Sol P2-1 (S13-1) | on a single-engine stack, the PostgreSQL (or MySQL) privilege and parity cases index `TARGETS` for the absent engine and fail with `KeyError`; the selection check alone skips | **input**, with **no stopgap** (the coordinator's decision: fact T, and a visible test error, not data): the table's T rows run unfiltered with each engine alone |
 
 ## Questions the design must answer
 

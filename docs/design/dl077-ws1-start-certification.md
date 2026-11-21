@@ -84,6 +84,8 @@ For example:
 | 8 | Opus P3-3 | the round 7 Sol 1 row said question 9 covered the passfile, and the facts and outcomes lacked its inputs | **input**: carried in fact L, the required outcomes and question 9 |
 | 8 | Sol P3-6 | fact H said round 5's image lacked the loaded report; its build includes the report and lacks `admin`'s revoke | **input**: fact H names the pre-report and pre-revoke builds separately |
 | 12 | Sol 8 | the round 7 start-probe findings were not in this table | **input**: the S7-8 and O7-P3-3 row above |
+| 8 | Sol P3-5 (S8-5) | the namespace assertion accepted a duplicate-name error that names the database | fixed in the tests (`a4f430e`, `f23ec19`): SQLSTATE `42501` with the hook's own message, and fresh names for both attempts; **input**: the design keeps the control |
+| 13 | Sol 8 | S8-5 was not in this table | **input**: the row above |
 
 ## Questions the design must answer
 
