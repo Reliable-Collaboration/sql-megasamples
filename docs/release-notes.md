@@ -17,16 +17,17 @@
   back as the image ships them; a whole-engine reset now also removes every MySQL and PostgreSQL
   copy. `reset --status postgres` reports leftover PostgreSQL data directories, and `make up` warns
   about them.
-- **A stricter read-only `demo` on PostgreSQL.** `demo` has no `TEMPORARY` privilege, cannot create
-  large objects and can run only allowlisted routines; a small server extension, `read_policy`,
-  backs this up, and the image will not start without it.
+- **`demo` is read-only by each engine's own model.** On PostgreSQL it holds the built-in
+  `pg_read_all_data` role and no write privilege; otherwise PostgreSQL's defaults stand (temporary
+  tables, built-in functions, large objects of its own). On MySQL it reads through
+  `SELECT` and `SHOW VIEW` grants.
 - **`make down` says what it discards** before it does it.
 
 ### What changed for existing users
 
 - **Rebuild and start fresh.** The new images start from their own data. `make up` after
   rebuilding recreates each changed engine, discarding its working data; save anything you made
-  first. The new PostgreSQL image refuses a data directory made by an earlier image.
+  first.
 - **MySQL `demo` reads less.** It reads the sample databases, explicitly enabled foreign
   namespaces and the registry tables, instead of every database on the server (`*.*`, system
   schemas included).
@@ -53,4 +54,4 @@
   copy that `drop` and `sweep` keep, which a whole-engine reset clears on MySQL and PostgreSQL and
   you delete by hand on SQLite; a PostgreSQL crash or cancel during a copy can leave a data
   directory with no database, which `make up` and `reset --status` report.
-- PostgreSQL's read-only `demo` is a convenience for a samples server, not a security boundary.
+- `demo` is read-only by each engine's own privileges; an administrator can change them.

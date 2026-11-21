@@ -5,8 +5,8 @@
 -- overrides at run time.
 --
 -- `postgres` is the superuser, password `root`, so every engine's superuser answers to the same
--- boilerplate credential. `admin` can do anything short of superuser; `demo` can only read, and
--- 20-grants.sql applies its SELECT grant inside each database as it is created.
+-- boilerplate credential. `admin` can do anything short of superuser; `demo` reads through PostgreSQL's
+-- built-in pg_read_all_data role and can write nothing.
 ALTER USER postgres WITH PASSWORD 'root';
 CREATE ROLE admin WITH LOGIN PASSWORD 'admin' CREATEDB CREATEROLE;
 CREATE ROLE demo WITH LOGIN PASSWORD 'demo';
@@ -17,6 +17,9 @@ CREATE ROLE megasamples_working_write;
 GRANT megasamples_read TO megasamples_working_read WITH INHERIT TRUE, SET FALSE;
 GRANT megasamples_read, megasamples_write_routines TO megasamples_working_write WITH INHERIT TRUE, SET FALSE;
 GRANT megasamples_working_read TO demo WITH INHERIT TRUE, SET FALSE;
+-- demo reads what PostgreSQL's built-in read role reads, and holds no write privilege; the membership
+-- above gives it CONNECT on the sample databases.
+GRANT pg_read_all_data TO demo WITH INHERIT TRUE, SET FALSE;
 
 -- the provenance registry: one row per dataset, the same columns as MySQL's megasamples.datasets
 CREATE DATABASE megasamples TEMPLATE template0 ENCODING 'UTF8';

@@ -153,14 +153,12 @@ written for one engine names the same tables on the other.
 psql -W -h 127.0.0.1 -p 5432 -U demo sakila
 ```
 
-**How `demo` is kept read-only on PostgreSQL.** `demo` reads sample tables, including
-tables `admin` later creates in a sample database's `public` schema. It has no write privilege on them,
-no `TEMPORARY` privilege, cannot create large objects, and can execute only allowlisted routines.
-A small server extension, `read_policy`, loaded into every PostgreSQL server the image starts,
-backs this up by refusing the few ways a read-only role could otherwise create or change things.
-The image refuses to start if that extension would not be loaded, or on a data directory made
-before it existed. This keeps a samples server tidy for people who should only look; it is not a
-security product, and the `postgres` superuser can change it.
+**How `demo` is read-only on PostgreSQL.** "Read only" is what PostgreSQL itself defines: `demo`
+holds PostgreSQL's built-in read role, `pg_read_all_data`, and no write privilege, directly or through
+any role. So it reads sample tables, including tables `admin` later creates in a sample database's
+`public` schema, and every insert, update, delete, truncate, `CREATE` or `DROP` is refused with
+PostgreSQL's own permission error. Otherwise PostgreSQL's defaults stand: it may use temporary
+tables, call built-in functions and create large objects of its own, none of which changes a sample. On MySQL, `demo` reads through `SELECT` and `SHOW VIEW` grants (above).
 
 **The PostgreSQL `copy` client needs libpq.** The package installs the pure Psycopg distribution,
 which loads the system's libpq (for example Debian's `libpq5`). Without it,
@@ -436,11 +434,6 @@ discards its working data and its copies. Save anything you want to keep first, 
 4. `make up`. Each engine whose image changed is recreated from the new image. Your `.env`
    passwords are reapplied; set the `copier` password again before making copies.
 
-The new PostgreSQL image will not start on a data directory made by an earlier image: it stops with
-a message instead of serving it. `make up` gives it a fresh one. If you start it by hand on an old
-volume, start it on a new volume instead, and move your own work across with `pg_dump` from the old
-image and a load into the new one.
-
 ## Limits
 
 - `make down`, and `make up` after a rebuild, discard each engine's working data and every MySQL
@@ -457,7 +450,8 @@ image and a load into the new one.
   yourself. On PostgreSQL, a crash or cancel at the wrong moment of a copy can leave a data directory
   with no database: it only takes disk, `make up` and `reset --status` report it, and the next
   whole-engine reset or `make down` removes it.
-- PostgreSQL's read-only `demo` is a convenience for a samples server, not a security boundary.
+- `demo` is read-only by each engine's own privileges (PostgreSQL's `pg_read_all_data`, MySQL's `SELECT`
+  grants); that is the whole of it, and an administrator can change it.
 - The console ports and the database ports listen on `127.0.0.1` only; publishing them wider is a
   deliberate edit of your own.
 

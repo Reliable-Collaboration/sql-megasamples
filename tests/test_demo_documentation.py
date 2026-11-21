@@ -57,10 +57,12 @@ def postgres_scope(document):
     # An allow-list: any privilege beyond reading (TRUNCATE, ALL, ...) fails.
     assert all(set(privileges) <= {'SELECT', 'USAGE', 'CONNECT'} for privileges, _ in grants), grants
     assert re.search(r'\breads (?:persistent )?sample tables\b', document)
-    for capability in ('TEMPORARY', 'large objects', 'routines'):
-        assert capability in document
-    assert 'cannot create large objects' in document and 'allowlisted routines' in document
-    assert 'no `TEMPORARY` privilege' in document
+    # PostgreSQL's own read model: the built-in read role, no write, and the engine's defaults otherwise.
+    assert 'GRANT pg_read_all_data TO demo' in users
+    assert '`pg_read_all_data`' in document and 'cannot create large objects' not in document
+    assert "PostgreSQL's defaults" in document
+    assert 'allowlisted routines' not in document and 'read_policy' not in document
+    assert 'no `TEMPORARY` privilege' not in document
 
 
 @pytest.mark.parametrize('engine', ['mysql', 'postgres'])
@@ -131,8 +133,8 @@ def test_strict_read_guide_describes_the_current_demo_grants():
     assert 'gives `demo` exactly `SELECT, SHOW VIEW ON *.*`' not in guide
     assert all(term in guide for term in ('working schemas', 'explicitly enabled foreign namespaces',
                                           '`megasamples.datasets`', '`megasamples.copy_service`'))
-    assert '`pg_catalog, pg_temp`' in guide and 'installed in `pg_catalog`' in guide
-    assert '`megasamples_policy_loaded()`' in guide and 'STRICT_READ_OWNER' in guide
+    assert '`pg_read_all_data`' in guide and 'STRICT_READ_OWNER' in guide
+    assert 'read_policy' not in guide and 'megasamples_policy_loaded' not in guide
 
 
 def test_strict_read_guide_states_the_grants_the_generator_makes():
@@ -161,9 +163,6 @@ def test_strict_read_guide_states_the_grants_the_generator_makes():
     assert 'fails at its grant assertion on this release' in guide
     # The guide is user documentation: no pull-request or design references.
     assert 'PR #14' not in guide and 'design 4.2' not in guide and 'version 1' not in guide
-    # The report: granted to demo directly, and executable otherwise only by the superuser.
-    assert 'granted to `demo` directly' in guide
-    assert '`admin` and every other role except the superuser `postgres` are refused it' in guide
 
 
 def test_readme_says_what_teardown_discards_and_keeps():

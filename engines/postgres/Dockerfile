@@ -7,13 +7,6 @@
 # baked. See ARCHITECTURE.md section 4.
 ARG POSTGRES_IMAGE=docker.io/library/postgres:18.7-trixie@sha256:2ea8630df176ad090ec92136dee850397c5af8781e4bcf2e4162593691c61bbc
 
-# Compile only inside the image build, against the exact server headers.
-FROM ${POSTGRES_IMAGE} AS policy-build
-USER root
-RUN apt-get update && apt-get install -y --no-install-recommends gcc make postgresql-server-dev-18="$PG_VERSION" && rm -rf /var/lib/apt/lists/*
-COPY engines/postgres/read-policy/ /src/
-RUN make -C /src && make -C /src install
-
 FROM ${POSTGRES_IMAGE} AS builder
 COPY engines/postgres/init/00-users.sql engines/postgres/init/20-grants.sql /build/init/
 COPY build/postgres/image/ /build/databases/
@@ -63,23 +56,11 @@ done
 psql -v ON_ERROR_STOP=1 -q -f /build/databases/registry.sql megasamples
 pg_ctl -w -m fast stop >/dev/null
 SH
-# Apply security policy after loading so policy changes reuse the bulk-load layer.
-COPY --from=policy-build /usr/lib/postgresql/18/lib/read_policy.so /usr/lib/postgresql/18/lib/read_policy.so
-COPY --from=policy-build /usr/share/postgresql/18/extension/read_policy* /usr/share/postgresql/18/extension/
-COPY engines/postgres/init/10-read-profile.sql engines/postgres/init/15-read-views.sql engines/postgres/init/read-routine-names.sql /build/init/
+# The copy accounts after loading, so changing them reuses the bulk-load layer.
 RUN <<'SH'
 #!/bin/bash
 set -euo pipefail
 pg_ctl -w -o "-c listen_addresses=''" start >/dev/null
-# Harden every database and both future-database templates. template0 is opened
-# privately for this pass, then returned to its original nonconnectable state.
-psql -v ON_ERROR_STOP=1 -q -c 'ALTER DATABASE template0 ALLOW_CONNECTIONS true' postgres
-while IFS= read -r db; do
-  psql -v ON_ERROR_STOP=1 -q -f /build/init/10-read-profile.sql "$db"
-  psql -v ON_ERROR_STOP=1 -q -f /build/init/15-read-views.sql "$db"
-done < <(psql -At -c 'SELECT datname FROM pg_database ORDER BY datname' postgres)
-psql -v ON_ERROR_STOP=1 -q -c 'ALTER DATABASE template0 ALLOW_CONNECTIONS false' postgres
-printf "shared_preload_libraries = 'read_policy'\n" >> "$PGDATA/postgresql.conf"
 if [ -f /build/databases/copy-roles.sql ]; then
     psql -v ON_ERROR_STOP=1 -q -f /build/databases/copy-roles.sql megasamples
 fi
@@ -105,7 +86,6 @@ if [ -f /build/databases/templates.list ]; then
 fi
 psql -v ON_ERROR_STOP=1 -q -f /build/init/99-trim-wal.sql postgres
 pg_ctl -w -m fast stop >/dev/null
-printf '1\n' > "$PGDATA/megasamples-read-policy"
 SH
 USER root
 RUN rm -rf /build
@@ -114,8 +94,6 @@ FROM ${POSTGRES_IMAGE}
 LABEL org.opencontainers.image.title="sql-megasamples-postgres" \
       org.opencontainers.image.description="PostgreSQL 18 preloaded with well-known sample databases (sql-megasamples)" \
       org.opencontainers.image.licenses="MIT AND BSD-3-Clause AND CC-BY-SA-3.0"
-COPY --from=policy-build /usr/lib/postgresql/18/lib/read_policy.so /usr/lib/postgresql/18/lib/read_policy.so
-COPY --from=policy-build /usr/share/postgresql/18/extension/read_policy* /usr/share/postgresql/18/extension/
 COPY engines/postgres/entrypoint-wrapper.sh /usr/local/bin/entrypoint-wrapper.sh
 COPY --from=builder --chown=postgres:postgres /var/lib/postgresql/18/docker /var/lib/postgresql/18/docker
 RUN chmod 700 /var/lib/postgresql/18/docker

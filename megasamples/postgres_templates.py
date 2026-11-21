@@ -16,15 +16,13 @@ def stage_roles(context, settings):
     ]
     for item in settings.namespaces:
         prefix, owner = item.prefix, item.owner
-        marker = f"megasamples_copy_{prefix}_owner"
         reader = f"megasamples_copy_{prefix}_read"
         ledger = f"copy_ledger_{prefix}"
         lines += [
-            f'CREATE ROLE "{marker}";',
             f'CREATE ROLE "{reader}";',
             f'CREATE ROLE "{owner}" LOGIN CREATEDB;',
             f'GRANT megasamples_read TO "{reader}" WITH INHERIT TRUE, SET FALSE;',
-            f'GRANT megasamples_read, megasamples_write_routines, "{marker}" TO "{owner}" WITH INHERIT TRUE, SET FALSE;',
+            f'GRANT megasamples_read, megasamples_write_routines TO "{owner}" WITH INHERIT TRUE, SET FALSE;',
             f"INSERT INTO copy_namespaces VALUES ('{prefix}', '{owner}', {item.max_copies});",
             f'CREATE TABLE "{ledger}" (name text PRIMARY KEY, record jsonb NOT NULL);',
             f'GRANT SELECT, INSERT, UPDATE, DELETE ON "{ledger}" TO "{owner}", admin;',

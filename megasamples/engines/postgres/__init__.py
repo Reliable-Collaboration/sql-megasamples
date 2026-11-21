@@ -84,7 +84,7 @@ class Postgres(Engine):
                             "DEMO_PASSWORD": "${DEMO_PASSWORD:-demo}",
                             "ADMIN_PASSWORD": "${ADMIN_PASSWORD:-admin}"},
             "healthcheck": {"test": ["CMD-SHELL", "PGPASSFILE=/run/megasamples-health.pgpass psql -w -h 127.0.0.1 -U demo -d megasamples "
-                                     "-tAc 'SELECT pg_catalog.megasamples_policy_loaded()' | grep -qx t"],
+                                     "-tAc 'SELECT 1' | grep -qx 1"],
                             "interval": "5s", "timeout": "5s", "retries": 30},
             "restart": "unless-stopped",
         }

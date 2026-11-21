@@ -148,7 +148,13 @@ class PostgresCopies(ServerCopies):
     def create_reserved(self, row, strategy):
         name, identity = row["name"], row["identity"]
         row = self.change(row, phase="issuing")
-        self.connection.execute(f'CREATE DATABASE "{name}" TEMPLATE "{row["database"]}_start" STRATEGY {strategy}')
+        # A new database is open to PUBLIC by PostgreSQL's default. The copy is created accepting no connection,
+        # closed to PUBLIC, and only then opened, so a copy an interruption leaves behind stays unreachable; only its
+        # owner and the namespace's readers (granted below) can connect. The check that follows confirms it.
+        self.connection.execute(f'CREATE DATABASE "{name}" TEMPLATE "{row["database"]}_start" STRATEGY {strategy} '
+                                'ALLOW_CONNECTIONS false')
+        self.connection.execute(f'REVOKE CONNECT, TEMPORARY ON DATABASE "{name}" FROM PUBLIC')
+        self.connection.execute(f'ALTER DATABASE "{name}" ALLOW_CONNECTIONS true')
         secure = self.one("""
             SELECT oid, pg_get_userbyid(datdba), datallowconn,
                 NOT EXISTS (
