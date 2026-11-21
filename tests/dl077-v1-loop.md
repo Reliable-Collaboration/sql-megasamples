@@ -1,10 +1,12 @@
 # Version 1, slices 1 and 2: review loop status
 
-This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5 to 13 are below.
+This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5 to 14 are below.
 
 ## Stop count
 
-**1 of 2.** Round 13 counts clean, the coordinator's decision: its one P2 (Sol P2-1) is in WS4's area, a WS4 input with no stopgap, and nothing else was fix-now outside the five areas. Round 12 had found a P2 (Sol) and kept the count at 0. Round 11 had found a P2 (both reviewers). Round 10 had found two P2s, fix-now, and returned it to 0, the coordinator's decision. Round 9 had counted clean (1 of 2); rounds 6, 7 and 8 had kept it at 0. The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
+**2 of 2: the loop is closed** (rounds 13 and 14). Round 14 had no P1 or P2, so it counts clean, the coordinator's decision, and the slice 1 and 2 review loop ends here. Its P3s were applied as one set, which WS1's first review round also reviews. Next: the owner questions go to the two deciders (`docs/design/dl077-v1-owner-questions.md`); the workstreams start after their answers, one at a time.
+
+Round 13 counted clean, the coordinator's decision: its one P2 (Sol P2-1) is in WS4's area, a WS4 input with no stopgap, and nothing else was fix-now outside the five areas. Round 12 had found a P2 (Sol) and kept the count at 0. Round 11 had found a P2 (both reviewers). Round 10 had found two P2s, fix-now, and returned it to 0, the coordinator's decision. Round 9 had counted clean (1 of 2); rounds 6, 7 and 8 had kept it at 0. The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
 
 **Scope from round 8, the coordinator's decision:** a workstream brief is an input to that workstream's own design, which is reviewed in its own loop after this one ends. So findings about a brief's content are recorded there as that workstream's inputs, not fixed now here. That covers its facts, its test plan's coverage and its questions.
 
@@ -54,7 +56,7 @@ Each row can wait: there is no realistic route to harm, or the harm is stated as
 | The MySQL rewrite of a table named like its database | round 1, F12 | Fails closed; its witness is withheld. |
 | Looks take the change lock; `renew` can return 6 during `list` | round 1, F15 | Callers retry 6. |
 | Direct `pg_database` update without a tuple lock | round 1, F18 | No route found by either reviewer. |
-| Configuration checks only at image build; the account name `megasamples_read` accepted | round 1, F20 | Start paths are slice 3+. |
+| Configuration checks only at image build | round 1, F20 | Start paths are slice 3+. The account name `megasamples_read` is now refused (round 14, S14-6). |
 | Declared MySQL writers' grants are baked before slice 3's suspension | round 1, F21 | Slice 2 does not merge without slice 3. |
 | Ownership transfer after creation; `DROP OWNED` and provisioned defaults | round 1, S6 and S7 | The rules are as specified. |
 | Range-type constructors keep `PUBLIC EXECUTE` | round 2, F2-8 | A stated limit: immutable built-in code. |
@@ -137,7 +139,7 @@ The orphan, start, MySQL-off image and native runs were first refused for memory
 | 11 | WS3 | Is there a third per-copy outcome (unknown or partial), and a list for the copies a stopped sweep never reached? Any change to a public exit or to `removed`/`kept`. |
 | 12 | WS4 | **Security posture:** may the suite authenticate to a listener it has not yet proved to be the checked instance? |
 | 13 | WS5 | **What a person sees, in the interim until slice 3** (which decides that `down` keeps named data volumes, [114-2F]): whether today's `make down` should warn or refuse before discarding changes; this does not reopen [114-2F] |
-| 14 | WS5 | **On a shared daemon, applying U-5 until slice 3:** what ownership evidence permits `status clean` to remove a container, and whether a pre-label match is listed with a hint or removed when its image is megasamples' own |
+| 14 | WS5 | **On a shared daemon:** what ownership evidence permits `status clean` to remove a container, and whether a pre-label name match (build, test and audit names) is listed with a hint or removed when its image is megasamples' own. Slice 3's U-5 does not decide it |
 
 ## Round 6's runs
 
@@ -344,9 +346,25 @@ These are the reviews of `6ddb40de`: Sol (`S13-*`) and Opus (`O13-*`, with its n
 | S13-5 | P3 | — | **Fixed now** (in hand): a parity case with an escaped underscore on every selection; `batch_text`'s docstring says it emulates only backslash doubling (O13-N1) | `fdbe661` |
 | S13-6 | P3 | — | **Fixed now** (in hand): the README describes the catalogue as the repository's, and databases per database. The generator's own header is a backlog row | `a19c037` (test), `16521d0` |
 | O13-2, S13-9 | P3 | — | **Fixed now**: the round 12 record says what each review found of the stopgaps at `9fe11377`; S12-1 and O12-1 keep their own ratings; owner question 13 (and 14) use WS5's narrowed wording | this file |
-| O13-1, S13-7 | P3 | 5 | **Fixed now** (faithfulness): WS5's "decided elsewhere" states slice 3's rule exactly (U-3 refused without `--discard engine` and replaced only with it, U-4, U-5, the replacement rules [114-2A] [114-2B] [115-7] [115-W]); questions 1 and 4 say they apply it | the brief |
+| O13-1, S13-7 | P3 | 5 | **Fixed now** (faithfulness): WS5's "decided elsewhere" summarises slice 3's rule (corrected in round 14: a summary, not exact, with the omissions S14-8 and O14-N2 named now carried; U-3 refused without `--discard engine` and replaced only with it, U-4, U-5, the replacement rules [114-2A] [114-2B] [115-7] [115-W]); questions 1 and 4 say they apply it | the brief |
 | S13-4, S13-8, O13-N2 to N4 | P3 | 5, 1 | **Workstream inputs**: WS5 the staleness cases, the teardown controls of rounds 6 to 9, the warning's noise, SQLite siblings, the O12-N2 credit; WS1 S8-5 | the briefs |
 | O13-N1 | P3 | — | **Fixed now**, with S13-5 | `fdbe661` |
+
+## Round 14: each finding's disposition, and the loop's close
+
+These are the reviews of `ab6448de`: Sol (`S14-*`) and Opus (`O14-*`, with its notes `O14-N*`). Neither had a P1 or P2, so round 14 counts clean and **the loop closes at 2 of 2** (rounds 13 and 14). The in-hand P3s were applied as one set of commits (`a06eea3` tests, `05f663d` fixes), which WS1's first review round also reviews.
+
+| ID | Sev. | Area | Disposition | Commit or brief |
+|---|---|---|---|---|
+| S14-1, O14-N1 | P3 | — | **Fixed**: MySQL's probes need the operation's own refusal, 1142 or 1370, and reject 1045, 1044 and others. Run natively | `a06eea3`, `05f663d` |
+| S14-2 | P3 | — | **Fixed**: both probe fakes answer only SQL naming the real fixtures, so a wrong column or routine fails | `a06eea3` |
+| S14-3, O14-N3 | P3 | — | **Fixed**: a native guard runs a value with an escaped underscore through `query()` in both modes. The earlier reversal covered the direct parity path; this one covers library mode | `05f663d` |
+| S14-4 | P3 | 5 | **Fixed**: the help test needs exit 0 and stdout, and checks `clean`'s `--all` option. The listing names the working data; each command's own help names the kept SQLite volume | `a06eea3` |
+| S14-5, O14-2 | P3 | — | **Fixed**: the landing page's PostgreSQL note and the README explain the shared database, under a test that needs the explanations; the registry paragraph says live datasets carry a verified snapshot | `a06eea3`, `05f663d` |
+| S14-6 | P3 | — | **Fixed**: accounts may not take the PostgreSQL service's roles (closing round 1's F20 for `megasamples_read`) | `a06eea3`, `05f663d` |
+| O14-1 | P3 | 5 | **Input**: U-5 does not govern `status clean`; WS5 question 4 and owner question 14 restated | WS5 |
+| O14-N2, S14-8 | P3 | 5 | **Input**: the "decided elsewhere" section's omissions carried; it now says it summarises | WS5 |
+| S14-7 | P3 | 5 | **Input**: S12-3's and S12-5's own cases | WS5 |
 
 ## Round 8: the class check for overwritten evidence
 
@@ -591,3 +609,29 @@ These were focused runs, one at a time, each after the 15 GiB check. Each names 
 - **Isolation** (`isolation-check.sh`, read-only): the live entries and engines are unchanged. The store holds the same 20 containers and 37 volumes.
 - **Every task container** this round started is removed. The socket service is stopped.
 - **The retained stack** was not addressed. Its last proof is round 9's.
+
+## Round 14's runs
+
+These were focused runs, one at a time, each after the 15 GiB check.
+
+**Passed**
+- **MySQL `test-image` with the per-operation refusals,** at `05f663d`'s tree, on `58d4b695a90c`: each probe refused by its own code, 0 failures, the store's volume set unchanged (`image-test-r14-mysql-write-probes.log`).
+- **The library-mode guard, natively,** at `05f663d`'s tree. Green: 1 passed. Reversal: without `batch_text` in library mode, 1 failed.
+- **Host tests:** 72 with the image-test host tests, at `05f663d`.
+
+**Failed**
+- **The host-only full suite,** at `05f663d` with this file's edits: 2 failed, the two baselines; 1,238 passed, 348 skipped (`pytest-r15.log`).
+
+**Not run**
+- PostgreSQL `test-image`: its probes are unchanged this round; only the fake changed.
+- A single-engine native run: WS4.
+
+## Round 14: restoration and isolation
+
+- **Isolation** (`isolation-check.sh`, read-only): the live entries and engines are unchanged. The store holds the same 20 containers and 37 volumes.
+- **Every task container** is removed. The socket service is stopped.
+- **The retained stack** was not addressed. Its last proof is round 9's.
+
+## After the loop
+
+The owner questions are in `docs/design/dl077-v1-owner-questions.md`, an options paper for the two deciders (DL-104): each question with its facts, two to four options and their consequences, and a recommendation. The workstreams start after their answers, one at a time, each designed, built test-first, and reviewed to two clean rounds, before the merge (DL-101).
