@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sql-megasamples"
-version = "2.0.0.dev0"
+version = "2.0.0"
 description = "Sample databases for MySQL, PostgreSQL and SQLite: images, files and a browsing console, built from upstream sources"
 requires-python = ">=3.11"
 dependencies = [
