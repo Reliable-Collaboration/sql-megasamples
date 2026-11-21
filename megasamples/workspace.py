@@ -63,7 +63,7 @@ def transient_containers():
         if name in found:
             continue
         for c in listing(f"name=^{name}$"):
-            found[c["Names"]] = c
+            found[c["Names"]] = {**c, "matched": "name"}
     return list(found.values())
 
 
@@ -85,13 +85,23 @@ def status():
     return 0
 
 
+def remove_unlabelled(names):
+    """Containers found only by a name from before the transient label. On a shared daemon such a name may be
+    another project's container, so its volumes stay (Opus round 10, N2); a labelled one goes with them."""
+    if names:
+        docker("rm", "-f", *names, check=True)
+
+
 def clean(also_stack=False):
     transient = transient_containers()
     if not transient:
         print("no transient containers to remove")
     else:
         names = [c["Names"] for c in transient]
-        docker("rm", "-fv", *names, check=True)
+        labelled = [c["Names"] for c in transient if c.get("matched") != "name"]
+        if labelled:
+            docker("rm", "-fv", *labelled, check=True)
+        remove_unlabelled([c["Names"] for c in transient if c.get("matched") == "name"])
         for n in names:
             print(f"  removed {n}")
 
