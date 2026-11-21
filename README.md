@@ -180,7 +180,9 @@ a non-root user exits before the public server starts; with password overrides, 
 password start may run first, listening only on its local socket. The healthcheck is healthy only
 while the `read_policy` library is loaded. **What is not checked:** a replaced entrypoint, or a
 command that wraps the server (for example `gosu postgres postgres …`), bypasses these checks, and
-the healthcheck is then the only signal that the policy is missing.
+the healthcheck is then the only signal that the policy is missing. That healthcheck is the one
+the generated Compose file defines; the image itself defines none, so a hand-run container has no
+such signal.
 
 **The PostgreSQL `copy` client needs libpq.** The package installs the pure Psycopg distribution,
 which loads the system's libpq (for example Debian's `libpq5`). Without it, `megasamples copy … postgres`
