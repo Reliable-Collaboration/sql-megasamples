@@ -8,6 +8,7 @@ from pathlib import Path
 from megasamples import config
 from megasamples.credentials import client, session
 from megasamples.engines import unique_databases
+from docs.validation.routine_reasons import reason as routine_reason
 
 assert os.environ['COMPOSE_PROJECT_NAME'] == 'megasamples-upgrade'
 assert os.environ['CONTAINERS_STORAGE_CONF'] == '/home/rcc-vstudio/working/sql-megasamples-upgrade-env/storage.conf'
@@ -52,17 +53,7 @@ with session():
         row = json.loads(query('postgres','postgres',db,sql+'::text'))
         for routine in row['routines']:
             if routine['demo_execute']:
-                if routine['namespace']=='information_schema' and routine['name'].startswith('_pg_'):
-                    reason = 'Upstream information-schema helper: expands supplied arrays or reads type and index metadata'
-                elif routine['signature'] in operators:
-                    reason = 'Implements an initdb operator: compares or computes supplied values without changing stored state'
-                elif routine['signature'] in casts:
-                    reason = 'Implements an initdb cast: converts supplied values without changing stored state'
-                elif routine['namespace']=='pg_catalog':
-                    reason = reasons.get(routine['name'], 'NOT in explicit read policy')
-                else:
-                    reason = 'NOT in explicit read policy'
-                routine['reason'] = reason
+                routine['reason'] = routine_reason(routine, operators, casts)
         result['postgres'][db] = row
     for user in ['demo','admin','root']:
         result['mysql'][user] = {'grants': query('mysql', user, 'megasamples', 'SHOW GRANTS').splitlines()}

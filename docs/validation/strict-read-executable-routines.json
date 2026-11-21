@@ -1,117 +1,15 @@
 {
-  "observed_at": "2026-11-18T07:40:54.510695+00:00",
+  "observed_at": "2026-11-21T11:22:17Z",
   "databases": [
-    "jaffle_shop",
-    "dvdstore",
-    "oracle_hr",
-    "pubs",
-    "smallsets",
     "chinook",
-    "sakila",
-    "adventureworks_lt",
-    "northwind",
-    "nyc_taxi",
-    "oracle_co",
-    "oracle_oe",
-    "stackexchange_beer",
-    "contoso",
-    "adventureworks_dw",
-    "adventureworks",
-    "lahman",
-    "contoso_1m",
-    "wideworldimporters_dw",
-    "chicago_crimes",
-    "oracle_sh",
     "employees",
-    "stackexchange_dba",
-    "enron",
-    "enron_full",
-    "contoso_10m",
-    "wikipedia_simple",
-    "wikipedia_simple_full",
-    "postgres",
     "megasamples",
+    "postgres",
+    "pubs",
     "template1"
   ],
-  "count": 1663,
+  "count": 1667,
   "routines": [
-    {
-      "namespace": "information_schema",
-      "signature": "information_schema._pg_char_max_length(oid,integer)",
-      "kind": "f",
-      "volatility": "i",
-      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
-    },
-    {
-      "namespace": "information_schema",
-      "signature": "information_schema._pg_char_octet_length(oid,integer)",
-      "kind": "f",
-      "volatility": "i",
-      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
-    },
-    {
-      "namespace": "information_schema",
-      "signature": "information_schema._pg_datetime_precision(oid,integer)",
-      "kind": "f",
-      "volatility": "i",
-      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
-    },
-    {
-      "namespace": "information_schema",
-      "signature": "information_schema._pg_expandarray(anyarray)",
-      "kind": "f",
-      "volatility": "i",
-      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
-    },
-    {
-      "namespace": "information_schema",
-      "signature": "information_schema._pg_index_position(oid,smallint)",
-      "kind": "f",
-      "volatility": "s",
-      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
-    },
-    {
-      "namespace": "information_schema",
-      "signature": "information_schema._pg_interval_type(oid,integer)",
-      "kind": "f",
-      "volatility": "i",
-      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
-    },
-    {
-      "namespace": "information_schema",
-      "signature": "information_schema._pg_numeric_precision(oid,integer)",
-      "kind": "f",
-      "volatility": "i",
-      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
-    },
-    {
-      "namespace": "information_schema",
-      "signature": "information_schema._pg_numeric_precision_radix(oid,integer)",
-      "kind": "f",
-      "volatility": "i",
-      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
-    },
-    {
-      "namespace": "information_schema",
-      "signature": "information_schema._pg_numeric_scale(oid,integer)",
-      "kind": "f",
-      "volatility": "i",
-      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
-    },
-    {
-      "namespace": "information_schema",
-      "signature": "information_schema._pg_truetypid(pg_attribute,pg_type)",
-      "kind": "f",
-      "volatility": "i",
-      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
-    },
-    {
-      "namespace": "information_schema",
-      "signature": "information_schema._pg_truetypmod(pg_attribute,pg_type)",
-      "kind": "f",
-      "volatility": "i",
-      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
-    },
     {
       "namespace": "pg_catalog",
       "signature": "\"bit\"(bigint,integer)",
@@ -4215,6 +4113,83 @@
       "reason": "Implements an initdb operator: compares or computes supplied values without changing stored state"
     },
     {
+      "namespace": "information_schema",
+      "signature": "information_schema._pg_char_max_length(oid,integer)",
+      "kind": "f",
+      "volatility": "i",
+      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
+    },
+    {
+      "namespace": "information_schema",
+      "signature": "information_schema._pg_char_octet_length(oid,integer)",
+      "kind": "f",
+      "volatility": "i",
+      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
+    },
+    {
+      "namespace": "information_schema",
+      "signature": "information_schema._pg_datetime_precision(oid,integer)",
+      "kind": "f",
+      "volatility": "i",
+      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
+    },
+    {
+      "namespace": "information_schema",
+      "signature": "information_schema._pg_expandarray(anyarray)",
+      "kind": "f",
+      "volatility": "i",
+      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
+    },
+    {
+      "namespace": "information_schema",
+      "signature": "information_schema._pg_index_position(oid,smallint)",
+      "kind": "f",
+      "volatility": "s",
+      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
+    },
+    {
+      "namespace": "information_schema",
+      "signature": "information_schema._pg_interval_type(oid,integer)",
+      "kind": "f",
+      "volatility": "i",
+      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
+    },
+    {
+      "namespace": "information_schema",
+      "signature": "information_schema._pg_numeric_precision(oid,integer)",
+      "kind": "f",
+      "volatility": "i",
+      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
+    },
+    {
+      "namespace": "information_schema",
+      "signature": "information_schema._pg_numeric_precision_radix(oid,integer)",
+      "kind": "f",
+      "volatility": "i",
+      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
+    },
+    {
+      "namespace": "information_schema",
+      "signature": "information_schema._pg_numeric_scale(oid,integer)",
+      "kind": "f",
+      "volatility": "i",
+      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
+    },
+    {
+      "namespace": "information_schema",
+      "signature": "information_schema._pg_truetypid(pg_attribute,pg_type)",
+      "kind": "f",
+      "volatility": "i",
+      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
+    },
+    {
+      "namespace": "information_schema",
+      "signature": "information_schema._pg_truetypmod(pg_attribute,pg_type)",
+      "kind": "f",
+      "volatility": "i",
+      "reason": "Upstream information-schema helper: expands supplied arrays or reads type and index metadata"
+    },
+    {
       "namespace": "pg_catalog",
       "signature": "initcap(text)",
       "kind": "f",
@@ -6841,6 +6816,13 @@
     },
     {
       "namespace": "pg_catalog",
+      "signature": "megasamples_policy_loaded()",
+      "kind": "f",
+      "volatility": "s",
+      "reason": "Reports whether the read_policy library was preloaded; a direct grant to demo, the healthcheck's account (design 4.2, P-8)"
+    },
+    {
+      "namespace": "pg_catalog",
       "signature": "min(anyarray)",
       "kind": "a",
       "volatility": "i",
@@ -8045,6 +8027,20 @@
     },
     {
       "namespace": "pg_catalog",
+      "signature": "pg_current_snapshot()",
+      "kind": "f",
+      "volatility": "s",
+      "reason": "Returns the current snapshot without assigning a transaction ID (design 4.2, P-3)"
+    },
+    {
+      "namespace": "pg_catalog",
+      "signature": "pg_database_size(oid)",
+      "kind": "f",
+      "volatility": "v",
+      "reason": "Reads the database size using the caller's existing access (design 4.2, P-3)"
+    },
+    {
+      "namespace": "pg_catalog",
       "signature": "pg_describe_object(oid,oid,integer)",
       "kind": "f",
       "volatility": "s",
@@ -8063,6 +8059,13 @@
       "kind": "f",
       "volatility": "s",
       "reason": "Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings"
+    },
+    {
+      "namespace": "pg_catalog",
+      "signature": "pg_export_snapshot()",
+      "kind": "f",
+      "volatility": "v",
+      "reason": "Publishes a snapshot that another session can import while the exporting transaction lives (design 4.2, P-3 and P-5)"
     },
     {
       "namespace": "pg_catalog",
