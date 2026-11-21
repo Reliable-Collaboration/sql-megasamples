@@ -170,6 +170,8 @@ def test_readme_says_what_teardown_discards_and_keeps():
     readme = (ROOT / 'README.md').read_text()
     assert '`make down` and `make clean-all` remove each engine\'s working data with its container' in readme
     assert 'the named `megasamples-sqlite` volume stays' in readme
+    # Sol round 12, 5: the restart behaviour, exactly: only the files the new image carries are replaced.
+    assert "replaces the files the image carries and leaves any other file in the volume" in readme
 
 
 def test_help_says_what_teardown_discards():
