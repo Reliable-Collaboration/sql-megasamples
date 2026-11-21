@@ -1,10 +1,10 @@
 # Version 1, slices 1 and 2: review loop status
 
-This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5 to 8 are below.
+This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5 to 9 are below.
 
 ## Stop count
 
-**0 of 2** (rounds 6, 7 and 8 kept it there). The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
+**1 of 2.** Round 9 had no P1 or P2, so it counts clean, the coordinator's decision. Rounds 6, 7 and 8 had kept the count at 0. The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
 
 **Scope from round 8, the coordinator's decision:** a workstream brief is an input to that workstream's own design, which is reviewed in its own loop after this one ends. So findings about a brief's content are recorded there as that workstream's inputs, not fixed now here. That covers its facts, its test plan's coverage and its questions.
 
@@ -213,7 +213,7 @@ These are the reviews of `c0179c8d`: Sol (`S7-*`) and Opus (`O7-*`). Findings ab
 | S7-6 | P2 | — | **Fixed now**: the strict-read guide's MySQL grants, and three more drifts found by checking it against the image | `ffddb0c` (test), `319294d`, `e5d6f23` |
 | S7-7 | P3 | 1 | Workstream input for retained volumes (WS1 question 7). **Fixed now** for the rights test's scope: every non-built-in role (outside `pg_*`), in every connectable database of the image tested and in the databases the restore matrix restores (S8-3) | `97cbd24`; WS1 |
 | S7-8 | P3 | — | **Fixed now**: start-test assertions witness their messages; a namespace positive control | `6ed9e2b` |
-| S7-9 | P3 | — | **Fixed in round 7 for one test only**: `test_round_four_start_routes` and the two health tests. The other two start tests, a failure before the scope, and anonymous volumes were fixed in round 8 (O8-P3-2, S8-4) | `6ed9e2b`; round 8: `d8b2616`, `f23ec19` |
+| S7-9 | P3 | — | **Fixed in round 7 for one of the three start tests**, `test_round_four_start_routes`, and for the two health tests (Opus round 9, N4). The other two start tests, a failure before the scope, and anonymous volumes were fixed in round 8 (O8-P3-2, S8-4) | `6ed9e2b`; round 8: `d8b2616`, `f23ec19` |
 | S7-10 | P3 | — | **Fixed now**: the verification-scope wording and the bypass disposition | this file |
 | O7-1 | P2 | 1, 3 | Workstream input: the coverage criterion | WS1, WS3 (round 7 rows) |
 | O7-2 | P2 | 4 | Workstream input: the table spanning S, T, A, P, B, C and D | WS4 (round 7 rows) |
@@ -239,18 +239,38 @@ These are the reviews of `9fa27c3a`: Sol (`S8-*`) and Opus (`O8-*`). Both found 
 | S8-5 | P3 | — | **Fixed now**: SQLSTATE `42501` and the hook's own message, with fresh names | `a4f430e` (test), `f23ec19` |
 | S8-6 | P3 | 1, 2, 3 | **Fixed now** (faithfulness): WS2's S4 and S2-3 rows; WS3's A4/F6 removal part; WS1's fact H names the pre-report and pre-revoke builds | `57cb0ec` |
 | S8-7 | P3 | — | **Fixed now**: the README's non-root sequence is qualified | `f28022d` |
-| S8-8 | P3 | — | **Fixed now**: the replay tokenizer follows MySQL's lexical rules, checked by class and on a MySQL server | `bf104ff` (test), `8cf268f` |
-| O8-P3-1 | P3 | — | **Fixed now**: the native suite asserts the published inventory is `demo`'s executable set in every database | `f2b33b9` |
+| S8-8 | P3 | — | **Fixed now for the reported case and part of its class**: `--`, executable comments and identifier characters, checked on a MySQL server. Round 9 found the rest of the class (non-ASCII spaces, comments around the dot, case) and fixed it | `bf104ff` (test), `8cf268f`; round 9: `5212c3b`, `7e514ab` |
+| O8-P3-1 | P3 | — | **Fixed now** for signature, namespace, kind and volatility, in every database the native suite covers. Round 9 added the name, the operator or cast, and the publication's databases list (S9-3) | `f2b33b9`; round 9: `93b4cf7` |
 | O8-P3-2 | P3 | — | **Fixed now**, the same as S8-4 | `f23ec19` |
 | O8-P3-3 | P3 | 1, 2 | **Fixed now** (faithfulness): WS1's round 7 Sol 1 row says where each input is carried, and fact L, the outcomes and question 9 carry them; WS2's S4 row | `57cb0ec` |
 | O8-P3-4 | P3 | — | **Fixed now**: the MySQL init comment, `ARCHITECTURE.md`, and the unused variable (gone with PR #14's script restored) | `f28022d`, `66bda86` |
 
 No finding was deferred. One note from S8-8's class check went to the backlog: MySQL optimizer hints.
 
+## Round 9: each finding's disposition
+
+These are the reviews of `cda80f25`: Sol (`S9-*`) and Opus (`O9-*`, and its notes `O9-N*`). Neither had a P1 or P2. Each P3 below was cheap and in hand, so all were fixed. None was deferred.
+
+| ID | Sev. | Area | Disposition | Commit or brief |
+|---|---|---|---|---|
+| O9-1, S9-1 | P3 | — | **Fixed now**: `--` is a comment only before one ASCII space or control byte; the qualifier search skips comments; schema names match exactly (this image keeps `lower_case_table_names=0`). All checked on a MySQL server. A replayed procedure with these traps is added to the MySQL copy suite, which runs in the batch | `5212c3b` (test), `789bb8d` (copy-suite test), `7e514ab` |
+| O9-2, S9-2 | P3 | — | **Fixed now**: the receipt's untracked set must be exactly the PR body, and every other path is compared, so a deletion fails | `dd8c369` |
+| O9-3 | P3 | — | **Fixed now**: the guide says PR #14 left the MySQL engine and views unchanged, and that version 1 changed the engine but not the views | `483b7cb` (test), `f44b6c7` |
+| S9-3 | P3 | — | **Fixed now**: the native comparison covers every published field of each row, and the publication's databases list and count | `93b4cf7` |
+| S9-4 | P3 | — | **Fixed now**, with O9-N5: the cleanup scope checks each inventory query's status and compares volume sets; a labeled leftover and the SQLSTATE are tested on their own | `6f820a8` (test), `40375c9` |
+| S9-5 | P3 | — | **Fixed now**: the guide test ties the escaping claim to the generator's exact patterns | `90cd4ab` |
+| S9-6 | P3 | — | **Fixed now**: the round 8 record now says the MySQL image takes the tokenizer, so its build, `test-image` and the copy suite are in the batch | this file |
+| S9-7 | P3 | 2, 4 | **Fixed now** (faithfulness): S6-2 in WS4 and S6-3 in WS2, each with the no-stopgap decision and its reopening criterion | `052d256` |
+| O9-N1 | P3 | — | **Fixed now**: the class check's list of files | this file |
+| O9-N2 | P3 | 2 | **Fixed now** (faithfulness): WS2's S4 row carries the closed copies and the return to the deciders | `052d256` |
+| O9-N3 | P3 | — | **Fixed now**: the `__main__` block is last, so a script run reaches all 15 tests | `6f820a8` |
+| O9-N4 | P3 | — | **Fixed now**: S7-9's wording | this file |
+| O9-N5 | P3 | — | **Fixed now**, the same as S9-4 | `40375c9` |
+
 ## Round 8: the class check for overwritten evidence
 
 The question: did any version 1 change overwrite an evidence file, or make one untrue? Two comparisons were made:
-- **Against `e61335f`**, `main`'s merge of PR #16. No file under `docs/` or any record in `tests/` that `e61335f` has was modified or deleted since. The files changed since are code, tests, `README.md`, `.env.example`, `.dockerignore` and `uv.lock`.
+- **Against `e61335f`**, `main`'s merge of PR #16. No file under `docs/` or any record in `tests/` that `e61335f` has was modified or deleted since. The files changed since are code, tests, `README.md`, `ARCHITECTURE.md`, `.env.example`, `.dockerignore`, `pyproject.toml` and `uv.lock` (Opus round 9, N1: the last two were missing here). None is an evidence file.
 - **Against PR #14's head, `2879fc472ad1`**, from which this branch carries PR #14's evidence. The commits after it that are in neither `e61335f` nor PR #14 changed:
   - **Evidence files:** `strict-read-executable-routines.{json,md}` and `strict-read-inventory.py`, by `644d949`. These were restored in `66bda86`.
   - **Living documents and code:** twelve files the canary receipt hashed. They are the strict-read guide, `.dockerignore`, and the PostgreSQL Dockerfile, read profile and routine names. Also the read_policy extension's SQL, C and control files, both image tests, the MySQL image startup test, and the native suite. Their receipt hashes describe `2879fc472ad1`. The read-profile record and the guide say so, and `tests/test_v1_public_routines.py` names the twelve and requires every other file the receipt hashed to match it.
@@ -314,7 +334,8 @@ No large container batch was run: DataIntent's gateway `--all` comes first, and 
 
 **Not run**
 - The MySQL suites and images, and the TCP copy suite. The tokenizer change (`megasamples/mysql_templates.py`) is exercised natively only by the MySQL copy suite. **That needs a large batch, cleared with the coordinator first.**
-- The health, policy and restore suites, and `test-image`: no image, policy or reset code changed.
+- The health, policy and restore suites, and PostgreSQL's `test-image`: no PostgreSQL image, policy or reset code changed.
+- **Corrected in round 9 (Sol 6):** the MySQL image does change. Its Dockerfile copies `megasamples/mysql_templates.py`, and `mysql_template_build.py` uses the tokenizer to bake the `_start` schemas. So MySQL's image build and `test-image` must rerun, with the copy suite, in the MySQL batch.
 
 ## Round 8: restoration and isolation
 
