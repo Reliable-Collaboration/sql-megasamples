@@ -100,7 +100,7 @@ def container_ready(timeout=900):
         sys.exit("could not build the pinned Oracle client image")
     state = sh("docker", "inspect", "-f", "{{.State.Status}}", NAME).stdout.strip()
     if state != "running":
-        sh("docker", "rm", "-f", NAME)
+        sh("docker", "rm", "-fv", NAME)
         p = sh("docker", "run", "-d", "--name", NAME,
                "--label", "megasamples.transient=true", "--label", "megasamples.role=oracle",
                "-e", f"ORACLE_PASSWORD={SYS_PW}", CLIENT_IMAGE)
@@ -419,7 +419,7 @@ def main(argv=None):
             failures += compare(n, SCHEMAS[n])
     finally:
         if not a.keep:
-            sh("docker", "rm", "-f", NAME)
+            sh("docker", "rm", "-fv", NAME)
             print(f"\nremoved {NAME}")
 
     for f in failures:

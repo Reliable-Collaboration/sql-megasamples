@@ -79,7 +79,7 @@ def state():
 def start(mounts, memory="6g"):
     """Start the container. `mounts` is [(host path, container path, "ro"|"rw")]."""
     if state():
-        run(["docker", "rm", "-f", NAME])
+        run(["docker", "rm", "-fv", NAME])
     cmd = ["docker", "run", "-d", "--name", NAME,
            "--label", "megasamples.transient=true", "--label", "megasamples.role=mssql",
            "-e", "ACCEPT_EULA=Y",                    # see require_acceptance()
@@ -113,7 +113,7 @@ def start(mounts, memory="6g"):
 
 def stop():
     if state():
-        run(["docker", "rm", "-f", NAME])
+        run(["docker", "rm", "-fv", NAME])
 
 
 def sqlcmd(query, database=None, check=True, timeout=7200):

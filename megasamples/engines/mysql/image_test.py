@@ -96,7 +96,7 @@ def main(argv=None):
                     "-ec", "test -d /var/lib/mysql/mysql; test ! -e /var/lib/mysql/auto.cnf; "
                            "test ! -L /var/lib/mysql/auto.cnf")
     c.expect(filesystem.returncode == 0, "the image has no baked auto.cnf before server startup")
-    sh("docker", "rm", "-f", NAME)
+    sh("docker", "rm", "-fv", NAME)
     started = time.monotonic()
     run = sh("docker", "run", "-d", "--name", NAME,
              "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
@@ -192,7 +192,7 @@ def main(argv=None):
         print(f"  . data directory: {datadir} MB across {databases} databases")
     finally:
         # the override path needs its own container
-        sh("docker", "rm", "-f", NAME)
+        sh("docker", "rm", "-fv", NAME)
         with environment_file({"MYSQL_ROOT_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:
             sh("docker", "run", "-d", "--name", NAME + "2",
                "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
@@ -207,7 +207,7 @@ def main(argv=None):
                  "the baked default root password no longer works after an override")
         c.expect(q("SELECT 1", user="demo", pw="viewer", container=NAME + "2").returncode == 0,
                  "DEMO_PASSWORD override applied")
-        sh("docker", "rm", "-f", NAME + "2")
+        sh("docker", "rm", "-fv", NAME + "2")
 
     print(f"image test: {len(c.failures)} failure(s)")
     return 1 if c.failures else 0

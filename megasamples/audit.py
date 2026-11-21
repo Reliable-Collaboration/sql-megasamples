@@ -53,7 +53,7 @@ def forbidden_files_in(image, failures, entrypoint_only=False):
 def image_schemas(image, failures):
     """Schemas actually inside the image, read by starting it once."""
     name = "megasamples-audit"
-    subprocess.run(["docker", "rm", "-f", name], capture_output=True)
+    subprocess.run(["docker", "rm", "-fv", name], capture_output=True)
     run = subprocess.run(["docker", "run", "-d", "--name", name,
                           "--label", "megasamples.transient=true",
                           "--label", "megasamples.role=audit",
@@ -75,7 +75,7 @@ def image_schemas(image, failures):
             return None, None
         return [s for s in q.stdout.split() if s], None
     finally:
-        subprocess.run(["docker", "rm", "-f", name], capture_output=True)
+        subprocess.run(["docker", "rm", "-fv", name], capture_output=True)
 
 
 def main(argv=None):

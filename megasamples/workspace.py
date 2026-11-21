@@ -91,7 +91,7 @@ def clean(also_stack=False):
         print("no transient containers to remove")
     else:
         names = [c["Names"] for c in transient]
-        docker("rm", "-f", *names, check=True)
+        docker("rm", "-fv", *names, check=True)
         for n in names:
             print(f"  removed {n}")
 

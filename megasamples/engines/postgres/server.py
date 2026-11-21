@@ -47,7 +47,7 @@ def start(fresh=False):
     if container_state() == "running":
         return
     if container_state():
-        run(["docker", "rm", "-f", NAME])
+        run(["docker", "rm", "-fv", NAME])
     os.makedirs(BUILD, exist_ok=True)
     p = run(["docker", "run", "-d", "--name", NAME,
              "--label", "megasamples.transient=true", "--label", "megasamples.role=build",
@@ -66,7 +66,7 @@ def start(fresh=False):
 
 
 def stop():
-    run(["docker", "rm", "-f", NAME])
+    run(["docker", "rm", "-fv", NAME])
 
 
 def psql(sql, database="postgres", check=True):

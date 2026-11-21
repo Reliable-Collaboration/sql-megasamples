@@ -52,7 +52,7 @@ class Checks:
 def main(argv=None):
     datasets = list(sys.argv[1:] if argv is None else argv) or ["sakila"]
     c = Checks()
-    sh("docker", "rm", "-f", NAME)
+    sh("docker", "rm", "-fv", NAME)
     started = time.monotonic()
     run = sh("docker", "run", "-d", "--name", NAME,
              "--label", "megasamples.transient=true", "--label", "megasamples.role=test", IMAGE)
