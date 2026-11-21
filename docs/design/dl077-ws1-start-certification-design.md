@@ -1,6 +1,8 @@
 # Workstream 1: PostgreSQL start certification, the design
 
-**Status: design, revision 4, for round 4 of the design review. No build yet.**
+**Status: design, revision 5 (partial), for round 5 of the design review. No build yet.**
+
+**Held for the deciders:** the HBA contract (4.6.1, R17, and their rows) goes to the deciders under DL-104 as security posture, after round 4's Sol P1s 1 and 2, Sol P3 9 and Opus P2 3. The brief is `RCC.DataIntent/.local/megasamples-hba/brief.md`. **The HBA parts below are revision 4's, unchanged until they answer.** Everything else is revised for round 4; section 14 traces it.
 
 **Design rounds so far:**
 
@@ -9,6 +11,7 @@
 | 1 | revision 1, `2ab72c25` | `sol-ws1-design.md`, `opus-ws1-design.md` |
 | 2 | revision 2, `bd9c5f26` | `sol-ws1-design2.md`, `opus-ws1-design2.md` |
 | 3 | revision 3, `32664450` | `sol-ws1-design3.md` (1 P1, 8 P2, 2 P3); `opus-ws1-design3.md` (no P1 or P2; 21 P3s, four of them not caught by the planned rows) |
+| 4 | revision 4, `4c69e81b` | `sol-ws1-design4.md` (2 P1, 6 P2, 2 P3); `opus-ws1-design4.md` (3 P2, 9 P3) |
 
 Section 13 traces each round 3 finding; sections 12 and 11 of revision 3 hold the earlier rounds' tracing.
 
@@ -65,7 +68,7 @@ Option values are never command words.
 | Route | Recognised by | Outcome |
 |---|---|---|
 | **Server start** | `argv[1]`'s basename is `postgres`, or `argv[1]` begins with `-` | R0, section 3, section 4. R2 refuses a `postgres` that is not the image's own path. |
-| **Informational** | a start whose parsed options include `-C`, `--version`/`-V`, `--describe-config` or `--help`/`-?` | R0 to R3; then it runs as `postgres` in the pinned environment and exits with its status |
+| **Informational** | a start whose parsed options include `-C`, `--version`/`-V`, `--describe-config` or `--help`/`-?` | R0 to R3; then the wrapper clears its traps and `exec`s it as `postgres` (`gosu`) in the pinned environment, so its exit status is its own (Opus round 4, 11) |
 | **Server mode** | a start with `--single`, `--boot` or `--check` | refused: `server-mode` |
 | **Ambiguous argument** | a start where a token equals one of upstream's help words (`-?`, `--help`, `--describe-config`, `-V`, `--version`) but the parser reads it as an operand, for example `postgres -k --version` | refused: `argument-ambiguous`. Upstream's `_pg_want_help` would read it as help and run the server as root (Opus 10). |
 | **Wrapped server** | the walk through recognised wrappers reaches a server word; or `argv[1]` is a server word other than `postgres` | refused: `wrapped-server` |
@@ -81,15 +84,16 @@ The first check that fails decides.
 
 | # | Check | Fact | Refused with |
 |---|---|---|---|
+| — | The `EXIT` trap is armed, with this run's own state directory (`mktemp -d` under `/dev/shm`), before any check (section 5) | — | — |
 | R0 | The wrapper runs as root | A | `non-root` |
 | R1 | The route is a start or informational | B | `wrapped-server`, `server-mode`, `argument-ambiguous` |
 | R2 | `argv[1]` is `/usr/lib/postgresql/18/bin/postgres` (by name under the pinned `PATH`, or by path) | B | `foreign-binary` |
-| R3 | No loader variable (`LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_AUDIT`), and no server-read variable the design does not honour (`PGPORT`, `PGOPTIONS`, `PGDATESTYLE`, `PGTZ`, `PGCLIENTENCODING`) | J | `loader-environment`, `server-environment` |
+| R3 | No loader variable (`LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_AUDIT`); no environment entry whose name is not a legal shell identifier (read from `/proc/self/environ`, for example `BASH_FUNC_exec%%`); and no server-read variable the design does not honour (`PGPORT`, `PGOPTIONS`, `PGDATESTYLE`, `PGTZ`, `PGCLIENTENCODING`) | J | `loader-environment`, `server-environment` |
 | — | Informational routes stop here | B | — |
 | R4 | The override keys are well formed (4.2) | F | `key-conflict`, `key-file`, `key-value` |
 | R5 | `PG_VERSION` exists | H | `uninitialised` |
 | — | **The directory lock** (4.9) | — | `volume-busy` on timeout; any other lock error `internal` |
-| — | The endpoint and stale private files are removed (only now, while the lock is held) | — | — |
+| — | Only now, with the lock held: the endpoint is removed, and `/run/megasamples-private`, `/run/megasamples-probe` and `/dev/shm/megasamples-private` are removed and recreated (Opus round 4, 6) | — | — |
 | R6 | The marker is the image's own, exactly | H | `policy-marker` |
 | — | slice 3's build-identity check (6.3) | — | slice 3's code |
 | — | The ownership repair | H | — |
@@ -135,7 +139,7 @@ The first check that fails decides.
 - **The entry points are absolute:** the Dockerfile's `ENTRYPOINT ["/usr/local/bin/entrypoint-wrapper.sh"]` and its `HEALTHCHECK` command (Sol 10; Opus 19).
 - **Stated limits:**
   - a loader variable acting on Bash before line 1;
-  - a path replaced beneath `PGDATA` mid-start. R8 ties `PGDATA` to the locked descriptor.
+  - a path replaced beneath `PGDATA` mid-start. R8 ties `PGDATA` to the locked descriptor up to R8's own comparison. A symlink or mount retargeted after R8 sends the launches, which receive the pathname, elsewhere. That is the precise limit, stated here and in 7.3 (Sol round 4, 10).
 
 **The pinned environment:**
 - **`PATH`** is set first and exported: `/usr/lib/postgresql/18/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`.
@@ -149,7 +153,7 @@ The first check that fails decides.
 - `TERM`, `INT`, `HUP` and `QUIT` trapped explicitly, since PID 1 ignores unhandled signals (Opus 8);
 - `wait "$pid" || status=$?`.
 
-**The secret-bearing private files** live in `/dev/shm/megasamples-private` (tmpfs under Docker and Podman), mode 0700, never in the writable layer (Opus 7). They are:
+**The secret-bearing private files** live in `/dev/shm/megasamples-private` (tmpfs under Docker and Podman), never in the writable layer (Opus 7). **The directory is owned by `postgres`, mode 0700**, created by root and then given to `postgres`, so the private server (reading `hba.conf`) and the confirmation client (reading `pgpass`) can traverse it as the uid they run as. Root, which writes the files, needs no traversal grant (Sol round 4, 3; Opus round 4, 4). A native row reads both files under the real uids. They are:
 - the confirmation passfile;
 - the key handoff to the verifier;
 - the clients' stderr;
@@ -157,9 +161,15 @@ The first check that fails decides.
 
 The directory is removed at the start and before the handover.
 
-**The handover's environment** is built by unsetting, in the wrapper itself, every exported variable not on an allowlist, then `exec`ing directly. There is no `env -i` process, so `execfail` sees the real target (Sol 5; Opus 8). The allowlist:
-- **derived** from the variables the pinned upstream `docker-entrypoint.sh` references, plus the image's own `ENV` (`PATH`, `PGDATA`, `PG_MAJOR`, `PG_VERSION`, `GOSU_VERSION`, `LANG`), plus `LC_*` and `TZ`;
-- **guarded:** a test greps the pinned upstream script and the image's `ENV` and requires the allowlist to cover them (Opus 11);
+**Two lists, kept apart** (Sol round 4, 4; Opus round 4, 1):
+- **the input list:** the names the wrapper itself reads, the six keys (`POSTGRES_PASSWORD`, `ADMIN_PASSWORD`, `DEMO_PASSWORD` and their `*_FILE` forms) among them;
+- **the handover list:** the names passed to the upstream entrypoint.
+
+**The handover's environment** is built by unsetting, in the wrapper itself, every exported variable not on the handover list, then `exec`ing directly. There is no `env -i` process, so `execfail` sees the real target (Sol 5; Opus 8). The allowlist:
+- **derived** as the variables the pinned upstream `docker-entrypoint.sh` references, plus the image's own `ENV` (`PATH`, `PGDATA`, `PG_MAJOR`, `PG_VERSION`, `GOSU_VERSION`, `LANG`), plus `LC_*` and `TZ`, **minus a denylist**: the six key names, `PGPASSWORD`, `PGPASSFILE`, `POSTGRES_HOST_AUTH_METHOD` and every `POSTGRES_INITDB_*` (which upstream reads only at init). So upstream's `file_env` never sees a key or its source path, and never exports `POSTGRES_PASSWORD` into the postmaster's environment;
+- **guarded, both halves:** a test greps the pinned upstream script and the image's `ENV`, and requires (1) that the handover list covers every reference outside the denylist, and (2) that no denylisted name is on it. A separate guard requires the wrapper to read no name outside the input list plus the handover list;
+- **read-only names skipped:** the unset loop skips Bash's read-only names (`SHELLOPTS`, `BASHOPTS`, `BASH_VERSINFO`, `EUID`, `PPID`, `UID`), so an imported read-only variable cannot fail a correct start under `set -e` (Opus round 4, 7). Entries with names that are not identifiers never get this far: R3 refuses them;
+- **checked natively:** for direct and `*_FILE` keys, the public postmaster's `/proc/PID/environ` holds none of the denylisted names (row 39b);
 - **dropped:** everything else, including `KRB5_KTNAME` and LDAP's TLS variables. The README lists that as a contract change.
 
 ### 4.2 The override keys
@@ -215,7 +225,7 @@ local  megasamples  all       scram-sha-256
 - `encode_base64($x, '')`;
 - the output pattern-checked.
 
-**The self-test, against the server's own oracle** (Opus 6). The build sets a scratch role's password from a fixed key, with `password_encryption = 'scram-sha-256'`, and reads `rolpassword`, which carries the server's own salt. The fixture records that key and that verifier.
+**The self-test, against the server's own oracle** (Opus 6). The build runs a throwaway cluster in its own build stage (never the baked one). There it sets a scratch role's password from a fixed key, with `password_encryption = 'scram-sha-256'`, and reads `rolpassword`, which carries the server's own salt. The fixture records that key and that verifier, and the throwaway cluster is discarded with its stage. **A build assertion** requires the baked cluster's `pg_authid` to hold only the image's roles, so no scratch LOGIN role ships (Opus round 4, 10).
 - **At every start with overrides,** the routine computes the verifier from the fixture's key and the salt parsed from the recorded verifier, and must reproduce the recorded verifier exactly. Otherwise the start refuses with `internal`, naming the self-test.
 
 **The rotation session:** one `psql -X -w -v ON_ERROR_STOP=1` per role, in the background, `wait`ed. Its stdin:
@@ -268,7 +278,7 @@ ALTER ROLE "ROLE" PASSWORD 'SCRAM-SHA-256$4096:…';
   - a forced stop is `private-stop`;
   - a signal received during the start is `interrupted`, new, logged with each role's state so far (Opus 8).
 - **One refusal line.** The first failure's code, then `also:` lines.
-- **Whether a refusal was written** is recorded as a file in the private directory, not a shell variable. So a refusal inside a `$(…)` is not followed by a second `internal` line. A lint check forbids `refuse` inside a substitution all the same (Opus 8).
+- **Whether a refusal was written** is recorded as a file in this run's own state directory, made by `mktemp -d` under `/dev/shm` when the `EXIT` trap is armed, before R0, and removed by the trap. It is never in the private directory, so a refusal before the lock, after the pre-handover removal, or after an earlier failed run in the same container, is recorded for this run only (Sol round 4, 6; Opus round 4, 4). So a refusal inside a `$(…)` is not followed by a second `internal` line. A lint check forbids `refuse` inside a substitution all the same (Opus 8).
 
 ### 4.6 Authentication and health
 
@@ -351,9 +361,12 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
 
 ### 4.9 One start per volume, for the server's life
 **The lock** (Sol 2; Opus 1, 2):
-- After R5: `exec 9<"$PGDATA"`, the directory opened read-only, then `flock -x -w 30 9`.
+- After R5: `exec 9<"$PGDATA"`, the directory opened read-only, then `flock -x -w 30 -E 75 9`. `-E` gives a timeout its own exit status, so a timeout cannot be confused with an error.
 - It writes nothing to the volume and works on a read-only mount. So a refused volume stays untouched.
-- **A timeout** is `volume-busy`. **Any other `flock` failure** (`ENOLCK` on a filesystem without locks) is `internal`, naming the step.
+- **A timeout** (status 75) is `volume-busy`. **Any other `flock` failure** is `internal`, naming the step and the error.
+- **Deployment requirements** (Opus round 4, 5), listed in section 8 and the README:
+  - `PGDATA` on a filesystem with local `flock` semantics. NFSv4 emulates `flock` with POSIX locks, which need a writable descriptor, so an NFS volume needs `local_lock=flock`, or is unsupported; it fails `internal`, not `volume-busy`;
+  - a read-only root filesystem needs `--tmpfs /run`, besides upstream's `/var/run/postgresql`, because the wrapper writes `/run/megasamples-*`.
 
 **How long it is held:**
 - Descriptor 9 is inherited through the `exec`s, so the postmaster holds the lock for its whole life.
@@ -364,9 +377,11 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
 
 **The line format:** `megasamples-start: refused: CODE: SENTENCE` on stderr.
 
-**The `EXIT` trap.** For any wrapper-owned exit, it makes sure that:
-- a coded line was written, `internal` with the last step if none was;
+**The `EXIT` trap** is armed first, with this run's state directory. For any wrapper-owned exit, it makes sure that:
+- a coded line was written for **this run**, `internal` with the last step if none was;
 - the exit status is 1.
+
+It owns this run's cleanup and reporting, so a stale flag from an earlier failed run cannot suppress the current line. The informational route and the handover `exec` with the trap cleared, so a successful `--version` exits 0 and the server's own status is the container's (Sol round 4, 6; Opus round 4, 11).
 
 **The rules for codes:** codes are added, never renamed or removed. An unknown code is a refusal.
 
@@ -418,12 +433,18 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
 - the image `pg_hba.conf`;
 - the Dockerfile's policy and HBA steps.
 
-**The history check** (Sol 9; Opus 17):
-- The test walks every revision of `policy-format.json` (`git log --format=%H -- …`, then `git show REV:…`) and parses each.
-- Each pair, keyed by its marker and version, must have the same digest in every revision where it appears.
-- A pair present in any revision must be present in every later one.
+**The current-digest check** (Sol round 4, 5): the digest of the current files must equal the current pair's recorded digest, released or not. Changing a guarded file while leaving the manifest alone fails. That is its reversal.
+
+**Released** (Opus round 4, 2): each pair carries a `released` flag. It is set in the commit that merges the format to `main`, or by a release tag, and is part of section 8's format contract. Before release, a pair's digest is refreshed with the files as the build proceeds; the current-digest check keeps it honest.
+
+**The history check:**
+- The test walks `main`'s history of `policy-format.json` with `--first-parent` (`git log --first-parent --format=%H origin/main -- …`, then `git show REV:…`), parses each revision, and also checks the working tree's file.
+- From the first revision where a pair is `released`, its digest must be the same in every later revision, and the pair must stay present and `released`.
 - The test needs full history and fails on a shallow clone.
-- **Tested:** rewriting a released pair's digest fails; deleting a released pair fails; changing a digest and changing it back fails, because the middle revision differs.
+- **The three cases, tested:**
+  - an unreleased pair's digest edited: passes;
+  - a released pair edited, deleted, or changed and changed back: fails;
+  - a feature branch whose own commits carried intermediate digests, merged to `main`: passes, because `--first-parent` sees only the merge.
 
 **Also checked:**
 - the pair matches the control file, the Dockerfile's marker write and the wrapper's constant;
@@ -439,26 +460,30 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
 ### 6.4 The upgrade route (Sol 4; Opus 18)
 1. **Keep the volume.**
 2. **Start the image that made it,** with no TCP published.
-3. **Dump each sample database** as `admin`, with `pg_dump -Fc --no-acl --no-owner`.
+3. **Dump each sample database as `postgres`** (the superuser reads every object, including those a deployer role owns and has not granted to `admin`), with `pg_dump -Fc`. Ownership and grants stay in the archive (Sol round 4, 7).
 4. **Dump roles** with `pg_dumpall --roles-only --no-role-passwords`, keeping only roles the current image lacks.
 5. **Start the current image on a fresh volume,** with overrides for every privileged key.
-6. **For each database, restore a filtered list:**
+6. **Create the deployer roles** from step 4's filtered dump, as `postgres`, before any restore. They come back with no passwords (the README says so), and their memberships as dumped.
+7. **For each database, restore a filtered list, as `postgres`:**
    - `pg_restore -l` lists the archive;
-   - the list keeps only table data and objects owned by `admin` or a deployer role. It drops:
+   - the list keeps table data and objects owned by `admin` or a deployer role, with their owners and their grants **to deployer roles**. It drops:
      - the `read_policy` extension and its schema;
      - the event trigger;
      - `15-read-views.sql`'s views, which `postgres` owns;
-     - every `DEFAULT ACL` and `ACL` entry.
-   - `pg_restore -L list --no-acl --no-owner --clean --if-exists --exit-on-error` runs as `admin`, into the baked database.
-7. **Verify, before TCP is opened:**
+     - every `DEFAULT ACL` entry, and every grant to `PUBLIC`, `demo` or the image's groups, which the image's own policy sets;
+   - **the employees database** (Opus round 4, 9): its baked tables `employees`, `departments`, `dept_emp` and `dept_manager` have the dependent views of step 7's drop list. So `postgres` drops those two views first, restores, and then re-runs `15-read-views.sql`;
+   - `pg_restore -L list --clean --if-exists --exit-on-error` runs **as `postgres`**, into the baked database, so the owners in the archive are kept;
+   - a database the image lacks is created first, owned as dumped.
+8. **Verify, before TCP is opened:**
    - the healthcheck is healthy;
    - the extension is at version 2;
    - the report's exact ACL;
    - the retained edit is present;
    - `demo`'s rights equal the image's;
-   - no privileged key from before the dump signs in.
+   - no privileged key from before the dump signs in;
+   - the role-owned table keeps its owner and its grant to its deployer role.
 
-**The README gives the steps.** The rehearsal runs on both marker-1 variants: a volume from before the report, and one from before `admin`'s revoke.
+**The README gives the steps.** The rehearsal runs on both marker-1 variants (a volume from before the report, and one from before `admin`'s revoke), each with a table owned by a deployer role that has not granted `admin` read, a retained edit, and the employees database.
 
 ## 7. Health
 
@@ -476,7 +501,12 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
 | Docker's CLI | Podman's socket, the documented route | the CLI rejects `--format`. The build goes through Podman's compatible API. **Whether that API keeps `HEALTHCHECK`** is checked by the inspect test on this route. If it does not, `megasamples image` runs `podman build --format docker` against the same store, where `podman` is installed and `container_engine.podman()` says Podman answers. |
 | `podman` (or the podman-docker shim) | Podman | `--format docker` |
 
-**Detection:** `docker --version` and `docker version -f '{{.Client.Platform.Name}}'` tell the client apart.
+**Detection** (Opus round 4, 12):
+- `docker --version` first: if it names Podman, the client is Podman's (the podman-docker shim);
+- otherwise `docker version -f '{{.Client.Platform.Name}}'`. A template error, or an empty name (distribution builds of Docker's CLI), is read as "not Podman's client";
+- **when neither route keeps `HEALTHCHECK`** (the compatible API drops it and `podman` is not installed), `megasamples image` refuses to build. It never produces an image without the check.
+
+**The README** names orchestrators that ignore an image `HEALTHCHECK` (Kubernetes) and gives the probe command, as DL-122 Q5 asked (restored; Sol round 4, 9).
 
 **The inspect test** runs `megasamples image` on each route and asserts `Config.Healthcheck`.
 
@@ -494,7 +524,7 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
 | Catalog-kept session or local preloads | no | none, stated |
 | Code-loading variables other than R3's | dropped by the handover's allowlist | — |
 | A loader variable acting on Bash itself | no | stated |
-| A path replaced beneath `PGDATA` | R8 against the locked descriptor | the refusal |
+| A path replaced beneath `PGDATA` | up to R8, refused against the locked descriptor; retargeted after R8, not detected | the refusal; after R8, stated (4.1) |
 | `read_policy` on `dynamic_library_path` | refused, R11 | the refusal |
 | A retained volume `pg_hba.conf` with `trust` | not read: the pinned `hba_file` | the note in 4.6.1 |
 
@@ -512,7 +542,10 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 - **the extra HBA file's location and certification;**
 - **the dropped environment variables** (4.1) and the refused server-read ones (R3);
 - **the image `HEALTHCHECK`** and the Compose test that names it;
-- **the narrowing of `uninitialised`.**
+- **the narrowing of `uninitialised`;**
+- **the two environment lists** (the input list and the handover list with its denylist);
+- **"released"** for a format pair: set at the merge to `main` or by a release tag, immutable from then (6.2);
+- **deployment requirements:** `PGDATA` on a filesystem with local `flock` semantics (NFS needs `local_lock=flock`); a read-only root needs `--tmpfs /run`.
 
 ## 9. Coverage
 
@@ -560,7 +593,22 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 48b | (A) an extra HBA file with `trust`, `password` or `ident`, or an `include` | `hba-local` |
 | 48c | an extra HBA file with a `hostssl … scram-sha-256` rule and a `reject` | start; the rules apply (checked against `pg_hba_file_rules`) |
 | 49 | (A) a second **container** on the same volume, held at each boundary, including during the first's public run | waits, then `volume-busy`; the first's keys in force; one postmaster on the volume |
-| 50 | keys with `'`, `\`, `:`, `$`, `"`, `;`, leading and trailing spaces, and 1024 bytes | start; each confirmed |
+| 50 | keys with `'`, `\`, `:`, `$`, `"`, `;`, leading and trailing spaces, 1024 bytes, and a 1024-byte key of only `:` and `\` (the longest escaped passfile line) | start; each confirmed |
+
+**Revision 5's row changes** (Sol round 4, 8, and round 4's other findings). The inherited rows are corrected to the new order, and the fault boundaries named:
+
+| Row | Facts | Outcome |
+|---|---|---|
+| 14 | informational forms | exit 0 by its own status: the route `exec`s with the trap cleared |
+| 15b | (A) `PGPORT`, `PGOPTIONS` set; an entry named `BASH_FUNC_exec%%`; an imported read-only `SHELLOPTS` or `BASHOPTS` | the first two: `server-environment`; the invalid name: `loader-environment`; the read-only names: start (skipped by the unset loop) |
+| 17 | (A) `PG_VERSION` missing | `uninitialised`. **R5 runs before the lock, so the endpoint and the `/run` directories are not touched**: a stale endpoint from an earlier run stays, and its dead PID keeps the probe unhealthy |
+| 39 | (W) **fault boundaries:** the entrypoint made unexecutable just before the handover's `exec`; `gosu` removed by a fault layer that acts only after the private stop, so the earlier `-C` reads and the private phase still have it; the server binary made unexecutable after the private stop | the first: `handover`; the others: a dead PID in the endpoint, unhealthy |
+| 39b | overrides, direct and as `*_FILE`; then the public postmaster's `/proc/PID/environ` | none of the six key names, `PGPASSWORD`, `PGPASSFILE`, `POSTGRES_HOST_AUTH_METHOD` or any `POSTGRES_INITDB_*`. Reversal: the denylist removed from the derivation |
+| 42 | (A) adds: an NFS-like `flock` failure (a stand-in returning `EBADF`) | `internal`, naming the lock and the error; never `volume-busy` |
+| 49 | adds: `docker exec … entrypoint-wrapper.sh postgres` inside a running container | the second run waits on the lock and is refused `volume-busy`; the live server's endpoint, probe socket and private directories are untouched, and it stays healthy |
+| 51 | (W) a failed rotation, then a restart of the same container hitting an early lock error | the restart prints its own `internal` line: the earlier run's flag is gone with its state directory |
+| 52 | the private directory's files read under the real uids | the private server reads `hba.conf` and the confirmation client reads `pgpass`, as `postgres` |
+| 53 | the image build | the baked `pg_authid` holds only the image's roles; no scratch role |
 
 ### 9.3 The shim harness
 **Where it runs** (Sol 8; Opus 16):
@@ -571,7 +619,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 
 **A preflight** fails loudly if a bind mount or the uid is missing. It does not run on a bare host.
 
-**The guard:** the wrapper names no environment variable outside the allowlist of 4.1.
+**The guards** (4.1): the wrapper reads no name outside the input list plus the handover list; the handover list covers upstream's references outside the denylist and holds no denylisted name.
 
 **Each row asserts:** the code, the calls, the states, the endpoint and the processes.
 
@@ -646,3 +694,22 @@ As revision 3's section 12 (at `32664450`).
 1. **The printable-ASCII rule:** agreed by both reviewers. It is a recorded contract item (section 8).
 2. **The upstream `$1` test:** by name with the pinned `PATH`, no patch.
 3. **The lock's lifetime:** held for the server's life, with the premise corrected (4.9).
+
+## 14. Design round 4, traced (everything but the HBA contract)
+
+| Finding | Where answered |
+|---|---|
+| Sol 1, Sol 2 (P1s), Sol 9 (P3), Opus 3 (P2), Opus 8 (P3): the HBA contract | **held for the deciders** (DL-104); 4.6.1, R17 and their rows are revision 4's until they answer. Sol 9's README note on orchestrators is restored now (7.1). |
+| Opus 1; Sol 4: the handover leaking keys | 4.1's two lists, the denylist, both guards; row 39b |
+| Opus 2: the format guard unbuildable while building | 6.2's `released` flag, `--first-parent`, the three cases; section 8 |
+| Sol 3; Opus 4: the private directory's owner; the flag's home | 4.1 (owned by `postgres`, 0700); 4.5 and section 5 (`mktemp -d` per run); row 52 |
+| Sol 5: the current digest | 6.2's current-digest check and its reversal |
+| Sol 6; Opus 11: the `EXIT` trap's outcome; informational exit | section 3's first step; section 5; section 2; rows 14 and 51 |
+| Sol 7; Opus 9: deployer-owned objects; the employees views | 6.4 steps 3, 6 and 7, and the rehearsal |
+| Sol 8: inherited rows and fault boundaries | rows 17 and 39 |
+| Sol 10: a path retargeted after R8 | 4.1 and 7.3, the precise limit |
+| Opus 5: NFS and a read-only root; `flock -E` | 4.9; section 8; row 42 |
+| Opus 6: the `/run` directories under the lock | section 3; row 49 |
+| Opus 7: invalid names and read-only names | R3; 4.1's unset loop; row 15b |
+| Opus 10: no scratch login role | 4.4's throwaway cluster and build assertion; row 53 |
+| Opus 12: client detection | 7.1 |

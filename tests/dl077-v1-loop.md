@@ -644,7 +644,7 @@ They run one at a time, in the coordinator's order: WS1, WS4, WS2, WS3, WS5. Eac
 
 | # | Workstream | State |
 |---|---|---|
-| 1 | Start certification | **Design revision 4**, `docs/design/dl077-ws1-start-certification-design.md`, answering design round 3 at `32664450` (Sol 1 P1, 8 P2, 2 P3; Opus 21 P3, none fix-now), each finding traced in its section 13; the public `hba_file` pinned to an image-owned file; waiting for design round 4. No build has started. |
+| 1 | Start certification | **Design revision 5 (partial)**, `docs/design/dl077-ws1-start-certification-design.md`, answering design round 4 at `4c69e81b` (Sol 2 P1, 6 P2, 2 P3; Opus 3 P2, 9 P3) except the HBA contract, which is **with the deciders** (DL-104, security posture; brief `RCC.DataIntent/.local/megasamples-hba/brief.md`). Then the HBA part, then design round 5. No build has started. |
 | 4 | Native suite binding | waiting for WS1 |
 | 2 | Orphan scan | waiting |
 | 3 | Removal outcomes | waiting |
