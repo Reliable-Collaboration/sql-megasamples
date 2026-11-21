@@ -57,10 +57,11 @@ def override_checks(c):
         started = sh("docker", "run", "-d", "--name", NAME + "2",
                      "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
                      "--env-file", path, IMAGE)
-    container = started.stdout.strip()
-    if started.returncode != 0 or not container:
-        c.fail(f"could not start the override container: {started.stderr.strip()[:200]}")
+    if started.returncode != 0:
+        c.expect(False, f"could not start the override container: {started.stderr.strip()[:200]}")
         return
+    # The ID docker printed; the name only names this run's container once the launch succeeded with it.
+    container = started.stdout.strip() or NAME + "2"
     try:
         for _ in range(150):
             if q("SELECT 1", pw="sekret", container=container).returncode == 0:
