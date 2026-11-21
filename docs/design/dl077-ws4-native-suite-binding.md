@@ -22,9 +22,12 @@ Every later statement, over the `docker exec` route or a TCP library connection,
 
 | Fact | Values |
 |---|---|
+| S. Store | the named isolated store; another store; `DL077_ISOLATED_GRAPH` unset |
+| T. Engine | PostgreSQL; MySQL with the binary log on; MySQL with it off |
 | A. Driver | the CLI over `docker exec`; the library over TCP (`STRICT_READ_NATIVE_DRIVER=library`) |
+| P. Endpoint and proof | the published port reaches the checked instance; reaches another; nothing listens. The marker: bootstrapped and read back; bootstrap failed; absent; unreadable; stale (from an earlier run); copied with the volume |
 | B. Target at the fixture | right owner; other owner; unlabelled; absent |
-| C. Target later | the same instance; replaced under the same name; its port reused by another instance; gone |
+| C. Target later | the same instance; replaced under the same name; its port reused by another instance; gone. Timing: before the fixture, between the fixture and the first test, between two statements, during cleanup |
 | D. Statement | read; write (database or role) |
 
 The outcomes to decide are to run or stop, and where the stop is raised.
@@ -33,16 +36,23 @@ The outcomes to decide are to run or stop, and where the stop is raised.
 
 | Round | Finding | Gist | Disposition so far |
 |---|---|---|---|
+| 1 | F19 | `tests/test_strict_read_native.py` named one machine's project and paths | fixed in the suite; an input for the library helper's portability |
 | 2 | A2-2 | the suite named one host's paths and defaulted to service names | fixed |
 | 3 | S3-3 | any `dl077-` label accepted | fixed: exact owner |
 | 4 | S4-2 | the name resolved again: a replacement under the same name | fixed: ID |
 | 5 | Sol P2-1 | library TCP connections by cached port reach a replacement that reuses the port | **input** |
+| 6 | Sol P2-8 | the TCP proof and its bootstrap are outside the table; zero statements on the replacement must be witnessed | **input** (fact P; question 4; test plan) |
+| 6 | Opus 3 | the store and engine facts, the gone and store controls, marker-read faults, F19, the H-3 scope | **input** (facts S, T; question 5; test plan) |
 
 ## Questions the design must answer
+
+**Owner decision in this brief:** question 4, a security-posture question.
 
 1. What is the per-instance marker? It could be a row the fixture writes in `megasamples` with a random value, read on each connection. The fixture's own write must then not need the marker.
 2. Should the library driver connect through `docker exec` port forwarding tied to the ID, instead of a published host port?
 3. Does `docs/validation/strict_read_clients.py`, a validation tool, take the same binding, or is it retired in favour of the suite's own client?
+4. **Owner decision, security posture:** may the suite authenticate, with the fixture's credentials, to a listener it has not yet proved to be the checked instance? Proving the marker needs a connection first (Sol round 6, P2-8).
+5. **Scope:** the H-3 probe (`tests/gates/dl077_h3_interrupts.py`) binds through `tests/gates/native.py`'s manifest and exec-by-ID only, and opens no TCP connection. It is in scope for the store and owner rules (N1, N2), not for N3. The other `tests/gates` launchers are out of scope unless they gain a TCP client.
 
 ## Test plan
 
@@ -54,4 +64,8 @@ The outcomes to decide are to run or stop, and where the stop is raised.
   - a replacement that takes the same host port.
 
   Each must stop the suite before any write, shown by a probe database that was never created on the replacement.
+- **Controls for the store and for gone:** `DL077_ISOLATED_GRAPH` unset or pointing at another store, and the target removed mid-run. Each must stop before any statement.
+- **Faults at the marker:** its bootstrap fails, or its read returns absent, unreadable or stale. The suite stops before any write.
+- **Zero statements on the replacement,** including destructive and cleanup statements, witnessed by the replacement's statement log or a probe database that never appears.
+- **Portability (F19):** the library helper runs from another checkout with no host-specific path.
 - **Reversals:** the marker check removed, or names resolved again, fails a control.

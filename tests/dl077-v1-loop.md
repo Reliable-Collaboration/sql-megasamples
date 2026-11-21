@@ -4,7 +4,7 @@ This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.Data
 
 ## Stop count
 
-**0 of 2.** The loop ends after two rounds in a row with nothing to fix now outside the workstreams. Round 6 reviews:
+**0 of 2** (round 6 kept it there). The loop ends after two rounds in a row with nothing to fix now outside the workstreams. Round 6 reviews:
 - the fixes outside the workstreams;
 - a fresh pass over everything outside them;
 - the four briefs, read by Sol and Opus.
@@ -27,14 +27,14 @@ These are the reviews of `c95ee833`: Sol (`S5-*`) and Opus (`O5-*`). A hot-area 
 | ID | Sev. | Area | Disposition | Stopgap and why |
 |---|---|---|---|---|
 | S5-1 | P2 | 4 | Workstream input | **None.** It needs another task to replace the container and reuse its port mid-run, in the same isolated store. That route is constructed, the harm is test-time writes to a scratch container, and every target in this store is disposable. |
-| S5-2 | P2 | 3 | Workstream input | **None.** It needs a filesystem I/O error right after a successful unlink. The data is gone as asked; only the reply's list is wrong, and `copy show` settles it. |
-| S5-3 | P2 | 1 | Workstream input | **None.** A custom persisted socket setting makes the private start unreachable, and the start fails closed: no server accepts connections, and nothing is exposed. |
+| S5-2 | P2 | 3 | Workstream input | **None.** It needs a filesystem I/O error right after a successful unlink. The data is gone as asked, and `copy show` confirms each copy's own state. *Corrected in round 6:* `copy show` cannot reconstruct which copies the sweep removed, so the reply's lists stay wrong until WS3. **Reopens the stopgap decision:** a supported caller that acts on the sweep's lists without `copy show`, or a reproduction of the I/O error on a supported filesystem. |
+| S5-3 | P2 | 1 | Workstream input | **None.** A custom persisted socket setting makes the password setup miss the private server, and the start fails closed: the container exits and no public server starts. *Corrected in round 6:* until then the private server accepts connections on its custom local socket. No TCP address listens, and the wrapper, which is PID 1, stops it on exit. **Reopens:** a route by which another process reaches that socket in the window. |
 | S5-4 | P2 | 2 | Workstream input | **None.** It needs a permission change that leaves `base/` searchable but unlistable. The harm is an orphan's disk use going unreported. No data is touched, and the control is detective. |
 | S5-5 | P2 | 2 | Workstream input | **None.** It needs a whole-engine reset concurrent with `reset --status`. Two operator actions; the report is wrong, the data is not. |
-| S5-6 | P2 | — | **Fixed now** | — The healthcheck's ERROR every probe. It is reached on every `up`. `2c9b106` (test `bc9a900`, test-only `6d321ad`). |
+| S5-6 | P2 | — | **Fixed now** | — The healthcheck's ERROR on every probe, reached on every `up`. `2c9b106` (test `bc9a900`, test-only `6d321ad`). *Corrected in round 6:* the report was also callable by `admin`, through the default privileges; `ae61776` revokes it, so only `demo` and the superuser may call it (test `aedd5e6`). |
 | S5-7 | P3 | 1 | Workstream input | **None.** The non-root ordering fails closed. |
 | S5-8 | P3 | — | **Fixed now** | — Design 2.4 lists `NO_BACKSLASH_ESCAPES` (`93a26c6`). |
-| O5-1 | P3 | 3 | Workstream input (same class as S5-2) | **None**, as S5-2. |
+| O5-1 | P3 | 3 | Workstream input (same class as S5-2) | **None**, as S5-2, with the same round 6 correction. |
 | O5-2 | P3 | — | **Fixed now** (same as S5-6) | — |
 | O5-3 | P3 | 1 | Workstream input | **A documentation stopgap.** The README sentence was inaccurate. It now says a non-root start exits before the public server starts, and that the private password start may run first on its local socket (`93a26c6`, corrected in the next commit after a run showed that start answering). |
 | O5-4 | P3 | 1 | Workstream input | **A documentation stopgap.** The README now states that a replaced entrypoint or a wrapping command is unchecked, and that the healthcheck is then the only signal (`93a26c6`). |
@@ -65,7 +65,7 @@ These are the runs on the candidates built from `8102f35`: PostgreSQL `9fbee1a14
 
 **Passed**
 - **The TCP server suite:** PostgreSQL 23 passed, 12 skipped; MySQL 32 passed, 3 skipped in each mode; the fallback case passed.
-- **PostgreSQL suites:** policy OK; restore and the real reset OK; orphans OK; start OK, with the non-root case asserting the exit; health, 3 passed.
+- **PostgreSQL suites:** policy OK; restore and the real reset OK; orphans OK; start OK, with the non-root case asserting the exit; health, 3 passed. *Corrected in round 6:* the start suite's path-form password check could not fail. The non-root case ran first on the same volume, and the key probe used the image's trusted loopback. `b65234f` gives each credential case its own volume and probes over scram; a planted skip of the override then fails it.
 - **`test-image`, 0 failures each:** PostgreSQL `chinook`; PostgreSQL `chinook employees pubs`; MySQL in both modes.
 - **The native strict-read suite:** PostgreSQL 46 passed; MySQL 7 passed in each mode.
 
@@ -96,3 +96,36 @@ The orphan, start, MySQL-off image and native runs were first refused for memory
 - **Isolation** (`build/dl114-r1-work/isolation-check.sh`, read-only):
   - **Live deployment:** the nine live `megasamples-*` entries are unchanged by ID, state, health, start time and image.
   - **Isolated store:** the same 20 containers.
+
+
+## Round 6: stopgaps, the disagreement and its reasoning
+
+**Sol's view (round 6, P2-2 and P2-3):**
+- **S5-1:** suspend the native suite's unchecked TCP statements that can write until WS4 binds them, because a second run on the same published port could receive database and role changes.
+- **S5-4 and S5-5:** add the smallest stopgap that reports `incomplete`, because DL-119 relies on the scan to disclose a gap.
+
+**Opus's view:** no stopgap is needed. Both routes need two concurrent operator or task actions, or an unusual permission state.
+
+**The coordinator's decision: none.**
+- Both routes need a second concurrent run or operator, so they are constructed under DL-040.
+- The harm falls on a disposable test store (S5-1), or is a missed report that the README's removal route already guards: it stops creates and drops and rechecks the OID before acting (S5-4, S5-5).
+- WS2 and WS4 fix both before the merge (DL-101).
+
+**Reopens with:** a supported caller acting on the scan's `complete` without the README's route, or a native run against a store that holds a non-disposable target.
+
+## Owner questions, for the two deciders (DL-104) once the briefs pass review
+
+| # | Workstream | Question |
+|---|---|---|
+| 1 | WS1 | Is the private password start kept, or are passwords applied another way? It changes when a credential takes effect. |
+| 2 | WS1 | Are non-root starts supported (move the health passfile), or refused before any launch? |
+| 3 | WS1 | Is each start refusal's one-line message a stable, supervisor-facing code? |
+| 4 | WS1 | **On-disk format:** how are the read-policy marker and the extension's version bumped and migrated for retained volumes? |
+| 5 | WS1 | Does the image carry its own `HEALTHCHECK`, so a hand-run container has the signal? |
+| 6 | WS1 | What may a failed start leave behind after a password change, and must it roll the change back? |
+| 7 | WS2 | Does `reset --status` exit non-zero when the scan is incomplete? |
+| 8 | WS2 | Does `up` block or fail on an incomplete scan, and are partial warnings shown? |
+| 9 | WS2 | Is an invalid database (an interrupted drop) reported, and how? |
+| 10 | WS3 | What is the result field for an unsettled cleanup step: `ledger: unsettled`, or one that names the step? |
+| 11 | WS3 | Is there a third per-copy outcome (unknown or partial), and a list for the copies a stopped sweep never reached? Any change to a public exit or to `removed`/`kept`. |
+| 12 | WS4 | **Security posture:** may the suite authenticate to a listener it has not yet proved to be the checked instance? |

@@ -16,7 +16,7 @@ Anything else is refused before any connection is accepted, or named in the READ
 - **I1. Same server.** Every launch the wrapper makes or hands over, whether the private password start or the public start, uses the directory and preload list it certified. Each is read from that launch's own arguments, files and environment.
 - **I2. Certified before accepting.** No launch accepts a connection, on a socket or over TCP, before I1 holds for it.
 - **I3. Private means private.** The password setup reaches the server it started, by a socket only it and `postgres` can use, and stops that server on every exit path.
-- **I4. Refusal is visible.** A refusal exits non-zero, before any password change or catalog write, and logs one line saying which rule refused.
+- **I4. Refusal is visible, and a failure leaves a stated state.** A refusal exits non-zero, before any password change or catalog write, and logs one line saying which rule refused. A failure after a password change (passfile write, handover, public start) leaves a state the README states: which keys are then in force, and that no server listens.
 - **I5. What is unchecked is stated.** A route the wrapper cannot see is named in the README together with its signal:
   - an entrypoint replaced;
   - a wrapping command;
@@ -30,14 +30,19 @@ These are the facts behaviour depends on. The design fills in the outcome of eve
 | Fact | Values |
 |---|---|
 | A. Who starts | root; postgres (`--user`); another uid |
-| B. Command form | `postgres`; this image's postgres by path; another binary named `postgres`; a wrapping command (`gosu …`, `sh -c …`); `-*` options only |
+| B. Command form | `postgres`; this image's postgres by path; another binary named `postgres`; a wrapping command (`gosu …`, `sh -c …`); `-*` options only; the server's other modes given by the user (`--single`, `--check`, `-C`, `--version`, `--describe-config`) |
 | C. Data directory source | `PGDATA` only; `-D` or `--pgdata`; `-c data_directory` (any case or spelling); `config_file` naming another file; `include` directives |
 | D. Preload source | the baked `postgresql.conf`; `postgresql.auto.conf` (`ALTER SYSTEM`); `-c` on the command line; an included file |
-| E. Preload value | contains `read_policy`; lacks it; quoted entries; empty |
+| E. Preload value | contains `read_policy` alone; with other libraries (one that replaces `ProcessUtility_hook` without chaining it); lacks it; quoted entries; empty |
+| E2. Library resolution | `$libdir/read_policy`; another `read_policy` reached by `dynamic_library_path` |
 | F. Password overrides | none; some; all |
 | G. Socket settings | default; custom `unix_socket_directories` (persisted or on the command line); `listen_addresses` |
-| H. Volume | marked, owned by postgres; marked, other owner; unmarked (pre-policy); `PG_VERSION` missing |
+| H. Volume | marked by this build, owned by postgres; marked, other owner; **marked by another build of this image** (same marker `1`, a different extension script: round 5's image lacks the loaded report); unmarked (pre-policy); `PG_VERSION` missing |
 | I. Entrypoint | the image's; replaced (`--entrypoint`) |
+| J. The client the wrapper runs | effective user; the socket it reaches; the authentication it gets |
+| K. `/run` | writable by the wrapper's user; not (non-root) |
+| L. Each password change | applied; refused; the connection lost mid-way (some keys changed, some not) |
+| M. Where the healthcheck is defined | the generated Compose file; none (a hand-run container); an image `HEALTHCHECK` (not today) |
 
 Required outcomes to decide, row by row:
 - **start** with the hook;
@@ -65,25 +70,41 @@ For example:
 | 5 | Opus P3-3 | the README's non-root sentence | stopgap: wording corrected |
 | 5 | Opus P3-4 | bypass routes not stated | stopgap: one README sentence |
 | 5 | Sol P2-6, Opus P3-2 | healthcheck ERROR every probe | fixed outside the workstream |
+| 6 | Sol P2-5 | failures after a password change are outside the plan | **input** (I4, facts J–L, question 9) |
+| 6 | Sol P2-6, Opus 1 | the start suite's shared volume and trusted-loopback probe masked the path-form check | fixed in the tests; the plan requires a fresh volume per row |
+| 6 | Opus 4 | facts missing: another build's volume, healthcheck location, `dynamic_library_path`, other libraries, server modes | **input** (facts B, E, E2, H, M; questions 7, 8, 10, 11) |
+| 6 | Opus P3-2 | the extension script changed without a version or marker bump | **input** (question 7) |
 
 ## Questions the design must answer
+
+**Owner decisions in this brief:** questions 1, 2, 7, 8 and 9.
 
 1. Is the private password start kept at all, or are passwords applied another way (for example by the public server's first boot, before it listens)? **Owner decision:** it changes when a credential takes effect.
 2. Are non-root starts supported (move the health passfile), or refused before any launch? **Owner decision:** it is a supported-deployment question.
 3. Does the private start take the public launch's arguments verbatim, with an image-chosen socket directory, or is any argument that changes sockets or data refused when overrides are set?
 4. Which unchecked routes are stated, and which are refused because they are detectable? A wrapping command whose argv contains this image's postgres could be refused.
 5. Is the `PG_VERSION`-missing path (upstream `initdb`) refused explicitly?
-6. What exactly does the one-line refusal say for each rule, and is it a stable code a supervisor can match?
+6. What exactly does the one-line refusal say for each rule, and is it a stable code a supervisor can match? **Owner decision** once it is a supervisor-facing contract (Sol round 6, P2-5).
+7. **Owner decision, an on-disk format:** how the read-policy marker and the extension's version are bumped and migrated for retained volumes. Today the marker stays `1` while the version-1 script changed in round 5, so a volume from an earlier build certifies and then fails every probe (Opus round 6, 4; P3-2).
+8. **Owner decision:** whether the image carries its own `HEALTHCHECK`, so a hand-run container has the signal too (Opus round 6, 4; Sol round 6, P3-9).
+9. **Owner decision:** what a failed start may leave behind. That is the keys in force after a failure that follows a password change, and whether such a failure must roll the change back (Sol round 6, P2-5).
+10. Is a later preload library that replaces the utility hook without chaining detectable (for example, the report checks that the hook is still installed), or is it a stated limit?
+11. Is a library reached through `dynamic_library_path` detected by the report? Opus's reading says it is, because the call loads `$libdir/read_policy` and answers false. That must be confirmed by test, and then moved from stated to detected.
 
 ## Test plan
 
+- **A fresh volume per row,** and a row whose outcome is a credential checks keys over password-authenticated TCP, never the image's trusted loopback. Round 6 showed both maskings in the round 4 suite.
 - **A table test over every row of the decision table:** a real container per row, the outcome asserted. A start must accept connections with `megasamples_policy_loaded()` true and the namespace owner's out-of-namespace `CREATE DATABASE` refused. A refusal must exit before any password change, checked by the old key still working. An unchecked route must be named in the README.
   - The rows are generated from the facts, so a new fact adds rows, not one case.
 - **Fault planting at each step of the wrapper:**
+  - the ownership repair;
   - the `-C` reads failing;
+  - the marker read;
   - the private start failing to start;
-  - the password SQL failing;
-  - the private stop failing.
+  - the password SQL failing, and failing after some keys changed;
+  - the private stop failing;
+  - the health passfile write;
+  - the handover `exec`.
 
   After each, no server remains and the exit is non-zero.
 - **The private socket:** a custom persisted `unix_socket_directories`, with an assertion that the password change landed on the private server and that nothing listened on the custom socket.

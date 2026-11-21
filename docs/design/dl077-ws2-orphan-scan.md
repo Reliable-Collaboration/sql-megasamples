@@ -10,7 +10,7 @@ The scan answers `complete` only when it has observed, from one data directory o
 
 ## Invariants
 
-- **O1. One instance.** Every observation in one scan comes from the same container instance and the same volume. A replacement during the scan makes it `incomplete`.
+- **O1. One instance.** Every observation in one scan comes from the same container instance, the same server process and the same volume. A replacement or a restart during the scan, even under the same container ID, makes it `incomplete`.
 - **O2. Every location inspected or reported.** Each location PostgreSQL could place a database directory in is either listed successfully or reported unreadable:
   - `base/`;
   - every tablespace in the catalog;
@@ -25,13 +25,15 @@ The scan answers `complete` only when it has observed, from one data directory o
 
 | Fact | Values |
 |---|---|
-| A. Container | the same instance throughout; replaced between reads; gone |
+| A. Container | the same instance throughout; replaced between reads; restarted under the same ID (a new postmaster); gone |
 | B. `base/` | listable; searchable but not listable; missing |
 | C. Each entry under `base/` | a numeric directory; non-numeric; removed during the scan; present but unmeasurable |
+| D0. `pg_tblspc` itself | listable; not listable |
 | D. Each `pg_tblspc` link | resolves and is listable; dangling; resolves, not listable; its `PG_*` directory missing or unreadable |
 | E. Each catalogued tablespace | has a link; has none |
-| F. Catalog read | succeeds; fails; returns nothing |
-| G. A database | created or dropped during the scan; neither |
+| E2. Each `pg_tblspc` link | has a catalog row; has none |
+| F. Each observation (listing, `pg_database`, `pg_tablespace`) | succeeds; fails; returns nothing; returns malformed output; times out (300 s for the listing) |
+| G. A database | created or dropped during the scan; **invalid after an interrupted drop** (PostgreSQL 15+: the row stays with `datconnlimit = -2`, its directory partly removed); neither |
 
 The outcomes to decide are `complete` with these warnings, or `incomplete` with this reason.
 
@@ -44,13 +46,17 @@ The outcomes to decide are `complete` with these warnings, or `incomplete` with 
 | 4 | O4-3 | the concurrent-drop test matched text | fixed: behaviour test |
 | 5 | Sol P2-4 | `base/` searchable but unreadable: no rows, and `pg_default` credited | **input** |
 | 5 | Sol P2-5 | the container replaced between the listing and the catalog: two volumes mixed | **input** |
+| 6 | Sol P2-7 | a restart under the same container ID; `pg_tblspc` not listable; malformed or empty results per observation; faults between reads | **input** (facts A, D0, F; question 6; test plan) |
+| 6 | Opus 5 | an invalid database after an interrupted drop; a link with no catalog row; timeouts; faults at each read | **input** (facts E2, F, G; question 5; test plan) |
 
 ## Questions the design must answer
 
 1. How is the instance pinned? By container ID, with a check that the ID still runs after the last read, or with an in-container marker the scan reads first and last?
 2. Is the listing done by one script that reports each location's own status, so that Python credits only what was positively listed?
 3. Should `reset --status` exit non-zero when the scan is `incomplete`? It is 0 today, per design 3.5a. **Owner decision:** it is a contract for supervisors.
-4. Does `up` ever block or fail on an incomplete scan, or only warn? It only warns today.
+4. **Owner decision:** does `up` ever block or fail on an incomplete scan, or only warn? Are partial warnings shown when incomplete? It only warns today, and an incomplete scan shows no directory.
+5. **Owner decision:** is an invalid database (an interrupted drop) reported, and how: as its own warning code, as an orphan, or not at all? It is the drop-side twin of DL-119's create window.
+6. How does a restart under the same container ID get detected? By the postmaster start time (`pg_postmaster_start_time()`) read first and last, or by the container's start time?
 
 ## Test plan
 
@@ -60,4 +66,6 @@ The outcomes to decide are `complete` with these warnings, or `incomplete` with 
   - a tablespace made unreadable;
   - a dangling link;
   - a container replaced between reads, by stopping it and starting another under the same name, via a fault hook between the listing and the catalog read.
+- **Fault planting at each observation step,** and between every pair of reads and at the final identity check: failure, empty output, malformed output and timeout. Both CLI outputs are asserted (`up`'s warning and `reset --status`'s document).
+- **Carried regressions:** S2-3 and DL-119's 480-attempt run, and the S3-7/S4-9 accounting limit of the H-3 probe's control.
 - **Reversals:** each crediting rule removed fails a row.
