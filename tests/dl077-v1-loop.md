@@ -637,3 +637,15 @@ These were focused runs, one at a time, each after the 15 GiB check.
 ## After the loop
 
 The owner questions are in `docs/design/dl077-v1-owner-questions.md`, an options paper for the two deciders (DL-104): each question with its facts, two to four options and their consequences, and a recommendation. The workstreams start after their answers, one at a time, each designed, built test-first, and reviewed to two clean rounds, before the merge (DL-101).
+
+## The workstreams after the loop
+
+They run one at a time, in the coordinator's order: WS1, WS4, WS2, WS3, WS5. Each is designed from its brief and DL-122, reviewed as a design by Sol and Opus, built test-first, and reviewed to two clean rounds.
+
+| # | Workstream | State |
+|---|---|---|
+| 1 | Start certification | **Design written**, `docs/design/dl077-ws1-start-certification-design.md`, waiting for its design review. No build has started. |
+| 4 | Native suite binding | waiting for WS1 |
+| 2 | Orphan scan | waiting |
+| 3 | Removal outcomes | waiting |
+| 5 | Container and volume lifecycle (interim until slice 3) | waiting |

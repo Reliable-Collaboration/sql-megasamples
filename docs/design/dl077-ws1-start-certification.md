@@ -1,6 +1,6 @@
 # Workstream 1: PostgreSQL start certification
 
-**Status:** brief, not yet built. The area went hot in review rounds 3, 4 and 5 (`tests/dl077-v1-loop.md`). This brief comes before any further patch. It covers what the PostgreSQL image checks before, during and after it lets a server accept connections.
+**Status:** brief; its design is `dl077-ws1-start-certification-design.md` (DL-122 applied), for review before any build. Not yet built. The area went hot in review rounds 3, 4 and 5 (`tests/dl077-v1-loop.md`). This brief comes before any further patch. It covers what the PostgreSQL image checks before, during and after it lets a server accept connections.
 
 ## The rule to be designed whole
 
