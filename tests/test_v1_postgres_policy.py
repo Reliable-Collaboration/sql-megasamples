@@ -157,6 +157,12 @@ class PostgresPolicyTests(unittest.TestCase):
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("not currently accepting connections", result.stderr)
 
+    def test_the_running_server_reports_the_policy_library_loaded(self):
+        for user in ("postgres", "demo"):
+            with self.subTest(user=user):
+                self.assertEqual(self.accept("SELECT current_setting('read_policy.loaded')", user, "megasamples"), "on")
+        self.refuse("SET read_policy.loaded = off", "postgres", code="55P02")
+
     def test_fresh_roles_get_expression_and_snapshot_floor(self):
         for user in ("v1_readonly", "v1_copier", "v1_other", "demo"):
             with self.subTest(user=user):
