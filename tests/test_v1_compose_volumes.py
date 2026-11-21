@@ -225,9 +225,10 @@ def test_up_refuses_to_recreate_what_compose_cannot_resolve(daemon, capsys):
 
 def test_down_warns_before_discarding_working_data_and_copies(daemon, capsys, monkeypatch):
     d = daemon()
-    fake = subprocess.run
+    fake, printed = subprocess.run, []
     def checked(*a, **kw):
-        out = capsys.readouterr().out
+        printed.append(capsys.readouterr().out)
+        out = "".join(printed)
         assert "working data" in out and "cop" in out, "down discarded before its warning"
         return fake(*a, **kw)
     monkeypatch.setattr(subprocess, "run", checked)
