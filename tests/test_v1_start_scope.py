@@ -91,13 +91,13 @@ class ScopeTests(unittest.TestCase):
     def test_a_failed_removal_fails_the_test(self):
         result = outcome(lambda scope: scope.run("c", "image"), FakePodman(fail_rm=True))
         self.assertFalse(result.wasSuccessful())
-        self.assertIn("teardown", "".join(text for _, text in result.errors))
+        self.assertIn("teardown", "".join(text for _, text in result.failures + result.errors))
 
     def test_an_anonymous_volume_left_behind_fails_the_test(self):
         # rm without its volumes (the round 7 leak) exits 0; the store's count still shows it.
         result = outcome(lambda scope: scope.run("c", "image"), FakePodman(keep_anonymous=True))
         self.assertFalse(result.wasSuccessful())
-        self.assertIn("volume count", "".join(text for _, text in result.errors))
+        self.assertIn("volume count", "".join(text for _, text in result.failures + result.errors))
 
     def test_the_body_failure_is_reported_beside_a_teardown_failure(self):
         def body(scope):
