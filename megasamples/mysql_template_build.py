@@ -52,7 +52,11 @@ def available_objects(database):
             dependencies[view].add(referenced)
     events = query("SELECT EVENT_NAME FROM information_schema.EVENTS WHERE EVENT_SCHEMA=? ORDER BY EVENT_NAME",
                    (database,))
-    objects = [query(f"SHOW CREATE PROCEDURE {qualify(database, name)}")[0][2] for (name,) in routines]
+    # A stored program keeps the SQL mode it was created under; record it with the definition.
+    objects = []
+    for (name,) in routines:
+        shown = query(f"SHOW CREATE PROCEDURE {qualify(database, name)}")[0]
+        objects.append({"ddl": shown[2], "sql_mode": shown[1]})
     while dependencies:
         ready = sorted(view for view, inputs in dependencies.items() if not inputs)
         if not ready:
@@ -62,7 +66,9 @@ def available_objects(database):
             dependencies.pop(view)
         for inputs in dependencies.values():
             inputs.difference_update(ready)
-    objects.extend(query(f"SHOW CREATE EVENT {qualify(database, name)}")[0][3] for (name,) in events)
+    for (name,) in events:
+        shown = query(f"SHOW CREATE EVENT {qualify(database, name)}")[0]
+        objects.append({"ddl": shown[3], "sql_mode": shown[1]})
     return definitions, objects
 
 

@@ -49,18 +49,25 @@ def replay(run, query, metadata, source, target, *, remove_definer):
     modes = old_mode.split(",") if old_mode else []
     if "NO_AUTO_VALUE_ON_ZERO" not in modes:
         modes.append("NO_AUTO_VALUE_ON_ZERO")
-    run(f"SET SESSION foreign_key_checks=0, sql_mode='{','.join(modes)}'")
+    run("SET SESSION foreign_key_checks=0")
     try:
         run(f"USE {quote(target)}")
         for table in metadata["tables"]:
             run(definition(table["ddl"], metadata["database"], target, remove_definer))
+        # Only the row copy needs an explicit AUTO_INCREMENT zero kept; no definition is made under it.
+        run(f"SET SESSION sql_mode='{','.join(modes)}'")
         for table in metadata["tables"]:
             columns = ", ".join(map(quote, table["columns"]))
             src = qualify(source, table["name"])
             dst = qualify(target, table["name"])
             run(f"INSERT INTO {dst} ({columns}) SELECT {columns} FROM {src}")
-        for ddl in metadata["objects"]:
+        run(f"SET SESSION sql_mode='{old_mode}'")
+        for item in metadata["objects"]:
+            # A view stores no SQL mode; a stored program is made under the one its source had.
+            ddl, mode = (item["ddl"], item["sql_mode"]) if isinstance(item, dict) else (item, old_mode)
+            run("SET SESSION sql_mode='" + mode.replace("'", "''") + "'")
             run(definition(ddl, metadata["database"], target, remove_definer))
+        run(f"SET SESSION sql_mode='{old_mode}'")
         for table in metadata["tables"]:
             destination = qualify(target, table["name"])
             count = query(f"SELECT COUNT(*) FROM {destination}")[0][0]
