@@ -220,3 +220,16 @@ def test_up_refuses_to_recreate_what_compose_cannot_resolve(daemon, capsys):
     assert not [c for c in d.calls if "--force-recreate" in c]
     assert {name: c["anonymous"] for name, c in d.containers.items()} == before
     assert "could not resolve" in capsys.readouterr().err
+
+
+
+def test_down_warns_before_discarding_working_data_and_copies(daemon, capsys, monkeypatch):
+    d = daemon()
+    fake = subprocess.run
+    def checked(*a, **kw):
+        out = capsys.readouterr().out
+        assert "working data" in out and "cop" in out, "down discarded before its warning"
+        return fake(*a, **kw)
+    monkeypatch.setattr(subprocess, "run", checked)
+    assert job.down([]) == 0
+    assert d.containers == {}
