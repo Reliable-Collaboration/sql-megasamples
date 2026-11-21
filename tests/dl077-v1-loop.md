@@ -1,10 +1,10 @@
 # Version 1, slices 1 and 2: review loop status
 
-This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5, 6 and 7 are below.
+This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5 to 8 are below.
 
 ## Stop count
 
-**0 of 2** (rounds 6 and 7 kept it there). The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
+**0 of 2** (rounds 6, 7 and 8 kept it there). The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
 
 **Scope from round 8, the coordinator's decision:** a workstream brief is an input to that workstream's own design, which is reviewed in its own loop after this one ends. So findings about a brief's content are recorded there as that workstream's inputs, not fixed now here. That covers its facts, its test plan's coverage and its questions.
 
@@ -60,6 +60,7 @@ Each row can wait: there is no realistic route to harm, or the harm is stated as
 | MySQL `character_set_client` and `collation_connection` not restored | round 3, O3-4 | A stated limit in design 2.4. |
 | The H-3 probe's client-only accounting has no reversal | round 4, S4-9 | A recorded limit of the control. |
 | `test_quiescence_gate` unrelated-holder case fails, also at `e61335f` | rounds 1–5 | A baseline failure; its cause is not isolated. |
+| MySQL `/*+ */` optimizer hints are treated as comments, so a schema name inside one is not rewritten | round 8, S8-8's class check | Not checked on a server. A hint names tables and query blocks, and no shipped template carries one. Reopens if a template does. |
 | Design 8.3's claims not yet made | rounds 2–5 | T-11 `verify`, T-15 and the kill points, the full disk, and the wider account matrix. The merge waits for each. |
 
 ## Round 5's runs
@@ -208,22 +209,55 @@ These are the reviews of `c0179c8d`: Sol (`S7-*`) and Opus (`O7-*`). Findings ab
 | S7-2 | P2 | 2 | Workstream input: the directory-to-catalog match | WS2 (round 7 rows) |
 | S7-3 | P2 | 3 | Workstream input: rollback and cleanup steps; unsent versus skipped | WS3 (round 7 rows) |
 | S7-4 | P2 | 4 | Workstream input: the proof and its oracle | WS4 (round 7 rows) |
-| S7-5 | P2 | — | **Fixed now**: the published inventories carry P-8's routine and P-3's reasons; P-8 renders in its table | `1cd35b8` (test), `644d949` |
+| S7-5 | P2 | — | **Fixed in round 8**, not round 7: `644d949` carried P-8 but overwrote PR #14's evidence and left the reconciliation record stale (S8-1, O8-1). PR #14's inventory is restored, v1's is published under its own name, and IA-01 is reconciled by signature | `1cd35b8`, `644d949`; round 8: `9fd97e8` (test), `66bda86` |
 | S7-6 | P2 | — | **Fixed now**: the strict-read guide's MySQL grants, and three more drifts found by checking it against the image | `ffddb0c` (test), `319294d`, `e5d6f23` |
-| S7-7 | P3 | 1 | Workstream input for retained volumes (WS1 question 7). **Fixed now** for the rights test's scope: every role, every database, and restored databases | `97cbd24`; WS1 |
+| S7-7 | P3 | 1 | Workstream input for retained volumes (WS1 question 7). **Fixed now** for the rights test's scope: every non-built-in role (outside `pg_*`), in every connectable database of the image tested and in the databases the restore matrix restores (S8-3) | `97cbd24`; WS1 |
 | S7-8 | P3 | — | **Fixed now**: start-test assertions witness their messages; a namespace positive control | `6ed9e2b` |
-| S7-9 | P3 | — | **Fixed now**: teardown inside the cleanup scope, and checked | `6ed9e2b` |
+| S7-9 | P3 | — | **Fixed in round 7 for one test only**: `test_round_four_start_routes` and the two health tests. The other two start tests, a failure before the scope, and anonymous volumes were fixed in round 8 (O8-P3-2, S8-4) | `6ed9e2b`; round 8: `d8b2616`, `f23ec19` |
 | S7-10 | P3 | — | **Fixed now**: the verification-scope wording and the bypass disposition | this file |
 | O7-1 | P2 | 1, 3 | Workstream input: the coverage criterion | WS1, WS3 (round 7 rows) |
 | O7-2 | P2 | 4 | Workstream input: the table spanning S, T, A, P, B, C and D | WS4 (round 7 rows) |
 | O7-3 | P2 | — | **Fixed now**: this round 6 table, the stale header | this file |
 | O7-P3-1 | P3 | — | **Fixed now**, the same as S7-7's rights scope | `97cbd24` |
-| O7-P3-2 | P3 | — | **Fixed now**, the same as S7-5 | `644d949` |
+| O7-P3-2 | P3 | — | **Fixed in round 8**, the same as S7-5 | `66bda86` |
 | O7-P3-3 | P3 | — | **Fixed now**, the same as S7-8, with the new probe's reversal recorded | `6ed9e2b` |
 | O7-P3-4 | P3 | 1 | Workstream input: question 6 in the owner list | WS1 |
 | O7-P3-5 | P3 | 3 | Workstream input: fact E as an owner category | WS3 (round 7 rows) |
 | O7-P3-6 | P3 | — | **Fixed now**: the header, and the README's non-root clause | this file, `fcc122b` |
 | O7-P3-7 | P3 | 1 | Workstream input, the same as S7-7's retained volumes | WS1, question 7 |
+
+## Round 8: each finding's disposition
+
+These are the reviews of `9fa27c3a`: Sol (`S8-*`) and Opus (`O8-*`). Both found the same P2.
+
+| ID | Sev. | Area | Disposition | Commit or brief |
+|---|---|---|---|---|
+| S8-1, O8-1 | P2 | — | **Fixed now.** PR #14's inventory and script are restored at their paths, byte for byte, so its evidence page, its links, its exported receipt and the canary receipt are true again. v1's set is published as `dl-077-v1-public-routines.{json,md}` only. The IA-01 comparison is redone signature by signature: four additions, none removed, the fourth a direct grant to `demo` outside `PUBLIC`. "A fresh login" is corrected | `9fd97e8` (test), `66bda86`; `tests/dl077-v1-read-profile.md` |
+| S8-2 | P3 | — | **Fixed now**: the guard regenerates every published row from the shared reasons, and the generator's refusals are tested with fixture rows | `9fd97e8`, `66bda86` |
+| S8-3 | P3 | — | **Fixed now**: the guide test takes MySQL's privileges and scopes from the grant generator; the guide names the superuser's access to the report; S7-7's record is scoped | `9439d9b` (test), `c273bb8`; this file |
+| S8-4 | P3 | — | **Fixed now**, with O8-P3-2: one labeled cleanup scope for all three start tests | `d8b2616` (test), `4c4461a`, `f23ec19` |
+| S8-5 | P3 | — | **Fixed now**: SQLSTATE `42501` and the hook's own message, with fresh names | `a4f430e` (test), `f23ec19` |
+| S8-6 | P3 | 1, 2, 3 | **Fixed now** (faithfulness): WS2's S4 and S2-3 rows; WS3's A4/F6 removal part; WS1's fact H names the pre-report and pre-revoke builds | `57cb0ec` |
+| S8-7 | P3 | — | **Fixed now**: the README's non-root sequence is qualified | `f28022d` |
+| S8-8 | P3 | — | **Fixed now**: the replay tokenizer follows MySQL's lexical rules, checked by class and on a MySQL server | `bf104ff` (test), `8cf268f` |
+| O8-P3-1 | P3 | — | **Fixed now**: the native suite asserts the published inventory is `demo`'s executable set in every database | `f2b33b9` |
+| O8-P3-2 | P3 | — | **Fixed now**, the same as S8-4 | `f23ec19` |
+| O8-P3-3 | P3 | 1, 2 | **Fixed now** (faithfulness): WS1's round 7 Sol 1 row says where each input is carried, and fact L, the outcomes and question 9 carry them; WS2's S4 row | `57cb0ec` |
+| O8-P3-4 | P3 | — | **Fixed now**: the MySQL init comment, `ARCHITECTURE.md`, and the unused variable (gone with PR #14's script restored) | `f28022d`, `66bda86` |
+
+No finding was deferred. One note from S8-8's class check went to the backlog: MySQL optimizer hints.
+
+## Round 8: the class check for overwritten evidence
+
+The question: did any version 1 change overwrite an evidence file, or make one untrue? Two comparisons were made:
+- **Against `e61335f`**, `main`'s merge of PR #16. No file under `docs/` or any record in `tests/` that `e61335f` has was modified or deleted since. The files changed since are code, tests, `README.md`, `.env.example`, `.dockerignore` and `uv.lock`.
+- **Against PR #14's head, `2879fc472ad1`**, from which this branch carries PR #14's evidence. The commits after it that are in neither `e61335f` nor PR #14 changed:
+  - **Evidence files:** `strict-read-executable-routines.{json,md}` and `strict-read-inventory.py`, by `644d949`. These were restored in `66bda86`.
+  - **Living documents and code:** twelve files the canary receipt hashed. They are the strict-read guide, `.dockerignore`, and the PostgreSQL Dockerfile, read profile and routine names. Also the read_policy extension's SQL, C and control files, both image tests, the MySQL image startup test, and the native suite. Their receipt hashes describe `2879fc472ad1`. The read-profile record and the guide say so, and `tests/test_v1_public_routines.py` names the twelve and requires every other file the receipt hashed to match it.
+  - **v1's own records and design:** the design, the briefs, the gates document, the loop and review records, and `dl-077-v1-public-routines.json`. Their changes are this branch's own.
+- **Other evidence pages** that differ from PR #14's head: `credential-prerequisite-evidence.md`, `live-upgrade-runbook.md` and `lts-upgrade-evidence.md`. Each came from `main`'s merges, not from a version 1 commit.
+
+The result: `644d949` was the only overwrite.
 
 ## Round 7's runs
 
