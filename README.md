@@ -164,6 +164,10 @@ PostgreSQL `demo` cannot modify the persistent sample tables in the tested DML/D
 Its read scope includes tables `admin` later creates in a sample database's `public` schema.
 It has no `TEMPORARY` privilege, cannot create large objects, and can execute only allowlisted routines.
 
+**The PostgreSQL `copy` client needs libpq.** The package installs the pure Psycopg distribution,
+which loads the system's libpq (for example Debian's `libpq5`). Without it, `megasamples copy … postgres`
+exits 3 with the code `client-library` and contacts no server.
+
 **A stated limit of PostgreSQL copies (DL-113, DL-119).** The image's hook does all of its own work
 before `CREATE DATABASE` copies any file, and PostgreSQL removes a half-made copy's files when the
 copy itself fails. It does not clean up after anything that ends the transaction between the file copy
