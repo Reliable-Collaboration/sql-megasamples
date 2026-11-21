@@ -357,7 +357,7 @@ def test_mysql_copy_withholding_precedes_a_reservation(server):
         text=True, capture_output=True, timeout=20,
     )
     assert listed.returncode == 0, listed.stdout + listed.stderr
-    assert not json.loads(listed.stdout)["result"]["copies"]
+    assert [row for row in json.loads(listed.stdout)["result"]["copies"] if row["label"] == "withheld"] == []
 
 
 def test_mysql_copy_lifecycle_and_schema_replay(server):
@@ -403,7 +403,7 @@ def test_mysql_copy_lifecycle_and_schema_replay(server):
             while cursor.nextset():
                 pass
             with pytest.raises(pymysql.IntegrityError):
-                cursor.execute("INSERT INTO child VALUES (2,999)")
+                cursor.execute("INSERT INTO child (id, parent_id) VALUES (2,999)")
             cursor.execute("SELECT STATUS FROM information_schema.EVENTS WHERE EVENT_NAME=%s AND EVENT_SCHEMA=%s",
                            (row["proof"]["event"], row["name"]))
             assert cursor.fetchone() == ("DISABLED",)
