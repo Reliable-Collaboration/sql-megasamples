@@ -296,3 +296,29 @@ No large container batch was run: DataIntent's gateway `--all` comes first, and 
 - **Isolation** (`build/dl114-r1-work/isolation-check.sh`, read-only):
   - **Live deployment:** the nine live `megasamples-*` entries are unchanged.
   - **Isolated store:** the same 20 containers.
+
+## Round 8's runs
+
+No large container batch was run: DataIntent's gateway `--all` comes first, and any batch is cleared with the coordinator. The container runs were focused, one container at a time, on `cf7325f4f9be` and `ce3b539fb522` (PostgreSQL, built from `ae61776`; no PostgreSQL engine file changed since) and `87dd365119ac` (MySQL). Logs are under `build/dl114-r1-work/`.
+
+**Passed**
+- **The v1 inventory generator** on `cf7325f4f9be`: 1,667 signatures, identical in 6 databases (11:57:55, `inventory-r8c.log`).
+- **The native PostgreSQL suite:** 52 passed, 3 deselected (`native-r8-pg-full.log`). The new inventory test passed in all 6 databases; its reversal (the inventory without `megasamples_policy_loaded()`) failed in all 6.
+- **The start suite** on `ce3b539fb522`: 3 tests OK, the store's 37 volumes unchanged (`start-r8-start.log`). Reversal: with anonymous probe volumes and `rm -f`, the teardown failed with "store volume count 37 before, 45 after" (`start-r8-scope-reversal.log`). The 8 volumes were checked unused and removed.
+- **MySQL's lexical rules on a server** (`87dd365119ac`, the client sending comments): `SELECT 1--1` is 2; `--` before a space, tab, CR or `\x01` is a comment; `#` is a comment; `/*! */` and `/*!50001 */` are code; `x$y` and `ésource` are identifiers; backslash escapes and doubled quotes hold (`mysql-lexer-r8.log`, `mysql-lexer-r8b.log`).
+- **Host tests:** inventory 9, tokenizer 26, cleanup scope 11, documentation 10, each with its reversals as recorded in the commits.
+
+**Failed**
+- **The host-only full suite:** 2 failed, 1,126 passed, 344 skipped (`pytest-r8.log`, 12:11:09). These are the two baseline failures: `test_quiescence_gate`'s unrelated holder and `test_rollback_preparation`'s whole rollback.
+- **Setup, before the green runs:** the generator refused twice because its manifest was not private (exit 1, nothing written). The first native run of the new test failed in all 6 databases on an ambiguous `text || "char"` in its own query; the query was corrected before the green run.
+
+**Not run**
+- The MySQL suites and images, and the TCP copy suite. The tokenizer change (`megasamples/mysql_templates.py`) is exercised natively only by the MySQL copy suite. **That needs a large batch, cleared with the coordinator first.**
+- The health, policy and restore suites, and `test-image`: no image, policy or reset code changed.
+
+## Round 8: restoration and isolation
+
+- **Retained isolated stack.** The fingerprint ledgers (phase `r8-final`, 12:11:46 to 12:17:16) are byte-identical to build 1's `after` ledgers: PostgreSQL `ee0f1a8b…711e`, MySQL `a5c0466a…a72f`, SQLite `5b0c2768…da98`.
+- **Removed:** every task container this round started, and the 8 volumes of the planted leak. The isolated socket service is stopped.
+- **Isolation** (`isolation-check.sh`, read-only): the nine live `megasamples-*` entries are unchanged by ID, state and health, and the three live engines by ID, start time and image. The isolated store holds the same 20 containers as at the session's start, and the same 37 volumes as at round 7's end.
+- **Git:** two unpushed commits were amended before the push: one to remove files staged by mistake, one to correct its message. No pushed commit was changed.
