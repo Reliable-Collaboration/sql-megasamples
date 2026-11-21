@@ -164,15 +164,27 @@ PostgreSQL `demo` cannot modify the persistent sample tables in the tested DML/D
 Its read scope includes tables `admin` later creates in a sample database's `public` schema.
 It has no `TEMPORARY` privilege, cannot create large objects, and can execute only allowlisted routines.
 
-**A stated limit of PostgreSQL copies (DL-113).** The image's hook does all of its own work before
-`CREATE DATABASE` copies any file, and PostgreSQL removes a half-made copy's files when the copy
-itself fails. What it does not clean up is an error PostgreSQL itself raises for want of a
-resource after the files are copied and before the transaction commits, or a crash in that
-window: either can leave a directory under the data directory with no database in the catalog.
-That is accepted, not prevented. An ordinary caller's own interrupts were tried on the build: a
-statement timeout and a client cancel, at random points across each copy strategy, 480 attempts,
-left no such directory (`tests/gates/dl077_h3_interrupts.py`). Random points do not prove the
-window closed, and a caller-caused leftover, if ever seen, goes back to the deciders.
+**A stated limit of PostgreSQL copies (DL-113, DL-119).** The image's hook does all of its own work
+before `CREATE DATABASE` copies any file, and PostgreSQL removes a half-made copy's files when the
+copy itself fails. It does not clean up after anything that ends the transaction between the file copy
+and the commit: an error PostgreSQL raises for want of a resource, a crash, or the caller's own cancel
+or statement timeout landing in that window. Any of these can leave a directory under the data
+directory with no database in the catalog. No SQL reaches it; it takes disk, persists in backups, and
+lasts until the volume is next replaced, which clears it. This is accepted, not prevented.
+
+`megasamples up` and `megasamples reset --status postgres` report every such directory as a warning,
+with its tablespace, OID, path and size. They also say when the scan could not complete. A create in
+progress can appear once; run it again. To remove one, as the administrator:
+
+1. stop every create and drop on the server (no `copy create`, `copy drop`, `copy sweep` or reset);
+2. run the check again, and confirm the OID is still absent from `pg_database`;
+3. shut PostgreSQL down cleanly;
+4. move the directory out of the data directory into a quarantine location;
+5. start the server, confirm it is healthy, and only then delete the quarantined directory.
+
+Caller interrupts were tried on the build: a statement timeout and a client cancel, at random points
+across each copy strategy, 480 attempts, left no such directory (`tests/gates/dl077_h3_interrupts.py`).
+That is evidence, not proof that the window is closed.
 
 ### SQLite
 
