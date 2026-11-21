@@ -164,6 +164,16 @@ PostgreSQL `demo` cannot modify the persistent sample tables in the tested DML/D
 Its read scope includes tables `admin` later creates in a sample database's `public` schema.
 It has no `TEMPORARY` privilege, cannot create large objects, and can execute only allowlisted routines.
 
+**A stated limit of PostgreSQL copies (DL-113).** The image's hook does all of its own work before
+`CREATE DATABASE` copies any file, and PostgreSQL removes a half-made copy's files when the copy
+itself fails. What it does not clean up is an error PostgreSQL itself raises for want of a
+resource after the files are copied and before the transaction commits, or a crash in that
+window: either can leave a directory under the data directory with no database in the catalog.
+That is accepted, not prevented. An ordinary caller's own interrupts were tried on the build: a
+statement timeout and a client cancel, at random points across each copy strategy, 480 attempts,
+left no such directory (`tests/gates/dl077_h3_interrupts.py`). Random points do not prove the
+window closed, and a caller-caused leftover, if ever seen, goes back to the deciders.
+
 ### SQLite
 
 `sql-megasamples-sqlite:dev` carries one file per database under `/data` plus
