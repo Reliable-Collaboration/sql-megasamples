@@ -22,7 +22,9 @@ NAMED = "megasamples-sqlite"
 
 
 class Daemon:
-    def __init__(self, image="current", recreate_fails=None, compose_images=None, image_ids=None):
+    def __init__(self, image="current", recreate_fails=None, compose_images=None, image_ids=None,
+                 config_fails=False):
+        self.config_fails = config_fails
         self.compose_images = compose_images or {}  # what Compose resolves each service's image to (.env)
         self.image_ids = image_ids or {}            # image reference -> ID, beyond the default "current"
         self.recreate_fails = recreate_fails   # None, "after" the renewal (--wait gives up), or "before" it
@@ -69,7 +71,9 @@ class Daemon:
         elif argv[:2] == ["docker", "compose"]:
             words = argv[2:]
             assert "-f" in words, "a Compose call names the generated file"
-            if "config" in words:
+            if "config" in words and self.config_fails:
+                code = 1
+            elif "config" in words:
                 out = json.dumps({"services": {service: {"image": self.compose_images.get(service, f"img-{service}")}
                                                for service in SERVICES}})
             elif "down" in words:
@@ -191,3 +195,28 @@ def test_up_compares_the_image_compose_resolves_not_the_default_tag(daemon):
     assert job.up([]) == 0
     assert not [c for c in d.calls if "--force-recreate" in c], "a container on its current image was recreated"
     assert {name: c["anonymous"] for name, c in d.containers.items()} == before
+
+
+def test_up_recreates_exactly_the_stale_service_by_its_resolved_image(daemon):
+    """Sol round 12, 3: distinct image IDs, and exactly one service stale under what Compose resolves."""
+    d = daemon(compose_images={"mysql": "published:9.7", "sqlite": "img-sqlite"},
+               image_ids={"published:9.7": "published-id", "img-sqlite": "rebuilt-sqlite-id", "img-mysql": "dev-id"})
+    d.containers["megasamples-mysql"]["image"] = "published-id"      # current under its .env override
+    d.containers["megasamples-sqlite"]["image"] = "old-sqlite-id"    # its tag was rebuilt
+    mysql_volume = d.containers["megasamples-mysql"]["anonymous"]
+    assert job.up([]) == 0
+    recreated = [c for c in d.calls if "--force-recreate" in c]
+    assert len(recreated) == 1 and "sqlite" in recreated[0] and "mysql" not in recreated[0], recreated
+    assert d.containers["megasamples-mysql"]["anonymous"] == mysql_volume
+    assert d.leftovers() == set()
+
+
+def test_up_refuses_to_recreate_what_compose_cannot_resolve(daemon, capsys):
+    """Sol round 12, 3: when Compose cannot say which image it will run, the old comparison with Python's
+    default tag could still discard working data, so no service is renewed, and the message says why."""
+    d = daemon(image="override-id", config_fails=True, image_ids={"img-mysql": "dev-id", "img-sqlite": "dev-id"})
+    before = {name: c["anonymous"] for name, c in d.containers.items()}
+    assert job.up([]) == 0
+    assert not [c for c in d.calls if "--force-recreate" in c]
+    assert {name: c["anonymous"] for name, c in d.containers.items()} == before
+    assert "could not resolve" in capsys.readouterr().err
