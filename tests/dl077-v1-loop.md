@@ -494,9 +494,11 @@ These were focused runs, one at a time, each after the 15 GiB check.
   - documentation: 11.
   - The reds and reversals are in the commits.
 
+**Failed**
+- **The host-only full suite:** 2 failed, the two baselines; 1,182 passed, 347 skipped (`pytest-r12.log`).
+
 **Not run**
 - A real recreate whose `--wait` fails. Only the fake models it. It is WS5's real-cycle row.
-- **The host-only full suite:** 2 failed, the two baselines; 1,182 passed, 347 skipped (`pytest-r12.log`). This is under **Failed**.
 
 ## Round 11: restoration and isolation
 
