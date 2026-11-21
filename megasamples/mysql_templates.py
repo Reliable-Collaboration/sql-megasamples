@@ -36,8 +36,11 @@ def create_schema(run, name, charset, collation):
 
 
 def replay(run, query, metadata, source, target, *, remove_definer):
-    old_checks = query("SELECT @@session.foreign_key_checks")[0][0]
-    run("SET SESSION foreign_key_checks=0")
+    old_checks, old_mode = query("SELECT @@session.foreign_key_checks, @@session.sql_mode")[0]
+    modes = old_mode.split(",") if old_mode else []
+    if "NO_AUTO_VALUE_ON_ZERO" not in modes:
+        modes.append("NO_AUTO_VALUE_ON_ZERO")
+    run(f"SET SESSION foreign_key_checks=0, sql_mode='{','.join(modes)}'")
     try:
         run(f"USE {quote(target)}")
         for table in metadata["tables"]:
@@ -56,5 +59,5 @@ def replay(run, query, metadata, source, target, *, remove_definer):
             if count != table["count"] or checksum is None or checksum != table["checksum"]:
                 raise ValueError("table verification failed")
     finally:
+        run(f"SET SESSION foreign_key_checks={int(old_checks)}, sql_mode='{old_mode}'")
         run("USE megasamples")
-        run(f"SET SESSION foreign_key_checks={int(old_checks)}")
