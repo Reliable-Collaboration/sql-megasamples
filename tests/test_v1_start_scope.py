@@ -17,9 +17,11 @@ from start_scope import Scope  # noqa: E402
 class FakePodman:
     """A store of containers and volumes; a container's run makes an anonymous volume, as the image's does."""
 
-    def __init__(self, fail_launch=False, fail_rm=False, keep_anonymous=False):
+    def __init__(self, fail_launch=False, fail_rm=False, keep_anonymous=False, keep_container=False,
+                 fail_inventory=None):
         self.containers, self.volumes, self.calls = {}, {}, []
         self.fail_launch, self.fail_rm, self.keep_anonymous = fail_launch, fail_rm, keep_anonymous
+        self.keep_container, self.fail_inventory = keep_container, fail_inventory
         self.anonymous = 0
 
     def __call__(self, *args, check=True):
@@ -39,7 +41,7 @@ class FakePodman:
         elif args[0] == "rm":
             names = [a for a in args[1:] if not a.startswith("-")]
             for name in names:
-                if name in self.containers:
+                if name in self.containers and not self.keep_container:
                     _, anonymous = self.containers.pop(name)
                     if "-fv" in args and not self.keep_anonymous:
                         self.volumes.pop(anonymous, None)
@@ -52,9 +54,13 @@ class FakePodman:
         elif args[:2] == ("volume", "ls"):
             wanted = next((a.split("=", 1)[1] for a in args if a.startswith("label=")), None)
             out = "\n".join(v for v, label in self.volumes.items() if wanted is None or label == wanted)
+            if wanted and self.fail_inventory == "volumes":
+                code, out = 125, ""
         elif args[0] == "ps":
             wanted = next(a.split("=", 1)[1] for a in args if a.startswith("label="))
             out = "\n".join(c for c, (label, _) in self.containers.items() if label == wanted)
+            if self.fail_inventory == "containers":
+                code, out = 125, ""
         result = subprocess.CompletedProcess(args, code, out, "fake failure" if code else "")
         if check and code:
             raise subprocess.CalledProcessError(code, args, out, result.stderr)
@@ -99,6 +105,31 @@ class ScopeTests(unittest.TestCase):
         self.assertFalse(result.wasSuccessful())
         self.assertIn("volume count", "".join(text for _, text in result.failures + result.errors))
 
+    def test_a_labeled_container_left_behind_fails_the_test(self):
+        result = outcome(lambda scope: scope.run("c", "image"), FakePodman(keep_container=True))
+        self.assertFalse(result.wasSuccessful())
+        self.assertIn("labeled leftovers: 1 containers", "".join(t for _, t in result.failures + result.errors))
+
+    def test_a_failed_inventory_query_fails_the_test(self):
+        # Round 9 (Sol 4): an empty answer from a failed query is not an empty inventory.
+        for which in ("containers", "volumes"):
+            with self.subTest(which=which):
+                result = outcome(lambda scope: scope.run("c", "image"), FakePodman(fail_inventory=which))
+                self.assertFalse(result.wasSuccessful())
+                self.assertIn("inventory", "".join(t for _, t in result.failures + result.errors))
+
+    def test_a_concurrent_removal_does_not_hide_a_leak(self):
+        # Round 9 (Opus N5): the check compares volume sets, so another removal cannot offset a leak.
+        podman = FakePodman(keep_anonymous=True)
+        podman.volumes["unrelated"] = ""
+
+        def body(scope):
+            scope.run("c", "image")
+            del podman.volumes["unrelated"]
+        result = outcome(body, podman)
+        self.assertFalse(result.wasSuccessful())
+        self.assertIn("anon1", "".join(t for _, t in result.failures + result.errors))
+
     def test_the_body_failure_is_reported_beside_a_teardown_failure(self):
         def body(scope):
             scope.run("c", "image")
@@ -125,9 +156,6 @@ class ScopeTests(unittest.TestCase):
         outcome(body, podman)
         self.assertEqual(seen, [([], ["v"]), (["c"], ["v"])])
 
-
-if __name__ == "__main__":
-    unittest.main()
 
 
 class NamespaceCheckTests(unittest.TestCase):
@@ -158,6 +186,10 @@ class NamespaceCheckTests(unittest.TestCase):
         duplicate = 'ERROR:  42P04: database "outside_namespace" already exists\n'
         self.assertFalse(self.check(duplicate)[0])
 
+    def test_the_hooks_message_under_another_sqlstate_is_not_enforcement(self):
+        # Round 9 (Sol 4): 42501 is required on its own, not only the message.
+        self.assertFalse(self.check(self.HOOK.replace("42501", "42P01"))[0])
+
     def test_another_permission_error_is_not_enforcement(self):
         self.assertFalse(self.check('ERROR:  42501: permission denied to create database\n')[0])
 
@@ -167,3 +199,7 @@ class NamespaceCheckTests(unittest.TestCase):
     def test_each_attempt_uses_a_fresh_name(self):
         first, second = self.check(self.HOOK)[1], self.check(self.HOOK)[1]
         self.assertEqual(len(set(first + second)), 4)
+
+
+if __name__ == "__main__":
+    unittest.main()
