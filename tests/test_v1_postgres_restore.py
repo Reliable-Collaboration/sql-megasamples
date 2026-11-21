@@ -67,6 +67,8 @@ class RestoreTests(unittest.TestCase):
                 dumped = self.run_in("pg_dump", "-U", "postgres", "-Fc", "-f", "/tmp/v1-restore.dump", database)
                 self.assertEqual(dumped.returncode, 0, dumped.stderr[-500:])
                 self.accept(f'CREATE DATABASE "{scratch}" TEMPLATE template0')
+                # The hook closes a new database to PUBLIC; the probe's own login needs CONNECT.
+                self.accept(f'GRANT CONNECT ON DATABASE "{scratch}" TO admin')
                 try:
                     restored = self.run_in("pg_restore", "-U", "postgres", "-d", scratch, "--exit-on-error",
                                            "/tmp/v1-restore.dump")
