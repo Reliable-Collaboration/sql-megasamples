@@ -81,6 +81,11 @@ PG_DATABASES = PG_SELECTED + ['megasamples', 'postgres', 'template1']
 MY_DATABASES = MY_SELECTED + ['megasamples']
 
 
+def selection_matches(names, datasets):
+    """Whether the registry's names (one per database) are the configured datasets' databases."""
+    return sorted(names) == sorted(datasets)
+
+
 # Sol round 11, 7: the checks follow the target's own dataset selection. The checkout's configuration must
 # name exactly the datasets the checked image carries (its registry), and dataset-specific cases run only
 # where the selection holds their dataset.
@@ -90,7 +95,7 @@ def test_target_carries_the_configured_selection(engine):
         pytest.skip(f'no {engine} target named')
     names = accepted(engine, 'megasamples', 'SELECT name FROM datasets ORDER BY name',
                      'postgres' if engine == 'postgres' else 'root').splitlines()
-    assert sorted(names) == sorted(CFG.datasets(engine)), (
+    assert selection_matches(names, CFG.datasets(engine)), (
         'configure the checkout for the image under test: its registry lists ' + ', '.join(names))
 
 
