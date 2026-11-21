@@ -35,7 +35,9 @@ def isolated_clients():
         if container:
             owner = subprocess.run(['docker', 'inspect', '-f', '{{index .Config.Labels "org.sql-megasamples.gates.owner"}}',
                                     container], capture_output=True, text=True)
-            assert owner.returncode == 0 and owner.stdout.strip().startswith('dl077-'), container
+            # The exact owner the caller names, as tests/gates/native.py's manifests require:
+            # another task's container in the same store is refused.
+            assert owner.returncode == 0 and owner.stdout.strip() == os.environ['STRICT_READ_OWNER'], container
     with session():
         yield
 
