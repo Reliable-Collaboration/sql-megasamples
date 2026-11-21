@@ -122,7 +122,9 @@ The orphan, start, MySQL-off image and native runs were first refused for memory
 
 **Reopens with:** a supported caller acting on the scan's `complete` without the README's route, or a native run against a store that holds a non-disposable target.
 
-## Owner questions, for the two deciders (DL-104): answered by DL-122
+## Owner questions, for the two deciders (DL-104): answered by DL-122, and DL-124 for WS1's HBA contract
+
+**DL-124** (2026-11-21): the deciders chose option (a) for WS1's client-authentication contract, the image's rules only. The public `hba_file` is pinned to the image's file, there is no deployer extension in version 1, and a customised volume `pg_hba.conf` is refused with `hba-volume`.
 
 The two deciders answered all fourteen in **DL-122** (RCC.DataIntent `docs/work/decision-log.md`, 2026-11-21), on the options paper `docs/design/dl077-v1-owner-questions.md`. They differ from its recommendations on Q4 (bump to 2 now, refuse any marker but the image's own, a digest guard), Q6 (four per-role states), Q7 (exit 5, `orphan-scan-incomplete`), Q8 (narrowed to same-instance, catalog-matched findings, 3.5a amended) and Q14 (removal by observed full container ID). Each brief's question carries its answer. Also recorded: console volumes to be established; the runbook's `make down` wording is DataIntent's; the contract at merge with impact notes and conformance tests; one message per cause; WS3's contended copy stays `kept` and `not-exclusive` still aborts; the MySQL image's healthcheck to be decided by WS1.
 
@@ -644,7 +646,7 @@ They run one at a time, in the coordinator's order: WS1, WS4, WS2, WS3, WS5. Eac
 
 | # | Workstream | State |
 |---|---|---|
-| 1 | Start certification | **Design revision 5 (partial)**, `docs/design/dl077-ws1-start-certification-design.md`, answering design round 4 at `4c69e81b` (Sol 2 P1, 6 P2, 2 P3; Opus 3 P2, 9 P3) except the HBA contract, which is **with the deciders** (DL-104, security posture; brief `RCC.DataIntent/.local/megasamples-hba/brief.md`). Then the HBA part, then design round 5. No build has started. |
+| 1 | Start certification | **Design revision 5**, `docs/design/dl077-ws1-start-certification-design.md`, answering design round 4 at `4c69e81b` (Sol 2 P1, 6 P2, 2 P3; Opus 3 P2, 9 P3), with the HBA contract decided by **DL-124 (a)**, the image's rules only, each finding traced in its section 14; waiting for design round 5. No build has started. |
 | 4 | Native suite binding | waiting for WS1 |
 | 2 | Orphan scan | waiting |
 | 3 | Removal outcomes | waiting |

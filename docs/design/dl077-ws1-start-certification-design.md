@@ -1,8 +1,8 @@
 # Workstream 1: PostgreSQL start certification, the design
 
-**Status: design, revision 5 (partial), for round 5 of the design review. No build yet.**
+**Status: design, revision 5, for round 5 of the design review. No build yet.**
 
-**Held for the deciders:** the HBA contract (4.6.1, R17, and their rows) goes to the deciders under DL-104 as security posture, after round 4's Sol P1s 1 and 2, Sol P3 9 and Opus P2 3. The brief is `RCC.DataIntent/.local/megasamples-hba/brief.md`. **The HBA parts below are revision 4's, unchanged until they answer.** Everything else is revised for round 4; section 14 traces it.
+**The HBA contract is decided:** **DL-124 (a)**, the image's rules only. The deciders chose it under DL-104 (security posture), after round 4's Sol P1s 1 and 2, Sol P3 9 and Opus P2 3. 4.6.1, its checks and rows follow it. Section 14 traces round 4.
 
 **Design rounds so far:**
 
@@ -17,7 +17,7 @@ Section 13 traces each round 3 finding; sections 12 and 11 of revision 3 hold th
 
 **The decisions applied:**
 - **Default 2 of the accepted design, [108-5]:** "No privileged account has a published password, even on loopback". The coordinator applied it in round 2: the loopback trust lines go, under format 2.
-- **Round 3, Sol's P1:** this revision pins the public server's `hba_file` to an image-owned file (4.6.1).
+- **DL-124 (a):** the public `hba_file` is pinned to the image's file, there is no deployer extension, and a customised volume `pg_hba.conf` is refused with `hba-volume` (4.6.1).
 - **DL-122's answers to the brief's owner questions (Q1 to Q6),** with the items DL-122 recorded for WS1.
 
 **Scope:**
@@ -47,7 +47,7 @@ The MySQL image appears only in 7.4.
 | DL-122 Q4: format 2, exact match, digest guard | Section 6: the marker checked before the repair and either launch; every revision of the pair file checked; the upgrade route specified and rehearsed. |
 | DL-122 Q5: an image `HEALTHCHECK`, one source | Section 7; the Compose test becomes the same script. |
 | DL-122 Q6: four per-role states, nothing stale | 4.4, 4.6. |
-| Default 2, [108-5] | 4.6.1: no loopback trust, and the public `hba_file` pinned to an image-owned file. |
+| Default 2, [108-5]; DL-124 (a) | 4.6.1: no loopback trust; the public `hba_file` pinned to the image's file; no extension; a customised volume file, or an `hba_file`/`ident_file` argument, refused. |
 | DL-122 recorded: one message per cause; MySQL; the contract | 6.3; 7.4; section 8. |
 
 ## 2. Routes
@@ -95,6 +95,7 @@ The first check that fails decides.
 | — | **The directory lock** (4.9) | — | `volume-busy` on timeout; any other lock error `internal` |
 | — | Only now, with the lock held: the endpoint is removed, and `/run/megasamples-private`, `/run/megasamples-probe` and `/dev/shm/megasamples-private` are removed and recreated (Opus round 4, 6) | — | — |
 | R6 | The marker is the image's own, exactly | H | `policy-marker` |
+| R6b | The volume's `pg_hba.conf` is the build's stock file, read safely (4.6.1) | H | `hba-volume` |
 | — | slice 3's build-identity check (6.3) | — | slice 3's code |
 | — | The ownership repair | H | — |
 | R7 | The server reports its configuration, by `-C`, as `postgres` | C, D | `config-unreadable`, which also covers a value the server cannot parse, such as a non-numeric `port` |
@@ -104,15 +105,15 @@ The first check that fails decides.
 | R11 | `dynamic_library_path` is `$libdir` | E2 | `library-path` |
 | R12 | No session or local preload in files or arguments | E | `preload-session` |
 | R13 | `unix_socket_directories` parses as a list | G | `socket-settings` |
-| R14 | With overrides set: no argument names a socket, port or data location (3.1) | F, C, G | `override-argument` |
+| R14 | With overrides set: no argument names a socket, port or data location (3.1). On every start: no `hba_file` or `ident_file` argument | F, C, G | `override-argument`; `hba-argument` |
 | R15 | With overrides set: no `standby.signal` or `recovery.signal` (rotation cannot succeed on a standby) | H | `recovery-mode` |
-| R16 | With overrides set: the private launch's values discovered, validated and rechecked (4.3) | F, C, D | R7 to R13's codes, "the private launch" |
-| R17 | The extra HBA file, if present, has no `trust`, `password` or `ident` method and is readable (4.6.1) | — | `hba-local` |
+| R16b | With overrides set: the private launch's values discovered, validated and rechecked (4.3) | F, C, D | R7 to R13's codes, "the private launch" |
+| R16 | The pinned image `pg_hba.conf` is byte-identical to the build's constant (4.6.1) | — | `hba-image` |
 
 **Changes from revision 3:**
 - **R3** now also refuses the server-read variables. A set `PGPORT` was silently dropped by the pinned environment (Opus 11). The sentence says to use `-p` or `-c port`.
 - **R15** is new. It removes the unbounded wait's standby case (Opus 9).
-- **R17** is new (4.6.1).
+- **R6b and R16** are DL-124's (4.6.1). Revision 4's R17 and its parser are removed. A supplied `hba_file` or `ident_file` argument is refused on every start (`hba-argument`, in R14).
 - **Non-numeric `port`** is R7's, as the server's parse decides (Sol 8; Opus 12).
 
 ### 3.1 The parser and R14's backstop
@@ -282,38 +283,53 @@ ALTER ROLE "ROLE" PASSWORD 'SCRAM-SHA-256$4096:…';
 
 ### 4.6 Authentication and health
 
-#### 4.6.1 The public HBA, pinned (Sol's P1)
-**The choice: pinning.**
-- The image ships `/etc/megasamples/pg_hba.conf`, root-owned, mode 0644. It is part of format 2 and inside the digest.
-- The public launch pins `-c hba_file=/etc/megasamples/pg_hba.conf`. So **the volume's `pg_hba.conf` is never read** by either server, whatever it holds, including a retained file with a loopback `trust` rule.
+#### 4.6.1 The image's rules only (DL-124)
+**The decision, DL-124 (a):** the image's client-authentication rules only. There is no deployer extension in version 1.
 
-**The image's file:**
+**The image's file** is `/etc/megasamples/pg_hba.conf`, root-owned, mode 0644, in a root-owned directory (mode 0755). It is part of format 2 and inside its digest. It holds exactly:
 
 ```
-include_if_exists /etc/megasamples/pg_hba.local.conf
 local  all          all  trust
 local  replication  all  trust
 host   all          all  all  scram-sha-256
 ```
 
-**How a deployer adds rules:**
-- **Where:** mount a file at `/etc/megasamples/pg_hba.local.conf`, for example `hostssl` lines, `reject` lines, a narrower `host` rule, or `cert`, `gss` or `ldap` methods.
-- **Its place:** it is included first, so its rules come before the image's catch-all.
-- **R17 certifies it before either launch:** it must be readable and contain no `trust`, `password` or `ident` method. A violation is refused with `hba-local`, naming the line.
-- **Include directives** inside it are refused too, so the certification sees every rule.
-- **R17's parser** is checked natively against PostgreSQL's own `pg_hba_file_rules` view in the tests (9.4).
+It has no `include` directive. `/etc/megasamples/pg_ident.conf` is empty, also root-owned.
 
-**What a deployer who customised the volume's `pg_hba.conf` sees:**
-- **The log line:** `megasamples-start: note: the volume's pg_hba.conf is not used; add rules in /etc/megasamples/pg_hba.local.conf`. It is printed whenever the volume's file differs from the format-2 file the build wrote. It is not a refusal.
-- **The README:** a section on authentication says the same, with the mount example.
+**The pins:** the public launch pins `-c hba_file=/etc/megasamples/pg_hba.conf` and `-c ident_file=/etc/megasamples/pg_ident.conf`. The private launch pins its own files (4.3).
+
+**The checks, before either launch:**
+- **R16** (DL-124's byte comparison, replacing revision 4's parser): the pinned file's bytes equal the build's constant, baked into the wrapper. Otherwise `hba-image`. Inside the image this guards against a layer or mount over `/etc/megasamples` (row 48d).
+- **R6b, after the marker check** (one message per cause), refuses with **`hba-volume`** a volume whose `pg_hba.conf` is not the build's stock file. It is refused before either launch.
+  - **How it is read safely:** a Perl routine opens `$PGDATA/pg_hba.conf` with `O_RDONLY|O_NOFOLLOW|O_NONBLOCK` and checks by `fstat` that it is a regular file of at most 64 KiB. Only then does it compare the bytes with the build's stock volume file, which the image also ships, at `/usr/share/megasamples/pg_hba.volume.conf`.
+  - **Anything else is `hba-volume`:** a symlink, a FIFO, a directory, an oversize file, an unreadable file, or different bytes.
+  - **The volume's file stays where it is.** The server never reads it: it is pinned out. It is checked only so that a deployer's rules are not dropped silently (Opus round 4, 3).
+  - **R7 also reads `hba_file` and `ident_file` from the files and `postgresql.auto.conf`.** Anything other than the stock values in `PGDATA` is a customisation the pin would hide, so it is `hba-volume` too.
+- **A supplied `-c hba_file=` or `-c ident_file=`** (any spelling, by 3.1's parser) is refused on every start, with overrides or not, as **`hba-argument`**.
+
+**`hba-volume`'s sentence** says that custom rules are unsupported in version 1. It gives the exact restore command, tested by row 47b:
+
+```
+docker run --rm --entrypoint /bin/cp -v VOLUME:/var/lib/postgresql IMAGE \
+  /usr/share/megasamples/pg_hba.volume.conf /var/lib/postgresql/18/docker/pg_hba.conf
+```
+
+It tells the deployer to save their own file first, and to restrict access outside the image instead.
+
+**Where a deployer restricts access** (DL-124; accepted design, near line 864):
+- outside the image: publish on loopback only, limit the container network, use the host firewall, or tunnel for remote use;
+- every TCP login still needs a key. `demo`'s key is published, so whoever can reach the port can read the samples. The README says so.
 
 **Reach:**
 - **The `local` lines** admit any process that can open the public socket: the container's own processes, and containers sharing the socket directory through a volume.
-- **TCP, loopback included,** needs a key, under Docker, pasta and rootlesskit alike.
-- **The README and [110-2]** say that `psql -h localhost` and sidecars need a key.
-- **The private server** uses its own `hba_file` (4.3), so a hardened `local` rule in a deployer's extra file does not affect rotation.
+- **TCP, loopback included,** needs a key, under Docker, pasta and rootlesskit alike. `psql -h localhost` and sidecars need a key. The README and [110-2]'s text say so.
 
-**The probe** needs the image's `local … trust` line for `demo`. A deployer's extra `reject` for `demo` on `local` makes it unhealthy, and the README says so.
+**The README states:**
+- **Not offered in version 1:** custom rules, `cert`, `gss`, `ldap` and TLS.
+- **Where to restrict access instead** (above).
+- **A mounted `/etc/megasamples/pg_hba.local.conf` has no effect** (row 48b).
+
+**Stated limit** (DL-124): root in the container, or an edit to a bind mount over the pinned file after start followed by a reload, is outside the claim. R16 checks the pinned file at start only.
 
 #### 4.6.2 The probe
 **What it does:** connects as `demo`, to `megasamples`, on the dedicated probe socket, in the pinned environment, and runs `SELECT pg_catalog.megasamples_policy_loaded()`.
@@ -346,7 +362,7 @@ A server that bound its ordinary socket but not the probe socket is unhealthy, w
 exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
 ```
 - **`postgres` by name,** resolved through the pinned, exported `PATH`. Upstream's `[ "$1" = 'postgres' ]` and `exec "$@"` work unpatched (Opus 10). A build test asserts that `command -v postgres` under the pinned `PATH` is the image's binary.
-- **PINS:** `data_directory`, the certified preload, `dynamic_library_path`, empty session and local preloads, the socket list of 4.6.3, the certified port, and `hba_file=/etc/megasamples/pg_hba.conf`.
+- **PINS:** `data_directory`, the certified preload, `dynamic_library_path`, empty session and local preloads, the socket list of 4.6.3, the certified port, `hba_file=/etc/megasamples/pg_hba.conf` and `ident_file=/etc/megasamples/pg_ident.conf`.
 - **`execfail` with `|| handover_failed`:** if the entrypoint cannot be executed, the wrapper removes the endpoint and refuses with `handover`.
 - **Failures after the `exec`:** upstream's `exec gosu`, or `gosu`'s `exec postgres`, are upstream processes. Their failure leaves a dead PID in the endpoint, so the probe is unhealthy, and the next start removes the endpoint. The README states it.
 - **Tested at each `exec` boundary:** the entrypoint missing, `gosu` missing, the server binary failing to execute, and the server exiting after start.
@@ -356,7 +372,7 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
 - **What it does now:** nothing. Slice 3 puts [110-2] there, and the state `locked` is reserved.
 - **The lock covers it.**
 - **Until slice 3,** `postgres` and `admin` sign in over TCP with published keys whenever no override applies, and loopback now needs a key.
-- **A release condition:** [110-2] holds at P on every route. T-23 checks it with missing, published, wrong and private keys, on both loopback families, and **with a retained volume `pg_hba.conf` carrying a loopback `trust` rule** (Sol's P1).
+- **A release condition:** [110-2] holds at P on every route. T-23 checks it with missing, published, wrong and private keys, on both loopback families, and **and with a retained volume `pg_hba.conf` carrying a loopback `trust` rule, which is refused with `hba-volume` before either launch** (Sol round 3's P1; DL-124).
 - **Under slice 3's seeding,** `uninitialised` narrows to a non-empty directory.
 
 ### 4.9 One start per volume, for the server's life
@@ -406,12 +422,14 @@ It owns this run's cleanup and reporting, so a stale flag from an earlier failed
 | `socket-settings` | R13 |
 | `override-argument` | R14 |
 | `recovery-mode` | R15 |
-| `hba-local` | R17 |
+| `hba-volume` | R6b |
+| `hba-image` | R16 |
+| `hba-argument` | R14 |
 | `private-start`, `password-setup`, `private-stop`, `interrupted` | the private phase |
 | `handover` | 4.7 |
 | `internal` | the catch-all |
 
-**New in revision 4:** `argument-ambiguous`, `server-environment`, `recovery-mode`, `hba-local` and `interrupted`.
+**New in revision 4:** `argument-ambiguous`, `server-environment`, `recovery-mode` and `interrupted`. **New in revision 5 (DL-124):** `hba-volume`, `hba-image` and `hba-argument`. Revision 4's `hba-local` is removed.
 
 ## 6. The policy format
 
@@ -420,7 +438,7 @@ It owns this run's cleanup and reporting, so a stale flag from an earlier failed
 - **The extension:** `read_policy` version `2`, with no upgrade script.
 - **Format 2 also carries:**
   - the image-owned `/etc/megasamples/pg_hba.conf`;
-  - the volume `pg_hba.conf` the build writes, which the server no longer reads but the start compares against for the note in 4.6.1.
+  - the volume `pg_hba.conf` the build writes, which the server no longer reads but R6b compares against (4.6.1), shipped as `/usr/share/megasamples/pg_hba.volume.conf`.
 - **The wrapper's constant** is generated from `policy-format.json`.
 
 ### 6.2 The rule and its guard
@@ -462,7 +480,8 @@ It owns this run's cleanup and reporting, so a stale flag from an earlier failed
 2. **Start the image that made it,** with no TCP published.
 3. **Dump each sample database as `postgres`** (the superuser reads every object, including those a deployer role owns and has not granted to `admin`), with `pg_dump -Fc`. Ownership and grants stay in the archive (Sol round 4, 7).
 4. **Dump roles** with `pg_dumpall --roles-only --no-role-passwords`, keeping only roles the current image lacks.
-5. **Start the current image on a fresh volume,** with overrides for every privileged key.
+5. **Inspect the old policy first** (DL-124): on the old image, read `SELECT * FROM pg_hba_file_rules`. Custom rules are **not carried over**; version 1 has the image's rules only. Before exposing the new server, confirm that equivalent protection is in place outside the image: loopback publishing, the container network, the host firewall or a tunnel.
+5b. **Start the current image on a fresh volume,** with overrides for every privileged key.
 6. **Create the deployer roles** from step 4's filtered dump, as `postgres`, before any restore. They come back with no passwords (the README says so), and their memberships as dumped.
 7. **For each database, restore a filtered list, as `postgres`:**
    - `pg_restore -l` lists the archive;
@@ -513,7 +532,6 @@ It owns this run's cleanup and reporting, so a stale flag from an earlier failed
 ### 7.2 What the probe reports
 - **It reports:** the policy library loaded in the postmaster this wrapper handed over to, through its dedicated socket.
 - **It does not report:** a hook replaced by a loaded library (3.2), or whether TCP listens.
-- **A deployer's `reject` for `demo` on `local`** makes it unhealthy.
 
 ### 7.3 Unchecked routes
 
@@ -526,7 +544,8 @@ It owns this run's cleanup and reporting, so a stale flag from an earlier failed
 | A loader variable acting on Bash itself | no | stated |
 | A path replaced beneath `PGDATA` | up to R8, refused against the locked descriptor; retargeted after R8, not detected | the refusal; after R8, stated (4.1) |
 | `read_policy` on `dynamic_library_path` | refused, R11 | the refusal |
-| A retained volume `pg_hba.conf` with `trust` | not read: the pinned `hba_file` | the note in 4.6.1 |
+| A retained or customised volume `pg_hba.conf` | refused, R6b | `hba-volume` |
+| The pinned file edited after start, or root in the container | no | stated (DL-124) |
 
 ### 7.4 The MySQL image
 - **Version 1:** no image `HEALTHCHECK`.
@@ -539,7 +558,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 - **the per-role states,** with `locked` reserved: an unknown state means the key is not known to be the requested one;
 - **the format pair and its rules,** including the image-owned HBA file;
 - **the key rule:** printable ASCII, 1 to 1024 bytes, a file's trailing LF bytes removed;
-- **the extra HBA file's location and certification;**
+- **the image's rules only (DL-124):** the pinned file's content, `hba-volume`, `hba-image`, `hba-argument`, and the restore command;
 - **the dropped environment variables** (4.1) and the refused server-read ones (R3);
 - **the image `HEALTHCHECK`** and the Compose test that names it;
 - **the narrowing of `uninitialised`;**
@@ -588,10 +607,13 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 36 | (W) a signal during the private phase | `interrupted`, with each role's state; the child stopped and reaped |
 | 39 | (W) the entrypoint missing; `gosu` missing; the server binary failing to execute | the first: `handover`; the others: a dead PID in the endpoint, unhealthy |
 | 42 | (A) root, `/run` read-only; `--cap-drop ALL`; the self-test failing; `ENOLCK` | `internal`, naming the step, exit 1 |
-| 47 | a volume `pg_hba.conf` with `local` requiring a key | start; the note; healthy (the volume file is not read) |
-| 48 | loopback TCP, both families, as `postgres` and `admin`, no key or a wrong key, under Docker, pasta and rootlesskit; **and with a retained volume `pg_hba.conf` carrying `host all all 127.0.0.1/32 trust`** | refused by SCRAM; right key admitted |
-| 48b | (A) an extra HBA file with `trust`, `password` or `ident`, or an `include` | `hba-local` |
-| 48c | an extra HBA file with a `hostssl … scram-sha-256` rule and a `reject` | start; the rules apply (checked against `pg_hba_file_rules`) |
+| 47 | (A) a volume `pg_hba.conf` customised in any way (a `local` rule requiring a key; a `hostssl` rule); a symlink; a FIFO; a directory; a file over 64 KiB; `hba_file` set in `postgresql.auto.conf` | `hba-volume`, before either launch, the volume untouched |
+| 47b | the restore command from `hba-volume`'s sentence, run on row 47's volume | the next start succeeds |
+| 48 | loopback TCP, both families, as `postgres` and `admin`, no key or a wrong key, under Docker, pasta and rootlesskit | refused by SCRAM; right key admitted |
+| 48r | (A) a retained volume `pg_hba.conf` carrying `host all all 127.0.0.1/32 trust` | `hba-volume` |
+| 48b | a file mounted at `/etc/megasamples/pg_hba.local.conf` with a `trust` rule | start; no effect: `pg_hba_file_rules` shows only the image's three rules, and loopback TCP still needs a key |
+| 48c | (A) `-c hba_file=/x`, `--hba-file=/x`, `-c ident_file=/x`, with and without overrides | `hba-argument` |
+| 48d | (A) a layer or mount replacing `/etc/megasamples/pg_hba.conf` | `hba-image` |
 | 49 | (A) a second **container** on the same volume, held at each boundary, including during the first's public run | waits, then `volume-busy`; the first's keys in force; one postmaster on the volume |
 | 50 | keys with `'`, `\`, `:`, `$`, `"`, `;`, leading and trailing spaces, 1024 bytes, and a 1024-byte key of only `:` and `\` (the longest escaped passfile line) | start; each confirmed |
 
@@ -628,7 +650,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 - The fake `postgres -C` records every query it answered, with the fixture's whole tree: working directory, absolute paths outside `PGDATA` (includes, `config_file`), owners and modes.
 - Each query is replayed, as `postgres`, against the real `postgres -C` in a throwaway container. The fixture tree is reproduced exactly, and status and value must agree (Opus 13).
 
-**R17's HBA parser** is checked the same way, against `pg_hba_file_rules` on a scratch server.
+**The image's HBA file** is checked once natively: `pg_hba_file_rules` on a started image shows exactly its three rules and no error.
 
 ### 9.5 Confirmed natively
 - the `psql` exit mapping, by the fault relay;
@@ -640,7 +662,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 - the upgrade rehearsal on both marker-1 variants.
 
 ### 9.6 Reversals
-- **Each rule R0 to R17,** removed in turn, fails at least one row.
+- **Each rule R0 to R16b, R6b included,** removed in turn, fails at least one row.
 - **So does each mechanism:**
   - the pinned environment, `-p`, the handover allowlist, each pin, the public and private `hba_file` pins;
   - the session `SET`s, `ON_ERROR_STOP`, the verifier's self-test against the server oracle, the confirmation with `require_auth`, `\warn`;
@@ -652,7 +674,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 1. **The harness and the generator, red against today's wrapper.** First, the native check that the lock survives the `exec`s; on failure the build stops (4.9).
 2. **Routes, the parser, and R0 to R4.**
 3. **Format 2** (marker, extension, both HBA files) and its guard, then R5, the lock and R6.
-4. **R7 to R17,** and the pins.
+4. **R7 to R16b,** R6b, and the pins.
 5. **The private phase:** environment, start, verifier and self-test, passwords, confirmation, supervision, stop.
 6. **Health:** the probe socket, the endpoint, the script, the Compose test, the timings, the build routes.
 7. **The handover and step P.**
@@ -668,7 +690,7 @@ As revision 3's section 12 (at `32664450`).
 
 | Finding | Where answered |
 |---|---|
-| Sol 1 (P1): a retained public HBA | 4.6.1 (pinned `hba_file`, extra file certified by R17); 4.8's T-23 case; rows 47, 48, 48b, 48c |
+| Sol 1 (P1): a retained public HBA | 4.6.1 (pinned `hba_file`; under DL-124 a customised volume file is refused); 4.8's T-23 case; rows 47, 48r |
 | Sol 2; Opus 1, 2: the lock | 4.9 (directory descriptor, no fallback, the cross-container premise corrected); R8 on the descriptor; endpoint removed after the lock; `ENOLCK` to `internal`; row 49 as a second container |
 | Sol 3; Opus 5: `ON_ERROR_STOP` | 4.1, 4.4; rows 30, 30b; the relay waits for `CommandComplete` (row 31) |
 | Sol 4; Opus 18: the upgrade recipe | 6.4 |
@@ -699,7 +721,7 @@ As revision 3's section 12 (at `32664450`).
 
 | Finding | Where answered |
 |---|---|
-| Sol 1, Sol 2 (P1s), Sol 9 (P3), Opus 3 (P2), Opus 8 (P3): the HBA contract | **held for the deciders** (DL-104); 4.6.1, R17 and their rows are revision 4's until they answer. Sol 9's README note on orchestrators is restored now (7.1). |
+| Sol 1, Sol 2 (P1s), Sol 9 (P3), Opus 3 (P2), Opus 8 (P3): the HBA contract | **DL-124 (a):** no extension, so the reload and method concerns and R17's parser go; `hba-volume` refuses a customised volume file instead of dropping it with a note; 4.6.1; R6b, R16, `hba-argument`; rows 47, 47b, 48r, 48b, 48c, 48d; 6.4's inspection step. Sol 9's README note on orchestrators is restored (7.1). |
 | Opus 1; Sol 4: the handover leaking keys | 4.1's two lists, the denylist, both guards; row 39b |
 | Opus 2: the format guard unbuildable while building | 6.2's `released` flag, `--first-parent`, the three cases; section 8 |
 | Sol 3; Opus 4: the private directory's owner; the flag's home | 4.1 (owned by `postgres`, 0700); 4.5 and section 5 (`mktemp -d` per run); row 52 |
