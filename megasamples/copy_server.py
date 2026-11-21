@@ -13,6 +13,8 @@ SERVICE_TAG = "megasamples-service/1"
 
 class ServerCopies:
     recovery_identity = None
+    # Set as a write is issued: until then a lost connection has changed nothing (3.3, exit 3).
+    wrote = False
     # The engine wait a drop without --wait, and a sweep's removal, allows (2.2).
     default_drop_wait = 0
 
@@ -25,6 +27,8 @@ class ServerCopies:
         if action in ("renew", "release") and self.recovery_identity:
             return CopyError(8, "lease-unsettled", "lease update did not finish", identity)
         if self.connection_lost(failure):
+            if not self.wrote:
+                return CopyError(3, "connection", "server connection closed before any change", identity)
             return CopyError(8, "connection-lost", "server connection closed during the copy command", identity)
         return CopyError(1, "internal", "copy command failed unexpectedly", identity)
 
@@ -155,15 +159,18 @@ class ServerCopies:
             try:
                 self.sweep_one(selected, removed, kept)
             except (CopyError, self.errors.Error) as failure:
-                if not removed:
+                # A dry run changes nothing; a sweep changes something only once it removed or rolled back.
+                if self.args.dry_run or not (removed or self.wrote):
                     raise
                 # Something already changed: the reply must say what (3.3, exit 8).
                 if isinstance(failure, CopyError):
                     code, message = failure.code, str(failure)
                 else:
                     code, message = self.server_error(failure).code, "sweep stopped after a removal"
+                stopped = [] if selected["name"] in {item["name"] for item in removed} else [
+                    {"copy": selected, "reason": code}]
                 raise CopyError(8, code, message, selected["identity"],
-                                result={"removed": removed, "kept": kept + [{"copy": selected, "reason": code}]}) from None
+                                result={"removed": removed, "kept": kept + stopped}) from None
         return {"removed": removed, "kept": kept}
 
     def sweep_one(self, selected, removed, kept):

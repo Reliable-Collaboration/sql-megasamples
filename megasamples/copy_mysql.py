@@ -83,10 +83,12 @@ class MySQLCopies(ServerCopies):
                         f"THEN 1 END), count(*) FROM {self.ledger}", (label,))
 
     def insert(self, row):
+        self.wrote = True
         self.execute(f"INSERT INTO {self.ledger} (name,record) VALUES (%s,%s)",
                      (row["name"], json.dumps(row)))
 
     def change(self, row, **changes):
+        self.wrote = True
         changed = {**row, **changes, "revision": row["revision"] + 1}
         self.execute(f"UPDATE {self.ledger} SET record=%s WHERE name=%s",
                      (json.dumps(changed), row["name"]))
@@ -187,6 +189,7 @@ class MySQLCopies(ServerCopies):
                             self.change(row, phase="ready")
                         raise CopyError(6, "busy", "schema is locked", identity) from None
                     raise
+            self.wrote = True
             self.execute(f"DELETE FROM {self.ledger} WHERE name=%s", (name,))
         except self.errors.Error:
             raise CopyError(8, "drop-unsettled", "schema removal did not finish", identity) from None

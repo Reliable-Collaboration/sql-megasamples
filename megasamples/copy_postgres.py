@@ -73,6 +73,7 @@ class PostgresCopies(ServerCopies):
                 self.one("SELECT pg_catalog.pg_advisory_unlock(%s::bigint)", (lock_id,))
 
     def change(self, row, **changes):
+        self.wrote = True
         changed = {**row, **changes, "revision": row["revision"] + 1}
         self.connection.execute(f"UPDATE {self.ledger} SET record=%s::jsonb WHERE name=%s",
                                 (json.dumps(changed), row["name"]))
@@ -136,6 +137,7 @@ class PostgresCopies(ServerCopies):
                         (label,))
 
     def insert(self, row):
+        self.wrote = True
         self.connection.execute(f"INSERT INTO {self.ledger} (name, record) VALUES (%s,%s::jsonb)",
                                 (row["name"], json.dumps(row)))
 
@@ -181,6 +183,7 @@ class PostgresCopies(ServerCopies):
                         time.sleep(min(0.1, max(0, deadline - time.monotonic())))
                     else:
                         break
+            self.wrote = True
             self.connection.execute(f"DELETE FROM {self.ledger} WHERE name=%s", (name,))
         except self.errors.Error:
             raise CopyError(8, "drop-unsettled", "database removal did not finish", identity) from None
