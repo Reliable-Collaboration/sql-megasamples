@@ -4,12 +4,12 @@ import re
 
 DEFINER = re.compile(r"^((?:CREATE)(?:\s+ALGORITHM\s*=\s*\w+)?)\s+DEFINER\s*=\s*"
                      r"`(?:[^`]|\x60\x60)*`\s*@\s*`(?:[^`]|\x60\x60)*`", re.I)
-# MySQL's lexical rules (Sol round 8, P3-8): `--` opens a comment only before whitespace, a control
-# character or the end; `/*!` opens an executable comment, whose content is code, so only its opener is
+# MySQL's lexical rules (Sol round 8, P3-8; round 9): `--` opens a comment only before an ASCII space or
+# control character (one byte, as MySQL's lexer tests it) or the end; `/*!` opens an executable comment, whose content is code, so only its opener is
 # one token; an unquoted identifier holds ASCII letters, digits, `_`, `$` and U+0080 to U+FFFF.
 # ANSI_QUOTES and NO_BACKSLASH_ESCAPES programs are withheld before replay (design 2.4).
 SQL_TOKEN = re.compile(r"'(?:''|\\.|[^'\\])*'|\"(?:\"\"|\\.|[^\"\\])*\"|`(?:``|[^`])*`|"
-                       r"/\*![0-9]*|/\*[\s\S]*?\*/|--(?=[\s\x00-\x1f\x7f]|$)[^\n]*|#[^\n]*|"
+                       r"/\*![0-9]*|/\*[\s\S]*?\*/|--(?=[\x00-\x20\x7f]|$)[^\n]*|#[^\n]*|"
                        r"[A-Za-z0-9_$\u0080-\uffff]+|\s+|.")
 
 
@@ -30,15 +30,22 @@ def demo_read_grants(working, foreign):
     ]
 
 
+def gap(token):
+    """Whitespace or an ordinary comment, which MySQL reads as a separator; an executable comment's
+    opener is one too, since its content is code."""
+    return token.isspace() or token.startswith(("/*", "#", "--"))
+
+
 def definition(sql, source, target, remove_definer):
     if remove_definer:
         sql = DEFINER.sub(r"\1", sql, count=1)
     tokens = SQL_TOKEN.findall(sql)
     for index, token in enumerate(tokens):
-        if token.casefold() not in (source.casefold(), quote(source).casefold()):
+        # Exact: schema names are case-sensitive on this image (lower_case_table_names=0).
+        if token not in (source, quote(source)):
             continue
         suffix = index + 1
-        while suffix < len(tokens) and tokens[suffix].isspace():
+        while suffix < len(tokens) and gap(tokens[suffix]):
             suffix += 1
         if suffix < len(tokens) and tokens[suffix] == ".":
             tokens[index] = quote(target)
