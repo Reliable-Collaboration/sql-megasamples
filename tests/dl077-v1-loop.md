@@ -1,13 +1,16 @@
 # Version 1, slices 1 and 2: review loop status
 
-This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`; round 5's dispositions are below.
+This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5, 6 and 7 are below.
 
 ## Stop count
 
-**0 of 2** (round 6 kept it there). The loop ends after two rounds in a row with nothing to fix now outside the workstreams. Round 6 reviews:
-- the fixes outside the workstreams;
-- a fresh pass over everything outside them;
-- the four briefs, read by Sol and Opus.
+**0 of 2** (rounds 6 and 7 kept it there). The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
+
+**Scope from round 8, the coordinator's decision:** a workstream brief is an input to that workstream's own design, which is reviewed in its own loop after this one ends. So findings about a brief's content are recorded there as that workstream's inputs, not fixed now here. That covers its facts, its test plan's coverage and its questions.
+
+This loop judges two things:
+- what lies outside the four areas: code, tests, documentation and records;
+- whether each brief carries every input faithfully.
 
 ## Hot areas, now workstreams
 
@@ -37,7 +40,7 @@ These are the reviews of `c95ee833`: Sol (`S5-*`) and Opus (`O5-*`). A hot-area 
 | O5-1 | P3 | 3 | Workstream input (same class as S5-2) | **None**, as S5-2, with the same round 6 correction. |
 | O5-2 | P3 | — | **Fixed now** (same as S5-6) | — |
 | O5-3 | P3 | 1 | Workstream input | **A documentation stopgap.** The README sentence was inaccurate. It now says a non-root start exits before the public server starts, and that the private password start may run first on its local socket (`93a26c6`, corrected in the next commit after a run showed that start answering). |
-| O5-4 | P3 | 1 | Workstream input | **A documentation stopgap.** The README now states that a replaced entrypoint or a wrapping command is unchecked, and that the healthcheck is then the only signal (`93a26c6`). |
+| O5-4 | P3 | 1 | Workstream input | **A documentation stopgap.** The README now states that a replaced entrypoint or a wrapping command is unchecked, and that the healthcheck, which only the generated Compose file defines, is then the only signal (a hand-run container has none) (`93a26c6`). |
 | O5-5 | P3 | 3 | Workstream input | **None.** The exit code is right; only one copy's reason misleads. |
 
 ## Backlog
@@ -132,7 +135,7 @@ The orphan, start, MySQL-off image and native runs were first refused for memory
 
 ## Round 6's runs
 
-These are focused runs only, because DataIntent's gateway `--all` was running. No large batch was run. The image is `ce3b539fb522`, built from `ae61776` (PostgreSQL `chinook`), and `cf7325f4f9be` (`chinook employees pubs`). Logs are under `build/dl114-r1-work/`.
+No large container batch was run, because DataIntent's gateway `--all` was running. The container runs were focused PostgreSQL tests, one container at a time. The full `pytest` suite ran on the host, with no container; its opt-in container tests skip there. The image is `ce3b539fb522`, built from `ae61776` (PostgreSQL `chinook`), and `cf7325f4f9be` (`chinook employees pubs`). Logs are under `build/dl114-r1-work/`.
 
 **Passed**
 - The health tests, 3 passed: only `demo` and `postgres` may call the report, healthy probes raise no ERROR, and the placeholder case fails.
@@ -142,7 +145,9 @@ These are focused runs only, because DataIntent's gateway `--all` was running. N
 - The native PostgreSQL suite, 46 passed (`native-r6-pg-full.log`).
 
 **Failed**
-- The full suite: 2 failed, 1,078 passed, 313 skipped (`pytest-r6.log`, 11:03:52). These are the same two baseline failures as before.
+- The full suite (host only): 2 failed, 1,078 passed, 313 skipped (`pytest-r6.log`, 11:03:52). These are the same two baseline failures as before, both also failing at `e61335f` (`tests/dl077-v1-review-1.md`, "Baseline"):
+  - `tests/test_quiescence_gate.py::test_readable_unrelated_holder_refuses_with_reversal`;
+  - `tests/test_rollback_preparation.py::test_whole_rollback_preserves_frozen_retained_file_list_and_digests`.
 
 **Not run**
 - The MySQL suites and images, and the TCP copy suite. Round 6 changed no MySQL or copy code; their last runs are round 5's.
@@ -166,3 +171,75 @@ These are focused runs only, because DataIntent's gateway `--all` was running. N
 - **Isolation** (`build/dl114-r1-work/isolation-check.sh`, read-only):
   - **Live deployment:** the nine live `megasamples-*` entries are unchanged by ID, state, health, start time and image.
   - **Isolated store:** the same 20 containers.
+
+
+## Round 6: each finding's disposition
+
+These are the reviews of `53334d4c`: Sol (`S6-*`) and Opus (`O6-*`).
+
+| ID | Sev. | Area | Disposition | Commit or brief |
+|---|---|---|---|---|
+| S6-1 | P2 | — | **Fixed now**: `admin` could call the loaded report | `aedd5e6` (test), `ae61776` |
+| S6-2 | P2 | 4 | Workstream input; **no stopgap**, the coordinator's decision recorded above | WS4 |
+| S6-3 | P2 | 2 | Workstream input; **no stopgap**, as S6-2 | WS2 |
+| S6-4 | P2 | 3 | Workstream input: the table could not derive the reply | WS3 (round 6 rows) |
+| S6-5 | P2 | 1 | Workstream input: failures after a password change | WS1 (round 6 rows) |
+| S6-6 | P2 | — | **Fixed now**: the start suite's masked path-form check | `b65234f` (test only) |
+| S6-7 | P2 | 2 | Workstream input: a restart, `pg_tblspc`, malformed results | WS2 (round 6 rows) |
+| S6-8 | P2 | 4 | Workstream input: the TCP proof and its bootstrap | WS4 (round 6 rows) |
+| S6-9 | P3 | — | **Fixed now**: the S5-2 and S5-3 rationales corrected, with what reopens them; the README's Compose-only healthcheck | `2670900`, `bf7ce84` |
+| S6-10 | P3 | — | **Fixed now**: the healthy-probe test's anonymous volume | `aedd5e6` |
+| O6-1 | P2 | — | **Fixed now**, the same as S6-6 | `b65234f` |
+| O6-2 | P2 | 3 | Workstream input | WS3 (round 6 rows) |
+| O6-3 | P2 | 4 | Workstream input | WS4 (round 6 rows) |
+| O6-4 | P2 | 1 | Workstream input | WS1 (round 6 rows) |
+| O6-5 | P2 | 2 | Workstream input | WS2 (round 6 rows) |
+| O6-6 | P2 | — | **Fixed now**: S5-3 and S5-6 records corrected | `2670900` |
+| O6-P3-1 | P3 | — | **Fixed now**, the same as S6-1 | `ae61776` |
+| O6-P3-2 | P3 | 1 | Workstream input: the extension changed without a version or marker bump | WS1, question 7 |
+
+## Round 7: each finding's disposition
+
+These are the reviews of `c0179c8d`: Sol (`S7-*`) and Opus (`O7-*`). Findings about a brief's content are that workstream's inputs, under the scope recorded above.
+
+| ID | Sev. | Area | Disposition | Commit or brief |
+|---|---|---|---|---|
+| S7-1 | P2 | 1 | Workstream input: a failed public start, informational commands, lost password replies | WS1 (round 7 rows) |
+| S7-2 | P2 | 2 | Workstream input: the directory-to-catalog match | WS2 (round 7 rows) |
+| S7-3 | P2 | 3 | Workstream input: rollback and cleanup steps; unsent versus skipped | WS3 (round 7 rows) |
+| S7-4 | P2 | 4 | Workstream input: the proof and its oracle | WS4 (round 7 rows) |
+| S7-5 | P2 | — | **Fixed now**: the published inventories carry P-8's routine and P-3's reasons; P-8 renders in its table | `1cd35b8` (test), `644d949` |
+| S7-6 | P2 | — | **Fixed now**: the strict-read guide's MySQL grants, and three more drifts found by checking it against the image | `ffddb0c` (test), `319294d`, `e5d6f23` |
+| S7-7 | P3 | 1 | Workstream input for retained volumes (WS1 question 7). **Fixed now** for the rights test's scope: every role, every database, and restored databases | `97cbd24`; WS1 |
+| S7-8 | P3 | — | **Fixed now**: start-test assertions witness their messages; a namespace positive control | `6ed9e2b` |
+| S7-9 | P3 | — | **Fixed now**: teardown inside the cleanup scope, and checked | `6ed9e2b` |
+| S7-10 | P3 | — | **Fixed now**: the verification-scope wording and the bypass disposition | this file |
+| O7-1 | P2 | 1, 3 | Workstream input: the coverage criterion | WS1, WS3 (round 7 rows) |
+| O7-2 | P2 | 4 | Workstream input: the table spanning S, T, A, P, B, C and D | WS4 (round 7 rows) |
+| O7-3 | P2 | — | **Fixed now**: this round 6 table, the stale header | this file |
+| O7-P3-1 | P3 | — | **Fixed now**, the same as S7-7's rights scope | `97cbd24` |
+| O7-P3-2 | P3 | — | **Fixed now**, the same as S7-5 | `644d949` |
+| O7-P3-3 | P3 | — | **Fixed now**, the same as S7-8, with the new probe's reversal recorded | `6ed9e2b` |
+| O7-P3-4 | P3 | 1 | Workstream input: question 6 in the owner list | WS1 |
+| O7-P3-5 | P3 | 3 | Workstream input: fact E as an owner category | WS3 (round 7 rows) |
+| O7-P3-6 | P3 | — | **Fixed now**: the header, and the README's non-root clause | this file, `fcc122b` |
+| O7-P3-7 | P3 | 1 | Workstream input, the same as S7-7's retained volumes | WS1, question 7 |
+
+## Round 7's runs
+
+No large container batch was run: DataIntent's gateway `--all` comes first, and any batch is cleared with the coordinator. The container runs were focused PostgreSQL tests, one container at a time, on `ce3b539fb522` (`chinook`) and `cf7325f4f9be` (`chinook employees pubs`), built from `ae61776`. Logs are under `build/dl114-r1-work/`.
+
+**Passed**
+- **The health tests:** 3 passed. Only `demo` and `postgres` may call the report, over every role and every connectable database.
+  - Reversal: on round 5's image, `admin,demo,postgres`.
+- **The restore matrix and the real reset**, with the report's rights in every restored database (`policy-r7-restore.log`).
+- **The start suite** (`start-r7-start.log`).
+  - Reversal of the new key probe: on the trusted loopback it fails (`start-r7-probe-reversal.log`).
+- **The inventory generator** on `cf7325f4f9be`: 1,667 signatures, identical in 6 databases (11:22:17).
+- **The documentation guard tests.**
+
+**Failed**
+- **The full suite (host only, no container):** 2 failed, 1,080 passed, 313 skipped (`pytest-r7.log`, 11:29:41). These are the two baseline failures named in round 6's record.
+
+**Not run**
+- The MySQL suites and images, and the TCP copy suite. Round 7 changed no MySQL or copy code.
