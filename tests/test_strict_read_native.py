@@ -212,18 +212,41 @@ def test_postgres_demo_exact_routine_allowlist():
                 f"SELECT has_function_privilege('admin','{signature}','EXECUTE')", 'postgres') == 'f'
 
 
-@pytest.mark.parametrize('database', PG_DATABASES)
-def test_postgres_published_v1_inventory_is_demos_executable_set(database):
-    """Opus round 8, P3-1: the published inventory is the image's, row for row, in every database."""
+def published_v1_inventory():
     import json
     from pathlib import Path
-    published = json.loads(Path('docs/validation/dl-077-v1-public-routines.json').read_text())
-    expected = sorted((r['signature'], r['namespace'], r['kind'], r['volatility']) for r in published['routines'])
-    rows = accepted('postgres', database, "SELECT concat_ws('|', p.oid::regprocedure::text, n.nspname, p.prokind::text, "
-                    "p.provolatile::text) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+    return json.loads(Path('docs/validation/dl-077-v1-public-routines.json').read_text())
+
+
+@pytest.mark.parametrize('database', PG_DATABASES)
+def test_postgres_published_v1_inventory_is_demos_executable_set(database):
+    """Opus round 8, P3-1 and Sol round 9, 3: the published inventory is the image's, row for row and field
+    for field (signature, name, namespace, kind, volatility, and the initdb operator or cast it implements),
+    in every database."""
+    published = published_v1_inventory()
+    expected = sorted((r['signature'], r['name'], r['namespace'], r['kind'], r['volatility'],
+                       ','.join(r['implements'])) for r in published['routines'])
+    rows = accepted('postgres', database, "SELECT concat_ws('|', p.oid::regprocedure::text, p.proname, n.nspname, "
+                    "p.prokind::text, p.provolatile::text, concat_ws(',', "
+                    "CASE WHEN EXISTS (SELECT 1 FROM pg_operator o WHERE o.oid < 16384 AND o.oprcode = p.oid "
+                    "AND p.oid < 16384) THEN 'operator' END, "
+                    "CASE WHEN EXISTS (SELECT 1 FROM pg_cast c WHERE c.oid < 16384 AND c.castfunc = p.oid "
+                    "AND p.oid < 16384) THEN 'cast' END)) "
+                    "FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
                     "WHERE has_function_privilege('demo', p.oid, 'EXECUTE')", 'postgres')
-    actual = sorted(tuple(line.rsplit('|', 3)) for line in rows.splitlines())
+    actual = sorted(tuple(line.rsplit('|', 5)) for line in rows.splitlines())
     assert actual == expected, database + ': demo can execute a set other than the published inventory'
+
+
+def test_postgres_published_v1_inventory_names_the_candidates_databases():
+    """Sol round 9, 3: the publication's databases are the candidate's connectable ones, and its count is
+    its rows'. Run against the candidate it was published from."""
+    published = published_v1_inventory()
+    observed = accepted('postgres', 'postgres', "SELECT datname FROM pg_database WHERE datallowconn "
+                        "AND datname NOT LIKE 'v1\\_%' ORDER BY 1", 'postgres').splitlines()
+    assert published['databases'] == observed
+    assert published['count'] == len(published['routines'])
+    assert set(published) == {'observed_at', 'databases', 'count', 'routines'}
 
 
 @pytest.mark.parametrize('database', PG_DATABASES)
