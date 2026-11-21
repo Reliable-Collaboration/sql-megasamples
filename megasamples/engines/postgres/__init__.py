@@ -18,6 +18,8 @@ from megasamples.engines.postgres import image_test as tester, port, server
 from megasamples.paths import ROOT, engine_build_dir, engine_dir, rel
 from megasamples import container_engine, config as stack
 from megasamples.credentials import client
+from megasamples.copy_config import CopySettings
+from megasamples.postgres_templates import stage_roles
 
 
 class Postgres(Engine):
@@ -45,6 +47,7 @@ class Postgres(Engine):
 
     def image_build(self, datasets, keep=False, threads=4, from_dumps=False):
         from megasamples.engines.mysql import link_tree
+        settings = CopySettings(stack.load(), self.name, datasets)
         context = os.path.join(engine_build_dir(self.name), "image")
         shutil.rmtree(context, ignore_errors=True)
         os.makedirs(context)
@@ -55,6 +58,9 @@ class Postgres(Engine):
             link_tree(src, os.path.join(context, s))
         with open(os.path.join(context, "registry.sql"), "w", encoding="utf-8") as fh:
             fh.write(registry.render(datasets, os.environ.get("MEGASAMPLES_BUILD_ID", "dev"), "postgres", "postgres"))
+        with open(os.path.join(context, "templates.list"), "w", encoding="utf-8") as fh:
+            fh.writelines(name + "\n" for name in settings.templates)
+        stage_roles(context, settings)
         cmd = ["docker", "build", "-f", os.path.join(engine_dir(self.name), "Dockerfile"), "-t", self.image, ROOT]
         print(f"  . docker build -t {self.image} ({len(datasets)} datasets from {rel(context)})")
         if subprocess.run(cmd, cwd=ROOT, env=container_engine.build_env()).returncode != 0:
@@ -77,7 +83,8 @@ class Postgres(Engine):
             "environment": {"POSTGRES_PASSWORD": "${POSTGRES_PASSWORD:-root}",
                             "DEMO_PASSWORD": "${DEMO_PASSWORD:-demo}",
                             "ADMIN_PASSWORD": "${ADMIN_PASSWORD:-admin}"},
-            "healthcheck": {"test": ["CMD-SHELL", "PGPASSFILE=/run/megasamples-health.pgpass psql -w -h 127.0.0.1 -U demo -d megasamples -tAc 'SELECT 1'"],
+            "healthcheck": {"test": ["CMD-SHELL", "PGPASSFILE=/run/megasamples-health.pgpass psql -w -h 127.0.0.1 -U demo -d megasamples "
+                                     "-tAc 'SELECT pg_catalog.megasamples_policy_loaded()' | grep -qx t"],
                             "interval": "5s", "timeout": "5s", "retries": 30},
             "restart": "unless-stopped",
         }

@@ -5,6 +5,8 @@ import re
 
 import pytest
 
+from megasamples.mysql_templates import demo_read_grants
+
 ROOT = Path(__file__).parents[1]
 
 
@@ -13,7 +15,7 @@ def role_grants(engine, role):
     for path in sorted((ROOT/'engines'/engine/'init').glob('*.sql')):
         # Read SQL for grant extraction only; never include its source in a failure.
         sql = re.sub(r'--[^\n]*', '', path.read_text())
-        for privileges, scope, roles in re.findall(r'GRANT\s+(.+?)\s+ON\s+(.+?)\s+TO\s+([^;]+);', sql, re.I):
+        for privileges, scope, roles in re.findall(r'^[ \t]*GRANT[ \t]+(.+?)\s+ON\s+(.+?)\s+TO\s+([^;]+);', sql, re.I | re.M):
             if re.search(r"(?:^|[,\s])'?"+re.escape(role)+r"'?(?:@|[,\s]|$)", roles, re.I):
                 grants.append((tuple(p.strip().upper() for p in privileges.split(',')), scope.strip()))
     return grants
@@ -28,28 +30,37 @@ def text(name, variable):
 
 
 def mysql_scope(document):
-    grants = demo_grants('mysql')
-    # Derive the documentation rule from the actual demo target and privileges.
-    assert grants == [(('SELECT', 'SHOW VIEW'), '*.*')], 'Review changed MySQL demo grants'
-    assert 'every database' in document and '`*.*`' in document
-    assert 'system schemas included' in document and '`mysql`' in document
-    assert 'account rows' in document and 'no write privilege' in document
+    assert demo_grants('mysql') == [], 'Review additional MySQL bootstrap grants'
+    grants = set(demo_read_grants(['working_example'], [('external', True), ('private', False)]))
+    assert grants == {
+        ('SELECT, SHOW VIEW', r'`working\_example`.*'),
+        ('SELECT, SHOW VIEW', r'`external\_%`.*'),
+        ('SELECT', 'megasamples.datasets'),
+        ('SELECT', 'megasamples.copy_service'),
+    }, 'Review changed MySQL demo grants'
+    assert all(term in document for term in ('working schemas', 'explicitly enabled foreign namespaces',
+                                              'registry tables', 'no write privilege'))
+    assert 'every database' not in document and 'system schemas included' not in document
 
 
 def postgres_scope(document):
-    grants = demo_grants('postgres')
+    users = (ROOT/'engines/postgres/init/00-users.sql').read_text()
+    assert 'GRANT megasamples_read TO megasamples_working_read WITH INHERIT TRUE' in users
+    assert 'GRANT megasamples_working_read TO demo WITH INHERIT TRUE' in users
+    grants = role_grants('postgres', 'megasamples_read')
     assert (('SELECT',), 'ALL TABLES IN SCHEMA public') in grants
-    assert (('SELECT',), 'datasets') in grants
-    assert (('SELECT',), 'TABLES') in grants
+    assert (('SELECT',), 'datasets') in role_grants('postgres', 'PUBLIC')
     grant_sql = (ROOT/'engines/postgres/init/20-grants.sql').read_text()
-    assert re.search(r'ALTER DEFAULT PRIVILEGES FOR ROLE admin IN SCHEMA public GRANT SELECT ON TABLES TO demo;', grant_sql)
+    assert re.search(r'ALTER DEFAULT PRIVILEGES FOR ROLE admin IN SCHEMA public GRANT SELECT ON TABLES TO megasamples_read;', grant_sql)
     assert 'tables `admin` later creates' in document and 'public' in document
     assert 'sample database' in document
-    # Init SQL grants demo reads; it does not revoke these inherited capabilities.
-    assert all(set(privileges) <= {'SELECT', 'USAGE', 'CONNECT'} for privileges, _ in grants)
+    # An allow-list: any privilege beyond reading (TRUNCATE, ALL, ...) fails.
+    assert all(set(privileges) <= {'SELECT', 'USAGE', 'CONNECT'} for privileges, _ in grants), grants
     assert re.search(r'\breads (?:persistent )?sample tables\b', document)
     for capability in ('TEMPORARY', 'large objects', 'routines'):
         assert capability in document
+    assert 'cannot create large objects' in document and 'allowlisted routines' in document
+    assert 'no `TEMPORARY` privilege' in document
 
 
 @pytest.mark.parametrize('engine', ['mysql', 'postgres'])
@@ -112,3 +123,104 @@ def test_env_example_admin_scope_matches_init_sql(engine):
     marker = 'admin (MySQL):' if engine == 'mysql' else 'admin (PostgreSQL):'
     assert marker in comments
     admin_scope(comments.split(marker, 1)[1].split('#   admin ', 1)[0], engine)
+
+
+def test_strict_read_guide_describes_the_current_demo_grants():
+    """Sol round 7, 6: docs/strict-read-account.md states what the image grants today."""
+    guide = (ROOT / 'docs/strict-read-account.md').read_text()
+    assert 'gives `demo` exactly `SELECT, SHOW VIEW ON *.*`' not in guide
+    assert all(term in guide for term in ('working schemas', 'explicitly enabled foreign namespaces',
+                                          '`megasamples.datasets`', '`megasamples.copy_service`'))
+    assert '`pg_catalog, pg_temp`' in guide and 'installed in `pg_catalog`' in guide
+    assert '`megasamples_policy_loaded()`' in guide and 'STRICT_READ_OWNER' in guide
+
+
+def test_strict_read_guide_states_the_grants_the_generator_makes():
+    """Sol round 8, P3-3: the guide's MySQL privileges and scopes are the grant generator's, and its
+    PostgreSQL report names every role that can call it (the health test's demo and postgres)."""
+    guide = (ROOT / 'docs/strict-read-account.md').read_text()
+    grants = demo_read_grants(['working'], [('foreign', True), ('closed', False)])
+    schemas = {privileges for privileges, scope in grants if scope.endswith('.*')}
+    tables = [scope for privileges, scope in grants if not scope.endswith('.*')]
+    assert len(schemas) == 1 and {privileges for privileges, scope in grants if scope in tables} == {'SELECT'}
+    assert ('gives `demo` exactly `' + schemas.pop() + '` on the working schemas and on explicitly enabled '
+            'foreign namespaces') in guide
+    assert '`SELECT` on the registry tables ' + ' and '.join(f'`{t}`' for t in tables) + ', and `USAGE`' in guide
+    assert not any('closed' in scope for _, scope in grants)
+    # Sol round 9, 5: the scope's escaping as well. The generator's exact patterns (pinned in
+    # mysql_scope) escape each underscore, so a working schema matches only itself and a foreign
+    # namespace only its own prefix; the guide must say so.
+    assert {scope for _, scope in demo_read_grants(['working_example'], [('external', True)])
+            if scope.endswith('.*')} == {r'`working\_example`.*', r'`external\_%`.*'}
+    assert "(each pattern's underscores escaped)" in guide and 'unescaped' not in guide
+    # The guide describes this release, which changed the MySQL grants but not the views.
+    assert 'The MySQL engine and views are unchanged in this PR' not in guide
+    assert 'This release changed `demo`\'s MySQL grants (above) but not these views' in guide
+    # The MySQL boundary probe was written for the earlier global grant, which it asserts first.
+    assert "[boundary probe](validation/strict-read-mysql-boundary.py) was written for the earlier grant" in guide
+    assert 'fails at its grant assertion on this release' in guide
+    # The guide is user documentation: no pull-request or design references.
+    assert 'PR #14' not in guide and 'design 4.2' not in guide and 'version 1' not in guide
+    # The report: granted to demo directly, and executable otherwise only by the superuser.
+    assert 'granted to `demo` directly' in guide
+    assert '`admin` and every other role except the superuser `postgres` are refused it' in guide
+
+
+def test_readme_says_what_teardown_discards_and_keeps():
+    """Sol round 11, 8: make down and make clean-all remove the engines' working data volumes (a later up
+    starts from the images); the named SQLite volume stays, and the next start copies the image's files over it."""
+    readme = (ROOT / 'README.md').read_text()
+    assert '`make down` and `make clean-all` remove each engine\'s working data with its container' in readme
+    assert 'the named `megasamples-sqlite` volume stays' in readme
+    # Sol round 12, 5: the restart behaviour, exactly: only the files the new image carries are replaced.
+    assert "replaces the files the image carries and leaves any other file in the volume" in readme
+
+
+def test_help_says_what_teardown_discards():
+    """Opus round 12, 2: the help nearest the command says it too, under the README's test."""
+    from megasamples import cli, workspace
+    phrase = "each engine's working data"
+    makefile = (ROOT / 'Makefile').read_text()
+    assert any('make up | down' in line and phrase in line for line in makefile.splitlines())
+    assert any('clean-all' in line and phrase in line for line in makefile.splitlines())
+    assert phrase in cli.COMMANDS['down'][2]
+    down = (ROOT / 'megasamples/job.py').read_text().split('def down', 1)[1].split('ap.parse_args', 1)[0]
+    assert phrase in down
+    assert phrase in workspace.__doc__.split('clean --all', 1)[1].splitlines()[0]
+
+
+def test_rendered_help_says_what_teardown_discards_and_keeps():
+    """Sol round 13, 3: the help as a person sees it, for both commands, with the named SQLite volume kept."""
+    import re
+    import subprocess
+    import sys
+
+    def rendered(*args):
+        # Sol round 14, 4: the help a person sees is stdout of a command that succeeded.
+        result = subprocess.run([sys.executable, '-m', 'megasamples', *args], capture_output=True, text=True,
+                                cwd=ROOT)
+        assert result.returncode == 0, (args, result.stderr[-300:])
+        return result.stdout
+    listing = rendered('--help')
+    for command in ('down', 'clean'):
+        line = re.search(rf'^\s+{command}\s+(.+)$', listing, re.M)
+        assert line and "each engine's working data" in line.group(1), (command, line and line.group(0))
+    for command in ('down', 'clean'):
+        text = ' '.join(rendered(command, '--help').split())
+        assert "each engine's working data" in text and 'the named SQLite volume stays' in text, (command, text)
+    clean_all = ' '.join(rendered('clean', '--help').split('--all', 2)[-1].split())
+    assert "each engine's working data" in clean_all and 'the named SQLite volume stays' in clean_all, clean_all
+
+
+def test_readme_describes_the_catalogue_and_the_databases_as_they_are():
+    """Sol round 13, 6: the catalogue is generated from the repository, not read from a running image, and a
+    PostgreSQL image has one database per physical database, which an append dataset shares with its base."""
+    readme = (ROOT / 'README.md').read_text()
+    assert 'The catalogue, the landing page and the image tests all read it' not in readme
+    assert "`make catalogue` is generated from the repository's dataset definitions and pinned counts" in readme
+    assert 'one per dataset' not in readme and 'one database per dataset' not in readme
+    # Sol round 14, 5: the explanations themselves, not only the absence of the old phrase.
+    assert readme.count("shares its base's") >= 2
+    page = (ROOT / 'megasamples/console_page.py').read_text()
+    assert 'one database per dataset' not in page and "an append dataset shares its base's" in page
+    assert 'for live datasets' in readme.split('provenance registry', 1)[1].split('\n\n', 1)[0]

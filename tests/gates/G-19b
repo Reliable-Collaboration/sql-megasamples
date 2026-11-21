@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""G-19b. A retained hard link identifies the file that was moved aside."""
+
+import errno
+import os
+import tempfile
+from pathlib import Path
+
+
+def require_same_file(moved: Path, retained: Path) -> None:
+    if not moved.samefile(retained):
+        raise AssertionError("the moved file is not the retained file")
+
+
+def run(directory: Path) -> None:
+    final = directory / "copy.sqlite"
+    retained = directory / "retained"
+    moved = directory / "moved"
+    final.write_bytes(b"original fixture")
+    os.link(final, retained)
+
+    final.rename(moved)
+    require_same_file(moved, retained)
+    os.link(moved, final)
+    moved.unlink()
+    print("untouched copy: same file")
+
+    final.unlink()
+    final.write_bytes(b"replacement fixture")
+    final.rename(moved)
+    try:
+        require_same_file(moved, retained)
+    except AssertionError as error:
+        print(f"control rejected replacement: {error}")
+    else:
+        raise AssertionError("replacement passed the same-file assertion")
+
+    final.write_bytes(b"file published during the comparison")
+    try:
+        os.link(moved, final)
+    except FileExistsError as error:
+        if error.errno != errno.EEXIST:
+            raise
+    else:
+        raise AssertionError("put-back unexpectedly replaced an occupied name")
+    if final.read_bytes() != b"file published during the comparison":
+        raise AssertionError("put-back overwrote another publication")
+    final.unlink()
+
+    os.link(moved, final)
+    if not final.samefile(moved) or final.read_bytes() != b"replacement fixture":
+        raise AssertionError("put-back did not restore the replacement")
+    moved.unlink()
+    final.unlink()
+
+    for number in range(1000):
+        candidate = directory / f"replacement-{number}"
+        candidate.touch(exist_ok=False)
+        if candidate.samefile(retained):
+            raise AssertionError("a new file reused the retained inode")
+    print("put-back preserved the replacement without overwriting")
+    print("1000 newly created files: none shared the retained inode")
+
+
+if __name__ == "__main__":
+    with tempfile.TemporaryDirectory(prefix="dl077-g19b-") as scratch:
+        run(Path(scratch))

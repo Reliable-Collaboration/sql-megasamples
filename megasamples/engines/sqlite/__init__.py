@@ -16,6 +16,9 @@ from megasamples.engines.mysql import server as mysql
 from megasamples.engines.sqlite import image_test as tester, port
 from megasamples.paths import ROOT, engine_build_dir, engine_dir, rel
 from megasamples import container_engine
+from megasamples.config import load as load_config
+from megasamples.copy_config import CopySettings
+from megasamples.sqlite_templates import stage_templates
 
 
 class SQLite(Engine):
@@ -39,6 +42,7 @@ class SQLite(Engine):
         return verifier.verify(dataset, stages, engine=self.name, pin=pin)
 
     def image_build(self, datasets, keep=False, threads=4, from_dumps=False):
+        settings = CopySettings(load_config(), self.name, datasets)
         context = os.path.join(engine_build_dir(self.name), "image")
         shutil.rmtree(context, ignore_errors=True)
         os.makedirs(os.path.join(context, "data"))
@@ -48,6 +52,7 @@ class SQLite(Engine):
                 sys.exit(f"no SQLite port of `{database}` at {rel(src)}; run: make build ENGINE=sqlite D=<dataset>")
             os.link(src, os.path.join(context, "data", f"{database}.sqlite"))
         port.write_registry(os.path.join(context, "data", "megasamples.sqlite"), datasets)
+        stage_templates(context, settings)
         cmd = ["docker", "build", "-f", os.path.join(engine_dir(self.name), "Dockerfile"), "-t", self.image, ROOT]
         print(f"  . docker build -t {self.image} ({len(datasets)} datasets from {rel(context)})")
         if subprocess.run(cmd, cwd=ROOT, env=container_engine.build_env()).returncode != 0:
@@ -67,9 +72,14 @@ class SQLite(Engine):
         # and `up --wait` waits for the whole 900 MB rather than for the first file. The copy of
         # that much data was OOM-killed under a 64 MB limit on the first start (2026-09-10), so the
         # limit is 256 MB and the health check has a start period long enough for a slow disk.
+        # A console writing when the stack stopped can leave a hot journal (or -wal and -shm) beside a
+        # file; SQLite would apply it to the fresh copy on its next open, so each file's three siblings
+        # are removed before the copy is moved into place.
         # `$$`: Compose interpolates a single `$` in compose.yaml; the doubled one reaches the shell
         copy = ("rm -f /shared/.complete; for f in /data/*.sqlite; do n=$$(basename \"$$f\"); "
-                "cp -f \"$$f\" \"/shared/.$$n.part\" && mv -f \"/shared/.$$n.part\" \"/shared/$$n\" || exit 1; done; "
+                "cp -f \"$$f\" \"/shared/.$$n.part\" && "
+                "rm -f \"/shared/$$n-journal\" \"/shared/$$n-wal\" \"/shared/$$n-shm\" && "
+                "mv -f \"/shared/.$$n.part\" \"/shared/$$n\" || exit 1; done; "
                 "touch /shared/.complete && exec sleep infinity")
         return {
             "image": f"${{MEGASAMPLES_SQLITE_IMAGE:-{self.image}}}",

@@ -10,7 +10,7 @@ ROOT=Path(__file__).resolve().parents[2]
 
 def main():
     out=Path(tempfile.mkdtemp(prefix='reversals-',dir=ROOT/'build/dl092'))
-    book=(ROOT/'docs/live-upgrade-runbook.md').read_text()
+    book=(ROOT/'docs/history/live-upgrade-runbook.md').read_text()
     gate=(ROOT/'docs/validation/quiescence.py').read_text()
     upgrade=(ROOT/'docs/validation/live-upgrade.py').read_text()
     runbook='DL089_RUNBOOK_SOURCE';scanner='DL088_GATE_SOURCE';config='DL086_UPGRADE_SOURCE'

@@ -6,12 +6,14 @@
 Asserts: the container answers a real query within the time budget (not `mysqladmin ping`, which
 succeeds on access-denied); every expected database is present and matches the registry; row counts
 match each dataset's pinned expectations; `demo` can read and cannot write, including through a
-routine; no account has an empty password; CHECK TABLE passes; CONVERT_TZ works; and the password
+routine; unkeyed accounts are declared and locked; CHECK TABLE passes; CONVERT_TZ works; the password
 override env vars take effect.
 """
 import json, os, subprocess, sys, time
 import yaml
 
+from megasamples import config
+from megasamples.copy_config import CopySettings
 from megasamples.paths import ROOT
 from megasamples.credentials import client, environment_file, session
 from megasamples.engines import unique_databases
@@ -31,11 +33,43 @@ def q(sql, user="root", pw="root", database=None, container=NAME):
 
 
 
+def expected_demo_grants(datasets, foreign=()):
+    # mysql --batch renders each literal backslash as two backslashes.
+    schemas = [*unique_databases(datasets), *(prefix + "_%" for prefix, readable in foreign if readable)]
+    scopes = [schema.replace("_", r"\\_") for schema in schemas]
+    principal = ' TO `demo`@`%`'
+    return {grant + principal for grant in [
+        'GRANT USAGE ON *.*',
+        'GRANT SELECT ON `megasamples`.`copy_service`',
+        'GRANT SELECT ON `megasamples`.`datasets`',
+        *(f'GRANT SELECT, SHOW VIEW ON `{scope}`.*' for scope in scopes),
+    ]}
+
+
 class Checks:
     def __init__(self): self.failures = []
     def ok(self, label): print(f"  . {label}")
     def fail(self, label): print(f"  x {label}"); self.failures.append(label)
     def expect(self, cond, label): (self.ok if cond else self.fail)(label)
+
+
+def refused(result, code):
+    """MySQL's own permission refusal for this operation: 1142 for a table statement, 1370
+    for a routine. Not an authentication or database-access error (1045, 1044) or any other failure."""
+    return result.returncode != 0 and f"ERROR {code} " in result.stderr
+
+
+def demo_write_checks(checks, table, created, routine):
+    """demo is refused each write to the probe table, and the write through a routine, by permission"""
+    reader = "demo"
+    for statement, label in [
+            (f"CREATE TABLE {created} (id integer)", "CREATE"),
+            (f"INSERT INTO {table} VALUES (2, 2)", "INSERT"),
+            (f"UPDATE {table} SET n=2 WHERE id=1", "UPDATE"),
+            (f"DELETE FROM {table} WHERE id=1", "DELETE"),
+            (f"DROP TABLE {table}", "DROP")]:
+        checks.expect(refused(q(statement, user=reader, pw=reader), 1142), f"demo cannot {label}")
+    checks.expect(refused(q(f"CALL {routine}()", user=reader, pw=reader), 1370), "demo cannot write through a routine")
 
 
 def account_checks(checks, schema, read_table, expected_count):
@@ -57,15 +91,7 @@ def account_checks(checks, schema, read_table, expected_count):
         checks.expect(q("SELECT 1", user=reader, pw=reader).returncode == 0, "demo can connect")
         result = q(f"SELECT COUNT(*) FROM `{schema}`.`{read_table}`", user=reader, pw=reader)
         checks.expect(result.returncode == 0 and result.stdout.strip() == str(expected_count), "demo can read")
-        for statement, label in [
-                (f"CREATE TABLE {created} (id integer)", "CREATE"),
-                (f"INSERT INTO {table} VALUES (2, 2)", "INSERT"),
-                (f"UPDATE {table} SET n=2 WHERE id=1", "UPDATE"),
-                (f"DELETE FROM {table} WHERE id=1", "DELETE"),
-                (f"DROP TABLE {table}", "DROP")]:
-            checks.expect(q(statement, user=reader, pw=reader).returncode != 0, f"demo cannot {label}")
-        checks.expect(q(f"CALL {routine}()", user=reader, pw=reader).returncode != 0,
-                      "demo cannot write through a routine")
+        demo_write_checks(checks, table, created, routine)
         checks.expect(q(f"INSERT INTO {table} VALUES (2, 2)", user=writer, pw=writer).returncode == 0,
                       "admin can write")
     finally:
@@ -73,11 +99,44 @@ def account_checks(checks, schema, read_table, expected_count):
         q(f"DROP TABLE IF EXISTS {table}, {created}")
 
 
+def override_checks(c):
+    """The password overrides, on a container of their own: only the one this run starts.
+    A leftover from an interrupted run goes first, with its volumes; a failed launch is a failure,
+    and every query names the ID the launch returned."""
+    sh("docker", "rm", "-fv", NAME + "2")
+    with environment_file({"MYSQL_ROOT_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:
+        started = sh("docker", "run", "-d", "--name", NAME + "2",
+                     "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
+                     "--env-file", path, IMAGE)
+    if started.returncode != 0:
+        c.expect(False, f"could not start the override container: {started.stderr.strip()[:200]}")
+        return
+    # The ID docker printed; the name only names this run's container once the launch succeeded with it.
+    container = started.stdout.strip() or NAME + "2"
+    try:
+        for _ in range(150):
+            if q("SELECT 1", pw="sekret", container=container).returncode == 0:
+                break
+            time.sleep(0.2)
+        c.expect(q("SELECT 1", pw="sekret", container=container).returncode == 0,
+                 "MYSQL_ROOT_PASSWORD override applied by the wrapper")
+        c.expect(q("SELECT 1", pw="root", container=container).returncode != 0,
+                 "the baked default root password no longer works after an override")
+        c.expect(q("SELECT 1", user="demo", pw="viewer", container=container).returncode == 0,
+                 "DEMO_PASSWORD override applied")
+    finally:
+        sh("docker", "rm", "-fv", container)
+
+
 @session()
 def main(argv=None):
     datasets = list(sys.argv[1:] if argv is None else argv) or ["sakila"]
     c = Checks()
-    sh("docker", "rm", "-f", NAME)
+    filesystem = sh("docker", "run", "--rm", "--network", "none", "--entrypoint", "sh", IMAGE,
+                    "-ec", "test -d /var/lib/mysql/mysql; test ! -e /var/lib/mysql/auto.cnf; "
+                           "test ! -L /var/lib/mysql/auto.cnf")
+    c.expect(filesystem.returncode == 0, "the image has no baked auto.cnf before server startup")
+    sh("docker", "rm", "-fv", NAME)
     started = time.monotonic()
     run = sh("docker", "run", "-d", "--name", NAME,
              "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
@@ -138,13 +197,26 @@ def main(argv=None):
                 c.expect(not orphaned, f"{schema}: {len(external)} cross-database foreign key(s) "
                                        f"present with no orphans" + (f" -- {orphaned}" if orphaned else ""))
 
+        grants = q("SHOW GRANTS", user="demo", pw="demo")
+        settings = CopySettings(config.load(), "mysql", datasets)
+        c.expect(grants.returncode == 0 and set(grants.stdout.splitlines()) ==
+                 expected_demo_grants(datasets, settings.foreign),
+                 "demo holds exactly the configured read grants")
+        for database in [*unique_databases(datasets), "megasamples"]:
+            result = q("CREATE TEMPORARY TABLE read_probe(i int)", user="demo", pw="demo", database=database)
+            c.expect(result.returncode != 0 and "denied" in result.stderr.lower(),
+                     f"{database}: demo cannot create temporary objects")
+
         first_counts = image_counts(datasets[0])
         read_table = sorted(first_counts)[0]
         account_checks(c, unique_databases(datasets)[0], read_table, first_counts[read_table])
 
-        empty = q("SELECT COUNT(*) FROM mysql.user WHERE authentication_string='' "
-                  "AND user NOT LIKE 'mysql.%'").stdout.strip()
-        c.expect(empty == "0", "no account has an empty password")
+        empty = q("SELECT user,host,account_locked FROM mysql.user WHERE authentication_string='' "
+                  "AND user NOT LIKE 'mysql.%'")
+        declared = {item.owner for item in settings.namespaces} | settings.readers.keys() | settings.writers.keys()
+        allowed = {f"{account}\t%\tY" for account in declared}
+        c.expect(empty.returncode == 0 and set(empty.stdout.splitlines()) <= allowed,
+                 "every unkeyed account is declared and locked")
         c.expect(q("SELECT CONVERT_TZ('2026-01-01 00:00:00','UTC','America/Chicago')")
                  .stdout.strip() == "2025-12-31 18:00:00", "CONVERT_TZ works (time-zone tables loaded)")
         c.expect(q("SELECT SHA2('a',256)").returncode == 0, "SHA2 available (SSL build)")
@@ -160,23 +232,8 @@ def main(argv=None):
         print(f"  . data directory: {datadir} MB across {databases} databases")
     finally:
         # the override path needs its own container
-        sh("docker", "rm", "-f", NAME)
-        with environment_file({"MYSQL_ROOT_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:
-            sh("docker", "run", "-d", "--name", NAME + "2",
-               "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
-               "--env-file", path, IMAGE)
-        for _ in range(150):
-            if q("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0:
-                break
-            time.sleep(0.2)
-        c.expect(q("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0,
-                 "MYSQL_ROOT_PASSWORD override applied by the wrapper")
-        c.expect(q("SELECT 1", pw="root", container=NAME + "2").returncode != 0,
-                 "the baked default root password no longer works after an override")
-        c.expect(q("SELECT 1", user="demo", pw="viewer", container=NAME + "2").returncode == 0,
-                 "DEMO_PASSWORD override applied")
-        sh("docker", "rm", "-f", NAME + "2")
-
+        sh("docker", "rm", "-fv", NAME)
+        override_checks(c)
     print(f"image test: {len(c.failures)} failure(s)")
     return 1 if c.failures else 0
 

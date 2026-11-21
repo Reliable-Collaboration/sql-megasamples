@@ -31,7 +31,7 @@ def main():
     (backup/'rollback-image-ids.txt').write_text(f'{tag} {image} []\n')
     subprocess.run(['python3', str(helper), 'save-images', str(backup)], check=True,
                    stdout=(out/'save.log').open('w'), stderr=subprocess.STDOUT)
-    text = (ROOT/'docs/live-upgrade-runbook.md').read_text()
+    text = (ROOT/'docs/history/live-upgrade-runbook.md').read_text()
     script = text.split('# Rehearse the COMPLETE rollback set', 1)[1].split(
         '# Back in the original maintenance shell/store.', 1)[0].split('\n', 1)[1]
     env = dict(os.environ, BACKUP_DIR=str(backup), UPGRADE_HELPER=str(helper))

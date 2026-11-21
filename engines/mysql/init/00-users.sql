@@ -1,4 +1,4 @@
--- Accounts for the megasamples image (PLAN.md section 1, decisions/database-naming-convention.md).
+-- Accounts for the megasamples image (knowledge/decisions/database-naming-convention.md).
 -- Runs in the BUILDER stage: the official entrypoint's docker_setup_db never executes on a
 -- pre-populated data directory, so root@'%', the demo user and the admin user are all created here.
 -- entrypoint-wrapper.sh applies MYSQL_ROOT_PASSWORD / DEMO_PASSWORD / ADMIN_PASSWORD at run time.
@@ -14,9 +14,9 @@ GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
 CREATE USER IF NOT EXISTS 'admin'@'%' IDENTIFIED BY 'admin';
 GRANT ALL PRIVILEGES ON *.* TO 'admin'@'%' WITH GRANT OPTION;
 
--- read-only demo account: SELECT and SHOW VIEW everywhere, no write privilege anywhere.
+-- read-only demo account: its grants are made per schema at build time (megasamples/mysql_templates.py,
+-- demo_read_grants); no write privilege anywhere.
 CREATE USER IF NOT EXISTS 'demo'@'%'  IDENTIFIED BY 'demo';
-GRANT SELECT, SHOW VIEW ON *.* TO 'demo'@'%';
 
 -- provenance registry; megasamples/registry.py regenerates 10-registry.sql with the real rows.
 CREATE DATABASE IF NOT EXISTS megasamples;

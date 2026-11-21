@@ -37,7 +37,7 @@ class Checks:
 def main(argv=None):
     datasets = list(sys.argv[1:] if argv is None else argv) or ["sakila"]
     c = Checks()
-    sh("docker", "rm", "-f", NAME)
+    sh("docker", "rm", "-fv", NAME)
     started = time.monotonic()
     run = sh("docker", "run", "-d", "--name", NAME, "--label", "megasamples.transient=true",
              "--label", "megasamples.role=test", IMAGE)
@@ -65,7 +65,7 @@ def main(argv=None):
             total_mb += float(q("SELECT page_count * page_size / 1048576.0 FROM pragma_page_count(), pragma_page_size()", db).stdout.strip() or 0)
         print(f"  . files: {total_mb:,.0f} MB across {len(datasets)} databases; sqlite {q('SELECT sqlite_version()').stdout.strip()}")
     finally:
-        sh("docker", "rm", "-f", NAME)
+        sh("docker", "rm", "-fv", NAME)
     print(f"image test: {len(c.failures)} failure(s)")
     return 1 if c.failures else 0
 

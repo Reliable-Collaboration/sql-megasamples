@@ -17,7 +17,7 @@ def main():
     scanner = (ROOT/'docs/validation/quiescence.py').read_text()
     readme = (ROOT/'README.md').read_text()
     example = '\n'.join(line for line in (ROOT/'.env.example').read_text().splitlines() if line.startswith('#'))
-    book = (ROOT/'docs/live-upgrade-runbook.md').read_text()
+    book = (ROOT/'docs/history/live-upgrade-runbook.md').read_text()
     controls = []
 
     def add(name, source, before, after, variable, test, failures):

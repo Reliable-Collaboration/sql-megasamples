@@ -9,7 +9,7 @@ import subprocess
 
 import pytest
 
-RUNBOOK = Path(os.environ.get('DL089_RUNBOOK_SOURCE', Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md'))
+RUNBOOK = Path(os.environ.get('DL089_RUNBOOK_SOURCE', Path(__file__).parents[1] / 'docs/history/live-upgrade-runbook.md'))
 
 
 def block(start, end):

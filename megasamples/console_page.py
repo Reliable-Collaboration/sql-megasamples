@@ -128,7 +128,7 @@ def connect_cards(cfg, data, demo_pw, admin_pw):
                     ("client", f"psql -h 127.0.0.1 -p {port} -U demo -W {first}"),
                     ("URL", f"postgresql://demo:{urllib.parse.quote(demo_pw, safe='')}@127.0.0.1:{port}/{first}"),
                     ("JDBC", f"jdbc:postgresql://127.0.0.1:{port}/{first}"),
-                    ("note", "one database per dataset; connect to the one you want, or to `megasamples` for the registry.")]
+                    ("note", "one database per physical database (an append dataset shares its base's); connect to the one you want, or to `megasamples` for the registry.")]
         elif name == "sqlite":
             rows = [("files", f"/data/{{database}}.sqlite inside the megasamples-sqlite container, plus /data/megasamples.sqlite (the registry); no accounts"),
                     ("copy one out", f"docker cp megasamples-sqlite:/data/{first}.sqlite ."),

@@ -16,7 +16,7 @@ def test_copy_and_server_limits_and_data_checks(monkeypatch, capsys, copy_second
     baked_password = image_test.q.__defaults__[1]
 
     def shell(*args, **kwargs):
-        if args[:2] == ('docker', 'run'):
+        if args[:3] == ('docker', 'run', '-d'):
             clock[0] = copy_seconds
         return SimpleNamespace(returncode=0, stdout='', stderr='')
 
@@ -30,7 +30,7 @@ def test_copy_and_server_limits_and_data_checks(monkeypatch, capsys, copy_second
             'CHECK TABLE `jobs`': 'pubs.jobs\tcheck\tstatus\tOK',
         }
         if 'authentication_string' in sql:
-            answer = '0'
+            answer = 'copier\t%\tY\n'
         elif 'CONVERT_TZ' in sql:
             answer = '2025-12-31 18:00:00'
         elif 'SELECT CONCAT(table_name)' in sql:
@@ -39,6 +39,15 @@ def test_copy_and_server_limits_and_data_checks(monkeypatch, capsys, copy_second
             answer = ''
         else:
             answer = answers.get(sql, '1')
+        if sql == 'SHOW GRANTS':
+            answer = "\n".join([
+                'GRANT USAGE ON *.* TO `demo`@`%`',
+                'GRANT SELECT, SHOW VIEW ON `pubs`.* TO `demo`@`%`',
+                'GRANT SELECT ON `megasamples`.`copy_service` TO `demo`@`%`',
+                'GRANT SELECT ON `megasamples`.`datasets` TO `demo`@`%`',
+            ])
+        if sql.startswith('CREATE TEMPORARY TABLE') and kwargs.get('user') == 'demo':
+            return SimpleNamespace(returncode=1, stdout='', stderr='CREATE command denied')
         rejected_override = (kwargs.get('container') == image_test.NAME + '2'
                              and kwargs.get('pw') == baked_password)
         return SimpleNamespace(returncode=int(rejected_override), stdout=answer, stderr='')

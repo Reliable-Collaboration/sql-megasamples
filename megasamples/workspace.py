@@ -3,7 +3,7 @@
 
   python3 -m megasamples status status     what is up: the compose stack, and any throwaway container
   python3 -m megasamples status clean      remove the throwaway containers, leave the stack alone
-  python3 -m megasamples status clean --all   also `docker compose down`
+  python3 -m megasamples status clean --all   also remove the stack, with each engine's working data
 
 Two kinds of container exist and they are not the same kind of thing:
 
@@ -63,7 +63,7 @@ def transient_containers():
         if name in found:
             continue
         for c in listing(f"name=^{name}$"):
-            found[c["Names"]] = c
+            found[c["Names"]] = {**c, "matched": "name"}
     return list(found.values())
 
 
@@ -85,18 +85,29 @@ def status():
     return 0
 
 
+def remove_unlabelled(names):
+    """Containers found only by a name from before the transient label. On a shared daemon such a name may be
+    another project's container, so its volumes stay; a labelled one goes with them."""
+    if names:
+        docker("rm", "-f", *names, check=True)
+
+
 def clean(also_stack=False):
     transient = transient_containers()
     if not transient:
         print("no transient containers to remove")
     else:
         names = [c["Names"] for c in transient]
-        docker("rm", "-f", *names, check=True)
+        labelled = [c["Names"] for c in transient if c.get("matched") != "name"]
+        if labelled:
+            docker("rm", "-fv", *labelled, check=True)
+        remove_unlabelled([c["Names"] for c in transient if c.get("matched") == "name"])
         for n in names:
             print(f"  removed {n}")
 
     if also_stack:
-        p = subprocess.run(["docker", "compose", "down"], capture_output=True, text=True)
+        from megasamples import data_volumes
+        p = data_volumes.down(capture=True)
         print("  stack down" if p.returncode == 0
               else f"  could not bring the stack down: {p.stderr.strip()[:200]}")
     return 0
@@ -106,7 +117,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("action", choices=["status", "clean"], nargs="?", default="status")
     ap.add_argument("--all", action="store_true",
-                    help="with `clean`: also bring the compose stack down")
+                    help="with `clean`: also remove the compose stack, with each engine's working data; "
+                         "the named SQLite volume stays")
     a = ap.parse_args(argv)
     return status() if a.action == "status" else clean(a.all)
 

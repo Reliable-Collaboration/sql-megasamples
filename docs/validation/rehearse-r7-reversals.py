@@ -10,7 +10,7 @@ ROOT=Path(__file__).resolve().parents[2]
 
 def main():
     out=Path(tempfile.mkdtemp(prefix='reversals-',dir=ROOT/'build/dl091'))
-    code=(ROOT/'docs/validation/quiescence.py').read_text();book=(ROOT/'docs/live-upgrade-runbook.md').read_text()
+    code=(ROOT/'docs/validation/quiescence.py').read_text();book=(ROOT/'docs/history/live-upgrade-runbook.md').read_text()
     controls=[
       ('Y1 enumeration errors',code,'for directory, _, _ in os.walk(path, onerror=lambda error: (_ for _ in ()).throw(error)):', 'for directory, _, _ in os.walk(path):','tests/test_quiescence_gate.py::test_required_cgroup_enumeration_denial_holds_with_readable_reversal','DL088_GATE_SOURCE'),
       ('Y2 checkpoint before first start',book,'    TEARDOWN_PHASE=rollback-starting; save_context', '    :','tests/test_quiescence_runbook.py::test_partial_exact_original_restart_persists_guard_before_first_start','DL089_RUNBOOK_SOURCE'),

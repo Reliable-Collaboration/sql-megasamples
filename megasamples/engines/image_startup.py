@@ -7,7 +7,7 @@ import math
 import time
 
 SERVER_BUDGET_SECONDS = 30
-# Observed maxima, seconds; see docs/cold-readiness-evidence.md for measurements.
+# Observed maxima, seconds; see docs/history/cold-readiness-evidence.md for measurements.
 # Six fresh-volume starts per measured image; maxima include both main and PR #11
 # where compared. Recorded in docs/validation/cold-readiness-2026-11-17.json.
 OBSERVED_COPY_MAX_SECONDS = {'mysql': 83.76201439800207, 'postgres': 85.27370424906258, 'sqlite': 71.86194443202112}

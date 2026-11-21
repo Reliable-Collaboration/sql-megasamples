@@ -1,0 +1,236 @@
+"""The stack's Compose routes keep no engine's anonymous data volume behind (Opus round 10, P2-1).
+
+The engines' data directories are the anonymous volumes their images declare. Compose's `down` removes the
+containers and leaves those volumes, and a later `up` makes fresh ones; `up --renew-anon-volumes` also leaves
+the volume it replaced. Each route is driven against a fake docker daemon that models exactly that, and
+must end with only the named volume (the SQLite files the consoles share) and the running containers'
+own volumes in the store.
+"""
+
+import json
+import subprocess
+from types import SimpleNamespace
+
+import pytest
+
+from megasamples import job, workspace
+import megasamples.console_config
+import megasamples.console_images
+
+SERVICES = {"mysql": "megasamples-mysql", "sqlite": "megasamples-sqlite"}
+NAMED = "megasamples-sqlite"
+
+
+class Daemon:
+    def __init__(self, image="current", recreate_fails=None, compose_images=None, image_ids=None,
+                 config_fails=False):
+        self.config_fails = config_fails
+        self.compose_images = compose_images or {}  # what Compose resolves each service's image to (.env)
+        self.image_ids = image_ids or {}            # image reference -> ID, beyond the default "current"
+        self.recreate_fails = recreate_fails   # None, "after" the renewal (--wait gives up), or "before" it
+        self.serial = 0
+        self.containers = {}            # name -> {"image", "anonymous"}
+        self.volumes = {NAMED}
+        self.calls = []
+        for service in SERVICES:
+            self.create(service, image)
+
+    def anonymous(self):
+        self.serial += 1
+        volume = f"{self.serial:064x}"
+        self.volumes.add(volume)
+        return volume
+
+    def create(self, service, image="current"):
+        self.containers[SERVICES[service]] = {"image": image, "anonymous": self.anonymous()}
+
+    def run(self, argv, **kwargs):
+        argv = list(argv)
+        self.calls.append(argv)
+        out, code = "", 0
+        if argv[:2] == ["docker", "inspect"] and argv[3] == "{{.Image}}":
+            container = self.containers.get(argv[4])
+            out, code = (container["image"], 0) if container else ("", 1)
+        elif argv[:3] == ["docker", "image", "inspect"]:
+            out = self.image_ids.get(argv[-1], "current")
+        elif argv[:2] == ["docker", "inspect"] and argv[3] == "{{json .Mounts}}":
+            container = self.containers.get(argv[4])
+            if container is None:
+                code = 1
+            else:
+                mounts = [{"Type": "volume", "Name": container["anonymous"]}]
+                if argv[4] == SERVICES["sqlite"]:
+                    mounts.append({"Type": "volume", "Name": NAMED})
+                out = json.dumps(mounts)
+        elif argv[:2] == ["docker", "volume"] and argv[2] == "rm":
+            for volume in argv[3:]:
+                if any(c["anonymous"] == volume for c in self.containers.values()):
+                    code = 1
+                else:
+                    self.volumes.discard(volume)
+        elif argv[:2] == ["docker", "compose"]:
+            words = argv[2:]
+            assert "-f" in words, "a Compose call names the generated file"
+            if "config" in words and self.config_fails:
+                code = 1
+            elif "config" in words:
+                out = json.dumps({"services": {service: {"image": self.compose_images.get(service, f"img-{service}")}
+                                               for service in SERVICES}})
+            elif "down" in words:
+                assert "-v" not in words and "--volumes" not in words, "down -v would remove the named volume"
+                self.containers.clear()                    # anonymous volumes stay, as Compose leaves them
+            elif "rm" in words:
+                assert "--stop" in words and "--force" in words
+                for container in self.containers.values():
+                    if "--volumes" in words or "-v" in words:
+                        self.volumes.discard(container["anonymous"])
+                self.containers.clear()
+            elif "up" in words:
+                services = [w for w in words if w in SERVICES]
+                if "--force-recreate" in words and self.recreate_fails == "before":
+                    code = 1
+                elif "--force-recreate" in words:
+                    if self.recreate_fails == "after":
+                        code = 1                            # created with fresh volumes, then unhealthy
+                    for service in services:
+                        old = self.containers[SERVICES[service]]
+                        renewed = "--renew-anon-volumes" in words
+                        self.containers[SERVICES[service]] = {
+                            "image": "current", "anonymous": self.anonymous() if renewed else old["anonymous"]}
+                else:
+                    for service in SERVICES:
+                        if SERVICES[service] not in self.containers:
+                            self.create(service)
+        elif argv[:2] == ["docker", "ps"]:
+            out = ""
+        return subprocess.CompletedProcess(argv, code, out, "")
+
+    def leftovers(self):
+        attached = {c["anonymous"] for c in self.containers.values()}
+        return self.volumes - attached - {NAMED}
+
+
+@pytest.fixture
+def daemon(monkeypatch):
+    def install(image="current", recreate_fails=None, **options):
+        d = Daemon(image, recreate_fails, **options)
+        monkeypatch.setattr(subprocess, "run", d.run)
+        monkeypatch.setattr(job.os.path, "exists", lambda path: True)
+        engines = {name: SimpleNamespace(name=name, container=SERVICES[name], image=f"img-{name}", title=name,
+                                         port=None, connection_hint=lambda cfg: "") for name in SERVICES}
+        monkeypatch.setattr(job.engine_registry, "get", engines.__getitem__)
+        monkeypatch.setattr(job.stack, "load", lambda: SimpleNamespace(engines=list(SERVICES), consoles=[], ports={}))
+        monkeypatch.setattr(megasamples.console_config, "main", lambda argv: 0)
+        monkeypatch.setattr(job.compose, "main", lambda argv: 0)
+        monkeypatch.setattr(megasamples.console_images, "build", lambda cfg: 0)
+        return d
+    return install
+
+
+def test_down_takes_each_engines_anonymous_volume_and_keeps_the_named_one(daemon):
+    d = daemon()
+    assert job.down([]) == 0
+    assert d.containers == {}
+    assert d.leftovers() == set(), "down left the engines' data volumes"
+    assert NAMED in d.volumes
+
+
+def test_down_then_up_cycles_leave_nothing_behind(daemon):
+    d = daemon()
+    for _ in range(3):
+        assert job.down([]) == 0
+        assert job.up([]) == 0
+    assert d.leftovers() == set()
+    assert len(d.volumes) == 1 + len(SERVICES)          # the named one and the running containers' own
+
+
+def test_clean_all_takes_the_stacks_anonymous_volumes(daemon):
+    d = daemon()
+    assert workspace.clean(also_stack=True) == 0
+    assert d.containers == {}
+    assert d.leftovers() == set()
+    assert NAMED in d.volumes
+
+
+def test_up_recreating_a_stale_engine_removes_the_volume_it_replaced(daemon):
+    d = daemon(image="stale")
+    before = {name: c["anonymous"] for name, c in d.containers.items()}
+    assert job.up([]) == 0
+    assert all(d.containers[name]["anonymous"] != volume for name, volume in before.items())
+    assert d.leftovers() == set(), "up kept the data volume it replaced"
+    assert NAMED in d.volumes
+
+
+# Round 11 (Opus 1, Sol 1): a recreate that fails after Compose renewed the volume still removes the one it
+# replaced; one that fails before keeps the volume its container still mounts. The failure is returned.
+@pytest.mark.parametrize("when", ["after", "before"])
+def test_up_whose_recreate_fails_removes_only_what_it_replaced(daemon, when):
+    d = daemon(image="stale", recreate_fails=when)
+    before = {name: c["anonymous"] for name, c in d.containers.items()}
+    assert job.up([]) == 1
+    assert d.leftovers() == set(), "the failed recreate stranded the volume it replaced"
+    if when == "before":
+        assert {name: c["anonymous"] for name, c in d.containers.items()} == before
+
+
+@pytest.mark.parametrize("when", ["after", "before"])
+def test_reset_whose_recreate_fails_removes_only_what_it_replaced(daemon, monkeypatch, when):
+    from megasamples import reset
+    d = daemon(recreate_fails=when)
+    monkeypatch.setattr(reset.engine_registry, "get", job.engine_registry.get)
+    before = d.containers["megasamples-mysql"]["anonymous"]
+    assert reset.reset_engines(["mysql"]) == 1
+    assert d.leftovers() == set(), "the failed reset stranded the volume it replaced"
+    if when == "before":
+        assert d.containers["megasamples-mysql"]["anonymous"] == before
+
+
+def test_up_compares_the_image_compose_resolves_not_the_default_tag(daemon):
+    """Sol round 11, 2: an image override set only in .env (as .env.example documents) reaches Compose, not
+    Python. With the default :dev tag also present locally, comparing against it called a current container
+    stale, and up recreated it with a fresh data volume: the working data lost on every `make up`."""
+    d = daemon(image="override-id", compose_images={"mysql": "published:9.7", "sqlite": "published-sqlite:1"},
+               image_ids={"published:9.7": "override-id", "published-sqlite:1": "override-id"})
+    before = {name: c["anonymous"] for name, c in d.containers.items()}
+    assert job.up([]) == 0
+    assert not [c for c in d.calls if "--force-recreate" in c], "a container on its current image was recreated"
+    assert {name: c["anonymous"] for name, c in d.containers.items()} == before
+
+
+def test_up_recreates_exactly_the_stale_service_by_its_resolved_image(daemon):
+    """Sol round 12, 3: distinct image IDs, and exactly one service stale under what Compose resolves."""
+    d = daemon(compose_images={"mysql": "published:9.7", "sqlite": "img-sqlite"},
+               image_ids={"published:9.7": "published-id", "img-sqlite": "rebuilt-sqlite-id", "img-mysql": "dev-id"})
+    d.containers["megasamples-mysql"]["image"] = "published-id"      # current under its .env override
+    d.containers["megasamples-sqlite"]["image"] = "old-sqlite-id"    # its tag was rebuilt
+    mysql_volume = d.containers["megasamples-mysql"]["anonymous"]
+    assert job.up([]) == 0
+    recreated = [c for c in d.calls if "--force-recreate" in c]
+    assert len(recreated) == 1 and "sqlite" in recreated[0] and "mysql" not in recreated[0], recreated
+    assert d.containers["megasamples-mysql"]["anonymous"] == mysql_volume
+    assert d.leftovers() == set()
+
+
+def test_up_refuses_to_recreate_what_compose_cannot_resolve(daemon, capsys):
+    """Sol round 12, 3: when Compose cannot say which image it will run, the old comparison with Python's
+    default tag could still discard working data, so no service is renewed, and the message says why."""
+    d = daemon(image="override-id", config_fails=True, image_ids={"img-mysql": "dev-id", "img-sqlite": "dev-id"})
+    before = {name: c["anonymous"] for name, c in d.containers.items()}
+    assert job.up([]) == 0
+    assert not [c for c in d.calls if "--force-recreate" in c]
+    assert {name: c["anonymous"] for name, c in d.containers.items()} == before
+    assert "could not resolve" in capsys.readouterr().err
+
+
+
+def test_down_warns_before_discarding_working_data_and_copies(daemon, capsys, monkeypatch):
+    d = daemon()
+    fake, printed = subprocess.run, []
+    def checked(*a, **kw):
+        printed.append(capsys.readouterr().out)
+        out = "".join(printed)
+        assert "working data" in out and "cop" in out, "down discarded before its warning"
+        return fake(*a, **kw)
+    monkeypatch.setattr(subprocess, "run", checked)
+    assert job.down([]) == 0
+    assert d.containers == {}

@@ -24,8 +24,7 @@ DEFAULT = {
     "engines": {"mysql": {"datasets": "core"}},
     "consoles": ["landing", "cloudbeaver", "dbgate", "adminer", "phpmyadmin"],
     "ports": {"mysql": 3306, "postgres": 5432, "landing": 8080, "phpmyadmin": 8081,
-              "adminer": 8082, "dbgate": 8083, "cloudbeaver": 8084, "pgadmin": 8085,
-              "sqlite-web": 8086},
+              "adminer": 8082, "dbgate": 8083, "cloudbeaver": 8084},
     "build": {"threads": 4, "keep_build_server": False, "scale_factor": 1},
     "downloads": {"concurrency": 3},
 }

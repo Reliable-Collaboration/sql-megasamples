@@ -13,8 +13,8 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def main():
     out = Path(tempfile.mkdtemp(prefix='reversals-', dir=ROOT/'build/dl086-review-r2'))
-    runbook = (ROOT/'docs/live-upgrade-runbook.md').read_text()
-    evidence = (ROOT/'docs/live-upgrade-evidence.md').read_text()
+    runbook = (ROOT/'docs/history/live-upgrade-runbook.md').read_text()
+    evidence = (ROOT/'docs/history/live-upgrade-evidence.md').read_text()
     controls = []
 
     def add(name, variable, source, tests, required=None):

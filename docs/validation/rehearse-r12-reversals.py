@@ -41,9 +41,9 @@ def main():
     example = '\n'.join(line for line in old('.env.example').splitlines() if line.startswith('#'))
     controls.append(('AC2 environment account omissions', example,
                      'DL086_ENV_EXAMPLE_SOURCE', ['tests/test_demo_documentation.py'], 3))
-    controls.append(('AC2 runbook proof and pointer', old('docs/live-upgrade-runbook.md'),
+    controls.append(('AC2 runbook proof and pointer', old('docs/history/live-upgrade-runbook.md'),
                      'DL089_RUNBOOK_SOURCE', ['tests/test_round12_documentation.py'], 2))
-    controls.append(('AC2 evidence proof limit', old('docs/live-upgrade-evidence.md'),
+    controls.append(('AC2 evidence proof limit', old('docs/history/live-upgrade-evidence.md'),
                      'DL086_EVIDENCE_SOURCE', ['tests/test_round12_documentation.py'], 1))
     results = []
     for number, (name, changed, variable, tests, failures) in enumerate(controls):

@@ -15,9 +15,13 @@
 # MySQL is the hub: every dataset is converted into MySQL first and verified there, and the other
 # engines are ported from that corpus. Naming a dataset under postgres or sqlite therefore also
 # builds it in the MySQL build server, whether or not it is in the MySQL image.
+# Each engine may also choose which databases get a copy template (`megasamples copy`):
+#   templates: core (the default) | none | a list of database names
 engines:
   mysql:
     datasets: core
+    # templates: core
+    # binary_log: true        # MySQL's binary log; false turns it off in the image
   # postgres:
   #   datasets: core
   # sqlite:
@@ -27,7 +31,7 @@ engines:
 # browse is selected, and configured for every engine present, read-only account first.
 #   landing      the generated index page: every database, its size, licence and links
 #   phpmyadmin   MySQL only
-#   adminer      MySQL, PostgreSQL, SQLite
+#   adminer      MySQL, PostgreSQL
 #   dbgate       MySQL, PostgreSQL, SQLite
 #   cloudbeaver  MySQL, PostgreSQL, SQLite
 consoles: [landing, cloudbeaver, dbgate, adminer, phpmyadmin]
@@ -50,3 +54,17 @@ build:
 
 downloads:
   concurrency: 3              # artifacts fetched at once; each is verified and fetched only once
+
+# Copies (`megasamples copy`). These are baked into the images, so change them before `make image`.
+# copies:
+#   namespaces:               # where copies are made, by whom, and how many at once (the default below)
+#     - {prefix: copy, owner: copier, max_copies: 32}
+#   foreign:                  # prefixes reserved for databases another tool creates;
+#     - {prefix: tool, demo_reads: false}   # demo_reads: true lets MySQL demo read them
+
+# Extra accounts, created without a password (set one as the README shows).
+#   readers read the sample databases (scope working) or a copy namespace (its prefix);
+#   writers can also insert, update and delete rows in the sample databases.
+# accounts:
+#   readers: [{name: analyst, scopes: [working]}]
+#   writers: [{name: loader, scopes: [working]}]

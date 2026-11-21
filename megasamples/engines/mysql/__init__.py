@@ -5,7 +5,7 @@ loaded (load.py) and verified (megasamples/verify.py); the verified databases ar
 Shell (dump.py) and baked into the image by engines/mysql/Dockerfile. The other engines are ports
 of what this one verified.
 """
-import os, shutil, subprocess, sys
+import json, os, shutil, subprocess, sys
 
 from megasamples import datasets as inventory, registry, stage as stager, verify as verifier, workspace
 from megasamples.engines.base import Engine
@@ -14,6 +14,7 @@ from megasamples.engines.mysql import dump as dumper, image_test as tester, load
 from megasamples.paths import ROOT, engine_build_dir, engine_dir, rel
 from megasamples import container_engine, config as stack
 from megasamples.credentials import client
+from megasamples.copy_config import CopySettings
 
 
 def link_tree(src, dst):
@@ -85,6 +86,7 @@ class MySQL(Engine):
 
     def image_build(self, datasets, keep=False, threads=4, from_dumps=False):
         from megasamples.engines.mysql import base_image
+        settings = CopySettings(stack.load(), self.name, datasets)
         base_image.build()
         dumps = os.path.join(engine_build_dir(self.name), "dumps")
         databases = unique_databases(datasets)
@@ -103,6 +105,12 @@ class MySQL(Engine):
         for s in databases:
             link_tree(os.path.join(dumps, s), os.path.join(context, "dumps", s))
         registry.main(list(datasets) + ["--dialect", "mysql", "--out", os.path.join(context, "registry.sql")])
+        with open(os.path.join(context, "copy-settings.json"), "w", encoding="utf-8") as stream:
+            json.dump({"templates": settings.templates, "foreign": settings.foreign,
+                       "namespaces": [(n.prefix, n.owner, n.max_copies) for n in settings.namespaces],
+                       "readers": settings.readers, "writers": settings.writers}, stream)
+        with open(os.path.join(context, "copy-mode.cnf"), "w", encoding="utf-8") as stream:
+            stream.write("[mysqld]\n" + ("" if settings.binary_log else "skip-log-bin\n"))
         cmd = ["docker", "build", "-f", os.path.join(engine_dir(self.name), "Dockerfile"),
                "-t", self.image, ROOT]
         print(f"  . docker build -t {self.image} ({len(datasets)} datasets from {rel(context)})")

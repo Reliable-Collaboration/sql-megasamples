@@ -13,7 +13,7 @@ there (ARCHITECTURE.md section 3).
 """
 import argparse, os, subprocess, sys
 
-from megasamples import workspace, compose, config as stack, console_page, fetch as fetcher, engines as engine_registry
+from megasamples import data_volumes, workspace, compose, config as stack, console_page, fetch as fetcher, engines as engine_registry
 from megasamples.paths import COMPOSE, ROOT
 
 
@@ -164,16 +164,25 @@ def up(argv=None):
     # directory -- so the old data would shadow the new image. An engine whose running container is
     # not on the current image is recreated first, with its anonymous volumes renewed.
     stale = []
+    # The image Compose will run, with .env's overrides, not Python's default tag.
+    resolved = data_volumes.compose_images()
     for name in cfg.engines:
         e = engine_registry.get(name)
+        if name not in resolved:
+            # Without Compose's answer the only comparison left is with Python's default tag, which can call
+            # a current container stale and discard its working data: renew nothing.
+            print(f"  ! not recreating {name}: Compose could not resolve its image, so whether it is stale is "
+                  f"unknown; check `docker compose -f {COMPOSE} config`", file=sys.stderr)
+            continue
         running = subprocess.run(["docker", "inspect", "-f", "{{.Image}}", e.container], capture_output=True, text=True)
-        current = subprocess.run(["docker", "image", "inspect", "-f", "{{.Id}}", e.image], capture_output=True, text=True)
+        current = subprocess.run(["docker", "image", "inspect", "-f", "{{.Id}}", resolved[name]],
+                                 capture_output=True, text=True)
         if running.returncode == 0 and current.returncode == 0 and running.stdout.strip() != current.stdout.strip():
             stale.append(name)
     if stale:
         print(f"  . recreating {', '.join(stale)}: the image was rebuilt since the container started")
-        if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--force-recreate", "--renew-anon-volumes",
-                           "--no-deps", "--wait", *stale], cwd=ROOT).returncode != 0:
+        # The volumes it replaces are removed by name, as reset's are.
+        if data_volumes.recreate(stale, [engine_registry.get(name).container for name in stale]):
             return 1
     if "landing" in cfg.consoles:
         # the bind mount's source; Docker would otherwise create it owned by root
@@ -181,6 +190,10 @@ def up(argv=None):
     print("  . docker compose up -d --wait")
     if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--wait"], cwd=ROOT).returncode != 0:
         return 1
+    if "postgres" in cfg.engines:
+        from megasamples import postgres_orphans
+        for warning in postgres_orphans.scan(engine_registry.get("postgres").container):
+            print("  ! " + postgres_orphans.describe(warning), file=sys.stderr)
     if "landing" in cfg.consoles:
         rc = console_page.main([])
         if rc:
@@ -197,11 +210,13 @@ def up(argv=None):
 
 
 def down(argv=None):
-    ap = argparse.ArgumentParser(description="stop the stack")
+    ap = argparse.ArgumentParser(description="remove the stack and each engine's working data; the named SQLite volume stays")
     ap.parse_args(argv)
     if not os.path.exists(COMPOSE):
         compose.main([])
-    return subprocess.run(["docker", "compose", "-f", COMPOSE, "down"], cwd=ROOT).returncode
+    print("down: discarding each engine's working data, including every copy; "
+          "the next `make up` starts from the shipped samples", flush=True)
+    return data_volumes.down().returncode
 
 
 def check(argv=None):

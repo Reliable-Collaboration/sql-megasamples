@@ -52,7 +52,7 @@ def start(fresh=False):
                      "the pinned LTS image. Do not reuse an Innovation data directory.")
         return
     if container_state():
-        run(["docker", "rm", "-f", NAME])
+        run(["docker", "rm", "-fv", NAME])
     if IMAGE == base_image.IMAGE:
         base_image.build()
     os.makedirs(STAGE, exist_ok=True)     # mounted below; Docker would otherwise create it as root
@@ -80,7 +80,7 @@ def start(fresh=False):
 
 
 def stop():
-    run(["docker", "rm", "-f", NAME])
+    run(["docker", "rm", "-fv", NAME])
 
 
 def sql(statement, database=None, table=False, check=True, raw=True):

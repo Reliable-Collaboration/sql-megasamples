@@ -72,7 +72,7 @@ def prove(n,g,u,out,backup,attempt,project,compose,sources,receipt):
                      'Non-data retained names include placeholders; four services and different bridge ports',
                      'Shared helper is slirp4netns with other isolated consumers; live uses Pasta with no other consumer',
                      'No full bootstrap, configuration/image restore or live restoration']) )
-    text=(ROOT/'docs/live-upgrade-runbook.md').read_text()
+    text=(ROOT/'docs/history/live-upgrade-runbook.md').read_text()
     def block(start,end):return text.split(start+'\n',1)[1].split(end,1)[0]
     def adapt(fragment):
         return fragment.replace('sql-megasamples',project).replace('megasamples-',project+'-').replace('-f compose.yaml','-f '+shlex.quote(str(compose)))

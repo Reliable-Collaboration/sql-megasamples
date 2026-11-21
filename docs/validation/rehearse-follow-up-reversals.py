@@ -14,8 +14,8 @@ ROOT = Path(__file__).resolve().parents[2]
 def main():
     out = Path(tempfile.mkdtemp(prefix='reversals-', dir=ROOT/'build/dl086-follow-up'))
     scanner = (ROOT/'docs/validation/quiescence.py').read_text()
-    runbook = (ROOT/'docs/live-upgrade-runbook.md').read_text()
-    evidence = (ROOT/'docs/live-upgrade-evidence.md').read_text()
+    runbook = (ROOT/'docs/history/live-upgrade-runbook.md').read_text()
+    evidence = (ROOT/'docs/history/live-upgrade-evidence.md').read_text()
     readme = (ROOT/'README.md').read_text()
     upgrade = (ROOT/'docs/validation/live-upgrade.py').read_text()
     controls = []
@@ -32,7 +32,7 @@ def main():
         'Existing captures without the absence marker', 'Retained old captures'),
         ['tests/test_round12_documentation.py::test_fixed_pid_and_native_scratch_limits_are_retired'])
     add('B-5 original ENOENT hold', 'DL088_GATE_SOURCE', original, [down+'test_stale_shared_pidfile_with_missing_proc_entry_is_absent'])
-    original_runbook = subprocess.check_output(['git', 'show', '3bef1436:docs/live-upgrade-runbook.md'], cwd=ROOT, text=True)
+    original_runbook = subprocess.check_output(['git', 'show', '3bef1436:docs/history/live-upgrade-runbook.md'], cwd=ROOT, text=True)
     add('B-4 and B-7 silent empty-listing exit', 'DL089_RUNBOOK_SOURCE', original_runbook,
         ['tests/test_round9_runbook.py::test_empty_original_listing_still_refuses_policy_pause'])
     add('B-7 lost shell boundary', 'DL089_RUNBOOK_SOURCE', change(runbook,

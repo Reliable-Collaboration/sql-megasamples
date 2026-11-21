@@ -148,7 +148,8 @@ def test_bootstrap_and_abort_execute_without_mutating_retained_inputs(tmp_path, 
         (receipts / (backup.name + '-ports.json')).write_bytes(receipt.read_bytes())
         for name in ['live-upgrade.py', 'quiescence.py']:
             (receipts.parent / name).symlink_to(ROOT / 'docs/validation' / name)
-        (reviewed / 'docs/live-upgrade-runbook.md').symlink_to(ROOT / 'docs/live-upgrade-runbook.md')
+        (reviewed / 'docs/history').mkdir()
+        (reviewed / 'docs/history/live-upgrade-runbook.md').symlink_to(ROOT / 'docs/history/live-upgrade-runbook.md')
         env['REVIEWED_CHECKOUT'] = str(reviewed)
     if original_restart:
         (backup/'original-stop.json').write_text(json.dumps(dict(containers=[dict(id='test')])))

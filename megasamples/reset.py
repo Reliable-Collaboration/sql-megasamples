@@ -30,6 +30,7 @@ import argparse, fcntl, json, os, re, subprocess, sys, time, tempfile, uuid
 from contextlib import ExitStack, contextmanager, nullcontext
 
 from megasamples import compose, config as stack, consoles, datasets as inventory, engines as engine_registry
+from megasamples import data_volumes as volumes
 from megasamples.credentials import client, session
 from megasamples.engines import unique_databases
 from megasamples.paths import COMPOSE, ROOT
@@ -120,12 +121,8 @@ def reset_locks(names):
 def data_volumes(container):
     """The anonymous volumes a container's data lives in (the images declare one for their data directory). An
     anonymous volume is named by a 64-digit hex id; a named one (the SQLite files the consoles share) is never
-    one of them."""
-    mounts = sh("docker", "inspect", "-f", "{{json .Mounts}}", container)
-    if mounts.returncode != 0:
-        return []
-    return [m["Name"] for m in json.loads(mounts.stdout or "[]")
-            if m.get("Type") == "volume" and re.fullmatch(r"[0-9a-f]{64}", m.get("Name") or "")]
+    one of them. The shared helper, so `up` removes what it replaces the same way."""
+    return volumes.attached(container)
 
 
 def reset_engines(names):
@@ -139,17 +136,13 @@ def reset_engines(names):
         if cleaned.returncode:
             sys.exit(f"could not remove stale SQLite journals or database files: {cleaned.stderr.strip()[:300]}")
     print(f"  . recreating {', '.join(names)} from the image (fresh data directory)")
-    if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--force-recreate", "--renew-anon-volumes",
-                       "--no-deps", "--wait", *names], cwd=ROOT).returncode != 0:
-        return 1
-    for container, volumes in replaced.items():
-        for volume in volumes:
-            if volume in data_volumes(container):
-                continue
-            removed = sh("docker", "volume", "rm", volume)
-            print(f"  . removed the replaced data volume {volume[:12]}" if removed.returncode == 0
-                  else f"  ! could not remove the replaced data volume {volume}: {removed.stderr.strip()[:200]}")
-    return 0
+    try:
+        return 1 if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--force-recreate",
+                                    "--renew-anon-volumes", "--no-deps", "--wait", *names],
+                                   cwd=ROOT).returncode != 0 else 0
+    finally:
+        # On every exit, as data_volumes.recreate does.
+        volumes.remove_replaced(replaced, attached=lambda container: data_volumes(container))
 
 
 # --- single databases ------------------------------------------------------------------------------
@@ -364,13 +357,28 @@ def main(argv=None):
     ap.add_argument("targets", nargs="*", help="all | an engine | engine:dataset (dataset: a name or a selector)")
     ap.add_argument("--engines", help="comma-separated, as configure takes them (default with --datasets: every engine)")
     ap.add_argument("--datasets", help="selector or comma-separated names, applied to every engine named")
+    ap.add_argument("--status", metavar="ENGINE", choices=["postgres"],
+                    help="report what is left over on an engine, as one JSON document (PostgreSQL's "
+                         "data directories with no database)")
     a = ap.parse_args(argv)
+    if a.status:
+        return status(a.status)
     cfg = stack.load()
     chosen = plan(cfg, a.targets, a.engines, a.datasets)
     with reset_locks(chosen):
         if compose.main([]):
             return 2
         return execute(chosen)
+
+
+def status(engine):
+    from megasamples import postgres_orphans
+    warnings = postgres_orphans.scan(engine_registry.get(engine).container)
+    complete = not any(item["code"] == "orphan-scan-incomplete" for item in warnings)
+    print(json.dumps({"schema": 1, "interface": 1, "command": "reset --status", "ok": True, "exit": 0,
+                      "volume": None, "result": {"engine": engine, "orphan_scan": "complete" if complete else "incomplete"},
+                      "error": None, "warnings": warnings}))
+    return 0
 
 
 def execute(chosen):

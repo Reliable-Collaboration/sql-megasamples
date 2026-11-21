@@ -22,6 +22,7 @@ COPY NOTICE.md LICENSES.md CATALOGUE.md README.md /usr/share/doc/megasamples/
 COPY engines/images.lock.yaml /usr/share/doc/megasamples/images.lock.yaml
 COPY datasets/ /usr/share/doc/megasamples/datasets/
 COPY build/sqlite/image/data/ /data/
+COPY build/sqlite/image/templates/ /templates/
 VOLUME /data
 WORKDIR /data
 CMD ["sleep", "infinity"]
