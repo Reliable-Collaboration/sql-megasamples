@@ -432,7 +432,7 @@ class SQLiteCopies:
                 except CopyError as failure:
                     if not removed:
                         raise
-                    error = CopyError(8, failure.code, str(failure), failure.identity or item["identity"])
-                    error.result = {"removed": removed, "kept": kept + [{"copy": item, "reason": failure.code}]}
+                    error = CopyError(8, failure.code, str(failure), failure.identity or item["identity"],
+                                      result={"removed": removed, "kept": kept + [{"copy": item, "reason": failure.code}]})
                     raise error from None
         return {"removed": removed, "kept": kept}

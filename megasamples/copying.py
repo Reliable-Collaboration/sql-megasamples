@@ -17,11 +17,12 @@ ENGINES = ("postgres", "mysql", "sqlite")
 
 
 class CopyError(Exception):
-    def __init__(self, status, code, message, identity=None):
+    def __init__(self, status, code, message, identity=None, *, result=None):
         super().__init__(message)
         self.status = status
         self.code = code
         self.identity = identity
+        self.result = result
 
 
 class Help(Exception):
@@ -191,13 +192,15 @@ def main(argv):
                 reply["volume"] = copies.volume
                 try:
                     reply["result"] = getattr(copies, args.action)()
+                except copies.errors.Error as failure:
+                    raise copies.server_error(failure) from None
                 finally:
                     reply["warnings"] = copies.warnings
     except Help as help_message:
         reply["result"] = {"usage": str(help_message)}
     except CopyError as error:
         reply["exit"] = error.status
-        reply["result"] = getattr(error, "result", None)
+        reply["result"] = error.result
         reply["error"] = {"code": error.code, "message": str(error), "identity": error.identity}
     except Exception:
         reply["exit"] = 1

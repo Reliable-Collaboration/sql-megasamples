@@ -50,6 +50,9 @@ class PostgresCopies(ServerCopies):
     def one(self, sql, params=()):
         return self.connection.execute(sql, params).fetchone()
 
+    def connection_lost(self, error):
+        return self.connection.closed or self.connection.broken or (error.sqlstate or "").startswith("08")
+
     @contextmanager
     def lock(self, name, wait=0):
         lock_id = int.from_bytes(hashlib.sha256(("megasamples/copy/" + name).encode()).digest()[:8],

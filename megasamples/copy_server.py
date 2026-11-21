@@ -11,6 +11,20 @@ SERVICE_TAG = "megasamples-service/1"
 
 
 class ServerCopies:
+    recovery_identity = None
+
+    def server_error(self, failure):
+        """Map a driver error to section 3.3's exit codes, keeping the identity a caller recovers by."""
+        action = self.args.action
+        identity = self.recovery_identity or getattr(self.args, "identity", None)
+        if action == "create" and self.recovery_identity:
+            return CopyError(8, "create-unsettled", "database copy did not finish", identity)
+        if action in ("renew", "release") and self.recovery_identity:
+            return CopyError(8, "lease-unsettled", "lease update did not finish", identity)
+        if self.connection_lost(failure):
+            return CopyError(8, "connection-lost", "server connection closed during the copy command", identity)
+        return CopyError(1, "internal", "copy command failed unexpectedly", identity)
+
     def load(self, name):
         row = self.one(f"SELECT record FROM {self.ledger} WHERE name=%s", (name,))
         if row is None:
@@ -77,11 +91,10 @@ class ServerCopies:
                         "label": label, "database": database, "phase": "reserved", "revision": 1,
                         "lease_until": self.lease_end(self.args.lease), "template": template,
                     }
+                    # From here a reply can be lost after the row is durable: keep the identity.
+                    self.recovery_identity = identity
                     self.insert(row)
-                try:
-                    return self.create_reserved(row, strategy)
-                except self.errors.Error:
-                    raise CopyError(8, "create-unsettled", "database copy did not finish", identity) from None
+                return self.create_reserved(row, strategy)
 
     def ensure_identity(self, row):
         if row is None or row.get("identity") != self.args.identity:
@@ -96,7 +109,9 @@ class ServerCopies:
             self.ensure_identity(row)
             if self.state(name, row) != "ready":
                 raise CopyError(5, "state", "copy is not ready", self.args.identity)
-            return self.result(name, self.change(row, lease_until=self.lease_end(seconds)), "ready")
+            lease = self.lease_end(seconds)
+            self.recovery_identity = row["identity"]
+            return self.result(name, self.change(row, lease_until=lease), "ready")
 
     def renew(self):
         return self.update_lease(self.args.lease)

@@ -51,6 +51,9 @@ class MySQLCopies(ServerCopies):
             cursor.execute(sql, params or None)
             return cursor.fetchone()
 
+    def connection_lost(self, error):
+        return not self.connection.open or error.args[:1] in ((2006,), (2013,), (2055,))
+
     @contextmanager
     def lock(self, name, wait=0):
         key = "megasamples:" + hashlib.sha256(name.encode()).hexdigest()[:48]
@@ -192,5 +195,9 @@ def open_mysql(args, password):
                                      charset="utf8mb4")
     except pymysql.Error:
         raise CopyError(3, "connection", "server connection or sign-in was refused") from None
-    with connection:
+    try:
         yield MySQLCopies(connection, args, pymysql)
+    finally:
+        # A connection the server closed cannot be closed again; that is not the command's outcome.
+        if connection.open:
+            connection.close()
