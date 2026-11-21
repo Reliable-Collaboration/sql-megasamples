@@ -84,6 +84,7 @@ def seed_mysql(container, marker, password):
         INSERT INTO {schema}.child (id, parent_id) VALUES (1,42);
         CREATE VIEW {schema}.v1 AS SELECT id FROM {schema}.parent;
         CREATE VIEW {schema}.v2 AS SELECT id FROM {schema}.v1;
+        SET SESSION sql_mode='ONLY_FULL_GROUP_BY,STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION';
         CREATE PROCEDURE {schema}.read_value() SELECT id FROM {schema}.parent ORDER BY id;
         CREATE EVENT {schema}.read_event ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 YEAR
             ON COMPLETION PRESERVE DISABLE DO SELECT id FROM {schema}.parent;
