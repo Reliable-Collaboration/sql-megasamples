@@ -41,6 +41,114 @@ def server():
     return config
 
 
+def copy_command(server, *args, status=0, stdin=False, fault=None):
+    password = Path(server["password_file"]).read_text() if stdin else None
+    password_args = ["--password-stdin"] if stdin else ["--password-file", server["password_file"]]
+    cli = ["-m", "megasamples", "copy"]
+    if fault:
+        cli = [str(Path(__file__).parent / "gates" / "dl077_copy_fault.py"), server["engine"], *fault]
+    result = subprocess.run(
+        [sys.executable, *cli, *args, "--host", server["host"],
+         "--port", str(server["port"]), "--user", server["owner"], *password_args],
+        input=password, text=True, capture_output=True, timeout=45,
+    )
+    canary = Path(server["password_file"]).read_text().strip()
+    assert canary not in result.stdout + result.stderr
+    assert result.returncode == status, result.stdout + result.stderr
+    assert len(result.stdout.splitlines()) == 1
+    reply = json.loads(result.stdout)
+    assert reply["volume"] == server["volume"] and reply["exit"] == status
+    return reply
+
+
+def native(server, sql, *, user=None, database="megasamples", parameters=()):
+    auth = {"host": server["host"], "port": server["port"], "user": user or server["owner"],
+            "password": Path(server["password_file"]).read_text().strip(), "connect_timeout": 5,
+            "autocommit": True}
+    if server["engine"] == "postgres":
+        import psycopg
+        with psycopg.connect(dbname=database, **auth) as connection:
+            cursor = connection.execute(sql, parameters or None)
+            return cursor.fetchall() if cursor.description else None
+    import pymysql
+    with pymysql.connect(database=database, **auth) as connection:
+        with connection.cursor() as cursor:
+            cursor.execute(sql, parameters or None)
+            return list(cursor.fetchall()) if cursor.description else None
+
+
+def test_server_inventory_reports_unmanaged_names(server):
+    engine = server["engine"]
+    admin = {"user": "dl077_fixture_admin"}
+    native(server, "CREATE DATABASE copy_scratch", **admin)
+    try:
+        listed = copy_command(server, "list", engine, "--prefix", "copy", stdin=True)["result"]["copies"]
+        assert ("copy_scratch", "unmanaged") in [(row["name"], row["state"]) for row in listed]
+        swept = copy_command(server, "sweep", engine, "--prefix", "copy", "--dry-run")["result"]
+        assert any(item["copy"]["name"] == "copy_scratch" and item["reason"] == "unmanaged"
+                   for item in swept["kept"])
+    finally:
+        native(server, "DROP DATABASE copy_scratch", **admin)
+
+
+def test_server_sweep_recovers_expired_dropping_copy(server):
+    engine = server["engine"]
+    row = copy_command(server, "create", engine + ":chinook", "--prefix", "copy",
+                       "--label", "dropping")["result"]
+    name = row["name"]
+    target = engine + ":" + name
+    identity = ("--identity", row["identity"])
+    copy_command(server, "release", target, *identity)
+    if engine == "postgres":
+        change = "jsonb_set(record, '{phase}', '\"dropping\"')"
+    else:
+        change = """JSON_SET(record, '$.phase', 'dropping')"""
+    native(server, f"UPDATE copy_ledger_copy SET record={change} WHERE name=%s", parameters=(name,))
+    try:
+        assert copy_command(server, "show", target)["result"]["state"] == "dropping"
+        preview = copy_command(server, "sweep", engine, "--prefix", "copy", "--dry-run")["result"]
+        assert any(item["name"] == name for item in preview["removed"])
+        assert copy_command(server, "show", target)["result"]["state"] == "dropping"
+        swept = copy_command(server, "sweep", engine, "--prefix", "copy")["result"]
+        assert any(item["name"] == name for item in swept["removed"])
+        assert copy_command(server, "show", target)["result"]["state"] == "gone"
+    finally:
+        copy_command(server, "drop", target, *identity)
+
+
+@pytest.mark.parametrize("when", ["before", "after"])
+def test_lost_reservation_reply_retains_the_issued_identity(server, when):
+    engine = server["engine"]
+    label = "lost" + when
+    reply = copy_command(server, "create", engine + ":chinook", "--prefix", "copy",
+                         "--label", label, status=8, fault=("insert", when))
+    error = reply["error"]
+    assert error["code"] == "create-unsettled" and len(error["identity"]) == 32
+    rows = copy_command(server, "list", engine, "--prefix", "copy", "--label", label)["result"]["copies"]
+    if when == "before":
+        assert rows == []
+    else:
+        assert [(row["identity"], row["state"]) for row in rows] == [(error["identity"], "stale")]
+        copy_command(server, "drop", engine + ":" + rows[0]["name"], "--identity", error["identity"])
+
+
+@pytest.mark.parametrize("when", ["before", "after"])
+def test_lost_lease_reply_retains_the_supplied_identity(server, when):
+    engine = server["engine"]
+    row = copy_command(server, "create", engine + ":chinook", "--prefix", "copy",
+                       "--label", "renew" + when)["result"]
+    target = engine + ":" + row["name"]
+    identity = ("--identity", row["identity"])
+    try:
+        reply = copy_command(server, "renew", target, *identity, "--lease", "7d", status=8,
+                             fault=("change", when))
+        assert reply["error"]["identity"] == row["identity"]
+        latest = copy_command(server, "show", target)["result"]
+        assert latest["revision"] == row["revision"] + (when == "after")
+    finally:
+        copy_command(server, "drop", target, *identity)
+
+
 def test_postgres_copy_lifecycle_on_tcp(server):
     if server["engine"] != "postgres":
         pytest.skip("requires the PostgreSQL fixture")
@@ -82,9 +190,20 @@ def test_postgres_copy_lifecycle_on_tcp(server):
         host=server["host"], port=server["port"], dbname=second["name"], user=server["owner"],
         password=Path(server["password_file"]).read_text().rstrip("\n"), connect_timeout=5,
     ) as session:
+        session.execute("CREATE TABLE busy_probe (i int)")
+        session.execute("INSERT INTO busy_probe VALUES (42)")
+        session.commit()
         command("drop", target, *identity, status=6)
-        assert session.execute("SELECT 42").fetchone() == (42,)
-        assert command("show", target)["result"]["state"] == "ready"
+        assert session.execute("SELECT i FROM busy_probe").fetchone() == (42,)
+        restored = command("show", target)["result"]
+        assert restored["state"] == "ready" and restored["revision"] == second["revision"] + 2
+        command("release", target, *identity)
+        for flags in [("--dry-run",), ()]:
+            sweep = command("sweep", "postgres", "--prefix", "copy", *flags)["result"]
+            assert not sweep["removed"]
+            assert any(item["copy"]["name"] == second["name"] and item["reason"] == "busy"
+                       for item in sweep["kept"])
+        assert session.execute("SELECT i FROM busy_probe").fetchone() == (42,)
     assert command("drop", target, *identity)["result"]["state"] == "gone"
 
 
@@ -144,14 +263,14 @@ def test_mysql_copy_lifecycle_and_schema_replay(server):
     ) as connection:
         with connection.cursor() as cursor:
             cursor.execute("SELECT id FROM v2")
-            assert cursor.fetchall() == ((42,),)
+            assert cursor.fetchall() == ((0,), (42,))
             cursor.execute("INSERT INTO parent VALUES (51)")
             cursor.execute("SELECT id FROM v2 ORDER BY id")
-            assert cursor.fetchall() == ((42,), (51,))
+            assert cursor.fetchall() == ((0,), (42,), (51,))
             cursor.execute("SELECT id FROM sample_start.v2")
-            assert cursor.fetchall() == ((42,),)
+            assert cursor.fetchall() == ((0,), (42,))
             cursor.execute("CALL read_value()")
-            assert cursor.fetchall() == ((42,), (51,))
+            assert cursor.fetchall() == ((0,), (42,), (51,))
             while cursor.nextset():
                 pass
             with pytest.raises(pymysql.IntegrityError):
@@ -159,6 +278,13 @@ def test_mysql_copy_lifecycle_and_schema_replay(server):
             cursor.execute("SELECT STATUS FROM information_schema.EVENTS WHERE EVENT_NAME=%s AND EVENT_SCHEMA=%s",
                            (row["proof"]["event"], row["name"]))
             assert cursor.fetchone() == ("DISABLED",)
+            cursor.execute("SELECT amount FROM child")
+            assert cursor.fetchone() == (84,)
+            cursor.execute("SELECT DEFINER, STATUS, EVENT_DEFINITION FROM information_schema.EVENTS "
+                           "WHERE EVENT_NAME='read_event' AND EVENT_SCHEMA=%s", (row["name"],))
+            definer, event_status, definition = cursor.fetchone()
+            assert definer == server["owner"] + "@%" and event_status == "DISABLED"
+            assert row["name"] in definition and "sample_start" not in definition
     command("release", target, *identity)
     assert command("sweep", "mysql", "--prefix", "copy", "--dry-run")["result"]["removed"]
     assert command("sweep", "mysql", "--prefix", "copy")["result"]["removed"]
@@ -166,26 +292,37 @@ def test_mysql_copy_lifecycle_and_schema_replay(server):
 
 
 def test_mysql_copy_replacement_grant_refuses_sweep(server):
-    witness = server.get("not_exclusive")
-    if server["engine"] != "mysql" or not witness:
-        pytest.skip("requires a copy with an outside replacement grant")
-    options = ["--host", server["host"], "--port", str(server["port"]), "--user", server["owner"],
-               "--password-file", server["password_file"]]
+    if server["engine"] != "mysql":
+        pytest.skip("requires the MySQL fixture")
+    admin = {"user": "dl077_fixture_admin"}
+    native(server, "CREATE USER 'outside_reader'@'%' ACCOUNT LOCK", **admin)
+    native(server, r"GRANT DROP ON `copy\_%`.* TO 'outside_reader'@'%'", **admin)
+    reply = copy_command(server, "create", "mysql:chinook", "--prefix", "copy", "--label", "outside")
+    row = reply["result"]
+    target = "mysql:" + row["name"]
+    proof = ("--identity", row["identity"])
+    try:
+        assert row["state"] == "not-exclusive" and reply["warnings"]
+        shown = copy_command(server, "show", target)
+        assert shown["result"] == row and shown["warnings"] == reply["warnings"]
+        listed = copy_command(server, "list", "mysql", "--prefix", "copy", "--label", "outside")
+        assert listed["result"]["copies"] == [row] and listed["warnings"] == reply["warnings"]
+        assert copy_command(server, "drop", target, *proof, status=5)["error"]["code"] == "not-exclusive"
+        assert copy_command(server, "sweep", "mysql", "--prefix", "copy", status=5)["error"]["code"] == "not-exclusive"
+        native(server, r"REVOKE DROP ON `copy\_%`.* FROM 'outside_reader'@'%'", **admin)
+        native(server, f"GRANT SELECT ON `{row['name']}`.`artist` TO 'outside_reader'@'%'", **admin)
+        shown = copy_command(server, "show", target)
+        assert shown["result"]["state"] == "ready"
+        assert any(warning["account"] == "outside_reader@%" for warning in shown["warnings"])
+        assert copy_command(server, "drop", target, *proof)["result"]["state"] == "gone"
+    finally:
+        native(server, "DROP USER 'outside_reader'@'%'", **admin)
+        copy_command(server, "drop", target, *proof)
 
-    def execute(*args):
-        result = subprocess.run([sys.executable, "-m", "megasamples", "copy", *args, *options],
-                                text=True, capture_output=True, timeout=25)
-        return result, json.loads(result.stdout)
 
-    target = "mysql:" + witness["name"]
-    before, shown = execute("show", target)
-    assert before.returncode == 0
-    assert shown["result"]["state"] == "not-exclusive"
-    assert shown["warnings"]
-    dropped, error = execute("drop", target, "--identity", witness["identity"])
-    assert dropped.returncode == 5
-    assert error["error"]["code"] == "not-exclusive"
-    swept, error = execute("sweep", "mysql", "--prefix", "copy")
-    assert swept.returncode == 5, swept.stdout + swept.stderr
-    assert error["error"]["code"] == "not-exclusive"
-    assert execute("show", target)[1]["result"] == shown["result"]
+def test_mysql_template_size_uses_allocated_tablespace_bytes(server):
+    if server["engine"] != "mysql" or "chinook_allocated_bytes" not in server:
+        pytest.skip("requires the MySQL fixture with a file-allocation witness")
+    rows = native(server, "SELECT JSON_EXTRACT(metadata,'$.bytes') FROM template_ddl WHERE name='chinook'")
+    # Copying a sparse data directory into an image can change its block allocation.
+    assert abs(int(rows[0][0]) - server["chinook_allocated_bytes"]) <= server["chinook_tablespaces"] * 4096
