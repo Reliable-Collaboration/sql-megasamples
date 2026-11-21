@@ -104,8 +104,7 @@ def build_offers(settings):
         "reason varchar(32), detail text, metadata json)")
     for name, build in query("SELECT name, build_id FROM megasamples.datasets ORDER BY name"):
         args = (name,)
-        size = int(query("SELECT COALESCE(SUM(data_length + index_length),0) "
-                         "FROM information_schema.TABLES WHERE TABLE_SCHEMA=?", args)[0][0])
+        size = allocated_bytes(name)
         triggers = query("SELECT TRIGGER_NAME FROM information_schema.TRIGGERS "
                          "WHERE TRIGGER_SCHEMA=? ORDER BY TRIGGER_NAME", args)
         functions = query("SELECT ROUTINE_NAME FROM information_schema.ROUTINES "
