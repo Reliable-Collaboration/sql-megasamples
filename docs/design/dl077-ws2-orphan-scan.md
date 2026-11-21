@@ -41,6 +41,8 @@ The outcomes to decide are `complete` with these warnings, or `incomplete` with 
 
 | Round | Finding | Gist | Disposition so far |
 |---|---|---|---|
+| 1 | S4 | a copy owner's statement timeout or cancel during `copy`'s `CREATE DATABASE` may leave a directory with no catalog row | handled as DL-113 says: 480 caller interrupts left none; a planted `base/424242` is reported (`h3-interrupts-control.log`); not a proof that the window is closed |
+| 2 | S2-3 | the same cancel or timeout at the commit boundary | **decided by DL-119**: a stated limit, with the detective control in `up` and `reset --status postgres`, the README's removal route, the planted-orphan test and the 480-attempt regression |
 | 3 | S3-2, O3-5 | a concurrent drop crashed the parser; the tablespace path lacked `PG_*` | fixed |
 | 4 | S4-3 | a dangling or unlistable tablespace, or partial `du` output, gave `complete` | fixed |
 | 4 | O4-3 | the concurrent-drop test matched text | fixed: behaviour test |
@@ -48,7 +50,8 @@ The outcomes to decide are `complete` with these warnings, or `incomplete` with 
 | 5 | Sol P2-5 | the container replaced between the listing and the catalog: two volumes mixed | **input** |
 | 6 | Sol P2-7 | a restart under the same container ID; `pg_tblspc` not listable; malformed or empty results per observation; faults between reads | **input** (facts A, D0, F; question 6; test plan) |
 | 6 | Opus 5 | an invalid database after an interrupted drop; a link with no catalog row; timeouts; faults at each read | **input** (facts E2, F, G; question 5; test plan) |
-| 7 | Sol 2 | the basic warning cannot be derived: no fact says whether a directory's OID has a catalog row; an empty location is not told apart from missing output; round 1 S4 and round 2 S2-3 not named | **input**: the directory-to-catalog match for `base/` and tablespaces; empty versus missing; both CLI routes asserted; a different leftover class names its warning and whether the README's removal route applies |
+| 7 | Sol 2 | the basic warning cannot be derived: no fact says whether a directory's OID has a catalog row; an empty location is not told apart from missing output; round 1 S4 and round 2 S2-3 not named | **input**: the directory-to-catalog match for `base/` and tablespaces; empty versus missing; both CLI routes asserted; a different leftover class names its warning and whether the README's removal route applies. Round 1 S4 and round 2 S2-3 are now their own rows above |
+| 8 | Sol P3-6 | the S4 and S2-3 cases and their dispositions (the planted orphan, the reporting in `up` and `reset --status`, the removal route) were not carried | **input**: both rows added; the design keeps each disposition or says why it changes |
 
 ## Questions the design must answer
 

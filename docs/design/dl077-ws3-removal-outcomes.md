@@ -41,7 +41,7 @@ Each step is crossed with:
 | Fact | Values |
 |---|---|
 | A. Outcome of the step | not issued; confirmed done; confirmed refused (engine error); busy (a session or lock, within or past the wait); contended (the change lock held); **unknown** (the connection lost after sending, as for a committed `DROP` whose reply is lost); partly done (an interrupted PostgreSQL `DROP DATABASE` leaving an invalid row; MySQL's non-atomic `DROP DATABASE`); an OS error (SQLite) |
-| A2. The copy at selection | its phase, format, identity, revision, lease and proof; `unmanaged`; already gone; `not-exclusive` |
+| A2. The copy at selection | its phase, format, identity, revision, lease and proof; `unmanaged`; already gone; `not-exclusive`. For MySQL, the grants on its schema: a grant that blocks removal (`not-exclusive`, such as `DROP` on `copy\_%`); a declared reader's `SELECT, SHOW VIEW` on the pattern, which does not; a table, column or routine grant, which is a warning only |
 | B. Earlier copies in this sweep | none; removed; kept busy after a rollback write; kept unchanged |
 | C. This copy's earlier writes | none; `dropping` written; `ready` rolled back |
 | D. Command | `drop`; `drop --wait N`; `sweep`; `sweep --dry-run` |
@@ -58,6 +58,7 @@ The outcomes to decide are the exit, this copy's list and reason, and the result
 | 1 | A8, F5 | unmanaged objects missing from the inventory; kept by the sweep | fixed; an input for fact A2 |
 | 1 | A9, F17 | the busy drop: `--wait`, the rollback and exit 6's promise | fixed and narrowed; an input for fact A (busy, contended) |
 | 1 | A6, A7 | dropping recovery; lost replies | fixed |
+| 1 | A4, F6 | a MySQL grant on the copy pattern: an administrator's `DROP`, a declared reader's `SELECT, SHOW VIEW`, a table, column or routine grant | fixed (`31a87a9`): `create` classifies as `show`; the grant view excludes exactly the declared reader's grant, and adds the narrower grants as warnings. The removal-facing part is an input for fact A2: which grant blocks a sweep or drop, which does not, and which only warns |
 | 2 | A2-3, F2-4 | a server sweep lost its completed removals | fixed |
 | 2 | A2-7 | connection lost at the metadata read | fixed |
 | 2 | A2-8 | exit 6's promise | narrowed |
@@ -74,6 +75,7 @@ The outcomes to decide are the exit, this copy's list and reason, and the result
 | 7 | Opus 1 | the full product of 9 steps and facts A to F is not buildable; no coverage criterion | **input**: state the criterion, as for WS1, with the full product only in the fault-switch harness |
 | 7 | Sol 3 | rollback and cleanup are not steps; a skipped dry-run step and an unsent request share `not issued`; R1's "exactly once" against unreached copies | **input**: selection, rollback and cleanup as steps; step execution separate from what the caller can confirm; object and ledger state asserted with the reply; question 6 in the owner summary if skipping a `not-exclusive` copy is considered |
 | 7 | Opus P3-5 | fact E (two parties changing the same copy) is an owner category under `AGENTS.md` | **input**: keep the change lock's semantics, or make E's outcomes part of question 5 |
+| 8 | Sol P3-6 | the removal-facing part of round 1's A4/F6 was not carried | **input**: the row above, and fact A2's MySQL grant values |
 
 ## Questions the design must answer
 

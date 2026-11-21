@@ -37,17 +37,19 @@ These are the facts behaviour depends on. The design fills in the outcome of eve
 | E2. Library resolution | `$libdir/read_policy`; another `read_policy` reached by `dynamic_library_path` |
 | F. Password overrides | none; some; all |
 | G. Socket settings | default; custom `unix_socket_directories` (persisted or on the command line); `listen_addresses` |
-| H. Volume | marked by this build, owned by postgres; marked, other owner; **marked by another build of this image** (same marker `1`, a different extension script: round 5's image lacks the loaded report); unmarked (pre-policy); `PG_VERSION` missing |
+| H. Volume | marked by this build, owned by postgres; marked, other owner; **marked by another build of this image** (same marker `1`, a different extension script). Two earlier builds differ: one before the loaded report (before `2c9b106`, rounds 1 to 4), whose healthcheck call fails; and one with the report but before `admin`'s revoke (`2c9b106` to before `ae61776`, round 5's candidates from `8102f35`), where `admin` can call it; unmarked (pre-policy); `PG_VERSION` missing |
 | I. Entrypoint | the image's; replaced (`--entrypoint`) |
 | J. The client the wrapper runs | effective user; the socket it reaches; the authentication it gets |
 | K. `/run` | writable by the wrapper's user; not (non-root) |
-| L. Each password change | applied; refused; the connection lost mid-way (some keys changed, some not) |
+| L. Each password change | applied and confirmed; refused; applied but its reply lost (the server changed the key, the wrapper did not see it); the connection lost mid-way (some keys changed, some not) |
 | M. Where the healthcheck is defined | the generated Compose file; none (a hand-run container); an image `HEALTHCHECK` (not today) |
 
 Required outcomes to decide, row by row:
 - **start** with the hook;
 - **refuse**, naming the rule;
-- **unchecked and stated**.
+- **unchecked and stated**;
+- a **failed public start** after certification (the port does not bind, or the server exits): what the container reports, and what it leaves behind (Sol round 7, 1);
+- an **informational exit**: a server mode given by the user (fact B) that exits 0 without a listener, and whether that counts as a start (Sol round 7, 1).
 
 For example:
 - A=root, B=path to own postgres, C=`PGDATA`, D=auto.conf lacking `read_policy`, F=some, G=custom socket → refuse (I1). If D is corrected on the command line, the private start must still be refused or be made to use the same arguments.
@@ -75,9 +77,11 @@ For example:
 | 6 | Opus 4 | facts missing: another build's volume, healthcheck location, `dynamic_library_path`, other libraries, server modes | **input** (facts B, E, E2, H, M; questions 7, 8, 10, 11) |
 | 6 | Opus P3-2 | the extension script changed without a version or marker bump | **input** (question 7) |
 | 7 | Opus 1 | the test plan asks for every combination of 14 facts on real targets, with no rule for which count | **input**: state the coverage criterion (precedence that makes later facts moot; the full product in a cheap model under shimmed `postgres -C` and `pg_ctl`; real targets for each value against a base row and for named interactions; impossible combinations with reasons) |
-| 7 | Sol 1 | no outcome for a failed public start (the port does not bind) or for an informational command that exits 0 without a listener; a confirmed password change versus one whose reply was lost; each role's key and the passfile after each failure | **input** (facts L and B; I4; question 9 covers credentials and the passfile) |
+| 7 | Sol 1 | no outcome for a failed public start (the port does not bind) or for an informational command that exits 0 without a listener; a confirmed password change versus one whose reply was lost; each role's key and the passfile after each failure | **input**: carried as fact L's applied-but-reply-lost value and the two outcomes above (a failed public start, an informational exit); each role's key and the passfile after each failure are question 9 |
 | 7 | Opus P3-4 | question 6 is missing from the owner list | **input**: question 6 is an owner decision |
 | 7 | Sol P3-7, Opus P3-7 | retained volumes from round 5 or 6 images keep `admin`'s EXECUTE or lack the routine, under marker `1` | **input** (question 7) |
+| 8 | Opus P3-3 | the round 7 Sol 1 row said question 9 covered the passfile, and the facts and outcomes lacked its inputs | **input**: carried in fact L, the required outcomes and question 9 |
+| 8 | Sol P3-6 | fact H said round 5's image lacked the loaded report; its build includes the report and lacks `admin`'s revoke | **input**: fact H names the pre-report and pre-revoke builds separately |
 
 ## Questions the design must answer
 
@@ -91,7 +95,7 @@ For example:
 6. What exactly does the one-line refusal say for each rule, and is it a stable code a supervisor can match? **Owner decision** once it is a supervisor-facing contract (Sol round 6, P2-5).
 7. **Owner decision, an on-disk format:** how the read-policy marker and the extension's version are bumped and migrated for retained volumes. Today the marker stays `1` while the version-1 script changed in round 5, so a volume from an earlier build certifies and then fails every probe (Opus round 6, 4; P3-2).
 8. **Owner decision:** whether the image carries its own `HEALTHCHECK`, so a hand-run container has the signal too (Opus round 6, 4; Sol round 6, P3-9).
-9. **Owner decision:** what a failed start may leave behind. That is the keys in force after a failure that follows a password change, and whether such a failure must roll the change back (Sol round 6, P2-5).
+9. **Owner decision:** what a failed start may leave behind. That is the keys in force after a failure that follows a password change, each role's key and the health passfile after each failure, a change whose reply was lost, and whether such a failure must roll the change back (Sol round 6, P2-5; Sol round 7, 1).
 10. Is a later preload library that replaces the utility hook without chaining detectable (for example, the report checks that the hook is still installed), or is it a stated limit?
 11. Is a library reached through `dynamic_library_path` detected by the report? Opus's reading says it is, because the call loads `$libdir/read_policy` and answers false. That must be confirmed by test, and then moved from stated to detected.
 
