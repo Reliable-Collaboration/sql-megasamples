@@ -153,12 +153,14 @@ def test_strict_read_guide_states_the_grants_the_generator_makes():
     assert {scope for _, scope in demo_read_grants(['working_example'], [('external', True)])
             if scope.endswith('.*')} == {r'`working\_example`.*', r'`external\_%`.*'}
     assert "(each pattern's underscores escaped)" in guide and 'unescaped' not in guide
-    # Opus round 9, 3: the guide describes version 1, which changed the MySQL engine; PR #14 did not.
+    # The guide describes this release, which changed the MySQL grants but not the views.
     assert 'The MySQL engine and views are unchanged in this PR' not in guide
-    assert 'PR #14 did not change the MySQL engine or views' in guide
-    # Sol round 10, 5: the MySQL boundary probe is PR #14's evidence; it asserts the old global grant first.
-    assert "[boundary probe](validation/strict-read-mysql-boundary.py) is PR #14's evidence" in guide
-    assert 'fails at its grant assertion on version 1' in guide
+    assert 'This release changed `demo`\'s MySQL grants (above) but not these views' in guide
+    # The MySQL boundary probe was written for the earlier global grant, which it asserts first.
+    assert "[boundary probe](validation/strict-read-mysql-boundary.py) was written for the earlier grant" in guide
+    assert 'fails at its grant assertion on this release' in guide
+    # The guide is user documentation: no pull-request or design references.
+    assert 'PR #14' not in guide and 'design 4.2' not in guide and 'version 1' not in guide
     # The report: granted to demo directly, and executable otherwise only by the superuser.
     assert 'granted to `demo` directly' in guide
     assert '`admin` and every other role except the superuser `postgres` are refused it' in guide
