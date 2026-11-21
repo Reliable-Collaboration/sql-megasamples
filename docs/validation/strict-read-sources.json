@@ -1,0 +1,103 @@
+{
+  "read_at": "2026-11-18T06:32:51Z",
+  "sources": [
+    {
+      "url": "https://www.postgresql.org/docs/18/ddl-priv.html",
+      "use": "PUBLIC default TEMPORARY and EXECUTE; explicit writer grants"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/sql-createdatabase.html",
+      "use": "Database ACLs are not copied from templates"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/sql-alterdefaultprivileges.html",
+      "use": "Global routine defaults; defaults do not follow role memberships"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/xfunc-volatility.html",
+      "use": "Volatility is a promise, not a user-routine audit"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/postgres/postgres/REL_18_STABLE/src/include/tcop/utility.h",
+      "use": "ProcessUtility hook API"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/postgres/postgres/REL_18_STABLE/src/backend/commands/dbcommands.c",
+      "use": "Database creation resets datacl instead of copying it"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/refman/9.7/en/privileges-provided.html",
+      "use": "SELECT/SHOW VIEW versus CREATE TEMPORARY TABLES, EXECUTE and administrative privileges"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/postgres/postgres/REL_18_STABLE/src/backend/catalog/information_schema.sql",
+      "use": "Pure type/index helpers needed for column metadata",
+      "read_at": "2026-11-18T06:42:31Z"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/sql-createextension.html",
+      "use": "Track template-resident policy objects as extension members",
+      "read_at": "2026-11-18T06:42:31Z"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/functions-xml.html",
+      "use": "XPath functions read supplied XML values; required by AdventureWorks read views",
+      "read_at": "2026-11-18T07:10:01Z"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html",
+      "use": "Release source for the unchanged engine version measured natively",
+      "read_at": "2026-11-18T07:11:18Z"
+    },
+    {
+      "url": "https://sqlite.org/releaselog/3_54_1.html",
+      "use": "Release source for the unchanged engine version measured natively",
+      "read_at": "2026-11-18T07:11:18Z"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/release/18.7/",
+      "use": "Release source for the unchanged engine version measured natively",
+      "read_at": "2026-11-18T07:11:18Z"
+    },
+    {
+      "url": "https://www.postgresql.org/docs/18/functions-binarystring.html",
+      "use": "Encoding conversion reads supplied byte/text values",
+      "read_at": "2026-11-18T07:19:19Z"
+    },
+    {
+      "url": "https://www.psycopg.org/psycopg3/docs/basic/from_pg2.html#multiple-statements-in-the-same-query",
+      "use": "Native protocol client connection and multi-result semantics",
+      "read_at": "2026-11-18T07:24:20Z"
+    },
+    {
+      "url": "https://pymysql.readthedocs.io/en/latest/modules/connections.html",
+      "use": "Native protocol client connection and multi-result semantics",
+      "read_at": "2026-11-18T07:24:20Z"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/refman/9.7/en/locking-functions.html",
+      "use": "Named locks are stateful built-ins; native probe confirms SELECT-only demo can obtain one",
+      "read_at": "2026-11-18T09:56:36Z"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/refman/9.7/en/privileges-provided.html",
+      "use": "EXECUTE governs stored routines; FILE and write/admin grants are absent from demo",
+      "read_at": "2026-11-18T09:56:36Z"
+    },
+    {
+      "url": "https://raw.githubusercontent.com/postgres/postgres/REL_18_STABLE/src/backend/commands/typecmds.c",
+      "read_at": "2026-11-18T10:47:41Z",
+      "use": "Generated range constructors use the bootstrap superuser owner; closed postgres defaults and explicit admin grants cover them"
+    },
+    {
+      "url": "https://www.sqlite.org/omitted.html",
+      "read_at": "2026-11-18T10:56:21Z",
+      "use": "SQLite has file permissions rather than server GRANT/REVOKE account enforcement"
+    },
+    {
+      "url": "https://dev.mysql.com/doc/refman/9.7/en/stored-objects-security.html",
+      "read_at": "2026-11-18T11:29:48Z",
+      "use": "Definer-context views execute with owner privileges; direct EXECUTE denial does not prove their helpers cannot change session state"
+    }
+  ]
+}

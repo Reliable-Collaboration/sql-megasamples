@@ -1,0 +1,188 @@
+{
+  "status": "Passed",
+  "read_at": "2026-11-18T12:19:54.918811+00:00",
+  "scope": "Configured private canaries in publication text; published-bootstrap output failures are recorded separately",
+  "canary_sets": 2,
+  "distinct_canary_values_checked": 8,
+  "files_checked": 35,
+  "files": [
+    {
+      "path": ".dockerignore",
+      "bytes": 1073,
+      "sha256": "e8ac1d70c28dc0e2823a61a1d3c85b086f305c7fbbb2abcc7e32bcbf94975a7e"
+    },
+    {
+      "path": "build/strict-read/pr-body.md",
+      "bytes": 3144,
+      "sha256": "38c8200806eb07851175b7d8a32c27ebafa31c5c4090ac996e42887ee9fd89d9"
+    },
+    {
+      "path": "docs/strict-read-account.md",
+      "bytes": 7295,
+      "sha256": "3fd2b15248cd6dcfb7ce90726ea681f0f7451a9b3d54dc6e07d712dadcc2db9e"
+    },
+    {
+      "path": "docs/strict-read-evidence.md",
+      "bytes": 11400,
+      "sha256": "e012415fb2f5903980daa834f7f5764ec67dc7e9e120b1963ec9c482c276f86f"
+    },
+    {
+      "path": "docs/validation/export-strict-read-evidence.py",
+      "bytes": 9820,
+      "sha256": "0de0ea4a3b2bf56bca1ceb9af82cfefbc77f6eeafa44ff5fa16cafc082136dcc"
+    },
+    {
+      "path": "docs/validation/strict-read-2026-11-18.json",
+      "bytes": 3476803,
+      "sha256": "6148da639e1fc88af8d0634b414f84c86839ff84f95c90ca519567602a714afe"
+    },
+    {
+      "path": "docs/validation/strict-read-checkpoints.py",
+      "bytes": 3055,
+      "sha256": "e52b7725eba51f9fabd82b216b553f61253e1ceabc613d8a5094afd03d5e3e4a"
+    },
+    {
+      "path": "docs/validation/strict-read-executable-routines.json",
+      "bytes": 423333,
+      "sha256": "be570f392de66be45d868cee27a2a5d71570c7bf87b5db93ce47179e2cd08076"
+    },
+    {
+      "path": "docs/validation/strict-read-executable-routines.md",
+      "bytes": 219982,
+      "sha256": "efe5805a832c3d64ef6ed4ae3092d4a379e9461b34bfd9eb9992b5e2f2373872"
+    },
+    {
+      "path": "docs/validation/strict-read-finish-candidate.py",
+      "bytes": 4489,
+      "sha256": "89747f187c803e949b9ab1f4f9e10887038a4fcd60a17c5d7860d12031e55c2c"
+    },
+    {
+      "path": "docs/validation/strict-read-generated-routines.py",
+      "bytes": 2433,
+      "sha256": "f60f48797e9e4665c39c60673ffea2064e120cb7250b8593842fcee898c2c002"
+    },
+    {
+      "path": "docs/validation/strict-read-inventory.py",
+      "bytes": 5151,
+      "sha256": "4469cfd4b383491de17bb61c29fd20744a2fcb14d558129a24e226d4e8a42ef4"
+    },
+    {
+      "path": "docs/validation/strict-read-matrix.py",
+      "bytes": 2008,
+      "sha256": "d5d3de8ce46aaaa7baff07c5b5a970131d72b356c0cde8e6c070af423638dd4a"
+    },
+    {
+      "path": "docs/validation/strict-read-mysql-boundary.py",
+      "bytes": 4163,
+      "sha256": "200653cdc978c107cfb980223c7c484496b732ca3c0d6b8fac2357cfce00bf94"
+    },
+    {
+      "path": "docs/validation/strict-read-mysql-view-state.py",
+      "bytes": 2041,
+      "sha256": "06e2c9c87d24a2d7d0a08c8c391c1edb242b843a0569da8ba35866403f1e3aa0"
+    },
+    {
+      "path": "docs/validation/strict-read-parallel-matrix.py",
+      "bytes": 7575,
+      "sha256": "841ca1dbfd3b75591edf965b10acbdfd9dc688333c9de874c5ad9ac1e6849637"
+    },
+    {
+      "path": "docs/validation/strict-read-publication-canaries.py",
+      "bytes": 3034,
+      "sha256": "9e45972674e73c8167d971b2847c330e0cbc2d972e28d268efe633521a85dc8d"
+    },
+    {
+      "path": "docs/validation/strict-read-reset-matrix.py",
+      "bytes": 4709,
+      "sha256": "7625b82b9cbaf1a81c079c8ae0a21d6fc9a073d2cf357eb622991419e0acfae8"
+    },
+    {
+      "path": "docs/validation/strict-read-rotation.py",
+      "bytes": 9579,
+      "sha256": "ce4a51b1a14f87222b57274e2bc778f338ce27867914cda319d5250bb5d8ea05"
+    },
+    {
+      "path": "docs/validation/strict-read-smoke.sh",
+      "bytes": 2031,
+      "sha256": "c81eabbed67af5a51ad85287fd1f8fdcbeefd8a8fab91584e00e7381d4e9743d"
+    },
+    {
+      "path": "docs/validation/strict-read-sources.json",
+      "bytes": 4436,
+      "sha256": "a29f8bad7a7aa24d5ba2c9c37c5c500004fff4b40c9aa011e70cf044bf905bc7"
+    },
+    {
+      "path": "docs/validation/strict-read-writer-scenarios.py",
+      "bytes": 2302,
+      "sha256": "574047d2450eb867b41fdfcf463a8919b2f5a2acc269d808d36ec5d9bb101dd3"
+    },
+    {
+      "path": "docs/validation/strict_read_clients.py",
+      "bytes": 3493,
+      "sha256": "dd2545d48985c757bdde39216619a89d3b9b938af2377bd42e57a999eb5f7f18"
+    },
+    {
+      "path": "engines/postgres/Dockerfile",
+      "bytes": 6886,
+      "sha256": "e5a80b3075e4add0aad2eaa650ce15a2a2dbe9b89f9d4196343d86ab5167590c"
+    },
+    {
+      "path": "engines/postgres/init/10-read-profile.sql",
+      "bytes": 2628,
+      "sha256": "a14dbdef3a2e26c7e2ad26a4aee7ffc1e5976d3cac386b3d6b2e2882c6f2f271"
+    },
+    {
+      "path": "engines/postgres/init/15-read-views.sql",
+      "bytes": 1479,
+      "sha256": "e3b35c977fca01c59524390633a8f957cecf9b1816dfacca2806f00d9698cc36"
+    },
+    {
+      "path": "engines/postgres/init/read-routine-names.sql",
+      "bytes": 43735,
+      "sha256": "e0a6d443867bd2f0a10db20d0a806979bd851ef412edb5139becb8968987542c"
+    },
+    {
+      "path": "engines/postgres/read-policy/Makefile",
+      "bytes": 148,
+      "sha256": "8d953ceb68bd205c8f88c298d46e387b99977ba503d61c9f6e20aef1abd8dbc9"
+    },
+    {
+      "path": "engines/postgres/read-policy/read_policy--1.sql",
+      "bytes": 1004,
+      "sha256": "4052750aaa7819d90447b28b50a1bfc58f65fc9062a94a12e6b6c1253af00644"
+    },
+    {
+      "path": "engines/postgres/read-policy/read_policy.c",
+      "bytes": 1733,
+      "sha256": "dfcd737c1888f80267597efa2a48f17178940d02275e037d3697a93baa2dafcf"
+    },
+    {
+      "path": "engines/postgres/read-policy/read_policy.control",
+      "bytes": 121,
+      "sha256": "eae58559484e165335dc94b3053ab7c9fdf4dd08521175b152133e89dc4b3e51"
+    },
+    {
+      "path": "megasamples/engines/mysql/image_test.py",
+      "bytes": 10754,
+      "sha256": "a83e3e8bd22799dbf668e4bb601b8c55be585528e98cb82d854e2e0401484537"
+    },
+    {
+      "path": "megasamples/engines/postgres/image_test.py",
+      "bytes": 8446,
+      "sha256": "5cb38315d6efb0f99b9fcae5b8dafc44aa1fbccaeb97c1e5822d745a77f12b94"
+    },
+    {
+      "path": "tests/test_mysql_image_startup.py",
+      "bytes": 2720,
+      "sha256": "75ce7b4e72db5e4aae8de7aca99bb573fb3cad52a3eec1a80cc640f0d4dd08f7"
+    },
+    {
+      "path": "tests/test_strict_read_native.py",
+      "bytes": 13254,
+      "sha256": "1dfcfa4ba797805ea71a503e9a43a862f8fb0ba78c9baf6da8486a497c3f326b"
+    }
+  ],
+  "matched_paths": [],
+  "parser_source_sha256": "e12596748127841e19a789c63ec41902845bcc9b1f4d7fdefccc756bf1ddb667",
+  "self_payload_checked": true
+}
