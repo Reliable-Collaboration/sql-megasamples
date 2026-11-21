@@ -128,3 +128,42 @@ class ScopeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class NamespaceCheckTests(unittest.TestCase):
+    """Sol round 8, P3-5: only the hook's own refusal counts, and each attempt uses a fresh name."""
+
+    HOOK = 'ERROR:  42501: database name does not match the namespace and template\nLOCATION:  x\n'
+
+    def check(self, outside_error, inside_code=0):
+        from start_scope import namespace_enforced
+        names = []
+
+        def podman(*args, check=True):
+            sql = args[-1]
+            if sql.startswith("CREATE DATABASE outside_"):
+                names.append(sql.split()[2])
+                return subprocess.CompletedProcess(args, 1, "", outside_error)
+            if sql.startswith("CREATE DATABASE copy_"):
+                names.append(sql.split()[2])
+                return subprocess.CompletedProcess(args, inside_code, "", "" if inside_code == 0 else "ERROR")
+            return subprocess.CompletedProcess(args, 0, "", "")
+        return namespace_enforced(podman, "probe"), names
+
+    def test_the_hooks_refusal_with_a_working_control_is_enforcement(self):
+        self.assertTrue(self.check(self.HOOK)[0])
+
+    def test_a_duplicate_name_error_is_not_enforcement(self):
+        # A fixture that already holds the name: PostgreSQL's error names it, and says nothing of policy.
+        duplicate = 'ERROR:  42P04: database "outside_namespace" already exists\n'
+        self.assertFalse(self.check(duplicate)[0])
+
+    def test_another_permission_error_is_not_enforcement(self):
+        self.assertFalse(self.check('ERROR:  42501: permission denied to create database\n')[0])
+
+    def test_a_failed_positive_control_is_not_enforcement(self):
+        self.assertFalse(self.check(self.HOOK, inside_code=1)[0])
+
+    def test_each_attempt_uses_a_fresh_name(self):
+        first, second = self.check(self.HOOK)[1], self.check(self.HOOK)[1]
+        self.assertEqual(len(set(first + second)), 4)
