@@ -92,6 +92,10 @@ def account_checks(checks, schema, read_table, expected_count):
 def main(argv=None):
     datasets = list(sys.argv[1:] if argv is None else argv) or ["sakila"]
     c = Checks()
+    filesystem = sh("docker", "run", "--rm", "--network", "none", "--entrypoint", "sh", IMAGE,
+                    "-ec", "test -d /var/lib/mysql/mysql; test ! -e /var/lib/mysql/auto.cnf; "
+                           "test ! -L /var/lib/mysql/auto.cnf")
+    c.expect(filesystem.returncode == 0, "the image has no baked auto.cnf before server startup")
     sh("docker", "rm", "-f", NAME)
     started = time.monotonic()
     run = sh("docker", "run", "-d", "--name", NAME,
