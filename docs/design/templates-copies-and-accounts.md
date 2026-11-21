@@ -1,24 +1,25 @@
 # Templates, copies, the scripting CLI and the account model: version 1
 
-**Design record · 2026-11-20 · round 5, the drafter's part. Status: a design under review. Nothing here is built, and nothing here has been run.**
+**Design record · 2026-11-21 · round 6, the drafter's part. Status: a design under review, revised from what its gates showed. Nothing here is built. Its 58 feasibility gates have run on an isolated stack; no regression of section 8.2 has.**
 
 - **What this is.** The design of **version 1** of sql-megasamples' pristine templates, per-test copies, the commands that scripts drive them with, and the account model that goes with them. It carries the strict PostgreSQL read profile of pull request #14.
 - **Version 1 only.** The two deciders staged the design (DL-108): one bounded version 1, merged and rolled out once, and later stages as new work. This record holds exactly the list of DL-108 items 5 and 8 to 11, at the placements of its items 1 to 3. Its surface is frozen (section 0).
 - **The fuller design is kept in Git history,** at `e0c2f935` of this file, as the source for the later stages. Section 11 names each stage, what waits in it, and every deferred finding against it.
 - **What sql-megasamples is.** A stand-alone offering: sample database servers that someone spins up, in any network setting (DL-107). Sections 2 to 6 describe that product. A deployment is configuration; DataIntent's development instance is one, in section 7.
-- **Rounds.** Round 1 is `2a15387`; round 2 `bdd9033`, with `9fe0bbd`; round 3 `e0c2f935`; round 4, the cut, `e8af920`. Astra's review 4, on the cut's scope and gates, found eight P1s, twelve P2s and a P3. Section 12 answers each by number. The reviews are in the coordinator's ignored `.local/megasamples-design/` in DataIntent.
-- **What comes next** (DL-108 item 12): version 1's gates run on an isolated stack; then this record is revised from what was observed and reviewed to two clean rounds. **No round counts as clean while a gate of section 8.1 is unrun.** A required capability that fails its gate returns to the deciders.
-- **Method.** Reading only: no container, no database connection, no network, and no credential file. So no statement about how an engine behaves has been observed.
+- **Rounds.** Round 1 is `2a15387`; round 2 `bdd9033`, with `9fe0bbd`; round 3 `e0c2f935`; round 4, the cut, `e8af920`; round 5 `0896ebc`, which answered Astra's review 4 and is the revision the gates ran on. Round 5 had no review of its own. Section 12 says what the gates changed, and keeps review 4's and review 3's answers by number. The reviews are in the coordinator's ignored `.local/megasamples-design/` in DataIntent.
+- **Where it stands** (DL-108 item 12): **version 1's gates have run,** all 58, each with its control shown. 55 Passed at once and three Failed; the deciders ruled on the three (DL-111, DL-112), and their re-runs Passed. **No gate that version 1 rests on is unrun.** This record is now reviewed to two clean rounds.
+- **Method.** This record's own work is reading only: no container, no database connection, and no credential file. **What it says of how an engine behaves is what the gates' record shows, and nothing more.** The gates were run by another task, on a task-owned isolated stack.
 - **Marks.** Each claim carries one:
   - **[R]** read in the cited file and line;
-  - **[G-n]** rests on a native behaviour nobody has shown: gate *n* of section 8.1. It is not asserted either way;
+  - **[G-n]** observed: gate *n* of section 8.1 Passed on the isolated stack. It is a kind of **[R]**: read in the gates' record, `GR:`, at that gate's row. Section 8.1 says what each showed, and what it was run on;
   - **[I]** inferred, and not load-bearing;
   - **[D]** decided here, with the reason;
-  - **[108-n]** decided by the two deciders in DL-108, item *n*; **[108+]** decided by them since, on this record's three readings, as the coordinator relayed it to this task.
+  - **[108-n]** decided by the two deciders in DL-108, item *n*. Likewise **[109-n]**, **[110-n]**, **[111-n]** and **[112-n]** for DL-109 to DL-112.
   - A table or list whose heading line carries a mark is marked as a whole. A file and line cited inside any row is **[R]**.
 - **Citations.**
   - `SM:` is sql-megasamples at `main`, `e61335f`. `PR14:` is its branch `fix/strict-read-account` at `2879fc4`.
-  - `DL:` is DataIntent's `docs/work/decision-log.md` on `origin/coordinator/journal-during-full`: DL-070 to DL-103 at `d02f7384`; DL-104 to DL-108 at `5831ef43`. `LR:` is `docs/work/lines-register.md` there.
+  - `GR:` is `docs/validation/dl-077-v1-gates.md` on sql-megasamples' branch `gates/dl-077-v1` at `d805539d`: the first run's rows at `:15-72`, the re-runs' at `:144-148`. Each gate's launcher is `tests/gates/<gate>` there.
+  - `DL:` is DataIntent's `docs/work/decision-log.md` on `origin/coordinator/journal-during-full`: DL-070 to DL-103 at `d02f7384`; DL-104 to DL-108 at `5831ef43`; DL-109 to DL-112 at `a0a23d23`. `LR:` is `docs/work/lines-register.md` there.
   - `ED:` is DataIntent's `docs/work/samples-service-editing-requirements.md`, `MR:` its `docs/work/samples-service-requirements-and-architecture.md`, and `DI:` any other DataIntent file, all at `4a8aad61` (`origin/coordinator/samples-p1`).
 
 ## 0. Version 1's surface
@@ -27,15 +28,15 @@
 
 | Kind | Version 1 has |
 |---|---|
-| **Commands** | `megasamples copy create`, `show`, `list`, `drop`, `renew`, `release`, `sweep`. `megasamples reset` and `megasamples up`, as today, with the options below. No other command is new. [108+: no `template` and no `interface` command.] |
+| **Commands** | `megasamples copy create`, `show`, `list`, `drop`, `renew`, `release`, `sweep`. `megasamples reset` and `megasamples up`, as today, with the options below. No other command is new. [109-1: no `template` and no `interface` command.] |
 | **Options** | For `copy`: `--host`, `--port`, `--user`, `--connect-timeout`; `--password-file` or `--password-stdin`; `--prefix`, `--label`, `--lease`, `--identity`, `--wait`, `--dry-run`; for SQLite `--templates` and `--dir`. For `reset`: `--json`, `--operation`, `--discard sessions`, `--discard engine`, `--unattended`, `--status`, `--reconcile`. For `up`: `--discard engine`. |
-| **Configuration keys** | `engines.<engine>.templates`; `engines.mysql.binary_log` [108+]; `copies.namespaces` (each: `prefix`, `owner`, `max_copies`); `copies.foreign` (each: `prefix`, `demo_reads`); `accounts.readers` and `accounts.writers` (each: `name`, `scopes`). |
+| **Configuration keys** | `engines.<engine>.templates`; `engines.mysql.binary_log` [109-2]; `copies.namespaces` (each: `prefix`, `owner`, `max_copies`); `copies.foreign` (each: `prefix`, `demo_reads`); `accounts.readers` and `accounts.writers` (each: `name`, `scopes`). |
 | **`.env` keys** | Today's four. `MYSQL_DEMO_PASSWORD`. One for each namespace's owner and each declared account: its name in upper case, then `_PASSWORD`. |
 | **Formats** | The JSON document's `schema`. The `interface` number. Four records with a tag each: the service's, a template's, a copy's, an operation's. For SQLite, a manifest and a sidecar. |
 | **Service accounts** | `postgres`, `root`, `admin` and `demo`, as today. A namespace's owner. A declared reader; a declared writer. On PostgreSQL, the groups of 4.1. |
 | **Hook rules** | Four (4.3): the creator must hold the new owner's rights; a namespace's owner is confined to its namespace and to registered templates; a new database is closed to `PUBLIC`; a role without `CREATEROLE` cannot alter roles or default privileges. |
 
-- **`--discard` is one option with a named value.** [108+] `--discard sessions` ends people's sessions on a database's reset. `--discard engine` authorises replacing a whole engine's volume. A whole engine's reset refuses `--discard sessions` and requires `--discard engine`; so does `megasamples up` before it replaces a stale engine's volume (3.5).
+- **`--discard` is one option with a named value.** [109-3] `--discard sessions` ends people's sessions on a database's reset. `--discard engine` authorises replacing a whole engine's volume. A whole engine's reset refuses `--discard sessions` and requires `--discard engine`; so does `megasamples up` before it replaces a stale engine's volume (3.5).
 - **Round 4's `reset --wait` is removed.** It was defined for `copy drop` only. [D: review 4's finding 18.]
 
 **What version 1 contains, by DL-108's list:**
@@ -53,7 +54,7 @@
 | Item 5, ninth | The CLI's contract for the formats version 1 has; the reset's session decision; the runbook's split. | 6; 3.5; 5.3 |
 | Item 9 | A whole engine's reset refuses unless told to discard, and the service's record carries an identity for each volume. | 3.5 |
 
-**What version 1 does not contain** is section 11: seven named stages.
+**What version 1 does not contain** is section 11: seven named stages and one ready addition.
 
 ## 1. What the design rests on
 
@@ -83,6 +84,9 @@
 | F-31 | **The bundled consoles and the generated pages hold administrator access.** phpMyAdmin signs a browser in with no form, and offers `admin` beside `demo`. DbGate and CloudBeaver are given `admin`'s password as a stored connection. **The landing page and the Adminer help page print `admin`'s configured password** to whoever opens them. | `SM:consoles/phpmyadmin/config.user.inc.php:15-27`; `SM:megasamples/engines/postgres/__init__.py:91-100`; `SM:megasamples/console_config.py:27-44`; `SM:megasamples/console_page.py:120`, `:127`, `:197-198`, `:246`, `:257`, `:286`, `:297`, `:311` | [R] |
 | F-32 | **`megasamples up` replaces an engine's data volume by itself,** when the running container is not on the current image: it recreates that engine with its anonymous volumes renewed. | `SM:megasamples/job.py:166-177` | [R] |
 | F-33 | **Callers of today's reset that expect it to succeed with no option:** the Makefile's shim; **six validation scripts, at seven call sites,** which between them reset whole engines, every engine at once, every configured pair, and single MySQL and SQLite databases; the README's examples, a single SQLite database among them. | `SM:Makefile:62`; `SM:docs/validation/probe-reset-flags.py:47`; `SM:docs/validation/rehearse-lts-resets.py:89`, `:121`; `SM:docs/validation/probe-approved-datasets.py:135`; `SM:docs/validation/rehearse-lts-append-reset.py:32`; `SM:docs/validation/rehearse-lts-persistence.py:55`; `SM:docs/validation/validate-credential-prerequisite.py:43`; `SM:README.md:294-298`, `:416` | [R] |
+
+| F-34 | **Today's MySQL image bakes a server identifier.** Its data directory is initialized in the build and copied whole, `auto.cnf` included, so every volume seeded from it reports the same server UUID. | `SM:engines/mysql/Dockerfile:32`, `:63`; `GR:` G-33a, `:67` | [R] |
+| F-35 | **MySQL databases known to carry triggers, from the repository's own sources:** `adventureworks_lt`, `oracle_oe`, `oracle_hr` and `sakila`. Datasets loaded from upstream dumps were not counted. | `SM:datasets/adventureworks_lt/objects.sql:37-65`; `SM:datasets/oracle_oe/objects.sql:123`; `SM:datasets/oracle_hr/PROVENANCE.md:45`; `SM:datasets/sakila/tests/triggers.yaml:7-27` | [R] |
 
 ### 1.2 One consumer, DataIntent
 
@@ -237,18 +241,20 @@ Otherwise exit 5, and nothing was changed.
 2. The template is made from the loaded database by the copy below, with each original definer kept.
 3. Each table's row count and checksum are compared with the loaded database's.
 4. The template is set `READ ONLY = 1`.
+5. **After the server's final shutdown, the build removes its identifier file, `auto.cnf`,** so that each fresh volume makes its own (3.5; F-34). An image test asserts that the file is absent. [111-2] [G-33a]
 
 **A copy,** as the namespace's owner, on one connection, all of it inside the server:
 1. `CREATE DATABASE <copy>`, with the template's character set and collation. **Then the marker event** (2.2).
 2. Each table's recorded definition, with foreign-key checks off for the session.
 3. `INSERT INTO <copy>.<table> (…) SELECT … FROM <database>_start.<table>`, a table at a time.
-4. The routines, the views, and then the triggers and events.
+4. The routines, the views and the events. A templated database has no trigger, and no function its owner would be refused (below).
 5. Each table's row count and checksum compared with the template's record.
 6. The row is set `ready`.
 
 - **A copy has no grant of its own.** A namespace's owner is the one ordinary account that can write its copies; a declared reader of the namespace can read them (4.6).
 - **The definer of everything in a copy is the namespace's owner.** [D]
-- **Whether a replayed definition belongs to the copy and not still to its source** is [G-13]. A kind that fails excludes the datasets that use it, by name.
+- **A replayed definition belongs to the copy and not to its source.** With the source's rows changed afterwards, a replayed view, procedure and function returned the copy's data, and a write through the copy's trigger landed in the copy alone. [G-13]
+- **But a namespace's owner cannot replay every kind while the binary log is on.** The engine refuses it a trigger (`1419`), and a stored function that declares none of `DETERMINISTIC`, `NO SQL` and `READS SQL DATA` (`1418`). With the log off, both replay. [G-13] Version 1 does not work around the engine's rule: it offers no copy of a database that needs either (below).
 
 **What gets no MySQL template.** [D]
 
@@ -256,10 +262,15 @@ Otherwise exit 5, and nothing was changed.
 |---|---|---|
 | Above 512 MiB of allocated bytes, measured at build | no template, no copies: exit 4, `too-large` | A logical copy's time and undo grow with its rows. The number is fixed by the build's measurements before the freeze. |
 | A database of an installed dependency group (2.6) | no template, no copies: exit 4, `dependency-group` | A copy of one would point at the other's shared working copy (F-11). |
+| **A database whose recorded definitions hold a trigger,** or a stored function the engine refuses the same way | no template, no copies: exit 4, `not-replayable`, **before any reservation or change** [111-3] [112-1] | The engine's own rule, above. The one setting that lifts it, `log_bin_trust_function_creators`, is deprecated (warning `1287`), so version 1 leaves it unset. **Withheld in both log modes:** a copy that exists only while the log is off is not offered. The namespace's owner stays the definer, and is given no wider privilege. |
+
+- **The build finds the withheld databases from the definitions it records** (step 1), and prints each with its reason. From the repository's sources they are at least `adventureworks_lt`, `oracle_oe`, `oracle_hr` and `sakila` (F-35); the build's list is the authority, and the README names it. [112-2]
+- **These databases are whole in every other way:** their working copies, their reset from the image, and their PostgreSQL and SQLite copies are unaffected.
+- **Lifting it is a ready later addition** (section 11, S-8). [112-3]
 
 **A MySQL working copy still resets from the image.** A reset from a template waits (section 11). Its gap against DL-077 item 1 is recorded. [108-10]
 
-**The binary log is configurable, and the image keeps it on:** `engines: {mysql: {binary_log: false}}`. Every logical copy is written to it a second time (F-10). [G-18a, G-18b]
+**The binary log is configurable, and the image keeps it on:** `engines: {mysql: {binary_log: false}}`. Every logical copy is written to it a second time (F-10). The image starts and passes its own tests with the log off and with it on [G-18a, G-18b], so the key is in version 1. [109-2]
 
 ### 2.5 SQLite
 
@@ -282,14 +293,14 @@ Otherwise exit 5, and nothing was changed.
 - **A template is its database again.** A live copy is its database again. A PostgreSQL reset needs its database once more while it runs.
 - **The build measures and prints** each template's allocated bytes, appended datasets included (F-9), and each copy's time. A deployer sizes a volume from that.
 - **`max_copies`** bounds how many copies a namespace's owner can have through the CLI. It bounds no bytes.
-- **When the disk fills,** version 1 promises this and no more, on each retained path:
+- **When the disk fills,** version 1 promises this and no more, on each retained path. **The error an engine gives is not relied on:** PostgreSQL answered a full disk once with its disk-full code and once with an internal error [G-9]. So after any failed step the CLI reads what is there.
 
   | What was running | What must hold afterwards | Gate |
   |---|---|---|
-  | A copy's creation, on a server | The server stays up. Every template and every working copy is whole. The copy is `interrupted`, and kept. | G-9, G-17a |
+  | A copy's creation, on a server | The server stays up. Every template and every working copy is whole. **PostgreSQL leaves nothing of the new database in its catalog,** so the copy's row is `stale`. **MySQL leaves the partly filled schema,** which is `interrupted`, and kept. | G-9, G-17a |
   | A PostgreSQL reset | The same: nothing is swapped until the new copy is whole. | G-9 |
-  | **A MySQL reset from the image, after its drop** | The server stays up. Every other schema is whole. **This one is not, and is not claimed to be:** its operation is unsettled at `loading`, and reconciling completes it once there is space. | G-17b |
-  | An operation's own record | The phase not written means the step it announces was not taken. An outcome not written leaves the operation unsettled, which reconciling settles. | G-17b |
+  | **A MySQL reset from the image, after its drop** | The server stays up. Every other schema is whole. **This one is not, and is not claimed to be:** the operation records `failed` and stays unsettled, and reconciling completes it once there is space. **`done` is never written for it** (3.5). | G-17b |
+  | An operation's own record | **The design does not lean on a full disk refusing the write:** a small row write was seen to succeed with no space free. A phase is written before its step; `done` is written only after verification. If a write does fail, the row keeps the last phase that was written, and the operation is unsettled. | G-17b |
   | A SQLite copy's publication, or its sidecar | No file under a final name that is not whole. | G-19c |
   | A SQLite reset, or its operation's file | The working file is the old one or the image's, whole: the reset stages the new file beside the final name and renames it over (`SM:megasamples/reset.py:319-327`). The operation's file is written the same way. | G-19c |
 
@@ -311,7 +322,7 @@ Otherwise exit 5, and nothing was changed.
 - **`copy` needs a TCP path to the engine's port, and nothing else:** no container runtime, no checkout. For SQLite it needs `--templates DIR` and `--dir DIR`. [D]
 - **`reset` and `up` run where the service runs,** as today (F-1). A reset asked for from elsewhere waits (section 11). [108-6]
 - **`ENGINE:DATABASE`** follows the reset's own pairs (`SM:megasamples/reset.py:6`).
-- **A copy owner's credential may be used from another machine only after its engine's confinement gates have passed:** G-29a to G-29d on PostgreSQL, G-11b on MySQL. Until then the product does not claim it, and says so. [108-5]
+- **A copy owner's credential may be used from another machine, on a build whose confinement regressions pass.** The confinement itself is shown: on PostgreSQL by a prototype of the hook's second rule [G-29a to G-29d], on MySQL by the engine's own grants [G-11b]. **The claim is made for a build only when T-7 and T-9 pass the same cases through its images.** [108-5]
 
 ### 3.2 Output
 
@@ -330,7 +341,7 @@ Otherwise exit 5, and nothing was changed.
 | 1 | a defect in the CLI | nothing; treat it as 8 |
 | 2 | wrong usage | no engine was contacted |
 | 3 | the engine cannot be reached, or the sign-in is refused | nothing changed |
-| 4 | not offered here: no template, `too-large`, `dependency-group`, or a failed gate's command | nothing changed |
+| 4 | not offered here: no template, `too-large`, `dependency-group`, `not-replayable` | nothing changed |
 | 5 | refused by a rule: namespace, label in use, identity or state not as expected, the limit, an unknown format, an unsettled operation, a missing or wrong `--discard`, a stale image | nothing changed |
 | 6 | busy | **nothing changed, and the CLI confirmed it** |
 | 7 | failed | **nothing is left changed, and the CLI confirmed it** |
@@ -342,7 +353,7 @@ Otherwise exit 5, and nothing was changed.
 | `copy drop` | sessions remained at the end of the wait; the copy is untouched | — | `copy show`; `copy drop` again |
 | `copy sweep` | — | — | `copy list`; `copy drop` for each `dropping` one it names |
 | `copy renew`, `release` | another change holds the name | — | — |
-| `reset`, one target | another reset holds the target's lock, or sessions were found; **the target is as it was** | it failed before anything of the target changed | `reset --status`; `reset --reconcile` |
+| `reset`, one target | another reset holds the target's lock, or sessions were found; **the target is as it was** | it failed before anything of the target changed: `rolled-back` | `reset --status`; `reset --reconcile`. **A reset whose target changed and did not verify is 8, never 0 and never 7.** |
 
 - **A command that cannot confirm what 6 or 7 promises returns 8.**
 - **`copy create` never returns 7.** A create that fails after its reservation leaves a row and perhaps an object, and those are kept: exit 8.
@@ -386,11 +397,15 @@ Otherwise exit 5, and nothing was changed.
 **An operation.** Each reset of each target is one operation, with an identity.
 - **A script resets one target for each call, and gives the identity:** `--json` and `--operation ID` take exactly one target. An identity that already has a record is refused: exit 5, `operation-exists`. So a caller that lost a reply asks again under the same identity and is told what happened. [D: review 4's finding 18: with several targets every identity arrived in the one document a caller could lose.]
 - **A reset of several targets is for a person:** text output, each operation's identity printed as it starts, and `reset --status ENGINE` afterwards.
-- **Its record is written before each step, and its terminal outcome is kept for the life of the volume:** `done`, `rolled-back` or `failed`.
+- **Its record is written before each step, and its terminal outcome is kept for the life of the volume.** There are two:
+  - **`done`:** the target is the image's, verified, with its grants in place;
+  - **`rolled-back`:** the target is as it was before the reset.
+- **`failed` is not terminal.** It is recorded when a target that is changed in place did not verify. The operation stays unsettled, the next reset of that target is refused, and reconciling completes it. A PostgreSQL database is never `failed`: nothing of it changes until the swap.
+- **Where the record is:**
   - For a database on a server, it is a row in `megasamples.operations`.
   - For a SQLite database and for a whole engine, it is a file where the service runs, outside the volume.
 - **Admission.** A reset is admitted only if the target has **no operation that is not terminal.** Otherwise: exit 5, `unsettled`, naming it. Only `reset --reconcile` settles one, and it settles that operation only.
-- **`megasamples reset --status [--operation ID]`** answers: `running`; `unsettled`, at a phase; a terminal outcome; or **`unknown`: this volume has no record of it.** It gives the volume's identity with every answer. `unknown` on the volume the caller started against means it never started. `unknown` on another volume means only that the volume was replaced since.
+- **`megasamples reset --status [--operation ID]`** answers: `running`; `unsettled`, at a phase, with `failed` and its reason where that was recorded; a terminal outcome; or **`unknown`: this volume has no record of it.** It gives the volume's identity with every answer. `unknown` on the volume the caller started against means it never started. `unknown` on another volume means only that the volume was replaced since.
 
 **Who holds what, from admission to the end.** [D: review 4's findings 2 and 3: round 4's MySQL lock began with the worker, after the row and the suspension and before the check and the regrant; and its PostgreSQL worker had no gate.]
 
@@ -403,7 +418,7 @@ Otherwise exit 5, and nothing was changed.
 - **An operation is live while either lock is held.** Admission and reconciliation go on only after taking **both** without waiting; and reconciliation **raises the row's epoch first.** So a worker that starts late finds another epoch and changes nothing; a worker already running keeps its lock, and nothing else touches the target until it ends. [G-26m]
 - **On PostgreSQL** a worker that outlives its coordinator goes on filling its own transient and nothing else. A reconciliation then keeps that transient and reports it; a second reset uses another. [G-26p]
 - **SQLite and a whole engine:** the lock file where the service runs, one for the engine (F-3). So a whole engine's reset and a reset of one of its databases never run together there.
-- **If an engine's lock or worker gate fails, that engine's reset of one database is not offered.** A whole engine's reset remains.
+- **Both engines' gates passed** [G-26p, G-26m], so a reset of one database is offered on both.
 
 **A PostgreSQL reset, by either path.**
 
@@ -425,7 +440,7 @@ Otherwise exit 5, and nothing was changed.
 | `closed` | **opens the door again;** the transient as above | `rolled-back` |
 | `swapped` | drops the old transient, by the OID recorded at step a | `done` |
 
-- **Steps c and e are each one transaction or the swap is not built.** If [G-3a] or [G-3b] fails, PostgreSQL's reset of one database returns to the deciders.
+- **Steps c and e are each one transaction.** Each was shown to commit whole and to roll back whole, every member read after both outcomes. [G-3a, G-3b]
 - **A crash in step c or d leaves the working copy closed** until someone reconciles. It is kept short by doing all the copying first, and the CLI opens the door again when it is interrupted by a signal.
 
 **A MySQL reset, from the image, in place.** Today's procedure (F-4), under the two locks and the record:
@@ -433,25 +448,25 @@ Otherwise exit 5, and nothing was changed.
 | Step | What happens | The phase |
 |---|---|---|
 | a | The coordinator's lock. Admission. The operation's row, with its epoch. | `started` |
-| b | `--discard sessions` is required (below). **Each declared writer's grant on this schema is revoked, and that account's sessions are ended.** The suspension is written in the row. [G-27a] | `excluding` |
+| b | `--discard sessions` is required (below). **Each declared writer's grant on this schema is revoked, and that account's sessions are ended.** Both are needed: after the revoke alone, a session that was already open still wrote. [G-27a] The suspension is written in the row. | `excluding` |
 | c | The worker: its lock, its epoch check, then the image's dump, which drops the schema and loads it. | `loading`, written first |
 | d | Each table's row count **and checksum** against the image's own, read from the pristine container that is still running. | `loaded` |
 | e | **The declared grants are applied again.** | `done`, written after, and kept |
 
+- **`done` is written only after a verified load.** [111-1] Every table's row count and checksum equal the image's, and the declared grants are in place. No other path writes it.
+- **A load that fails is recorded `failed`, then and there,** with its reason. On a full disk that small write was seen to succeed while the load could not [G-17b]. If it does not, the row stays at `loading`. Either way the operation is unsettled: exit 8.
 - **It cannot be undone after step c begins.** Reconciling says which it does:
 
   | The row's phase, with both locks free | What reconciling does | Outcome |
   |---|---|---|
   | `started`, `excluding` | applies the declared grants again | `rolled-back` |
-  | `loading` | runs steps c to e again, under the same operation and a new epoch | `done` |
-  | `loaded` | **checks, and applies the grants. It does not load again.** | `done`, or `failed` with the tables that differ |
+  | `loading`, with or without `failed` | runs steps c to e again, under the same operation and a new epoch | `done`; or `failed` again, still unsettled |
+  | `loaded` | **checks, and applies the grants. It does not load again.** | `done`; or `failed` with the tables that differ, still unsettled |
 
-- **`done` requires both:** the data checked, and the declared grants in place.
-- **A start of the server during an unsettled reset does not reopen it.** A revoked grant stays revoked across a restart [G-27b]; the start applies declared grants (4.6), and leaves out any that an unsettled operation's row records as suspended.
-- **A database of an installed dependency group is not reset singly** (2.6): exit 4, `dependency-group`. A reset of one would leave the other pointing at rows that are gone, and today's path does exactly that. They are reset with the whole engine. [108+: accepted, in the impact note.]
-- **If [G-26m] or [G-27a] fails,** a MySQL reset of one database is not offered: where any writer is declared, for G-27a; at all, for G-26m.
+- **A start of the server during an unsettled reset does not reopen it,** a `failed` one included. A revoked grant stays revoked across a restart [G-27b]; the start applies declared grants (4.6), and leaves out any that an unsettled operation's row records as suspended.
+- **A database of an installed dependency group is not reset singly** (2.6): exit 4, `dependency-group`. A reset of one would leave the other pointing at rows that are gone, and today's path does exactly that. They are reset with the whole engine. [109-4]
 
-**A SQLite reset** is today's (F-4), under its lock file and an operation's file. It stops the consoles that read the files, and those consoles also carry people's sessions on the other engines. **So it always needs `--discard sessions`, and says which consoles it will stop.** [108+: accepted, in the impact note.]
+**A SQLite reset** is today's (F-4), under its lock file and an operation's file. It stops the consoles that read the files, and those consoles also carry people's sessions on the other engines. **So it always needs `--discard sessions`, and says which consoles it will stop.** [109-4] It stages each file beside its final name and renames it over [G-19c]; one that does not verify is `failed`, as on MySQL.
 
 **The session decision.** [108-2] **A reset of a database preserves sessions unless it is told otherwise.**
 
@@ -464,16 +479,19 @@ Otherwise exit 5, and nothing was changed.
 - **Only a session positively known to be the product's own is ended without the option.** [D: review 4's finding 7: a person at a bundled console has the console's address, and between statements is idle with no transaction; round 4 would have disconnected them.]
   - **The product's own sessions say so:** on PostgreSQL, the health probe and the CLI set a reserved application name on the connections they open. A client that sets that name itself has declared its own session disposable.
   - **Every other session is a person's, a console's included,** and is preserved.
-  - Whether a session can be told that way, and whether a console holds a session while nobody uses it, is [G-32a, G-32b]. **If consoles hold sessions on their own, the default would refuse every reset; that returns to the deciders,** with what was observed.
+  - **What was observed.** The reserved name told the product's session from the others, and nothing else did: a person's console session, idle between statements, looks like any idle session of that console. [G-32a] **With nobody there, no bundled console held a session on either server** [G-32b], so the default does not refuse by itself.
+  - **A console connection that a person opened stays open, idle, after they stop** (G-32b's control). So the default refuses until they close it, or until the reset is told `--discard sessions`. The refusal names the sessions.
 - **On PostgreSQL** the door is closed first, so nobody arrives between the look and the swap. [G-3c]
 - **MySQL has no door,** and a session there can name any schema. So a MySQL reset of one database always needs `--discard sessions`, and `--unattended` is refused before any change: exit 4.
 - **This changes today's default,** which disconnects (F-4). It enters version 1 at the freeze, with the impact note of 5.4. [108-2]
 
-**Replacing a whole engine's volume.** [108-9] [108+]
+**Replacing a whole engine's volume.** [108-9] [109-3]
 - **It is refused before any change unless it is given `--discard engine`.** `--discard sessions` is refused for it: it is not the same decision. Every copy, every session and every account that is not the image's goes with the volume. There is no drain in version 1.
 - **`megasamples up` is the same act when an engine's image is stale** (F-32). **Without `--discard engine` it replaces nothing:** it names the stale engine and stops, exit 5, `stale-image`, before it recreates anything. With it, it does what it does today. An engine whose container does not exist yet is simply started. [D: review 4's finding 5.]
 - **The service's record carries an identity for each volume.** [G-33a] Every document carries it.
-  - **On a server** it is in the server: MySQL's own server identifier, which the baked data directory must not hold; on PostgreSQL a value written at the first start.
+  - **On a server** it is in the server: MySQL's own server identifier, which the build removes from the baked data directory so that each fresh volume makes its own [111-2]; on PostgreSQL a value written at the first start.
+  - **`volume` is an opaque string.** A caller compares it and reads nothing into it. [111-2]
+  - **A MySQL volume seeded from an image built before this is unqualified.** Every one of them reports the same identifier (F-34), and the identity rule is not claimed for it. [111-2]
   - **For the service's SQLite files** it is a file in their volume, written when the volume is first started and never copied from the image. A SQLite reset reads it under the engine's lock file.
   - **A caller's own directory of copies has none** (2.5): its documents say null.
 - **Nothing a command does can land in a volume it did not start on.** [D: review 4's finding 4.]
@@ -565,16 +583,16 @@ A namespace's owner also holds, in the `megasamples` database only: its own ledg
 
 ### 4.3 The hook and the event trigger
 
-Input to **one independent review, of two things: the final compiled hook, and the `SECURITY DEFINER` event trigger** (F-26). Each finding is from reading `PR14:` at the cited lines; none was run.
+Input to **one independent review, of two things: the final compiled hook, and the `SECURITY DEFINER` event trigger** (F-26). Each finding was first read in `PR14:` at the cited lines. **Four have since been reproduced by gates,** and are marked; the others are still from reading.
 
 | # | Finding | Where | Disposition |
 |---|---|---|---|
-| H-1 | **Every role but `demo` and `admin` may be left unable to call any built-in routine,** an operator's function among them; and `admin` could not repair it (F-13). [G-5a] | `PR14:engines/postgres/init/10-read-profile.sql:14-15`, `:23-35` | If reproduced: P-1. |
-| H-2 | **The hook's `REVOKE` may do nothing, and succeed,** when the creator is not the new owner and does not inherit the owner's rights. [G-4a] | `PR14:engines/postgres/read-policy/read_policy.c:31-38` | Rule 1, and rule 3's confirmation. |
-| H-3 | **An error in the hook after the copy may leave the copied files with no database.** [G-4b] | `PR14:engines/postgres/read-policy/read_policy.c:24-38` | **If reproduced, it is resolved before the merge:** everything the hook can know is refused before any file is copied; the step after the copy may not raise for a reason of its own. If a raising path remains, or the leak shows with no hook at all, it returns to the deciders. |
+| H-1 | **Every role but `demo` and `admin` is left unable to call a built-in routine,** an operator's function among them; and `admin` could not repair it (F-13). **Reproduced:** a fresh role's `SELECT 1 = 1` was refused. [G-5a] | `PR14:engines/postgres/init/10-read-profile.sql:14-15`, `:23-35` | P-1. |
+| H-2 | **The hook's `REVOKE` does nothing, and succeeds,** when the creator is not the new owner and does not inherit the owner's rights. **Reproduced:** it ended with a warning and no error, and `PUBLIC`'s privileges remained. [G-4a] | `PR14:engines/postgres/read-policy/read_policy.c:31-38` | Rule 1, and rule 3's confirmation. |
+| H-3 | **An error in the hook after the copy leaves the copied files with no database.** **Reproduced** on a prototype that raises there: one directory with no catalog row. With no error, and with no hook, nothing was left. [G-4b] | `PR14:engines/postgres/read-policy/read_policy.c:24-38` | **Resolved before the merge,** as set out under the four rules below. |
 | H-4 | **The role name `admin` is compiled in.** | `PR14:engines/postgres/read-policy/read_policy.c:32-33` | The hook names no account. |
 | H-5 | **The hook closes `TEMPORARY` only.** | the same | `CONNECT` too. |
-| H-6, H-7 | **A role may change its own password, its own settings, and its own default privileges.** [G-6a] | — | Rule 4. [G-6b] |
+| H-6, H-7 | **A role can change its own password, its own settings, and its own default privileges.** **Reproduced:** natively each is accepted. [G-6a, and G-6b's control] | — | Rule 4, which refuses all three while the role still reads. [G-6b] |
 | H-8 | **`NOTIFY` is a statement, not a routine** [I]; the page says notifications "receive no `demo` grant". | `PR14:docs/strict-read-account.md:3` | Correct the page. `NOTIFY` stays allowed. |
 | H-9, H-10 | **The event trigger names `admin`,** runs as its definer, and is enabled in the ordinary way [I]. | `PR14:engines/postgres/read-policy/read_policy--1.sql:3-20` | It checks that the role exists; `ENABLE ALWAYS`. The review covers its definer's rights and its search path. |
 | H-12 | **A policy image started on data from before the policy** would run with the hook and without the grants. | `PR14:engines/postgres/Dockerfile:83` | The build writes the policy's version into the data directory; the start wrapper refuses one whose marker is missing or older. |
@@ -586,8 +604,16 @@ Input to **one independent review, of two things: the final compiled hook, and t
 |---|---|---|
 | 1 | Before `CREATE DATABASE` | Refuse, when the creator would not hold the new owner's rights. |
 | 2 | See below | The confinement of a namespace's owner. [108-5] |
-| 3 | After `CREATE DATABASE` | Close `CONNECT` and `TEMPORARY` on the new database to `PUBLIC`; then confirm it. |
+| 3 | After `CREATE DATABASE` | Close `CONNECT` and `TEMPORARY` on the new database to `PUBLIC`; then confirm it. **It raises no error of its own** (H-3's resolution, below). |
 | 4 | Before `ALTER ROLE`, `ALTER ROLE … SET` and `ALTER DEFAULT PRIVILEGES` | Refuse, when the caller is neither a superuser nor a holder of `CREATEROLE`. [G-6b] |
+
+**H-3's resolution, required before the merge.** [D] The gate showed the hazard is real: an error after the copy orphans the copied files [G-4b].
+- **Every refusal the hook can decide is made before the copy:** rules 1 and 2, and every check of a name, an owner or a template.
+- **After the copy the hook raises nothing of its own.** It closes the new database directly, with interrupts held for those few statements.
+- **A confirmation that fails is a warning and a line in the server's log,** naming the database; never an error. Rule 1 already removed the one known cause, a creator without the owner's rights [G-4a].
+- **The CLI does not trust the hook for its own copies:** before it records `created` it reads the new database's privileges, and a copy that is not closed as rule 3 leaves it is kept, `interrupted`, and reported.
+- **What stays possible** is an error PostgreSQL itself raises in those statements, such as running out of memory. A plain `CREATE DATABASE` is taken to have the same exposure between its copy and its commit [I]; the gate showed only that one which completes leaves nothing over. The independent review judges whether that is acceptable; if it is not, it returns to the deciders.
+- **T-7 keeps G-4b as a regression on the built hook:** with a fault planted in the confirmation, no directory is left without a catalog row.
 
 **Rule 2, exactly.**
 - **A namespace is known to the hook by its marker role:** `megasamples_copy_<prefix>_owner`. An account is that namespace's owner if it is a member.
@@ -597,7 +623,7 @@ Input to **one independent review, of two things: the final compiled hook, and t
 - **The rule binds a namespace's owner, and nobody else.** [D: review 4's finding 9: round 4 also kept every other creator out of a namespace, which is a rule of its own that DL-108 did not list.] A role that may create databases and owns no namespace creates as PostgreSQL lets it [G-29d]. If it puts a database under a namespace's prefix, that database is `unmanaged`: listed, reported, and removed by no command (2.2).
 - **It names no account and holds no state.** It reads the catalog.
 
-**What rule 2 is for.** DL-108 asks that the hook confine a namespace's owner, wherever it signs in from. **So if any of G-29a to G-29d fails, PostgreSQL copies are not offered at all, here or from elsewhere, and it returns to the deciders.** [108-5] Rule 2 does not bound bytes: an owner can still fill the disk with copies of its own.
+**What rule 2 is for.** DL-108 asks that the hook confine a namespace's owner, wherever it signs in from. **All four parts were shown on a prototype of the rule** [G-29a to G-29d]: the destination, the source, the rename, and that nobody else is bound. **The built hook repeats them in T-7 before any PostgreSQL copy is claimed,** here or from elsewhere. [108-5] Rule 2 does not bound bytes: an owner can still fill the disk with copies of its own.
 
 ### 4.4 MySQL's accounts
 
@@ -623,16 +649,27 @@ The second of line 10's two items. A read account's credential is shared: by the
 
 | Engine | In version 1 |
 |---|---|
-| **PostgreSQL** | **Refused,** by the hook's fourth rule, for every role without `CREATEROLE`. Natively such a role can change its own password [G-6a]; with the rule it cannot, and still reads [G-6b]. |
-| **MySQL** | **Not known to be possible. [G-16] establishes it first.** |
+| **PostgreSQL** | **Refused,** by the hook's fourth rule, for every role without `CREATEROLE`. Natively such a role changed its own password [G-6a]; under a prototype of the rule it could not, and still read [G-6b]. The built hook repeats it in T-7 and T-25. |
+| **MySQL** | **Not refused: the engine has no refusal that version 1 can use.** [G-16] |
 
-- **PostgreSQL takes MySQL's fallback only if G-6b shows the rule failing to refuse the password change while the account still reads.** No other result of G-6a or G-6b selects it. [D: review 4's finding 12.]
-- **G-16 records, before any branch is chosen:** each statement it tried by which a MySQL account changes its own password; each mechanism of the pinned server it tried against that, by name; and, for each mechanism, whether `demo` still signs in from the probe, from each console and from a client.
-- **If G-16 finds a refusal that keeps `demo` usable,** it is built. If that would add to section 0's surface, it returns to the deciders first.
-- **If it finds none,** the product says that MySQL cannot refuse it, and version 1 has what limits the harm:
-  - **a key of its own for MySQL's `demo`,** so that it can be kept and rotated apart;
-  - **a declared reader for each consumer** (4.6), so that one consumer's change locks out only itself;
-  - **the probe,** which signs in as `demo` and so shows the engine unhealthy; and **every start,** which applies the configured passwords again (F-6).
+**What G-16 recorded,** as `demo` on the pinned server:
+
+| Mechanism tried | The four statements that change one's own password | `demo`'s sign-in, by the probe, a client and each console |
+|---|---|---|
+| none: `demo`'s grants as they are | all four changed it | accepted |
+| `PASSWORD REQUIRE CURRENT` | three refused; **`SET PASSWORD … REPLACE` still changed it** | accepted |
+| the account locked, or its password expired | all four refused | **refused** |
+| global `read_only`, or `super_read_only` | all four refused | accepted |
+
+- **`PASSWORD REQUIRE CURRENT` is no refusal:** whoever holds a shared credential knows its current value.
+- **A locked or expired account cannot be used at all.**
+- **The two global settings refuse every ordinary account's writes with it:** a namespace owner's copies, a declared writer's rows, a ledger's rows. That is the engine's documented behaviour, as the record notes (`GR:98`); the gate did not itself try those writes. Version 1 cannot run under them.
+- **So version 1 takes the branch round 5 set for "no usable refusal".** [D] The gates' record left that choice to the deciders; it is listed for their confirmation in section 12.
+
+**The product says that MySQL cannot refuse it, and version 1 has what limits the harm:**
+- **a key of its own for MySQL's `demo`,** so that it can be kept and rotated apart;
+- **a declared reader for each consumer** (4.6), so that one consumer's change locks out only itself;
+- **the probe,** which signs in as `demo` and so shows the engine unhealthy; and **every start,** which applies the configured passwords again (F-6).
 
 ### 4.6 Declared readers and writers
 
@@ -694,7 +731,7 @@ accounts:
 |---|---|---|
 | `postgres`, `root`; MySQL's `admin` | everything | nothing |
 | PostgreSQL's `admin` | own and change all sample data; make databases and roles | not a superuser; cannot alter a template [G-1c] |
-| `demo`; a declared reader | read what it is granted. On MySQL: take any named lock; change its own password, unless G-16 finds a refusal | the read profile on PostgreSQL; its grants on MySQL |
+| `demo`; a declared reader | read what it is granted. On MySQL: take any named lock; change its own password (4.5) | the read profile on PostgreSQL; its grants on MySQL |
 | a declared writer | change rows of every working copy | no definition change; a reset restores |
 | **a namespace's owner** | **every copy of its namespace, whoever made it:** read, write, drop. Fill the disk with copies. On MySQL, take any named lock, and so make a copy or a reset report busy. | PostgreSQL: the hook [G-29a to G-29d]. MySQL: nothing outside its pattern, and no granting [G-11b]. |
 
@@ -724,11 +761,14 @@ The product does not know where it runs (DL-107).
 | `megasamples up`; the generated Compose file used directly | the product: loopback, always | Defaults 1 to 7. T-23 checks that no configuration makes the generator publish wider. |
 | An image run by hand; a Compose file someone wrote or edited | **the deployer** | Defaults 2 and 5, which are in the image: no privileged or declared account is usable without its own private key. **Not default 1:** an image cannot know how its port is published. **`demo`'s password is published, so whoever publishes that port wider gives read access to the samples to anyone who reaches it.** |
 
-DL-108 item 2 (a) approved refusing a wider listener while any account keeps a published password. **On the second path the product cannot do that from inside the image;** version 1 documents it instead. That exception is returned to the deciders (section 12).
+**The second path is documented, not refused.** [110-1] DL-108 item 2 (a) is a default of the start path the product generates. An image run by hand cannot see how its port is published, so the README says that anyone who can reach that port can read the samples as `demo`.
+- **On every start path, that one included, the image's start names each account still on its published password,** and keeps each privileged account locked while its key is missing or set to its published value. [110-2]
+- **There is no switch that acknowledges the exposure.** [110-3] It would verify nothing, and scripts would come to depend on it.
+- **Adding a refusal there later breaks hand-run scripts,** and is a decision of its own. The README claims none.
 
 **Default 2, exactly.**
 - **The privileged accounts are `admin` on both engines, `postgres`, and both of MySQL's `root`.**
-- **The image holds none of them usable over the network:** each is baked with no password that signs in. [G-35p, G-35m]
+- **The image holds none of them usable over the network:** each is baked with no password that signs in. Without one, each was refused on every network way in, while the container's own maintenance still worked and `demo` still signed in. [G-35p, G-35m]
 - **The start gives one a password only from its key, and tests the value:** a key that is unset, **or set to the value published today,** leaves that account locked, and the start says which.
 - **`megasamples up` writes a private value for each such key that is missing,** into the checkout's `.env`, closed to others, and never prints it.
 - **The reset, and everything else that signs in as a superuser, reads the same keys** (3.4). With none set it cannot run, and says so.
@@ -750,9 +790,9 @@ Version 1 gives these mechanisms. Which to use is the deployer's.
 | **Who can reach the engines** | Loopback publication, on the paths the product controls. | Any forward, proxy, shared network, or image run by hand. **Version 1 has no setting for a wider listener and no rule about where a client comes from** (section 11): whoever reaches the port can try every account, and `demo`'s password is published. |
 | **The transport** | PostgreSQL's passwords are not sent (`SM:ARCHITECTURE.md:166-167`). The product configures no TLS (`MR:` B-04). | A tunnel, or a network the deployer trusts. |
 | **Passwords** | One key for each account. **Rotation:** set the key and start again. **Revocation:** clear a key, and the account is locked at the next start. | When, and who is told. |
-| **A shared read credential** | `demo` is one account. On MySQL a holder may change its password, unless G-16 finds a refusal. | A declared reader for each consumer that must not be able to lock out the others; `demo` only for the consoles. |
+| **A shared read credential** | `demo` is one account. On MySQL a holder can change its password, and the engine has no usable refusal (4.5). | A declared reader for each consumer that must not be able to lock out the others; `demo` only for the consoles. |
 | **Who makes copies** | A namespace and an owner for each consumer that must be kept apart. | How many to bake, and which to leave locked. |
-| **A copy owner's credential away from the service** | Claimed only once that engine's confinement gates have passed (3.1). | **It can still fill the disk.** Version 1 bounds no bytes. |
+| **A copy owner's credential away from the service** | Claimed for a build whose confinement regressions pass (3.1). | **It can still fill the disk.** Version 1 bounds no bytes. |
 | **A consumer that manages accounts** | A foreign namespace keeps the product out of the consumer's objects. | An account that manages accounts may be able to change the service's own. The product ships none and tests none; whoever adds one tests what it reaches, **before that account and a credential that has left the machine exist together.** |
 | **Handing a credential over** | Nothing: **it is the deployer's own procedure,** which the README describes: one credential, alone, never the `.env`. [108-11] | The channel, and the record of it. |
 | **Write access to the samples** | A declared writer (4.6). | Whether to declare one. |
@@ -761,6 +801,7 @@ Version 1 gives these mechanisms. Which to use is the deployer's.
 
 - **A new image renews the data volumes,** and only when told to: `megasamples up --discard engine`, or a whole engine's reset (3.5). Everything made on the old ones goes. Declared accounts return at the start, from the configuration.
 - **Image and data must match.** On PostgreSQL the policy image refuses data without its marker (H-12). On MySQL nothing refuses. SQLite has no such pairing.
+- **A MySQL volume kept from an image built before this is unqualified for the identity rule** (3.5). After going back by kept volumes, that rule is not claimed for MySQL until its volume is next replaced.
 - **The runbook is split in this work.** [108-3]
   - **The product keeps a short, tested, general upgrade route, with its helpers:** replace the images, keep the old volumes until the new ones are checked, go back by the kept volumes.
   - **The live-upgrade runbook moves to DataIntent's side,** as the procedure of its rollout's plan, pinned to a sql-megasamples revision (F-29).
@@ -769,7 +810,7 @@ Version 1 gives these mechanisms. Which to use is the deployer's.
 
 ### 5.4 The impact note for what version 1 changes
 
-It enters at the freeze, with migration instructions, and every caller is changed in the same work. [108-2] [108+] [D: review 4's finding 20.]
+It enters at the freeze, with migration instructions, and every caller is changed in the same work. [108-2] [109-4] [D: review 4's finding 20.]
 
 | What changes | Who is affected | What to do instead |
 |---|---|---|
@@ -823,15 +864,15 @@ One deployment, by the product's present maintainers. Its records are DataIntent
 | **Templates** | `core`; the selection on each engine is made at its rollout's approval, from the build's measurements. |
 | **Namespaces** | One for each machine or consumer that makes copies, and spare locked ones. None begins with `di`. |
 | **Foreign namespaces** | `di`, marked `demo_reads: true`: its fixture's own (F-16, F-30). So `demo` keeps the sight of `di_…` schemas on MySQL that DL-079 item 3 allowed and a DataIntent case asserts. |
-| **Declared accounts** | A reader for each LAN consumer, if G-16 finds no refusal. **No writer:** its first is the two deciders' decision, after the controls of `ED:` R-39. |
-| **MySQL's binary log** | Its choice at its rollout's approval, after G-18a. |
+| **Declared accounts** | A reader for each LAN consumer, since MySQL cannot refuse a password change (4.5). **No writer:** its first is the two deciders' decision, after the controls of `ED:` R-39. |
+| **MySQL's binary log** | Its choice at its rollout's approval. The image starts and passes either way [G-18a, G-18b]. |
 
 **Its policy,** each a choice among 5.2's mechanisms:
 - **No administrator's or superuser's credential leaves the machine,** `di_admin` and its fixture and provisioning credentials included.
-- **Whether to send a namespace owner's credential elsewhere is DataIntent's.** It sends none before that engine's gates. Meanwhile it records DL-077 item 3's "from a separate machine" as unmet for that engine. [108-1]
+- **Whether to send a namespace owner's credential elsewhere is DataIntent's.** It sends none before that engine's confinement regressions pass on the candidate (T-7, T-9). Meanwhile it records DL-077 item 3's "from a separate machine" as unmet for that engine. [108-1]
 - **`di_admin` and a MySQL namespace credential that has left the machine must not come to exist together untested.** DataIntent tests what `di_admin` can do to the service's accounts **before the first sending, or before it provisions `di_admin`, whichever would first bring the two together.** [D: review 4's finding 17: round 4's condition fired only on a later provisioning.]
 - **It keeps the record of each sending,** an uncertain delivery included, and holds a send it cannot record. [108-1]
-- **MySQL's `demo`, if G-16 finds no refusal,** gets a key of its own, rotated at its rollout, which ends the value its LAN machines already hold; each of them reads with its own declared reader.
+- **MySQL's `demo`** gets a key of its own, rotated at its rollout, which ends the value its LAN machines already hold; each of them reads with its own declared reader.
 - **Its automation resets with `--unattended` only:** one PostgreSQL database at a time. It resets no MySQL database, **and no SQLite one: it has no unattended route to either in version 1.** Its SQLite cases work on copies of their own. [108-1]
 - **A long run renews its lease.** `ED:` criterion 11, "never a copy in use", is recorded as **not passed** for an idle MySQL session and an open SQLite file whose lease has ended.
 - **A result that needs to be the only writer** (`ED:` R-35). On PostgreSQL it holds for a namespace one run uses alone. **On MySQL it is recorded as unmet in version 1,** unless DataIntent itself, as an administrator on its own instance, has read that no grant but the owner's reaches the copy's name. [D: review 4's finding 16.]
@@ -841,6 +882,8 @@ One deployment, by the product's present maintainers. Its records are DataIntent
 - A copy's name is issued; its harness keeps the name and the identity, and finds a copy by its label after a lost reply.
 - Its edit tests' writer of a **copy** is that namespace's owner in version 1.
 - A MySQL copy holds one event that the dataset does not: the marker (2.2).
+- **It has no MySQL copy of a database with triggers** (2.4): `sakila` and `adventureworks_lt` among them. A case that needs one is Not run there, by exit 4, in version 1.
+- Its kept MySQL volume, from today's image, is unqualified for the identity rule (5.3).
 - The provider's list of databases does not gain the templates: it leaves out every database marked as a template (F-17). A raw catalog query shows them; the registry does not list them. Each is tested apart.
 - A fixture role cannot connect to a working copy. The fixture grants `EXECUTE` on its own routines, and `TEMPORARY` where a case needs it. A fixture role cannot change its own password on PostgreSQL.
 - Its harness maps the exit codes (`ED:` 4.2): 3 and 4 are Not run; 2, 5 and 7 Failed; 6 a deferral; 1 and 8 Failed, and it reads the state first.
@@ -849,11 +892,11 @@ One deployment, by the product's present maintainers. Its records are DataIntent
 
 | # | Step | It must show |
 |---|---|---|
-| 1 | **Version 1's gates** (8.1), on an isolated stack. Then this record revised and reviewed to two clean rounds. | DL-108 item 12. |
+| 1 | **Version 1's gates** (8.1): run. **This record reviewed to two clean rounds.** | DL-108 item 12. |
 | 2 | **The credentials, consoles and pages change** (5.1), as its own pull request if it is split out. | Merged before the build. |
 | 3 | **The build,** test-first, on a branch that merges pull request #14's branch first (section 9). | 8.2. |
 | 4 | **DL-078's README,** on the same branch, reviewed. **The runbook's split,** rehearsed. | Section 10; 5.3. |
-| 5 | **The branch's candidate,** built in an isolated store. | The dataset matrix, the image tests and every native suite Passed. |
+| 5 | **The branch's candidate,** built in an isolated store. | The dataset matrix, the image tests and every native suite Passed. **The gates that ran on a prototype or on compiled sources pass again on the candidate itself,** as T-7 and T-8; G-13 runs on it as a regression. [112-3] |
 | 6 | **DL-087's acceptance is recorded.** | Nothing from step 7 on comes before it (F-26). |
 | 7 | **DataIntent's comparison against that candidate,** the read account's admission among it. **And the reconciliation of the product's routine inventory with DataIntent's own (IA-01), recorded: each signature in one and not the other, with its disposition.** | Below. These are DL-085 item 3's conditions. |
 | 8 | **The reviews, on the head step 7 compared:** one independent review that covers **both the compiled hook and the `SECURITY DEFINER` event trigger,** each named in its record; Fable's and Astra's blessing (DL-086). | A review that signs off one of the two does not meet it. |
@@ -874,104 +917,115 @@ One deployment, by the product's present maintainers. Its records are DataIntent
 
 ## 8. Gates and tests
 
-### 8.1 Version 1's feasibility gates
+### 8.1 Version 1's feasibility gates, and what each showed
 
-**These run next, on an isolated stack.** [108-12] Each is **one assertion**; each tests the crossing or the identity it names, with a control that would fail if the assertion were false; and each names everything of version 1 it withholds. A required capability that fails returns to the deciders.
+**All 58 have run, on a task-owned isolated stack, each with its control shown.** [108-12] The record is `GR:`.
+- **The first run:** 55 Passed, 3 Failed, 0 Not run, 0 Unsupported. The three were G-13, G-17b and G-33a.
+- **The deciders ruled on the three** (DL-111, DL-112), and their re-runs Passed. Each of those rows says what first happened and what was done.
+- **Each gate is one assertion, with a control that would fail if it were false.** Its test is as round 5 defined it, in this file at `0896ebc`, section 8.1; its launcher is `tests/gates/<gate>` on the gates' branch.
+- **A row's last column but one says what in version 1 rests on that result.**
 
-**Two kinds, marked in each row:**
-- **E · engine-only.** The stack as `main` builds it today, its consoles included, or stock engines and stock clients; raw SQL and plain processes; for pull request #14's profile, its candidate as that branch builds it today. **No code of this work. These can all run now.**
-- **H · needs the hook.** The same, on an image with the changed hook built as a prototype. Still no CLI code.
+**What they ran on** (`GR:76-83`): PostgreSQL 18.7, MySQL 9.7.4 and SQLite 3.54.1, from the retained images of `main` at `e61335f`; and its consoles, CloudBeaver 26.2.5, DbGate 7.3.6, Adminer 6.3.0 and phpMyAdmin 5.2.3.
+- **E · engine-only** (52): that stack, stock clients, raw SQL and plain processes. No code of this work.
+- **H · needs the hook** (6): the same, with a prototype of the changed rules preloaded. No CLI code.
 
-Anything that needs the CLI, the start wrapper or the package is not a gate: it is a regression of 8.2. [D: review 4's finding 13.]
+**What a result here does not show.** Each is a regression's to show, on the candidate (7.2, step 5):
+- **The six H gates ran on a prototype of the rules, not on the built hook** (`GR:83`). T-7 repeats them.
+- **G-2c and G-5a to G-5c ran on pull request #14's exact policy sources,** compiled and applied to disposable copies of the data. Its candidate image was not reproduced (`GR:82`). T-8 repeats them on the candidate.
+- **G-33a's re-run used a fixture image** built from a scratch copy of the product's recipe with the removal added (`GR:152`). T-30 holds it in the product's own build.
+- **Nothing that needs the CLI, the start wrapper or the package is a gate.** Those are 8.2's. [D: review 4's finding 13.]
+- **The product's full regression suite was Not run** by the gates' task (`GR:111`, `:162`).
+
+**The stack was put back:** eight images and 95 dataset fingerprints matched before and after, and the live deployment's inventory was unchanged (`GR:114-138`, `:164-168`).
 
 **PostgreSQL: the template and what a copy carries.**
 
-| Gate | Kind | The one assertion | The test, with its control | Withholds if it fails | Serves |
-|---|---|---|---|---|---|
-| **G-1a** | E | A template that accepts no connections refuses every connection. | Each account, the superuser over the network and inside the container: refused. Control: with connections allowed, one succeeds. | every PostgreSQL template, copy, and reset from a template | 5, first |
-| **G-1b** | E | A role with `CREATEDB` alone copies it, and two copies at the same moment both succeed. | Two sessions create from it together; both exist, and their tables' checksums equal the template's twin. Control: a database that is not a template is refused to that role. | the same | 5, first |
-| **G-1c** | E | `admin` cannot alter, rename, drop or comment on it. | Each statement as `admin`: refused. Control: the same on a database `admin` owns: accepted. | **every use of a template as pristine:** PostgreSQL copies, template resets, and rule 2's registration | 5, first and fifth |
-| **G-2a** | E | A copy carries each object's owner, and each object's grants to group roles and to `pg_database_owner`. | The catalog's rows for both, in a template's twin and in its copy: equal. Control: a grant added to the twin afterwards is absent from the copy. | the read group and the owner's writing: all PostgreSQL copies and reset-made working copies | 5, first and fourth |
-| **G-2b** | E | A copy carries the default privileges. | The same, for the default-privilege catalog. | the closed defaults of pull request #14 on every copy and reset-made working copy | 5, fourth |
-| **G-2c** | E | A copy carries the policy's extension and its event trigger. | On pull request #14's candidate: a routine created in a copy has no `EXECUTE` for `PUBLIC`. Control: in a database made from a template without the extension, it has. | **the strict profile on every copy and reset-made working copy** | 5, fourth |
-| **G-2d** | E | A copy does not carry `CONNECT`, its owner or its comment. | A twin with a `CONNECT` grant and a comment; its copy has neither, and its owner is the creator. | 4.1's `CONNECT` table; the copy's own comment as its proof | 5, first and second |
-| **G-23** | E | A grant to `pg_database_owner` is held, in each database, by that database's owner and by no other ordinary role. | In a copy a namespace's owner made: it changes a row; a member of the namespace's read group and a member of the working write group are refused. Control: the owner is refused the same row in a working copy. | a copy's owner writing its copy: PostgreSQL copies | 5, first and seventh |
+| Gate | Kind | The one assertion | Result | What was observed, with its control | What rests on it | Serves |
+|---|---|---|---|---|---|---|
+| **G-1a** | E | A template that accepts no connections refuses every connection. | Passed | The closed template refused a query on the local socket and from the bridge. Control: opened, it answered. | every PostgreSQL template, copy, and reset from a template | 5, first |
+| **G-1b** | E | A role with `CREATEDB` alone copies it, and two copies at the same moment both succeed. | Passed | Two sessions were inside `CREATE DATABASE` together; the twin and both copies gave one count and one checksum. Control: the same role's copy of a database that is not a template was refused, `42501`. | every PostgreSQL template, copy, and reset from a template | 5, first |
+| **G-1c** | E | `admin` cannot alter, rename, drop or comment on it. | Passed | `ALTER`, rename, `COMMENT` and `DROP` as `admin`: each `42501`. Control: all four succeeded on a database `admin` owns. | **every use of a template as pristine:** PostgreSQL copies, template resets, and rule 2's registration | 5, first and fifth |
+| **G-2a** | E | A copy carries each object's owner, and each object's grants to group roles and to `pg_database_owner`. | Passed | Five rows of owners and grants were equal in the twin and its copy, the grant to `pg_database_owner` among them. Control: a grant added to the twin afterwards was absent from the copy. | the read group and the owner's writing: all PostgreSQL copies and reset-made working copies | 5, first and fourth |
+| **G-2b** | E | A copy carries the default privileges. | Passed | Two rows of default privileges were equal in both. Control: a later grant changed the template's alone. | the closed defaults of pull request #14 on every copy and reset-made working copy | 5, fourth |
+| **G-2c** | E | A copy carries the policy's extension and its event trigger. | Passed | On pull request #14's policy: the copy held the extension, and a routine made in it had no `EXECUTE` for `PUBLIC`. Control: with the extension removed, it had. | **the strict profile on every copy and reset-made working copy** | 5, fourth |
+| **G-2d** | E | A copy does not carry `CONNECT`, its owner or its comment. | Passed | The twin had the superuser as owner, a comment and a `CONNECT` grant. Its copy had its creator as owner, no comment and no grant. | 4.1's `CONNECT` table; the copy's own comment as its proof | 5, first and second |
+| **G-23** | E | A grant to `pg_database_owner` is held, in each database, by that database's owner and by no other ordinary role. | Passed | The copy's owner updated rows. The namespace's reader and the working writer were each refused, `42501`. Control: the owner was refused the same in a working database. | a copy's owner writing its copy: PostgreSQL copies | 5, first and seventh |
 
 **PostgreSQL: locks, proof, and the reset.**
 
-| Gate | Kind | The one assertion | The test, with its control | Withholds if it fails | Serves |
-|---|---|---|---|---|---|
-| **G-7a** | E | A session's advisory lock is held while that session runs `CREATE DATABASE`, also after its client is gone, and ends when the session does. | Kill the client during a long create; a second session's try-lock on the same key fails until the statement ends, then succeeds. | on PostgreSQL: every `copy` command that changes anything; `reset` of one database | 5, first and third |
-| **G-7b** | E | The same key taken from another database does **not** conflict. | Hold it in `megasamples`; take it in `postgres`: granted. So every command must take it in one database. Control: taken twice in `megasamples`: refused. | nothing by itself: it fixes where the lock is taken. If the key did conflict across databases, the design is unchanged. | 5, first and third |
-| **G-8a** | E | A database's comment is read by any role from any database, and set only by its owner or a superuser. | A reader reads a template's comment from `megasamples`. A namespace's owner sets one on a template: refused; on its own copy: accepted. | template records; rule 2's registered template; a copy's proof | 5, first, second and fifth |
-| **G-8b** | E | A plain `DROP DATABASE` refuses while any session is connected to it. | An idle session connected: refused. Control: none connected: it succeeds. | on PostgreSQL: `copy drop`, `copy sweep`, and the reconciliation's drop of a transient | 5, first and third |
-| **G-24p** | E | A database dropped and made again under one name has another OID. | Record, drop, create under the same name, compare: different. Control: after a restart, an untouched database's OID is the same. | the proof on PostgreSQL: `copy drop`, `copy sweep`, the reset's steps b and f | 5, second |
-| **G-24w** | E | **Between a proof's check and the drop, no account but the object's owner and the administrators can put another object under its name.** | Pause after the check. On PostgreSQL: another namespace's owner, a declared account and `demo` each try to drop the copy and to create under its name: refused. On MySQL: the same accounts try to drop the schema, to drop its marker, and to create a schema under its name: refused. Control, on each: the copy's own owner can, and that is the stated limit. | `copy drop` and `copy sweep` on that engine | 5, second |
-| **G-3a** | E | Closing a database to connections, and a row's update, commit or roll back together. | Roll back: the database accepts a connection **and the row is unchanged.** Commit: a new connection is refused **and the row reads the new phase.** | PostgreSQL's reset of one database | 5, third and eighth |
-| **G-3b** | E | Two renames, a `CONNECT` grant and a row's update commit or roll back together. | Roll back: both names, the grant and the row are as before, each read. Commit: all four are changed, each read; a reader connects under the old name to the new database. | the same | 5, third and eighth |
-| **G-3c** | E | A closed database keeps its sessions and refuses new ones; the superuser ends a session of `demo`'s. | One session open across the closing still answers; a new one is refused; the open one is ended. | the door and the session decision on PostgreSQL | 5, third; 2 (b) |
-| **G-26p** | E | **A restore worker that outlives its lock holder changes nothing but its own transient.** | A database with no template. The coordinator takes the lock, writes the row, creates the transient, starts `pg_restore` into it, and is killed. While the worker runs: a reconciliation and a second admission are raced against it, as raw statements. Afterwards: the working database's checksums are unchanged; the first transient exists, with its recorded OID; the second reset made another. | **PostgreSQL's reset from the image** | 5, third and eighth |
-| **G-9** | E | When the data volume fills during a copy, by each strategy, and during a reset before its swap: the server stays up, no part of the new database remains in the catalog, and every other database is whole. | A small volume; fill it; check the catalog and each database's checksums. | on PostgreSQL: `copy create`; `reset` of one database | 5, first and eighth |
-| **G-32a** | E | **A session is told to be the product's own by its application name, and by nothing else.** | Through a bundled console: a person runs a statement and goes idle, with no transaction. Beside it: a connection that carries the reserved application name. The superuser's view tells the second from the first; **nothing in it tells the first from any other idle session of that console.** | ending any session without `--discard sessions` | 2 (b) |
-| **G-32b** | E | With the stack up and nobody using a console, no console holds a session on an engine. | Each bundled console, started and left alone: the engines' session lists show none of theirs. | **the default itself:** if a console holds sessions by itself, every default reset would refuse. That returns to the deciders. | 2 (b) |
+| Gate | Kind | The one assertion | Result | What was observed, with its control | What rests on it | Serves |
+|---|---|---|---|---|---|---|
+| **G-7a** | E | A session's advisory lock is held while that session runs `CREATE DATABASE`, also after its client is gone, and ends when the session does. | Passed | With its client killed, the session's lock still refused a second session while the create ran; the copy then appeared. Control: once the backend ended, the lock was granted. | on PostgreSQL: every `copy` command that changes anything; `reset` of one database | 5, first and third |
+| **G-7b** | E | The same key taken from another database does **not** conflict. | Passed | The same key, held in another database, was granted. Control: in the same database it was refused. | where the lock is taken: every command takes it in the `megasamples` database (2.2) | 5, first and third |
+| **G-8a** | E | A database's comment is read by any role from any database, and set only by its owner or a superuser. | Passed | A reader read the template's comment from `megasamples`. A namespace's owner was refused setting it, `42501`. Control: it set and read its own copy's. | template records; rule 2's registered template; a copy's proof | 5, first, second and fifth |
+| **G-8b** | E | A plain `DROP DATABASE` refuses while any session is connected to it. | Passed | With one session connected, the drop was refused, `55006`. Control: with none, it succeeded. | on PostgreSQL: `copy drop`, `copy sweep`, and the reconciliation's drop of a transient | 5, first and third |
+| **G-24p** | E | A database dropped and made again under one name has another OID. | Passed | The reused name's OID changed from one creation to the next. Control: an untouched database kept its OID across a restart. | the proof on PostgreSQL: `copy drop`, `copy sweep`, the reset's steps b and f | 5, second |
+| **G-24w** | E | **Between a proof's check and the drop, no account but the object's owner and the administrators can put another object under its name.** | Passed | Outside roles could neither drop the object nor take its name: `42501` or `42P04` on PostgreSQL; `1044` on MySQL, for the schema and for the marker. Control: the owner replaced each, and the OID or the marker then no longer matched. | `copy drop` and `copy sweep` on each server | 5, second |
+| **G-3a** | E | Closing a database to connections, and a row's update, commit or roll back together. | Passed | Rolled back: the phase and the admission were as before. Committed: the new phase was read, and a new connection was refused. | PostgreSQL's reset of one database | 5, third and eighth |
+| **G-3b** | E | Two renames, a `CONNECT` grant and a row's update commit or roll back together. | Passed | Committed: both names with their OIDs, the phase `swapped`, and a reader saw the new data under the old name. Rolled back: both original names and OIDs, no grant, the phase `closed`, and the reader refused. | PostgreSQL's reset of one database | 5, third and eighth |
+| **G-3c** | E | A closed database keeps its sessions and refuses new ones; the superuser ends a session of `demo`'s. | Passed | After the door closed, an open session still answered and a new one was refused; the superuser ended the open one, and none remained. | the door and the session decision on PostgreSQL | 5, third; 2 (b) |
+| **G-26p** | E | **A restore worker that outlives its lock holder changes nothing but its own transient.** | Passed | `pg_restore` went on in the first transient while its coordinator was killed and two admissions raced it. The working database's checksum was unchanged, and the two transients had OIDs of their own. Control: a restore aimed at the working database changed its checksum. | **PostgreSQL's reset from the image** | 5, third and eighth |
+| **G-9** | E | When the data volume fills during a copy, by each strategy, and during a reset before its swap: the server stays up, no part of the new database remains in the catalog, and every other database is whole. | Passed | At 2,048 KiB free every create failed: by `WAL_LOG` with an internal error, `XX000`; by `FILE_COPY` with the disk-full code, `53100`. Each time the server answered, the catalog had no row for the new database, and every database's checksum matched. Control: with space, each succeeded. A reset's build is the same statement. | on PostgreSQL: `copy create`; `reset` of one database | 5, first and eighth |
+| **G-32a** | E | **A session is told to be the product's own by its application name, and by nothing else.** | Passed | Through CloudBeaver's editor a person's statements ran, and its sessions then sat idle as `demo` with no transaction. The reserved application name matched exactly one session, the product's. Control: under another name it matched none. | ending any session without `--discard sessions` | 2 (b) |
+| **G-32b** | E | With the stack up and nobody using a console, no console holds a session on an engine. | Passed | Three polls with nobody there: no console held a session on PostgreSQL or MySQL. Control: opening a connection in CloudBeaver left two idle sessions. | the session decision's default: it does not refuse by itself. A connection a person opened does hold it (3.5). | 2 (b) |
 
 **PostgreSQL: the profile and the hook.**
 
-| Gate | Kind | The one assertion | The test, with its control | Withholds if it fails | Serves |
-|---|---|---|---|---|---|
-| **G-5a** | E | On pull request #14's candidate, a role other than `demo` and `admin` cannot call an operator's function. | A fresh role runs `SELECT 1 = 1`: refused. Control: `demo` runs it: accepted. | P-1's reason. If the role can already, P-1 is still applied, and H-1 is recorded as not reproduced. | 5, fourth |
-| **G-5b** | E | `pg_export_snapshot`, `pg_current_snapshot` and `pg_database_size` assign no transaction id and change no catalog row; a snapshot exported by one session is imported by another, both holding only the floor and the three. | The transaction id and a catalog digest before and after each; the import. | P-3, P-5 | 5, fourth |
-| **G-5c** | E | A trigger's body runs with the rights of the account whose statement fired it. | A writer's insert fires a trigger that calls a built-in outside the floor: refused. With that built-in granted to the writer: accepted. | P-6; a declared writer | 5, fourth and seventh |
-| **G-6a** | E | Natively, a role without `CREATEROLE` can change its own password, and cannot change another role's. | `ALTER ROLE` on itself: accepted. On another: refused. | nothing: it shows the hazard that rule 4 is for | 5, fourth |
-| **G-6b** | H | With rule 4, that role cannot change its own password, its own settings or its own default privileges, and still reads. | Each of the three: refused. Control, same image: it reads a table; `admin` alters a role it made; and with the rule's library unloaded, the first three are accepted. | rule 4. **Only a failure to refuse the password change while it still reads selects 4.5's fallback.** | 5, fourth |
-| **G-4a** | E | `REVOKE … FROM PUBLIC` on a new database, by a creator that is not its owner and does not inherit the owner's rights, leaves `PUBLIC`'s privileges in place and raises no error. | Such a creator creates `OWNER other`, then revokes; `PUBLIC`'s privileges are read. Control: the owner's own revoke removes them. | rule 1's reason. Whatever it shows, rule 3 confirms. | 5, fourth |
-| **G-4b** | H | An error raised after `CREATE DATABASE` has copied its files leaves files with no catalog row. | A prototype hook that raises there; the data directory listed against the catalog. Control: no error, no leftover. | H-3's resolution, or the deciders | 5, fourth |
-| **G-29a** | H | **The destination.** A namespace's owner is refused a database whose name is not exactly its own namespace's form. | As the owner of `lab`, with its source a registered template throughout: a name in `lab2`'s form; a name outside every namespace; the right prefix with another database's name; a token of eleven digits. Each refused. **Control: its own well-formed name: made.** | **PostgreSQL copies, here and from elsewhere.** Returns to the deciders. | 5, fifth |
-| **G-29b** | H | **The source.** A namespace's owner is refused any source that is not a registered template. | With its name well-formed throughout: `template0`, `template1`, a working copy, another copy, and a closed template named `x_start` with no tag. Each refused. **Control: a registered template: made.** | the same | 5, fifth |
-| **G-29c** | H | **The rename.** A namespace's owner is refused every rename of a database. | Its own copy, to a name inside and to a name outside its namespace: refused. Control: `admin` renames a database of its own. | the same | 5, fifth |
-| **G-29d** | H | **Nobody else is bound.** A role that may create databases and owns no namespace creates and renames as PostgreSQL lets it. | Such a role creates a database outside every namespace, creates one under `lab`'s prefix, and renames its own: each accepted. The second is then reported as `unmanaged` by a plain catalog query of the namespace. | the claim that rule 2 binds namespace owners only | 5, fifth |
-| **G-35p** | E | A PostgreSQL role with no password cannot sign in over any network rule the image has, while the container's own maintenance still can. | `admin` and `postgres`, each with a null password: from a second container on the stack's network, and through the published port: refused, by its error as an authentication failure. Inside the container, as today's wrapper connects: accepted. Control: with a password set, each signs in. | default 2 on PostgreSQL | 5, sixth |
+| Gate | Kind | The one assertion | Result | What was observed, with its control | What rests on it | Serves |
+|---|---|---|---|---|---|---|
+| **G-5a** | E | On pull request #14's candidate, a role other than `demo` and `admin` cannot call an operator's function. | Passed | A fresh role's `SELECT 1 = 1` was refused, `42501`, for `int4eq`. Control: `demo`'s returned true. | P-1. H-1 is reproduced. | 5, fourth |
+| **G-5b** | E | `pg_export_snapshot`, `pg_current_snapshot` and `pg_database_size` assign no transaction id and change no catalog row; a snapshot exported by one session is imported by another, both holding only the floor and the three. | Passed | Each of the three returned with no transaction id assigned and the catalog's digest unchanged. A second transaction imported the snapshot and read the earlier row. Control: each was refused before its grant. | P-3, P-5 | 5, fourth |
+| **G-5c** | E | A trigger's body runs with the rights of the account whose statement fired it. | Passed | The writer's insert was refused, `42501`, for `current_setting`, and wrote nothing. Control: with that one built-in granted, it wrote. | P-6; a declared writer | 5, fourth and seventh |
+| **G-6a** | E | Natively, a role without `CREATEROLE` can change its own password, and cannot change another role's. | Passed | The role set its own password to null. Control: its change of another role was refused, `42501`. | nothing by itself: it shows the hazard that rule 4 is for | 5, fourth |
+| **G-6b** | H | With rule 4, that role cannot change its own password, its own settings or its own default privileges, and still reads. | Passed | On the prototype: the three statements were each refused, `42501`; the role still read; its password was unchanged. Control: `admin` altered a role it manages; with the library not loaded, all three succeeded. | rule 4, and with it PostgreSQL's refusal in 4.5. The built hook repeats it (T-7, T-25). | 5, fourth |
+| **G-4a** | E | `REVOKE … FROM PUBLIC` on a new database, by a creator that is not its owner and does not inherit the owner's rights, leaves `PUBLIC`'s privileges in place and raises no error. | Passed | The non-owner's `REVOKE` ended with exit 0 and warning `01006`, and `PUBLIC`'s privileges remained. Control: the owner's revoke removed them. | rule 1, and rule 3's confirmation. H-2 is reproduced. | 5, fourth |
+| **G-4b** | H | An error raised after `CREATE DATABASE` has copied its files leaves files with no catalog row. | Passed | On a prototype that raises after the copy: the catalog had no row, and the data directory held one directory with none. Control: an ordinary create left only its own; with the library not loaded the create succeeded and left nothing over. | H-3 is reproduced: its resolution is required before the merge (4.3). | 5, fourth |
+| **G-29a** | H | **The destination.** A namespace's owner is refused a database whose name is not exactly its own namespace's form. | Passed | On the prototype: four malformed destinations were refused, `42501`. Control: the well-formed name was made; with the library not loaded, the first malformed one was accepted. | **PostgreSQL copies, here and from elsewhere.** The built hook repeats it (T-7). | 5, fifth |
+| **G-29b** | H | **The source.** A namespace's owner is refused any source that is not a registered template. | Passed | On the prototype: five unregistered sources were refused, `42501`. Control: the registered one was copied; not loaded, the first was accepted. | **PostgreSQL copies, here and from elsewhere.** The built hook repeats it (T-7). | 5, fifth |
+| **G-29c** | H | **The rename.** A namespace's owner is refused every rename of a database. | Passed | On the prototype: a rename inside the namespace and one outside it were refused, `42501`. Control: `admin` renamed a database of its own; not loaded, the rename was accepted. | **PostgreSQL copies, here and from elsewhere.** The built hook repeats it (T-7). | 5, fifth |
+| **G-29d** | H | **Nobody else is bound.** A role that may create databases and owns no namespace creates and renames as PostgreSQL lets it. | Passed | On the prototype: a role with no marker created both names and renamed its own, and the catalog query classed the one under the prefix `unmanaged`. Control: once given the marker, it was refused both. | the claim that rule 2 binds namespace owners only | 5, fifth |
+| **G-35p** | E | A PostgreSQL role with no password cannot sign in over any network rule the image has, while the container's own maintenance still can. | Passed | `admin` and `postgres`, with null passwords, were refused on both TCP ways in, as authentication failures; the local socket still answered as the user meant. Control: with passwords, both signed in on both. | default 2 on PostgreSQL | 5, sixth |
 
 **MySQL.**
 
-| Gate | Kind | The one assertion | The test, with its control | Withholds if it fails | Serves |
-|---|---|---|---|---|---|
-| **G-10a** | E | `READ ONLY = 1` on a schema refuses every account's write. | A row change and a definition change, as a namespace's owner, `admin` and `root`: each refused. Control: with the option off, `admin`'s is accepted. | every MySQL template and copy | 5, first |
-| **G-10b** | E | It is read by several `INSERT … SELECT` at once. | Two sessions copy from it together; both finish, with equal checksums. | the same | 5, first |
-| **G-10c** | E | Changing the option needs `ALTER` on the schema. | `admin` changes it: accepted. A namespace's owner, with `SELECT` only: refused. | the claim that only an administrator can open a template | 5, first |
-| **G-11a** | E | In a schema-level grant an escaped underscore is literal, and an unescaped one matches any character. | A grant on `a\_b`: `a_b` is read, `axb` is refused. A grant on `a_b`: both are read. | every grant the product makes on MySQL | 5, first, fourth, seventh |
-| **G-11b** | E | A holder of 4.4's privileges on `P\_%`, with no grant option, can create, fill and drop inside it and nowhere else, and can grant nothing. | As the owner of `copy`: **create, fill and drop `copy_x`: each accepted.** Then a schema `copyx`, a working schema, a template, `megasamples`, another namespace's: create, alter and drop each refused. A `GRANT` on its own schema: refused. | MySQL namespaces; a MySQL owner's credential used away from the service | 5, first and fifth |
-| **G-11c** | E | `demo`'s grants reach what they name and nothing else, **with a foreign namespace marked readable beside one that is not.** | With `fa` marked and `fb` not: `demo` reads each working schema and a schema `fa_x`; it is refused `fb_x`, `fax`, `mysql.user` and each template. | `demo`'s narrowing; declared readers and writers; `demo_reads` | 5, fourth and seventh |
-| **G-13** | E | **A replayed definition belongs to the schema it was replayed into.** | A source with tables holding generated columns, foreign keys and full-text indexes; a view; a routine and a trigger that read and write a table; an event. Replayed into a second schema by a namespace's owner, **then a marked row is changed in the source only.** Each replayed view and routine returns the second schema's data, and a write through the second's trigger lands in the second. Run with the binary log on, and with it off. | MySQL copies of each dataset that uses a kind that fails | 5, first |
-| **G-15a** | E | A named lock is held while its session runs a statement after its client is gone, and ends with the session. | Kill the client during a long statement; a second session's attempt fails, then succeeds when the statement ends. | on MySQL: every `copy` command that changes anything; `reset` of one database | 5, first and third |
-| **G-15b** | E | `DROP DATABASE` waits on a transaction that has touched the schema, and gives up at the lock wait's end. | A transaction open on a table: the drop times out, and the schema's checksums are unchanged. Control: with none, it succeeds. | `copy drop` and `copy sweep` on MySQL | 5, first |
-| **G-24m** | E | **A marker event made first in a schema is there exactly as long as that schema is,** and a schema made again under the same name within the same second, with the same tables, does not have it. | A namespace's owner creates the schema and the disabled event, with the scheduler off, and with the binary log on and off. Drop the schema and make it again at once with the same tables: the event is absent. Control: the untouched schema still has it after a restart. | the proof on MySQL: `copy drop`, `copy sweep`. With no proof no MySQL copy can be removed, so **MySQL copies are not offered.** | 5, second |
-| **G-26m** | E | **From admission to the written outcome, a competing reset or reconciliation never changes a target that a live coordinator or worker holds.** | Raw sessions play each part: the coordinator with its lock, row and epoch; the worker's stream with its lock and its epoch check. **In each of five intervals** (after admission; after the suspension; while the worker loads; after it, before the check; before the regrant), **with the coordinator killed, with the worker killed, and with the server restarted,** a second admission and a reconciliation are attempted. **The second admission is refused every time:** by a lock while one is held, and by the unsettled row when none is. **The reconciliation is refused while either lock is held;** when it proceeds it has raised the epoch, and a worker's stream started after that stops at its second statement, with the schema's checksums unchanged. Control: with the epoch check removed from the stream, the late worker loads. | **MySQL's reset of one database** | 5, third and eighth |
-| **G-27a** | E | A grant revoked from an account, with that account's sessions ended, leaves it unable to write the schema. | A writer with a session open: after the revoke alone, what the open session can still do is recorded; after its session is ended, a new session is refused the write. | MySQL's reset of one database, where a writer is declared | 5, third and seventh |
-| **G-27b** | E | A revoked grant is still revoked after the server restarts. | Revoke; restart; the writer is refused. | the same | 5, third and seventh |
-| **G-16** | E | Whether the pinned MySQL can refuse an account's change of its own password while that account still signs in. | Each statement that changes it, as `demo`; each mechanism that might refuse it; **and for each mechanism, `demo`'s sign-in from the probe's command, a console and a client.** All recorded by name. | nothing: it selects the branch of 4.5 | 5, fourth |
-| **G-17a** | E | When the disk fills during a copy, the server stays up and every template and working schema is whole. | A small volume; fill it during the load; checksums of every other schema. | `copy create` on MySQL | 5, first |
-| **G-17b** | E | When the disk fills during a load that has already dropped its schema, the server stays up, every other schema is whole, and a row that could not be written leaves the earlier phase readable. | The image's dump into a schema, the volume filled mid-load; then an update of the operation's row attempted while full. After space is freed, the load is run again and the schema's checksums are the image's. | MySQL's reset of one database | 5, third and eighth |
-| **G-18a** | E | The shipped MySQL starts and passes its image tests with the binary log off. | That start. | the `binary_log` key: withdrawn, and the log stays on | 1 |
-| **G-18b** | E | It does so with the log on, as shipped. | That start, on the candidate's image. | **nothing of this work:** a failure here is a defect of the image as it is, and returns to the deciders | 1 |
-| **G-35m** | E | **Each privileged MySQL account, by each way in, cannot sign in while locked.** | `admin@'%'` and `root@'%'` over TCP from a second container and through the published port; `root@localhost` over the socket inside the container: each refused while locked. Control: unlocked, each signs in, **and `CURRENT_USER()` names the account that was meant.** With all three locked, the engine starts and `demo` signs in. | default 2 on MySQL | 5, sixth |
+| Gate | Kind | The one assertion | Result | What was observed, with its control | What rests on it | Serves |
+|---|---|---|---|---|---|---|
+| **G-10a** | E | `READ ONLY = 1` on a schema refuses every account's write. | Passed | `UPDATE` and `ALTER` were refused for all three accounts, `3989`. Control: with the option off, both succeeded as `admin`. | every MySQL template and copy | 5, first |
+| **G-10b** | E | It is read by several `INSERT … SELECT` at once. | Passed | Two `INSERT … SELECT` sessions ran together; the source and both copies gave one checksum. Control: a write into the source was refused, `3989`. | every MySQL template and copy | 5, first |
+| **G-10c** | E | Changing the option needs `ALTER` on the schema. | Passed | The owner with `SELECT` alone was refused, `1044`. Control: `admin` opened the schema and changed a row. | the claim that only an administrator can open a template | 5, first |
+| **G-11a** | E | In a schema-level grant an escaped underscore is literal, and an unescaped one matches any character. | Passed | Escaped: `a_b` was read and `axb` refused, `1142`. Control: unescaped, both were read. | every grant the product makes on MySQL | 5, first, fourth, seventh |
+| **G-11b** | E | A holder of 4.4's privileges on `P\_%`, with no grant option, can create, fill and drop inside it and nowhere else, and can grant nothing. | Passed | Create, fill and drop inside the pattern succeeded. Definition changes on schemas outside it were refused, `1044`, and so was a `GRANT`. | MySQL namespaces; a MySQL owner's credential used away from the service | 5, first and fifth |
+| **G-11c** | E | `demo`'s grants reach what they name and nothing else, **with a foreign namespace marked readable beside one that is not.** | Passed | `demo` read the working schema and `fa_x`. It was refused `fb_x`, `fax`, `mysql.user` and the template, `1142`. | `demo`'s narrowing; declared readers and writers; `demo_reads` | 5, fourth and seventh |
+| **G-13** | E | **A replayed definition belongs to the schema it was replayed into.** | **Failed,** as first defined. Its consequence is applied. Re-run Passed. | **First run:** with the log on, the owner's trigger was refused, `1419`; with it off the trigger replayed and wrote into the copy alone; every other kind passed both ways, the source changed and the copy not. **Re-run, as evidence for the deciders** [111-3]: with the log on and trust unset, a trigger `1419` and a function `1418`; with `log_bin_trust_function_creators` set, a trigger, function, procedure, view and event replayed in both modes, source and copy apart, grants unchanged, and warning `1287` at every setting of it. | **Applied:** no MySQL copy of a database that holds a trigger, or a function refused the same way (2.4). [111-3] [112-1] The setting stays unset; the lift is S-8. MySQL copies of every other templated database rest on the part that passed. | 5, first |
+| **G-15a** | E | A named lock is held while its session runs a statement after its client is gone, and ends with the session. | Passed | With its client killed, the lock still refused a second session while the statement ran. Control: granted once the session ended. | on MySQL: every `copy` command that changes anything; `reset` of one database | 5, first and third |
+| **G-15b** | E | `DROP DATABASE` waits on a transaction that has touched the schema, and gives up at the lock wait's end. | Passed | The drop gave up, `1205`, and the table's checksum was unchanged. Control: with no transaction open, it succeeded. | `copy drop` and `copy sweep` on MySQL | 5, first |
+| **G-24m** | E | **A marker event made first in a schema is there exactly as long as that schema is,** and a schema made again under the same name within the same second, with the same tables, does not have it. | Passed | In both log modes the marker was there, disabled, before and after a restart. A schema made again within the same second, with the same tables, had no event. Control: the untouched schema kept its own. | the proof on MySQL: `copy drop`, `copy sweep`, and so MySQL copies at all | 5, second |
+| **G-26m** | E | **From admission to the written outcome, a competing reset or reconciliation never changes a target that a live coordinator or worker holds.** | Passed | All five intervals, each with the coordinator killed, the worker killed and the server restarted: the locks and the phase kept the second admission out, and a fenced late stream stopped at its second statement with checksums equal. Control: with the fence removed, the late stream loaded. | **MySQL's reset of one database** | 5, third and eighth |
+| **G-27a** | E | A grant revoked from an account, with that account's sessions ended, leaves it unable to write the schema. | Passed | After the revoke alone, the writer's open session still wrote. After that session was ended, a new one was refused, `1142`. Control: the writer wrote before the revoke. | MySQL's reset of one database, where a writer is declared. **Both the revoke and the ending of sessions are needed.** | 5, third and seventh |
+| **G-27b** | E | A revoked grant is still revoked after the server restarts. | Passed | After a restart the writer was still refused, `1142`. Control: it wrote before the revoke. | MySQL's reset of one database, where a writer is declared | 5, third and seventh |
+| **G-16** | E | Whether the pinned MySQL can refuse an account's change of its own password while that account still signs in. | Passed | All four statements changed the password. `PASSWORD REQUIRE CURRENT` refused three, and `SET PASSWORD … REPLACE` still changed it. A locked or expired account could not sign in. Global `read_only` and `super_read_only` refused all four with sign-in intact, by the probe, a client and each console. The matrix is at `GR:85-98`. | 4.5's branch: MySQL has no refusal that version 1 can use | 5, fourth |
+| **G-17a** | E | When the disk fills during a copy, the server stays up and every template and working schema is whole. | Passed | The `INSERT … SELECT` failed, `1114`; the server answered; the template's and the working schema's checksums were unchanged. Control: with space, every row arrived. | `copy create` on MySQL | 5, first |
+| **G-17b** | E | When the disk fills during a load that has already dropped its schema: the server stays up, every other schema is whole, the row read back is the last phase successfully written, and the schema's counts and checksum differ from the image's. | Failed, by the test's own defect. **Re-run Passed.** | **First run Failed by its own test:** after the load failed, the test itself wrote `done` and then required that write to fail. **Corrected** [111-1], **re-run:** the load failed, `1114`, at 0 KiB free; a write of `failed` succeeded and was read back; the schema held no rows where the image has 32,768; the server answered and the other schemas matched. Control: after space was freed, a reload matched the image's count and checksum. | MySQL's reset of one database, and its rule that `done` follows only a verified load (3.5). T-27 holds it through the real command. | 5, third and eighth |
+| **G-18a** | E | The shipped MySQL starts and passes its image tests with the binary log off. | Passed | `log_bin` read 0, and the image's whole test suite reported no failure. | the `binary_log` key, which is in version 1 [109-2] | 1 |
+| **G-18b** | E | It does so with the log on, as shipped. | Passed | `log_bin` read 1, and the same suite reported no failure. | the image as it ships, with the log on | 1 |
+| **G-35m** | E | **Each privileged MySQL account, by each way in, cannot sign in while locked.** | Passed | Locked, each account on each way in was refused, `3118`, after a restart too, while `demo` signed in. Control: before locking, `CURRENT_USER()` named `admin@%`, `root@%` and `root@localhost` on the ways meant. | default 2 on MySQL | 5, sixth |
 
 **Both servers, and SQLite.**
 
-| Gate | Kind | The one assertion | The test, with its control | Withholds if it fails | Serves |
-|---|---|---|---|---|---|
-| **G-33a** | E | Each volume has an identity that survives a restart and is not the next volume's. | MySQL: with the baked directory holding no server identifier, each fresh volume's is its own, and the same after a restart. PostgreSQL: a row written on a first start is there after a restart and absent from a fresh volume. SQLite's container: a file written into its volume at a first start is there after a restart, and absent after the engine is recreated with its volumes renewed. | item 9's rule, on that engine | 9 |
-| **G-33b** | E | **Nothing started against one volume changes the next.** | Pause a client between its read of the identity and its change, playing in turn a `copy` command, a reset's coordinator and a reconciliation; replace the volume; let it go on: its connection is dead and it changes nothing. Start a worker with the old operation's parameters after the replacement: PostgreSQL's `pg_restore` fails for want of its transient; MySQL's stream fails at its epoch check. **Then the new volume is read:** every schema's checksums and the catalog are as the image shipped them. Control: a stream with no epoch check loads into the new volume. | `copy` and `reset` commands on that engine, beside anything that replaces a volume. **Without it, `megasamples up --discard engine` and a whole engine's reset say that callers elsewhere must be stopped first.** | 9 |
-| **G-19a** | E | On the filesystems a copy is made on, a bind mount shared by a host and a container among them: exclusive creation and a hard link each fail when the name exists, and two racing publications leave one winner. | Two processes, one on each side of the mount. | every SQLite `copy` command | 5, first |
-| **G-19b** | E | **A file moved aside and compared with a retained link is this copy's exactly when they are one file;** and while the link is kept no other file has its inode. | Replace the final name with another file; move aside; compare: different, and it is put back without overwriting. Remove the final name and make a thousand files: none is the retained link's file. Control: an untouched copy compares the same. | the proof on SQLite: `copy drop`, `copy sweep` | 5, second |
-| **G-19c** | E | When the destination fills while a file is staged beside its final name, or while a small record is written beside it, no final name holds a file that is not whole. | A small filesystem, filled at each step of: a copy's publication by hard link; a sidecar's write; a reset's staged file renamed over a working file; an operation's file renamed into place. Each final name is absent, or holds its earlier content whole, or the new content whole, by SHA-256. | SQLite `copy create`; SQLite's reset of one database | 5, first and third |
-| **G-20** | E | A `flock` held by one process is seen by another across the host and a container on one mount, and a lock file replaced after it was opened is detected. | Two processes; a replaced lock file. | every SQLite `copy` command that changes anything | 5, first |
+| Gate | Kind | The one assertion | Result | What was observed, with its control | What rests on it | Serves |
+|---|---|---|---|---|---|---|
+| **G-33a** | E | Each volume has an identity that survives a restart and is not the next volume's. | Failed, on today's image. **Re-run Passed.** | **First run Failed on MySQL:** the image bakes `auto.cnf`, and the old and the new volume reported one server UUID (F-34). **With the build's removal** [111-2], **re-run:** the image held no `auto.cnf`; two fresh volumes reported different UUIDs, and each kept its own across a restart. PostgreSQL's row and SQLite's file kept across a restart and were absent after replacement, in both runs. | item 9's rule, on each engine. On MySQL: for volumes from an image built with the removal; older ones are unqualified (3.5). | 9 |
+| **G-33b** | E | **Nothing started against one volume changes the next.** | Passed | Three paused commands lost their connections. A late restore found no transient, and a late MySQL stream failed at its epoch query, `1146`. The new volumes' catalogs and fingerprints matched the image's. Control: an unfenced stream loaded into the new volume. | `copy` and `reset` commands running beside anything that replaces a volume | 9 |
+| **G-19a** | E | On the filesystems a copy is made on, a bind mount shared by a host and a container among them: exclusive creation and a hard link each fail when the name exists, and two racing publications leave one winner. | Passed | Across the bind mount, exclusive opens and hard links refused occupied names, and each race between host and container had one winner. Control: a vacant name was published and read from both sides. | every SQLite `copy` command | 5, first |
+| **G-19b** | E | **A file moved aside and compared with a retained link is this copy's exactly when they are one file;** and while the link is kept no other file has its inode. | Passed | A replaced file failed the comparison and was put back without overwriting. None of a thousand new files shared the retained inode. Control: an untouched copy compared the same. | the proof on SQLite: `copy drop`, `copy sweep` | 5, second |
+| **G-19c** | E | When the destination fills while a file is staged beside its final name, or while a small record is written beside it, no final name holds a file that is not whole. | Passed | On a full filesystem all four stagings failed, `ENOSPC`, and each final name held whole content. Control: a partial staging differed by hash; with space, a complete one matched. | SQLite `copy create`; SQLite's reset of one database | 5, first and third |
+| **G-20** | E | A `flock` held by one process is seen by another across the host and a container on one mount, and a lock file replaced after it was opened is detected. | Passed | A lock held on the host was seen in the container. A replaced lock file was detected as another file. Control: the vacant path could be locked. | every SQLite `copy` command that changes anything | 5, first |
 
 **Not gates.** Round 4's G-12 withheld nothing: whether a grant outlives its schema's drop only decides whether the reset's regrant repairs or confirms, and T-5 observes it. G-21 needed the package, and is T-28. G-32m had no consumer: every MySQL reset of one database needs `--discard sessions`. What the start wrapper decides about a configured value is T-23. Whether a deployment's clients look different to its servers, and what an account that manages accounts can do, are a deployer's own to observe.
 
 ### 8.2 Regressions
 
-Revised after the gates have run. Every red asserts the outcome that is wanted, and fails on the commit before its change because that outcome is not yet there. Every row has a reversal that changes the very assertion it plants a fault for.
+Revised from what the gates showed. Every red asserts the outcome that is wanted, and fails on the commit before its change because that outcome is not yet there. Every row has a reversal that changes the very assertion it plants a fault for.
 
 **The native entry point.** A native test runs only against **an explicitly provisioned, task-owned, disposable target,** named to it: its project, its store and its ports. It verifies that the target carries the marker its provisioning wrote, and refuses one without it. It names no machine and no path. Its own tests: a shared target is refused; a second isolated one is accepted.
 
@@ -983,11 +1037,11 @@ Revised after the gates have run. Every red asserts the outcome that is wanted, 
 | T-4 | **The reach tables of 4.7,** cell by cell. | One fault for each column. | Every account against every kind of database, for connect, read, row write, definition change, drop and grant; a right held directly and through an inherited role. |
 | T-5 | **Declared grants are in force after a start and after each reset:** a declared writer changes a working row after its copy was reset. | The reset's grant step removed; the start's. | Both engines; every reset path; an account declared no longer, locked at the next start; **a server restarted during an unsettled MySQL reset, whose suspended writer stays shut out.** It also records whether a MySQL grant outlived the drop. |
 | T-6 | **A declared writer writes rows of working copies and nothing else:** it is refused a definition change, a copy, the registry, a template. | The write grant put in the template. | Both engines; a reader of a namespace and of the working copies at once. |
-| T-7 | **The hook's four rules,** through the built image. | Each rule removed in turn; the library not loaded. | G-4a, G-6b and G-29a to G-29d as regressions; every command that makes a routine, by each kind of creator; a second session that never sees a new database open. |
+| T-7 | **The hook's four rules,** through the built image. | Each rule removed in turn; the library not loaded. | G-4a, G-4b, G-6b and G-29a to G-29d as regressions on the built hook; **a fault planted in rule 3's confirmation, which leaves no directory without a catalog row;** every command that makes a routine, by each kind of creator; a second session that never sees a new database open. |
 | T-8 | **The routine floor is the list, for every role.** | The list granted to `demo` alone. | `demo`, a fresh role, a namespace's owner, a declared reader and writer; every kind of database; an exported snapshot imported by a second session. Pull request #14's own cases, kept. |
 | T-9 | **MySQL's grants reach what they name and nothing else.** | One underscore left unescaped; `demo`'s grant on `*.*` restored. | G-11b's and G-11c's cases through the built image. |
 | T-10 | **A copy's access is exactly what its engine's design says.** **PostgreSQL:** the copy's database privileges are its owner's and `CONNECT` for its namespace's read group, and nothing else. **MySQL:** no entry in the grant tables names the copy's schema. | PostgreSQL: a `CONNECT` grant to `PUBLIC` planted in the create: the assertion reads the database's privileges, and fails. MySQL: a grant on the copy's name planted: it reads the grant tables, and fails. | Both engines; a create that is interrupted; **a name forced to repeat, with a hand-made grant left on it:** the product reports no claim about the copy's writers. |
-| T-11 | **A MySQL copy is the dataset:** its own verification passes against a copy (`SM:ARCHITECTURE.md:239-249`). | The foreign keys' replay skipped; one view left pointing at the template. | Every templated database; the two exclusions; the marker event present and reported. |
+| T-11 | **A MySQL copy is the dataset:** its own verification passes against a copy (`SM:ARCHITECTURE.md:239-249`). | The foreign keys' replay skipped; one view left pointing at the template. | Every templated database; the marker event present and reported. **The three exclusions, each refused with exit 4 before any reservation:** `too-large`, `dependency-group`, `not-replayable`. **G-13 as a regression, on the candidate and at every engine upgrade** [112-3]: with the log on a trigger and an undeclared function are refused the owner; a replayed definition reads and writes its copy alone. It fails if the engine's answer changes either way. |
 | T-12 | **The contract:** one document; each exit's promise checked on the server; each reader rule. | A second line; a changed code; an unknown member rejected. | Every command by every outcome of 3.3. `--json` with two targets: exit 2. An operation's identity given twice: exit 5. |
 | T-13 | **A reset signs in with the file's value when another is exported,** for its coordinator and for its worker. | Today's reader put back. | Each key; a canary password in no argument, output or log, nor taken from the CLI's environment. |
 | T-14 | **An interrupted create is kept, and what is expected depends on where it stopped.** **Killed before the exclusive creation:** there is no object; the row is `stale` and is removed. **Killed after it, at each later phase:** the object is there, `copy list` reports it `interrupted`, and no command removes it. | Recovery made to remove an `interrupted` object; `stale` made to keep its row for ever. | Each phase, each engine; an occupied name; a `ready` object replaced outside the CLI, kept as `inconsistent`; a MySQL schema made again within the second, without its marker. |
@@ -999,11 +1053,13 @@ Revised after the gates have run. Every red asserts the outcome that is wanted, 
 | T-20 | **A worker that outlives its coordinator still excludes the next reset, or touches only its own transient.** | The worker's lock removed; its epoch check removed. | Both server engines. |
 | T-21 | **A reset of a database preserves sessions unless told otherwise.** | The default made to disconnect; a console's idle session made disposable. | Each path; a person's idle session, directly and through a console; a connection with the reserved application name; `--unattended` on MySQL and SQLite, refused; a MySQL and a SQLite reset without `--discard sessions`, refused; **`make reset` and every validation script that calls it (F-33), as migrated; a search of the repository for a call that lacks the option its target needs.** |
 | T-22 | **Nothing replaces an engine's volume without `--discard engine`.** A whole engine's reset without it, and with `--discard sessions`: refused. **`megasamples up` with a stale image and a live copy: refused before anything is recreated;** with `--discard engine`: replaced. | Either refusal removed. | Each engine; an engine not yet started, which `up` simply starts; a `copy` command begun on the old volume, which changes nothing in the new one. |
-| T-23 | **No privileged password is published or shown,** on any path that starts an engine. **The landing page and the Adminer page, fetched with no sign-in, do not hold a canary set as `admin`'s password.** | The value's test removed; a page made to print it; a stale page left in place. | G-35p's and G-35m's cases through the built images; a privileged key set to the published value, leaving its account locked; `megasamples up` writing each missing key; no console offering anything privileged; **no configuration making the generator publish a port wider than loopback.** |
+| T-23 | **No privileged password is published or shown,** on any path that starts an engine. **The landing page and the Adminer page, fetched with no sign-in, do not hold a canary set as `admin`'s password.** | The value's test removed; a page made to print it; a stale page left in place. | G-35p's and G-35m's cases through the built images, **on an image run by hand as well** [110-2]; the start naming each account still on its published password; a privileged key set to the published value, leaving its account locked; `megasamples up` writing each missing key; no console offering anything privileged; **no configuration making the generator publish a port wider than loopback.** |
 | T-24 | **SQLite:** a truncated copy is not published; a replaced file is not dropped; adjacent files are left and reported. | The hash check removed; the move-aside removed. | Create, drop, sweep; a manifest that disagrees; a sidecar one format back, kept. |
-| T-25 | **Passwords:** PostgreSQL refuses `demo`'s change of its own. MySQL: what G-16 established, as a case that fails if the engine's answer changes. | Rule 4 removed. | Each account without `CREATEROLE`; a cleared key locking its account at the next start. |
-| T-26 | **An installed dependency group is not reset singly.** **First, on today's path, it shows the harm:** a row added to `oracle_oe`, then `oracle_hr` reset alone, leaves a key with no parent. [108+] Then: the reset is refused, and after a whole engine's reset every key holds. | The refusal removed. | A MySQL with both; one with `oracle_hr` alone, which resets singly. |
-| T-27 | **The general upgrade route, rehearsed:** images replaced, the old volumes kept, and back. | A step removed from the route: its test fails. | PostgreSQL's refusal of data without the policy's marker. |
+| T-25 | **Passwords:** PostgreSQL refuses `demo`'s change of its own. MySQL: what G-16 established, as a case that fails if the engine's answer changes: each of the four statements changes it. | Rule 4 removed. | Each account without `CREATEROLE`; a cleared key locking its account at the next start. |
+| T-26 | **An installed dependency group is not reset singly.** **First, on today's path, it shows the harm:** a row added to `oracle_oe`, then `oracle_hr` reset alone, leaves a key with no parent. [109-4] Then: the reset is refused, and after a whole engine's reset every key holds. | The refusal removed. | A MySQL with both; one with `oracle_hr` alone, which resets singly. |
+| T-27 | **A MySQL reset is `done` only after a verified load, through the real reset command.** [111-1] With the data volume filled during the load: the reset ends unsettled, exit 8, recorded `failed`, **never `done`.** After space is freed, reconciling ends `done`, with the image's counts and checksums and the declared grants. | An unconditional `done` put back. | A load that fails for each reason: a full disk, a killed stream, one table that differs afterwards. The write of `failed` itself refused, leaving `loading`. A suspended writer shut out until `done`, across a restart. The next reset of that target refused meanwhile. SQLite's reset, the same way. |
+| T-29 | **The general upgrade route, rehearsed:** images replaced, the old volumes kept, and back. | A step removed from the route: its test fails. | PostgreSQL's refusal of data without the policy's marker. |
+| T-30 | **Each volume has an identity of its own.** The MySQL image holds no `auto.cnf`, as an image test [111-2]; two fresh volumes report different identities, and each keeps its own across a restart. | The removal taken out of the build. | PostgreSQL's value and SQLite's file, the same way; `megasamples up --discard engine`, after which the identity is another. |
 | T-28 | **The package installs with the two drivers alone,** on each supported Python, and `uv sync --locked` is unchanged. Psycopg's licence is reviewed first. | A pipeline dependency imported by a `copy` module. | One `copy list` from that install, with no container runtime. |
 
 ## 9. Pull request #14, and the order of the work
@@ -1041,7 +1097,7 @@ For DL-078's writer, before the merge. **The README describes the product.** A d
 
 **What version 1 fixes:**
 7. **The model, with a picture:** a template, a working copy, a test copy and a reset; and how the three engines differ, MySQL's reset from the image among the differences.
-8. **Which databases have a template,** per engine, with measured sizes and times; that version 1 bounds no storage, and what it promises when a disk fills (2.6).
+8. **Which databases have a template,** per engine, with measured sizes and times; **each MySQL database that has none, by name, with its reason** [112-2]: too large; a dependency group; or triggers, whose replay the engine refuses a copy's owner while the binary log is on, the one setting that lifts it being deprecated (warning `1287`); that version 1 bounds no storage, and what it promises when a disk fills (2.6).
 9. **Namespaces:** what a prefix is, why it may not overlap, a foreign namespace.
 10. **A copy's life:** issued, ready, leased, renewed, released, swept. That an interrupted create is kept, and how an administrator removes one. That the lease is the protection, and the two cases past it. **That a MySQL copy holds one marker event.**
 11. **The commands,** each with one example and its JSON; the identity on `drop`, `renew` and `release`.
@@ -1050,9 +1106,9 @@ For DL-078's writer, before the merge. **The README describes the product.** A d
 14. **The accounts,** as 4.7's tables. It replaces today's two-row tables (`SM:README.md:120-123`, `:247-255`).
 15. **Declared readers and writers.**
 16. **The read profile on PostgreSQL,** and its limit. It replaces the sentence that `demo` "still has `TEMPORARY`" (`SM:README.md:163-167`).
-17. **5.1's table of start paths, and 5.2's table, whole.** How to hand a credential over: one, alone, never the `.env`. [108-11]
+17. **5.1's table of start paths, and 5.2's table, whole.** **For an image run by hand: anyone who can reach its port can read the samples as `demo`.** [110-1] How to hand a credential over: one, alone, never the `.env`. [108-11]
 18. **The impact note of 5.4, whole,** with each migration.
-19. **What is not claimed:** a sweep protecting a copy past its lease; that a copy has had one writer; a copy owner's credential away from the service before its gates; any bound on storage; a wider listener, or any refusal of one on an image run by hand; MySQL as a strict read profile; MySQL refusing a password change, unless G-16 finds it does; TLS.
+19. **What is not claimed:** a sweep protecting a copy past its lease; that a copy has had one writer; a copy owner's credential away from the service before its gates; any bound on storage; a wider listener, or any refusal of one on an image run by hand; MySQL as a strict read profile; MySQL refusing a password change; the volume identity of a MySQL volume from an older image; TLS.
 20. **Resets:** each path and its option, the session decision, `--discard sessions` and `--discard engine`, operations and their identities, one target for each scripted call, `--status` and `--reconcile`.
 21. **The contract and the formats.**
 
@@ -1073,10 +1129,41 @@ Each is new work with a brief of its own, added under section 6's rules. [108-4]
 | **S-5 · `copy hold`** | Holding a copy past its lease; a holder's own identity; protection of active copies, holds and sessions across a replacement of a volume, with a drain. | 8, 9 | **R3-5** (protection and drain); **R3-11** (a drop against a hold); **R2-9** (the hold's handshake) |
 | **S-6 · MySQL's reset from a template** | The reset itself; writers shut out through it; a group of databases that refer to each other, reset and recovered as one; an unattended route for MySQL. | 10 | **R3-6** (the template path's exclusion); **R3-16** (a group's recovery); **R2-11** (definers restored on a reset); **R4-20** (a reset of one of a group without the whole engine) |
 | **S-7 · `accounts export`** | One credential handed over with a value-free receipt; an optional custody record. | 1, 11 | — |
+| **S-8 · MySQL copies of databases with triggers** | **A ready addition, not a design to be made** [112-3]: `log_bin_trust_function_creators` in the shipped configuration, or whatever replaces it, with an image test that the server starts with it and reads it back in both log modes; the withholding kept as the fallback. **Its evidence is G-13's re-run** (`GR:144-148`): with the setting, a trigger, a function and a procedure replayed in both log modes, with source and copy apart and no grant changed. | DL-111 item 3; DL-112 | **G-13** (the first run's failure) |
 
-## 12. The reviews' findings
+## 12. What the gates changed, and the reviews' findings
 
-### 12.1 Review 4's findings, each answered
+**Round 5 had no review of its own:** the gates ran on it, and the deciders ruled on what they showed. So there is no finding of a round 5 to answer by number.
+
+### 12.1 What the gates changed
+
+Every conditional sentence about a gate is now a statement of what it showed, and **[G-n]** marks an observation. Beyond that:
+
+| What was observed or decided | What changed in this record | Where |
+|---|---|---|
+| **G-13:** with the binary log on, the engine refuses a namespace's owner a trigger (`1419`), and a function that declares no characteristic (`1418`). DL-111 item 3; DL-112. | No MySQL copy of a database that needs either: exit 4, `not-replayable`, before any reservation or change, in both log modes. The setting that lifts it stays unset. The README names the databases and the reason. G-13 is kept as a regression. The lift is a ready addition. | 2.4; 3.3; 7.2; T-11; section 10; S-8 |
+| **G-17b:** the failure was the test's own write of `done`. A small row write succeeds on a full disk. DL-111 item 1. | **`done` is written only after a verified load,** with counts, checksums and declared grants matching. A load that fails is recorded `failed`, which is not terminal: the operation stays unsettled, exit 8, and reconciling completes it. **T-27 is now that regression,** through the real reset command, as DL-111 names it; the upgrade route's rehearsal, T-27 in round 5, is T-29. | 3.5; 3.3; 2.6; T-27, T-29 |
+| **G-33a:** today's MySQL image bakes `auto.cnf`. DL-111 item 2. | The build removes it after its final shutdown, with an image test. `volume` is an opaque string. A volume from an older image is unqualified for the identity rule. | 2.4; 3.5; 5.3; F-34; T-30 |
+| **G-16:** MySQL has no account-local refusal of a password change; the two global settings that refuse it also refuse version 1's own writes. | Version 1 takes the branch round 5 set for "no usable refusal": it says MySQL cannot refuse it, and limits the harm. A consumer's instance declares a reader for each consumer and gives `demo` a key of its own. | 4.5; 5.2; 7.2; T-25 |
+| **G-4b:** an error after the copy orphans the copied files. H-3 is reproduced. | H-3's resolution is no longer conditional. It is set out, and required before the merge. | 4.3; T-7 |
+| **G-5a, G-4a, G-6a:** H-1, H-2, and H-6 with H-7 are reproduced. | Each is stated as shown, with its disposition unchanged. | 4.3 |
+| **G-9:** PostgreSQL answered a full disk once with its disk-full code and once with an internal error; it left nothing of the new database in the catalog. | No engine error code is relied on. A failed PostgreSQL create leaves a `stale` row; a failed MySQL one leaves an `interrupted` schema. | 2.6 |
+| **G-27a:** after a revoke alone, a session already open still wrote. | Both steps of the suspension are stated as needed. | 3.5 |
+| **G-32a, G-32b:** only the reserved name tells the product's session; no console holds a session with nobody there; a connection a person opened stays open. | The default stands. The record says a reset refuses while such a connection is open. | 3.5 |
+| **The H gates ran on a prototype; G-2c and G-5a to G-5c on compiled policy sources.** | Each is repeated on the candidate, as T-7 and T-8, before the claim it carries is made for a build. | 8.1; 3.1; 7.2, step 5 |
+| **DL-109, DL-110:** the three readings; an image run by hand. | The readings are cited as decisions. An image run by hand is documented, not refused; every start names each account still on its published password; there is no acknowledgement switch. | Section 0; 5.1; T-23 |
+
+**For the deciders to confirm,** each a reading this record applied:
+1. **4.5's branch after G-16.** The gates' record left the choice to them. This record applied round 5's own rule: a refusal that stops version 1's writes is not usable.
+2. **The withholding covers a stored function that the engine refuses with `1418`,** as well as a trigger. DL-111 and DL-112 name triggers. The re-run showed the function refused the same way, and section 8.1 as reviewed withholds "each dataset that uses a kind that fails". In the repository's own sources the one stored function is declared `DETERMINISTIC` (`SM:datasets/adventureworks_lt/objects.sql:19-21`); upstream dumps were not counted.
+3. **`failed` is recorded and is not terminal.** DL-111 says the product records `failed`; this record adds that the operation then stays unsettled until reconciled, so that the next reset is refused and suspended writers stay out.
+4. **H-3's remaining exposure:** an error PostgreSQL itself raises in the statements after the copy. The independent review judges it; if it is not acceptable, it returns to them.
+
+**Not settled here:**
+- **The exact file list of the runbook's split** (5.3).
+- **Every regression of 8.2.** None has run; each is the build's.
+
+### 12.2 Review 4's findings, each answered
 
 | # | Finding | What changed | Where |
 |---|---|---|---|
@@ -1089,7 +1176,7 @@ Each is new work with a brief of its own, added under section 6's rules. [108-4]
 | 7 | **P1 · G-32p cannot tell a person's idle console session from the product's.** | Only a session that carries the product's reserved application name is ended without the option. Every other session, a console's included, is a person's and is preserved. G-32a tests a person idle through a console beside such a connection; G-32b tests whether consoles hold sessions with nobody there, which would return to the deciders. | 3.5; G-32a, G-32b; T-21 |
 | 8 | **P1 · A declared reader's key can be a superuser's key.** | The whole inventory of derived keys is checked when the configuration is read: no two alike, and none one of the five reserved. T-3 tries `mysql_root` and `mysql_demo`. | 3.4; 4.6; T-3 |
 | 9 | **P2 · The confinement gates have the wrong boundary and incomplete controls.** | G-29 is four: destination, source, rename, and that nobody else is bound; each refusal has a successful control beside it, and each isolates one cause. A failure withholds PostgreSQL copies altogether, not only their use from elsewhere. **The restriction on other creators is removed:** rule 2 binds a namespace's owner only. G-11b now creates, fills and drops inside its pattern before it is refused outside. | 4.3; G-29a to G-29d; G-11b |
-| 10 | **P2 · The wider-listener default is deferred without a boundary of supported start.** | 5.1 says which start paths the product controls and what it enforces on each. On an image run by hand the publisher is the deployer; the product says so, and that `demo`'s password is published. T-23 checks every path the product controls. **The exception to DL-108 item 2 (a) is returned to the deciders,** below. | 5.1; 5.2; T-23 |
+| 10 | **P2 · The wider-listener default is deferred without a boundary of supported start.** | 5.1 says which start paths the product controls and what it enforces on each. On an image run by hand the publisher is the deployer; the product says so, and that `demo`'s password is published. T-23 checks every path the product controls. The exception to DL-108 item 2 (a) was returned to the deciders, who decided it: documented, not refused (DL-110). | 5.1; 5.2; T-23 |
 | 11 | **P2 · Several PostgreSQL gates can pass with part of their assertion false.** | G-3a and G-3b read every member of the change after both outcomes. G-7 is two, and G-7b takes the same key from another database. G-2 is four, each withholding what inherits it, the strict profile on every copy and reset-made working copy among them. G-1c withholds every use of a template as pristine. | 8.1 |
 | 12 | **P2 · G-6 cannot select the PostgreSQL password fallback.** | G-6a shows the native hazard; G-6b gates the rule itself, with a control on the same image. Only a failure to refuse the password change while the account still reads selects the fallback. G-16 records its statements, mechanisms and usability controls before a branch is chosen. | 4.5; G-6a, G-6b, G-16 |
 | 13 | **P2 · The next gate run mixes engine evidence with implementation and packaging.** | Every gate is marked engine-only or needs-the-hook; none needs the CLI. G-21 is T-28. G-35p and G-35m test native authentication by account and by way in, and `CURRENT_USER()` names who signed in; the wrapper's decision is T-23. G-12 and G-32m are removed. | 8.1; 8.2 |
@@ -1102,22 +1189,15 @@ Each is new work with a brief of its own, added under section 6's rules. [108-4]
 | 20 | **P2 · The reset migration omits callers and the breadth of the discard.** | 5.4 is the impact note: each change, who it reaches, and what to do; the consoles a SQLite reset stops and whose sessions go with them; that a whole engine's discard is everything on it; that automation has no unattended MySQL or SQLite route. Every caller is named: a search found six validation scripts at seven call sites, where the review named two (F-33); T-21 searches again. The Oracle refusal follows the installed group. Several targets are checked before any is changed. | 5.4; 2.6; 3.3; F-33; T-21, T-26 |
 | 21 | **P3 · The lines register lists stages without their findings.** | Section 11 lists every deferred finding against its stage, by review and number. | Section 11 |
 
-**The deciders on this record's three readings** [108+]:
-- **No `template` and no `interface` command:** accepted.
-- **`engines.mysql.binary_log` in version 1:** accepted.
-- **Both narrowings accepted, each in the impact note:** a dependency group resets through the whole engine; a SQLite reset needs its discard. T-26 first shows the broken key on today's path.
-- **`--discard` takes a named value:** `sessions` for a database's reset, `engine` for a volume's replacement; a whole engine's reset refuses the first; `megasamples up` asks the second.
+**The deciders on round 4's three readings** (DL-109):
+- **No `template` and no `interface` command:** accepted. [109-1]
+- **`engines.mysql.binary_log` in version 1:** accepted, and its condition is met [G-18a, G-18b]. [109-2]
+- **`--discard` takes a named value:** `sessions` for a database's reset, `engine` for a volume's replacement; a whole engine's reset refuses the first; `megasamples up` asks the second. [109-3]
+- **Both narrowings accepted, each in the impact note:** a dependency group resets through the whole engine; a SQLite reset needs its discard. T-26 first shows the broken key on today's path. [109-4]
 
-**Returned to the deciders:**
-- **DL-108 item 2 (a), on an image run by hand.** The approved default refuses a wider listener while an account keeps a published password. The product cannot see how a hand-run image's port is published, and `demo`'s password is published by item 5. Version 1 documents the exposure there instead of refusing it (5.1). Whether that is the intended reading is theirs.
+### 12.3 Review 3's findings, each mapped
 
-**Not settled here:**
-- **The exact file list of the runbook's split** (5.3).
-- **What the gates will show.** Each has its consequence written; none is assumed.
-
-### 12.2 Review 3's findings, each mapped
-
-As round 4 mapped them, with what round 5 changed. Every finding is answered first by removing or narrowing a claim, and is **closed in version 1** only where every entry point version 1 keeps avoids the hazard. [108-7]
+As round 4 mapped them, with what rounds 5 and 6 changed. Every finding is answered first by removing or narrowing a claim, and is **closed in version 1** only where every entry point version 1 keeps avoids the hazard. [108-7]
 
 | # | Finding | Where it goes | How |
 |---|---|---|---|
@@ -1138,7 +1218,7 @@ As round 4 mapped them, with what round 5 changed. Every finding is answered fir
 | 15 | **P2 · Storage admission has no input for several operations.** | **S-3.** | Version 1 bounds no bytes; what it promises when a disk fills is gated (2.6). |
 | 16 | **P2 · A coordinated MySQL reset lacks a group recovery rule.** | **Version 1, by a tested narrowing.** The group reset: **S-6.** | An installed group is not reset singly (3.5). T-26. |
 | 17 | **P2 · Enrollment replay and admission have conflicting authorities.** | **Version 1.** Run-time enrollment: **S-2.** | The configuration is the one authority (4.6). T-5. |
-| 18 | **P2 · Several gate fallbacks retain the failed prerequisite.** | **Version 1.** | 8.1, as round 5 has it. |
+| 18 | **P2 · Several gate fallbacks retain the failed prerequisite.** | **Version 1.** | 8.1: every gate has run, and each failure's consequence is applied (12.1). |
 | 19 | **P2 · The regression matrix has impossible expectations.** | **Version 1.** | T-1, T-2, T-10 and T-14, each with its engine's or its phase's own expectation. |
 | 20 | **P2 · The native-test plan assumes one machine.** | **Version 1.** | A named, task-owned, disposable target (8.2). |
 | 21 | **P2 · The rollout cannot pass its account check with locked spares.** | **Version 1,** in the profile. | Verification follows each account's effective state (7.2). |
