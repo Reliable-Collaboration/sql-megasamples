@@ -133,3 +133,20 @@ def test_strict_read_guide_describes_the_current_demo_grants():
                                           '`megasamples.datasets`', '`megasamples.copy_service`'))
     assert '`pg_catalog, pg_temp`' in guide and 'installed in `pg_catalog`' in guide
     assert '`megasamples_policy_loaded()`' in guide and 'STRICT_READ_OWNER' in guide
+
+
+def test_strict_read_guide_states_the_grants_the_generator_makes():
+    """Sol round 8, P3-3: the guide's MySQL privileges and scopes are the grant generator's, and its
+    PostgreSQL report names every role that can call it (the health test's demo and postgres)."""
+    guide = (ROOT / 'docs/strict-read-account.md').read_text()
+    grants = demo_read_grants(['working'], [('foreign', True), ('closed', False)])
+    schemas = {privileges for privileges, scope in grants if scope.endswith('.*')}
+    tables = [scope for privileges, scope in grants if not scope.endswith('.*')]
+    assert len(schemas) == 1 and {privileges for privileges, scope in grants if scope in tables} == {'SELECT'}
+    assert ('gives `demo` exactly `' + schemas.pop() + '` on the working schemas and on explicitly enabled '
+            'foreign namespaces') in guide
+    assert '`SELECT` on the registry tables ' + ' and '.join(f'`{t}`' for t in tables) + ', and `USAGE`' in guide
+    assert not any('closed' in scope for _, scope in grants)
+    # The report: granted to demo directly, and executable otherwise only by the superuser.
+    assert 'granted to `demo` directly' in guide
+    assert '`admin` and every other role except the superuser `postgres` are refused it' in guide
