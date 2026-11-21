@@ -363,7 +363,7 @@ On the coordinator's go, after DataIntent's gateway `--all` ended at 13:07 UTC. 
 - **The TCP copy suite:** 32 passed, 3 skipped in each mode. That includes the replayed procedure with `1--1` and a comment before the dot, read from the copy.
 - **The reversal:** with round 8's tokenizer planted in the working tree, the lifecycle test failed at `CALL read_lexed()` with "SELECT command denied to user 'copier' … for table 'parent'". The copy's program still named `sample_start`, the case the finding describes. The tokenizer was restored (`git status` clean).
 
-**Found by the batch: a finding for round 10's triage, not fixed here.** `megasamples test-image` removes its containers with `docker rm -f`, without `-v`. So each MySQL run left the image's anonymous data volume behind: 4 this batch, checked unused and removed. It is the S7-9 class in product code: `megasamples/engines/mysql/image_test.py` and 17 such calls across `megasamples/`, unchanged since `e61335f`.
+**Found by the batch** (fixed before round 10; see below). `megasamples test-image` removes its containers with `docker rm -f`, without `-v`. So each MySQL run left the image's anonymous data volume behind: 4 this batch, checked unused and removed. It is the S7-9 class in product code: `megasamples/engines/mysql/image_test.py` and 17 such calls across `megasamples/`, unchanged since `e61335f`.
 
 ## Round 9: restoration and isolation
 
@@ -371,3 +371,34 @@ On the coordinator's go, after DataIntent's gateway `--all` ended at 13:07 UTC. 
 - **Removed:** every task container the batch started, and the 4 anonymous volumes `test-image` left. The socket service is stopped.
 - **Kept for review:** the round 9 MySQL images.
 - **Isolation** (`isolation-check.sh`, read-only): the nine live `megasamples-*` entries are unchanged, and so are the three live engines by ID, start time and image. The isolated store holds the same 20 containers as at the session's start, and the same 37 volumes as at round 7's end.
+
+## The batch's finding: container removals leaving anonymous volumes
+
+**Fix now**, the coordinator's decision: a defect found in use under `review-and-fix.md`. It is realistic, since any user running `test-image` hits it; it is cheap and in hand; and it lies outside the four areas.
+
+**The class:** every container removal in `megasamples/`. There were 20; 3 already used `-v` (`reset.py`, and the PostgreSQL image test's two later removals). Each of the other 17 was decided:
+
+| Removal | Container | Decision |
+|---|---|---|
+| `audit.py` (2) | the image audit's MySQL container | `-v` |
+| `engines/mysql/image_test.py` (3) | the image test's containers | `-v` |
+| `engines/mysql/server.py` (2) | the build server; dumps go to a bind mount | `-v` |
+| `engines/postgres/image_test.py` (1) | the image test's first removal | `-v` |
+| `engines/postgres/server.py` (2) | the build server; output to a bind mount | `-v` |
+| `engines/sqlite/image_test.py` (2) | the image test's containers | `-v` |
+| `sources/mssql.py` (2) | the MSSQL source container; bind mounts only | `-v` |
+| `sources/verify_oracle.py` (2) | the Oracle verifier's container | `-v` |
+| `workspace.py` `clean` (1) | the transient (labeled) containers | `-v` |
+
+**Why none keeps its volumes:** once a container is removed, no later `docker run` reattaches its anonymous volumes, so leaving them keeps nothing reachable. `-v` removes anonymous volumes only. Bind mounts and named volumes stay, so data that must persist is not affected. `tests/test_v1_container_removal.py` reads every removal in `megasamples/` and requires `-v`, unless a removal is listed with its reason as one that must keep its volumes. None is listed.
+
+**Commits:** `5bf374e` (test), then `53a2d1e` (the fix).
+
+**Runs** (focused, one at a time, each with the 15 GiB check; volume sets compared by `build/dl114-r1-work/image-test-volumes.sh`):
+- **Red:** the class test found 17. One MySQL `test-image` run (binary log on, `58d4b695a90c`) added 2 volumes, with 0 test failures.
+- **Green:** the class test, 2 passed. `test-image` with the store's volume set unchanged, 0 failures each, on MySQL with the binary log on (`58d4b695a90c`), with it off (`b3d6d569ed6d`), and on PostgreSQL (`ce3b539fb522`).
+- **Reversal:** the MySQL image test's old removals added 2 volumes again. `workspace.py`'s old removal alone fails the class test.
+- **Host full suite** (Failed): 2 failed (the two baselines), 1,143 passed, 345 skipped (`pytest-r10.log`).
+- **Not run:** SQLite's `test-image`, the MSSQL and Oracle verifiers, the build servers and `workspace clean`. They are covered by the class test only.
+
+**Restoration and isolation:** the 4 volumes of the red and reversal runs were checked unused and removed, so the store's volume set is the same 37 as before. The socket service is stopped. `isolation-check.sh` passed: the live entries are unchanged, and the store has the same 20 containers. The retained stack was not touched after the batch's fingerprint proof (13:20 to 13:26 UTC), so it was not fingerprinted again.
