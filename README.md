@@ -372,7 +372,11 @@ from different hosts or users sharing a container daemon must be coordinated sep
 
 ## The consoles
 
-`make up` brings the engines and the consoles up as one stack, and `make down` takes it away again.
+`make up` brings the engines and the consoles up as one stack, and `make down` takes it away again. `make down` and `make clean-all` remove each engine's working data with its container: the
+anonymous volume holding its data directory goes too, and the next `make up` starts every engine from
+its image again. Changes made since the last start are lost; a later `up` never reattached that volume
+anyway. For SQLite, the named `megasamples-sqlite` volume stays, so the SQLite files the consoles use survive
+teardown, but the next start copies the image's files over them.
 Every port binds to `127.0.0.1`: an unauthenticated database UI should not appear on the network
 because someone opened a laptop in a café. Publishing one more widely is a deliberate edit. Only
 CloudBeaver and DbGate browse all three engines; the index page lists the consoles by how much
