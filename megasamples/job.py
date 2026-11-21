@@ -214,6 +214,8 @@ def down(argv=None):
     ap.parse_args(argv)
     if not os.path.exists(COMPOSE):
         compose.main([])
+    print("down: discarding each engine's working data, including every copy; "
+          "the next `make up` starts from the shipped samples", flush=True)
     return data_volumes.down().returncode
 
 
