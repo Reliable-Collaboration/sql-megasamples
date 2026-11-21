@@ -54,6 +54,8 @@ The outcomes to decide are `complete` with these warnings, or `incomplete` with 
 | 7 | Sol 2 | the basic warning cannot be derived: no fact says whether a directory's OID has a catalog row; an empty location is not told apart from missing output; round 1 S4 and round 2 S2-3 not named | **input**: the directory-to-catalog match for `base/` and tablespaces; empty versus missing; both CLI routes asserted; a different leftover class names its warning and whether the README's removal route applies. Round 1 S4 and round 2 S2-3 are now their own rows above |
 | 8 | Sol P3-6 | the S4 and S2-3 cases and their dispositions (the planted orphan, the reporting in `up` and `reset --status`, the removal route) were not carried | **input**: both rows added; the design keeps each disposition or says why it changes |
 | 9 | Sol P3-7, Opus N2 | round 6 S6-3 was not in these inputs; the S4 row lacked two parts of its disposition | **input**: the S6-3 row; the S4 row now carries the closed copies and the return to the deciders |
+| 10 | Sol P3-7 (S10-P3-7) | the S4 row gave DL-113's escalation as current beside the S2-3 row's DL-119 rule for the same cancel-or-timeout case | **input**: the S4 row marks DL-113's escalation historical, and the S2-3 row's DL-119 disposition is the current rule |
+| 11 | Sol P3-11 | the round 10 finding was not in this table | **input**: the row above |
 
 ## Questions the design must answer
 
