@@ -16,7 +16,7 @@ def test_copy_and_server_limits_and_data_checks(monkeypatch, capsys, copy_second
     baked_password = image_test.q.__defaults__[1]
 
     def shell(*args, **kwargs):
-        if args[:2] == ('docker', 'run'):
+        if args[:3] == ('docker', 'run', '-d'):
             clock[0] = copy_seconds
         return SimpleNamespace(returncode=0, stdout='', stderr='')
 
