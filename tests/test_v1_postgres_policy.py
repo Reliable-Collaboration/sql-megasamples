@@ -265,7 +265,7 @@ class PostgresPolicyTests(unittest.TestCase):
             SELECT coalesce(pg_has_role('v1_writer', to_regrole('megasamples_working_write'), 'MEMBER'), false)
         """), "f")
         self.accept("GRANT megasamples_working_write TO v1_writer WITH INHERIT TRUE, SET FALSE")
-        self.accept("GRANT USAGE ON SEQUENCE v1_seq TO v1_writer", "admin", "chinook")
+        # No grant to the login: the sequence's USAGE must come from the writer group's defaults.
         self.assertEqual(self.accept("INSERT INTO v1_writes DEFAULT VALUES RETURNING value",
                                      "v1_writer", "chinook"), "1")
         self.refuse("SELECT lo_create(0)", "v1_writer", "chinook")
