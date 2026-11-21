@@ -9,8 +9,10 @@ import subprocess
 import pytest
 
 from megasamples import config
+from megasamples.copy_config import CopySettings
 from megasamples.credentials import client, session
 from megasamples.engines import unique_databases
+from megasamples.engines.mysql.image_test import expected_demo_grants
 
 pytestmark = pytest.mark.skipif(os.environ.get('MEGASAMPLES_NATIVE_READ_TESTS') != '1',
                                 reason='requires explicitly enabled isolated native stack')
@@ -94,9 +96,9 @@ def test_postgres_writers_retain_temporary_large_object_and_ddl_rights(database,
 @pytest.mark.parametrize('database', MY_DATABASES)
 def test_mysql_demo_only_reads(database):
     denied('mysql', database, 'CREATE TEMPORARY TABLE strict_read_temp(i int)')
-    grants = accepted('mysql', database, 'SHOW GRANTS').splitlines()
-    assert any('GRANT USAGE ON *.*' in grant for grant in grants)
-    assert all(' ON *.*' not in grant or 'GRANT USAGE' in grant for grant in grants)
+    datasets = CFG.datasets('mysql')
+    assert set(accepted('mysql', database, 'SHOW GRANTS').splitlines()) == expected_demo_grants(
+        datasets, CopySettings(CFG, 'mysql', datasets).foreign)
     denied('mysql', database, 'SELECT COUNT(*) FROM mysql.user')
     for user in ['admin', 'root']:
         accepted('mysql', database, 'CREATE TEMPORARY TABLE strict_writer_temp(i int); '

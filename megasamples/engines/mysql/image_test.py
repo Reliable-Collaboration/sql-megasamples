@@ -12,6 +12,8 @@ override env vars take effect.
 import json, os, subprocess, sys, time
 import yaml
 
+from megasamples import config
+from megasamples.copy_config import CopySettings
 from megasamples.paths import ROOT
 from megasamples.credentials import client, environment_file, session
 from megasamples.engines import unique_databases
@@ -29,6 +31,19 @@ def q(sql, user="root", pw="root", database=None, container=NAME):
     with client("mysql", container, user, pw) as command:
         return sh(*command, "-N", "--batch", *(["-D", database] if database else []), "-e", sql)
 
+
+
+def expected_demo_grants(datasets, foreign=()):
+    # mysql --batch renders each literal backslash as two backslashes.
+    schemas = [*unique_databases(datasets), *(prefix + "_%" for prefix, readable in foreign if readable)]
+    scopes = [schema.replace("_", r"\\_") for schema in schemas]
+    principal = ' TO `demo`@`%`'
+    return {grant + principal for grant in [
+        'GRANT USAGE ON *.*',
+        'GRANT SELECT ON `megasamples`.`copy_service`',
+        'GRANT SELECT ON `megasamples`.`datasets`',
+        *(f'GRANT SELECT, SHOW VIEW ON `{scope}`.*' for scope in scopes),
+    ]}
 
 
 class Checks:
@@ -139,8 +154,10 @@ def main(argv=None):
                                        f"present with no orphans" + (f" -- {orphaned}" if orphaned else ""))
 
         grants = q("SHOW GRANTS", user="demo", pw="demo")
-        c.expect(grants.returncode == 0 and grants.stdout.strip() ==
-                 "GRANT SELECT, SHOW VIEW ON *.* TO `demo`@`%`", "demo holds exactly SELECT and SHOW VIEW")
+        settings = CopySettings(config.load(), "mysql", datasets)
+        c.expect(grants.returncode == 0 and set(grants.stdout.splitlines()) ==
+                 expected_demo_grants(datasets, settings.foreign),
+                 "demo holds exactly the configured read grants")
         for database in [*unique_databases(datasets), "megasamples"]:
             result = q("CREATE TEMPORARY TABLE read_probe(i int)", user="demo", pw="demo", database=database)
             c.expect(result.returncode != 0 and "denied" in result.stderr.lower(),

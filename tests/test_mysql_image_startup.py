@@ -40,7 +40,12 @@ def test_copy_and_server_limits_and_data_checks(monkeypatch, capsys, copy_second
         else:
             answer = answers.get(sql, '1')
         if sql == 'SHOW GRANTS':
-            answer = "GRANT SELECT, SHOW VIEW ON *.* TO `demo`@`%`"
+            answer = "\n".join([
+                'GRANT USAGE ON *.* TO `demo`@`%`',
+                'GRANT SELECT, SHOW VIEW ON `pubs`.* TO `demo`@`%`',
+                'GRANT SELECT ON `megasamples`.`copy_service` TO `demo`@`%`',
+                'GRANT SELECT ON `megasamples`.`datasets` TO `demo`@`%`',
+            ])
         if sql.startswith('CREATE TEMPORARY TABLE') and kwargs.get('user') == 'demo':
             return SimpleNamespace(returncode=1, stdout='', stderr='CREATE command denied')
         rejected_override = (kwargs.get('container') == image_test.NAME + '2'
