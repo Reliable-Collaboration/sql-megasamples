@@ -38,11 +38,14 @@ class RestoreTests(unittest.TestCase):
         return result.stdout.strip()
 
     def assert_accounts(self, database):
-        """A restored database keeps the image's account rules: large-object creation closed to PUBLIC, and so
-        to demo, and admin keeping it."""
-        self.assertEqual(self.accept("SELECT has_function_privilege('demo', 'pg_catalog.lo_create(oid)', 'EXECUTE'), "
-                                     "has_function_privilege('admin', 'pg_catalog.lo_create(oid)', 'EXECUTE'), "
-                                     "pg_has_role('demo', 'pg_read_all_data', 'USAGE')", database), "f|t|t")
+        """A restored database keeps the image's account rules: demo reads through pg_read_all_data and is
+        refused every write to the restored tables."""
+        self.assertEqual(self.accept("SELECT pg_has_role('demo', 'pg_read_all_data', 'USAGE'), "
+                                     "pg_has_role('demo', 'pg_write_all_data', 'USAGE'), "
+                                     "coalesce(bool_or(has_table_privilege('demo', c.oid, 'INSERT, UPDATE, DELETE, TRUNCATE')), false) "
+                                     "FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace "
+                                     "WHERE c.relkind = 'r' AND n.nspname NOT IN ('pg_catalog', 'information_schema')",
+                                     database), "t|f|f")
 
     def counts(self, database):
         return self.accept("""SELECT format('SELECT %L || '':'' || count(*) FROM %I.%I', n.nspname || '.' || c.relname,

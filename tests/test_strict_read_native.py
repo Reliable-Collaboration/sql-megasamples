@@ -111,9 +111,9 @@ def test_target_carries_the_configured_selection(engine):
 
 
 @pytest.mark.parametrize('database', PG_DATABASES)
-def test_postgres_demo_cannot_create_large_objects(database):
-    for expression in ['lo_create(0)', 'lo_creat(-1)', "lo_from_bytea(0,decode('00','hex'))", "lo_import('/nonexistent')"]:
-        denied('postgres', database, 'BEGIN; SELECT ' + expression + '; ROLLBACK')
+def test_postgres_demo_cannot_import_server_files_as_large_objects(database):
+    # lo_import reads the server's filesystem: superuser-only by PostgreSQL's own default.
+    denied('postgres', database, "BEGIN; SELECT lo_import('/nonexistent'); ROLLBACK")
 
 
 # template1 keeps PostgreSQL's initdb ACL, CONNECT alone for PUBLIC, so no one but the superuser makes

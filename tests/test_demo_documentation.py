@@ -57,10 +57,9 @@ def postgres_scope(document):
     # An allow-list: any privilege beyond reading (TRUNCATE, ALL, ...) fails.
     assert all(set(privileges) <= {'SELECT', 'USAGE', 'CONNECT'} for privileges, _ in grants), grants
     assert re.search(r'\breads (?:persistent )?sample tables\b', document)
-    # PostgreSQL's own read model: the built-in read role, no write, large-object creation closed, and the
-    # engine's defaults otherwise.
+    # PostgreSQL's own read model: the built-in read role, no write, and the engine's defaults otherwise.
     assert 'GRANT pg_read_all_data TO demo' in users
-    assert '`pg_read_all_data`' in document and 'cannot create large objects' in document
+    assert '`pg_read_all_data`' in document and 'cannot create large objects' not in document
     assert "PostgreSQL's defaults" in document
     assert 'allowlisted routines' not in document and 'read_policy' not in document
     assert 'no `TEMPORARY` privilege' not in document

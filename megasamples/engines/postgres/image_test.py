@@ -132,15 +132,10 @@ def main(argv=None):
             c.expect(not bad, f"{schema}: {len(counts)} tables match their expected snapshot counts"
                               + (f" -- {bad[:3]}" if bad else ""))
 
-        # demo reads with PostgreSQL's own read role; large-object creation, the one write PostgreSQL's
-        # defaults give every role, is closed in every database
+        # demo reads with PostgreSQL's own read role and holds no role that writes
         membership = q("SELECT pg_has_role('demo', 'pg_read_all_data', 'USAGE'), "
                        "pg_has_role('demo', 'pg_write_all_data', 'USAGE')")
         c.expect(membership.stdout.strip() == "t|f", "demo holds pg_read_all_data and not pg_write_all_data")
-        for database in [*unique_databases(datasets), "megasamples", "postgres", "template1"]:
-            result = q("BEGIN; SELECT lo_create(0); ROLLBACK", user="demo", pw="demo", database=database)
-            c.expect(result.returncode != 0 and "permission denied" in result.stderr,
-                     f"{database}: demo cannot create large objects")
         first = datasets[0]
         schema = yaml.safe_load(open(os.path.join(ROOT, "datasets", first, "dataset.yaml"), encoding="utf-8"))["database"]
         table = next(iter(yaml.safe_load(open(os.path.join(ROOT, "datasets", first, "tests", "expected_counts.yaml"), encoding="utf-8"))))

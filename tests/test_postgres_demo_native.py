@@ -2,8 +2,9 @@
 
 "Read only" is what PostgreSQL itself defines: demo holds the built-in role pg_read_all_data and no
 write privilege, directly, through a role or through a default privilege; otherwise the engine's
-defaults stand (CONNECT, TEMPORARY, EXECUTE on built-in functions). Creating a large object is the
-one inherited write PostgreSQL's defaults would give every role, and it stays refused.
+defaults stand (CONNECT, TEMPORARY, EXECUTE on built-in functions, large objects of its own). A
+write reaching the samples, inherited through a role, a default privilege or pg_write_all_data, is
+what the account checks refuse.
 
 The consumer compatibility check runs each catalog, describe, snapshot and data-read statement of
 DataIntent's PostgreSQL adapter (src/DataIntent.Adapters/Postgres in RCC.DataIntent) as demo. It is
@@ -286,12 +287,10 @@ def test_demo_writes_are_refused_with_their_native_sqlstate():
             assert states == {statement: "42501" for statement in states}, (database, states)
 
 
-def test_demo_cannot_create_a_large_object():
-    """The original inherited write: every role inherits large-object creation from PUBLIC by default."""
+def test_demo_may_create_its_own_large_object():
+    """PostgreSQL's default: a large object demo creates is its own, and changes no sample."""
     with connect(sample_databases()[0]) as connection:
-        assert sqlstate(connection, "SELECT lo_create(0)") == "42501"
-        assert sqlstate(connection, "SELECT lo_from_bytea(0, '\\x00'::bytea)") == "42501"
-        assert sqlstate(connection, "SELECT lo_creat(-1)") == "42501"
+        assert sqlstate(connection, "BEGIN; SELECT lo_create(0); ROLLBACK") is None
 
 
 def test_demo_keeps_the_engine_defaults_for_reading():
