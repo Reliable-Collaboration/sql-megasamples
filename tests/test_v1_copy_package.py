@@ -64,3 +64,20 @@ def test_copy_runs_without_pipeline_dependencies(engine, tmp_path):
     assert "pipeline dependency" not in result.stderr
     assert reply["error"] is None or reply["error"]["code"] != "internal", result.stdout + result.stderr
     assert result.returncode == (0 if engine == "sqlite" else 3), result.stdout + result.stderr
+
+
+def test_postgres_copy_names_a_missing_client_library(tmp_path):
+    """Astra round 2, 6 / Fable round 2, 2: without libpq psycopg cannot load; say so, exit 3."""
+    secret = tmp_path / "password"
+    secret.write_text("synthetic-test-key\n")
+    secret.chmod(0o600)
+    blocker = BLOCKER.replace("name.split('.')[0] in {blocked!r}", "name.split('.')[0] == 'psycopg'")
+    result = subprocess.run(
+        [sys.executable, "-c", blocker, "copy", "list", "postgres", "--prefix", "copy",
+         "--host", "127.0.0.1", "--port", str(closed_port()), "--user", "copier", "--password-file", str(secret)],
+        capture_output=True, text=True, timeout=30, cwd=Path(__file__).parents[1],
+    )
+    reply = json.loads(result.stdout)
+    assert result.returncode == 3, result.stdout + result.stderr
+    assert reply["error"]["code"] == "client-library"
+    assert "libpq" in reply["error"]["message"]

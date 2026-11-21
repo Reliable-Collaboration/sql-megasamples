@@ -229,6 +229,147 @@ def test_sweep_keeps_a_copy_renewed_after_its_selection(server):
         copy_command(server, "drop", target, *proof)
 
 
+def ledger(server):
+    return native(server, "SELECT name, record FROM copy_ledger_copy ORDER BY name",
+                  user="dl077_fixture_admin")
+
+
+def test_lost_connection_during_metadata_is_exit_3_with_the_identity(server):
+    """Astra round 2, 7: nothing was written before the metadata read, so 3 promises truthfully."""
+    engine = server["engine"]
+    row = copy_command(server, "create", engine + ":chinook", "--prefix", "copy", "--label", "metadata")["result"]
+    target, proof = engine + ":" + row["name"], ("--identity", row["identity"])
+    try:
+        reply = copy_command(server, "renew", target, *proof, "--lease", "7d", status=3, fault=("metadata", "-"))
+        assert reply["error"]["code"] == "connection" and reply["error"]["identity"] == row["identity"]
+        assert copy_command(server, "show", target)["result"]["revision"] == row["revision"]
+    finally:
+        copy_command(server, "drop", target, *proof)
+
+
+def test_sweep_that_stops_after_a_removal_reports_what_it_removed(server):
+    """Astra round 2, 3 / Fable round 2, 4: exit 8 with the completed removals and where it stopped."""
+    engine = server["engine"]
+    admin = {"user": "dl077_fixture_admin"}
+    first, second = (copy_command(server, "create", engine + ":chinook", "--prefix", "copy", "--label", label)["result"]
+                     for label in ("partiala", "partialb"))
+    for row in (first, second):
+        copy_command(server, "release", engine + ":" + row["name"], "--identity", row["identity"])
+    removed_first, kept_second = sorted((first, second), key=lambda row: row["name"])
+    try:
+        reply = copy_command(server, "sweep", engine, "--prefix", "copy", status=8,
+                             fault=("corrupt-after-first", kept_second["name"]))
+        assert reply["error"]["code"] == "format-unknown"
+        assert reply["error"]["identity"] == kept_second["identity"]
+        assert removed_names(reply) == [removed_first["name"]]
+        assert any(item["copy"]["name"] == kept_second["name"] for item in reply["result"]["kept"])
+    finally:
+        name = kept_second["name"]
+        database = "postgres" if engine == "postgres" else "megasamples"
+        quote = '"' if engine == "postgres" else "`"
+        native(server, f"DROP DATABASE IF EXISTS {quote}{name}{quote}", database=database, **admin)
+        native(server, "DELETE FROM copy_ledger_copy WHERE name=%s", parameters=(name,), **admin)
+        copy_command(server, "drop", engine + ":" + removed_first["name"], "--identity", removed_first["identity"])
+
+
+def test_create_refuses_a_namespace_whose_records_it_cannot_read(server):
+    """Astra round 2, 4: admission validates the namespace's records first and writes nothing."""
+    engine = server["engine"]
+    row = copy_command(server, "create", engine + ":chinook", "--prefix", "copy", "--label", "newer")["result"]
+    if engine == "postgres":
+        change = "jsonb_set(record, '{tag}', '\"megasamples-copy/99\"')"
+    else:
+        change = "JSON_SET(record, '$.tag', 'megasamples-copy/99')"
+    native(server, f"UPDATE copy_ledger_copy SET record={change} WHERE name=%s", parameters=(row["name"],))
+    try:
+        before = ledger(server)
+        reply = copy_command(server, "create", engine + ":chinook", "--prefix", "copy", "--label", "admitted", status=5)
+        assert reply["error"]["code"] == "format-unknown"
+        assert ledger(server) == before
+    finally:
+        native(server, f"UPDATE copy_ledger_copy SET record=JSON_SET(record, '$.tag', 'megasamples-copy/1') WHERE name=%s"
+               if engine == "mysql" else
+               "UPDATE copy_ledger_copy SET record=jsonb_set(record, '{tag}', '\"megasamples-copy/1\"') WHERE name=%s",
+               parameters=(row["name"],))
+        copy_command(server, "drop", engine + ":" + row["name"], "--identity", row["identity"])
+
+
+def test_postgres_newer_template_registration_is_unsupported_not_missing(server):
+    """Astra round 2, 4: a newer template tag is format-unknown (5), not no-template (4)."""
+    if server["engine"] != "postgres":
+        pytest.skip("requires the PostgreSQL fixture")
+    admin = {"user": "dl077_fixture_admin", "database": "postgres"}
+    comment = native(server, "SELECT shobj_description(oid, 'pg_database') FROM pg_database "
+                             "WHERE datname='chinook_start'", **admin)[0][0]
+    newer = comment.replace("megasamples-template/1 ", "megasamples-template/2 ", 1)
+    native(server, "COMMENT ON DATABASE chinook_start IS '" + newer.replace("'", "''") + "'", **admin)
+    try:
+        reply = copy_command(server, "create", "postgres:chinook", "--prefix", "copy", "--label", "newertpl", status=5)
+        assert reply["error"]["code"] == "format-unknown" and reply["error"]["identity"] is None
+        assert copy_command(server, "list", "postgres", "--prefix", "copy", "--label", "newertpl")["result"]["copies"] == []
+    finally:
+        native(server, "COMMENT ON DATABASE chinook_start IS '" + comment.replace("'", "''") + "'", **admin)
+
+
+def test_busy_drop_promises_only_what_it_wrote(server):
+    """Astra round 2, 8: lock contention changes nothing; an already-dropping copy stays dropping."""
+    engine = server["engine"]
+    row = copy_command(server, "create", engine + ":chinook", "--prefix", "copy", "--label", "busyscope")["result"]
+    name, target, proof = row["name"], engine + ":" + row["name"], ("--identity", row["identity"])
+    take, give, key = change_lock(server, name)
+    holder = session(server, "megasamples")
+    try:
+        assert run_sql(holder, take, (key,))[0][0] in (1, True)
+        reply = copy_command(server, "drop", target, *proof, status=6)
+        assert reply["error"]["code"] == "busy"
+        run_sql(holder, give, (key,))
+        shown = copy_command(server, "show", target)["result"]
+        assert (shown["state"], shown["revision"]) == ("ready", row["revision"])
+        if engine == "postgres":
+            change = "jsonb_set(record, '{phase}', '\"dropping\"')"
+        else:
+            change = "JSON_SET(record, '$.phase', 'dropping')"
+        native(server, f"UPDATE copy_ledger_copy SET record={change} WHERE name=%s", parameters=(name,))
+        busy = hold_busy(server, name)
+        try:
+            copy_command(server, "drop", target, *proof, "--wait", "1", status=6)
+            shown = copy_command(server, "show", target)["result"]
+            assert (shown["state"], shown["revision"]) == ("dropping", row["revision"])
+        finally:
+            busy.close()
+    finally:
+        holder.close()
+    assert copy_command(server, "drop", target, *proof)["result"]["state"] == "gone"
+
+
+def test_a_name_never_made_shows_gone(server):
+    """Fable 14 / Astra round 2, 12: one state name for neither a row nor an object."""
+    engine = server["engine"]
+    shown = copy_command(server, "show", engine + ":copy_chinook_000000000000")["result"]
+    assert shown["state"] == "gone" and shown["identity"] is None
+
+
+def test_mysql_namespace_owner_is_confined_to_its_pattern(server):
+    """T-9 with G-11b and G-11c's cases through the built image, as the namespace owner."""
+    if server["engine"] != "mysql":
+        pytest.skip("requires the MySQL fixture")
+    import pymysql
+    connection = session(server, "megasamples")
+    try:
+        for sql in ("CREATE DATABASE copyx_outside", "CREATE DATABASE copy",
+                    "CREATE DATABASE chinook_other", "DROP DATABASE chinook",
+                    "INSERT INTO chinook.artist SELECT * FROM chinook.artist LIMIT 0",
+                    "ALTER DATABASE chinook_start READ ONLY = 0",
+                    "GRANT SELECT ON `copy\\_%`.* TO 'reader_b'@'%'",
+                    "CREATE USER 'copy_made'@'%'"):
+            with pytest.raises(pymysql.err.MySQLError):
+                run_sql(connection, sql)
+        run_sql(connection, "CREATE DATABASE copy_scratch_confinement")
+        run_sql(connection, "DROP DATABASE copy_scratch_confinement")
+    finally:
+        connection.close()
+
+
 def test_server_inventory_reports_unmanaged_names(server):
     engine = server["engine"]
     admin = {"user": "dl077_fixture_admin"}

@@ -7,7 +7,10 @@ that write (WHEN is `before` or `after`). POINT `short-fill` (MySQL; WHEN ignore
 table fill of a copy select one row, as an engine that lost rows would. POINT `renew-first` (WHEN is
 `NAME:IDENTITY`) runs a separate `copy renew` of that copy for seven days just before the sweep takes
 that name's change lock the second time: the selection has read the copy under its first lock, so the
-renewal lands between the sweep's selection and its removal.
+renewal lands between the sweep's selection and its removal. POINT `metadata` closes the connection
+just before the command's first metadata read after sign-in. POINT `corrupt-after-first` (WHEN is
+the NAME of another copy) rewrites that copy's ledger record to an unknown tag right after the
+sweep's first removal.
 """
 
 import subprocess
@@ -50,6 +53,39 @@ def run():
             return lock(self, name, *rest, **keywords)
 
         copies.lock = renew_first
+        return main(["copy", *args])
+    if point == "metadata":
+        one = copies.one
+        state = {"done": False}
+
+        def first_read(self, sql, params=()):
+            if not state["done"]:
+                state["done"] = True
+                self.connection.close()
+            return one(self, sql, params)
+
+        copies.one = first_read
+        return main(["copy", *args])
+    if point == "corrupt-after-first":
+        remove = copies.remove
+        state = {"done": False}
+
+        def remove_then_corrupt(self, row, *rest, **keywords):
+            result = remove(self, row, *rest, **keywords)
+            if not state["done"]:
+                state["done"] = True
+                if engine == "postgres":
+                    sql = (f"UPDATE {self.ledger} SET record = jsonb_set(record, '{{tag}}', "
+                           "'\"megasamples-copy/99\"') WHERE name = %s")
+                else:
+                    sql = f"UPDATE {self.ledger} SET record = JSON_SET(record, '$.tag', 'megasamples-copy/99') WHERE name = %s"
+                if engine == "postgres":
+                    self.connection.execute(sql, (when,))
+                else:
+                    self.execute(sql, (when,))
+            return result
+
+        copies.remove = remove_then_corrupt
         return main(["copy", *args])
     original = getattr(copies, point)
 
