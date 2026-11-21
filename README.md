@@ -119,7 +119,7 @@ Two accounts are offered from every console, and both are usable from any client
 
 | account | factory password (without overrides) | privileges |
 |---|---|---|
-| `demo` | `demo` | `SELECT`, `SHOW VIEW` on every database (`*.*`), system schemas included, including `mysql`, where account rows live; no write privilege |
+| `demo` | `demo` | `SELECT` and `SHOW VIEW` on working schemas and explicitly enabled foreign namespaces. `SELECT` on the `megasamples.datasets` and `megasamples.copy_service` registry tables. Holds no write privilege. |
 | `admin` | `admin` | `ALL PRIVILEGES WITH GRANT OPTION` |
 
 Each console opens on `demo`, because the safe account should be the one you get without choosing.
@@ -162,9 +162,7 @@ psql -W -h 127.0.0.1 -p 5432 -U demo sakila
 
 PostgreSQL `demo` cannot modify the persistent sample tables in the tested DML/DDL paths.
 Its read scope includes tables `admin` later creates in a sample database's `public` schema.
-As of **2026-11-18**, it still has `TEMPORARY`, can create large objects and can execute granted
-routines. Treat it as a sample-data reader, not a general sandbox account; see the
-[account limits](docs/live-upgrade-evidence.md#documentation-checks).
+It has no `TEMPORARY` privilege, cannot create large objects, and can execute only allowlisted routines.
 
 ### SQLite
 
