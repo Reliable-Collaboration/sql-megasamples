@@ -49,13 +49,20 @@ class Checks:
 
 
 def demo_write_checks(c, schema, table):
-    """demo is refused each write to a baked table."""
+    """demo is refused each write to a baked table, by permission (Sol round 12, P3-6): the UPDATE names one
+    of the table's real columns, and WHERE false keeps it harmless if it were ever allowed."""
+    column = q(f"SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' "
+               f"AND table_name = '{table}' ORDER BY ordinal_position LIMIT 1",
+               user="demo", pw="demo", database=schema).stdout.strip()
+    c.expect(bool(column), f"the probe table {table} has a column")
     for statement, label in [
             ("CREATE TABLE nope (i int)", "CREATE"),
-            (f'DELETE FROM "{table}"', "DELETE"),
-            (f'UPDATE "{table}" SET "{table}" = NULL', "UPDATE"),
+            (f'DELETE FROM "{table}" WHERE false', "DELETE"),
+            (f'UPDATE "{table}" SET "{column}" = "{column}" WHERE false', "UPDATE"),
             (f'DROP TABLE "{table}"', "DROP")]:
-        c.expect(q(statement, user="demo", pw="demo", database=schema).returncode != 0, f"demo cannot {label}")
+        result = q(statement, user="demo", pw="demo", database=schema)
+        c.expect(result.returncode != 0 and any(m in result.stderr for m in ("permission denied", "must be owner")),
+                 f"demo cannot {label}")
 
 
 def override_checks(c):
