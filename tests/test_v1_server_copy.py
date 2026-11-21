@@ -77,6 +77,128 @@ def native(server, sql, *, user=None, database="megasamples", parameters=()):
             return list(cursor.fetchall()) if cursor.description else None
 
 
+def change_lock(server, name):
+    """A second session holding the CLI's change lock for one copy name."""
+    import hashlib
+    if server["engine"] == "postgres":
+        key = int.from_bytes(hashlib.sha256(("megasamples/copy/" + name).encode()).digest()[:8],
+                             "big", signed=True)
+        return "SELECT pg_catalog.pg_advisory_lock(%s::bigint)", "SELECT pg_catalog.pg_advisory_unlock(%s::bigint)", key
+    key = "megasamples:" + hashlib.sha256(name.encode()).hexdigest()[:48]
+    return "SELECT GET_LOCK(%s, 10)", "SELECT RELEASE_LOCK(%s)", key
+
+
+def session(server, database):
+    password = Path(server["password_file"]).read_text().strip()
+    if server["engine"] == "postgres":
+        import psycopg
+        return psycopg.connect(host=server["host"], port=server["port"], dbname=database,
+                               user=server["owner"], password=password, connect_timeout=5, autocommit=True)
+    import pymysql
+    return pymysql.connect(host=server["host"], port=server["port"], database=database,
+                           user=server["owner"], password=password, connect_timeout=5, autocommit=True)
+
+
+def run_sql(connection, sql, parameters=()):
+    if hasattr(connection, "execute"):
+        cursor = connection.execute(sql, parameters or None)
+        return cursor.fetchall() if cursor.description else None
+    with connection.cursor() as cursor:
+        cursor.execute(sql, parameters or None)
+        return cursor.fetchall() if cursor.description else None
+
+
+def hold_busy(server, name):
+    """Keep a copy busy for its engine: a connected session, or an open metadata lock."""
+    connection = session(server, name)
+    if server["engine"] == "mysql":
+        run_sql(connection, "BEGIN")
+        run_sql(connection, "SELECT * FROM artist LIMIT 1")
+    return connection
+
+
+def test_drop_wait_is_one_deadline_across_the_lock_and_the_removal(server):
+    import threading
+    import time
+    engine = server["engine"]
+    row = copy_command(server, "create", engine + ":chinook", "--prefix", "copy", "--label", "deadline")["result"]
+    target, proof = engine + ":" + row["name"], ("--identity", row["identity"])
+    take, give, key = change_lock(server, row["name"])
+    holder, busy = session(server, "megasamples"), hold_busy(server, row["name"])
+    try:
+        run_sql(holder, take, (key,))
+        threading.Timer(2, run_sql, (holder, give, (key,))).start()
+        started = time.monotonic()
+        reply = copy_command(server, "drop", target, *proof, "--wait", "4", status=6)
+        elapsed = time.monotonic() - started
+        assert reply["error"]["code"] == "busy"
+        assert 3.5 <= elapsed < 5.5, elapsed
+        assert copy_command(server, "show", target)["result"]["state"] == "ready"
+    finally:
+        busy.close()
+        holder.close()
+    assert copy_command(server, "drop", target, *proof)["result"]["state"] == "gone"
+
+
+def test_mysql_drop_honours_an_explicit_wait_beyond_five_seconds(server):
+    import threading
+    if server["engine"] != "mysql":
+        pytest.skip("requires the MySQL fixture")
+    row = copy_command(server, "create", "mysql:chinook", "--prefix", "copy", "--label", "longwait")["result"]
+    target, proof = "mysql:" + row["name"], ("--identity", row["identity"])
+    busy = hold_busy(server, row["name"])
+    try:
+        threading.Timer(7, busy.close).start()
+        assert copy_command(server, "drop", target, *proof, "--wait", "15")["result"]["state"] == "gone"
+    finally:
+        copy_command(server, "drop", target, *proof)
+
+
+def test_drop_refuses_a_copy_whose_proof_changed(server):
+    engine = server["engine"]
+    admin = {"user": "dl077_fixture_admin"}
+    row = copy_command(server, "create", engine + ":chinook", "--prefix", "copy", "--label", "proof")["result"]
+    name, proof = row["name"], ("--identity", row["identity"])
+    target = engine + ":" + name
+    if engine == "postgres":
+        native(server, f'''COMMENT ON DATABASE "{name}" IS 'megasamples-copy/1 {"0" * 32}''', **admin)
+        restore = f'''COMMENT ON DATABASE "{name}" IS 'megasamples-copy/1 {row["identity"]}'''
+        exists = ("SELECT count(*) FROM pg_database WHERE datname=%s", "postgres")
+    else:
+        native(server, f"DROP EVENT `{name}`.`megasamples_copy_{row['identity']}`", **admin)
+        restore = (f"CREATE EVENT `{name}`.`megasamples_copy_{row['identity']}` ON SCHEDULE AT "
+                   "CURRENT_TIMESTAMP + INTERVAL 1 YEAR ON COMPLETION PRESERVE DISABLE DO SELECT 1")
+        exists = ("SELECT count(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=%s", "megasamples")
+    try:
+        assert copy_command(server, "show", target)["result"]["state"] == "inconsistent"
+        assert copy_command(server, "drop", target, *proof, status=5)["error"]["code"] == "inconsistent"
+        copy_command(server, "release", target, *proof, status=5)
+        swept = copy_command(server, "sweep", engine, "--prefix", "copy")["result"]
+        assert not any(item["name"] == name for item in swept["removed"])
+        assert native(server, exists[0], user=admin["user"], database=exists[1], parameters=(name,))[0][0] == 1
+    finally:
+        native(server, restore, **admin)
+    assert copy_command(server, "drop", target, *proof)["result"]["state"] == "gone"
+
+
+def test_mysql_declared_reader_is_not_an_outside_grant(server):
+    if server["engine"] != "mysql":
+        pytest.skip("requires the MySQL fixture")
+    readers = native(server, "SELECT User FROM mysql.db WHERE User='reader_b'", user="dl077_fixture_admin",
+                     database="mysql")
+    if not readers:
+        pytest.skip("requires an image built with the declared copy reader reader_b")
+    reply = copy_command(server, "create", "mysql:chinook", "--prefix", "copy", "--label", "declared")
+    target = "mysql:" + reply["result"]["name"]
+    proof = ("--identity", reply["result"]["identity"])
+    try:
+        assert reply["result"]["state"] == "ready" and reply["warnings"] == []
+        shown = copy_command(server, "show", target)
+        assert shown["result"]["state"] == "ready" and shown["warnings"] == []
+    finally:
+        copy_command(server, "drop", target, *proof)
+
+
 def test_server_inventory_reports_unmanaged_names(server):
     engine = server["engine"]
     admin = {"user": "dl077_fixture_admin"}
