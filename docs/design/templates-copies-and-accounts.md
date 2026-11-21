@@ -207,7 +207,7 @@ The same on all three engines. [D]
 |---|---|
 | `renew`, `release` | the identity named; `ready` |
 | `drop` | the identity named; `ready` or `dropping`; the proof. **Any lease:** an owner may drop its own leased copy. |
-| a sweep's removal | the identity **and the revision** it selected; `ready`; the proof; **a lease that has ended, read again now** |
+| a sweep's removal | the identity **and the revision** it selected; `ready`, or `dropping` (the recovery row); the proof; **a lease that has ended, read again now** |
 
 Otherwise exit 5, and nothing was changed.
 
@@ -336,7 +336,7 @@ Otherwise exit 5, and nothing was changed.
 | `megasamples copy sweep ENGINE --prefix P [--dry-run]` | the owner | What it removed, and what it kept and why. **With `--dry-run` it changes nothing,** and says what a real sweep would select. **Narrowed in build round 1:** whether the engine lets a selected copy go is learned only at the removal, so a copy with a connected session (PostgreSQL) or a held lock (MySQL) is listed as removed by the preview and kept as `busy` by the real sweep. |
 | `megasamples reset …`; `megasamples up`; `megasamples down` | where the service runs | 3.5. |
 
-- **`copy` needs a TCP path to the engine's port, and nothing else:** no container runtime, no checkout. For SQLite it needs `--templates DIR` and `--dir DIR`. [D]
+- **`copy` needs a TCP path to the engine's port, and nothing else:** no container runtime, no checkout. For SQLite it needs `--templates DIR` and `--dir DIR`. [D] **Narrowed in build round 2:** for PostgreSQL the client also needs the system's libpq, which the pure Psycopg distribution loads; without it `copy` exits 3, `client-library`. A bundled libpq (`psycopg[binary]`) would need its own licence review.
 - **`reset` and `up` run where the service runs,** as today (F-1). A reset asked for from elsewhere waits (section 11). [108-6]
 - **`ENGINE:DATABASE`** follows the reset's own pairs (`SM:megasamples/reset.py:6`).
 - **A copy owner's credential may be used from another machine, on a build whose confinement regressions pass.** The confinement itself is shown: on PostgreSQL by a prototype of the hook's second rule [G-29a to G-29d], on MySQL by the engine's own grants [G-11b]. **The claim is made for a build only when T-7 and T-9 pass the same cases through its images.** [108-5]
@@ -357,17 +357,17 @@ Otherwise exit 5, and nothing was changed.
 | 0 | done | as asked |
 | 1 | a defect in the CLI | nothing; treat it as 8 |
 | 2 | wrong usage | no engine was contacted |
-| 3 | the engine cannot be reached, or the sign-in is refused | nothing changed |
+| 3 | the engine cannot be reached, the sign-in is refused, the connection was lost before any write, or the PostgreSQL client library cannot load (`client-library`) | nothing changed |
 | 4 | not offered here: no template, `too-large`, `dependency-group`, `not-replayable` | nothing changed |
 | 5 | refused by a rule: namespace, label in use, identity or state not as expected, `not-exclusive`, the limit, an unknown format, an unsettled operation, a reset still running, a state that cannot be read, an ordinary account that can write a MySQL target, a missing or wrong `--discard`, a stale image, a volume that cannot be identified, an earlier deployment | nothing changed |
 | 6 | busy, or people's sessions were there | **the target's data is as it was, no person's session was ended, and the CLI confirmed it.** A reset may leave a `rolled-back` record, and its database may briefly have refused new connections (3.5). [115-6] |
 | 7 | failed | **nothing is left changed, and the CLI confirmed it** |
-| 8 | unsettled | **a durable record describes what is there** |
+| 8 | unsettled | **a durable record describes what is there,** or there is none: a create whose reply was lost before its reservation was written leaves no row, and `copy list --label` finding none settles it. A sweep that stopped after a removal names what it removed. [Narrowed in build round 2.] |
 
 | Command | 6 means | 7 means | 8 is read by, and settled by |
 |---|---|---|---|
 | `copy create` | the namespace lock could not be had; no row was written | — | `copy list --label`. **An interrupted create is not settled by any command:** it is kept (2.2). |
-| `copy drop` | sessions or a lock remained at the end of the wait; **the copy's data and every session are as they were, and its record is `ready` again. Its revision has advanced** by the durable `dropping` and `ready` writes (2.3). [Narrowed in build round 1.] | — | `copy show`; `copy drop` again |
+| `copy drop` | **the change lock could not be had within the wait:** nothing was read or changed. **Sessions or a lock remained at the end of the wait:** the copy's data and every session are as they were. A copy that was `ready` is `ready` again, its revision advanced by the durable `dropping` and `ready` writes (2.3); one that was already `dropping` stays `dropping` at its revision. [Narrowed in build rounds 1 and 2.] | — | `copy show`; `copy drop` again |
 | `copy sweep` | — | — | `copy list`; `copy drop` for each `dropping` one it names |
 | `copy renew`, `release` | another change holds the name | — | — |
 | `reset`, one target | another reset holds the target's lock, or sessions were found; **its data is as it was, and nobody's session was ended.** Found at the first look: no record, and `--status` says `unknown`. Found at the second: `--status` says `rolled-back`. [115-6] | it failed before anything of the target changed: `rolled-back` | `reset --status`; `reset --reconcile`. **A reset whose target changed and did not verify is 8, never 0 and never 7.** |
@@ -568,7 +568,7 @@ Otherwise exit 5, and nothing was changed.
 - **For the service's SQLite working files** it is a file in their volume, written when the volume is first seeded. A replacement of the volume renews it; a reset of one database does not.
 - **`volume` is an opaque string.** A caller compares it and reads nothing into it. [111-2]
 - **A MySQL volume seeded from an image built before this is unqualified.** Every one of them reports the same identifier (F-34). [111-2]
-- **A `copy` command reads it once, on the one connection it uses, and never reconnects.** A replaced server ends that connection, and with it the command: exit 8. Every document carries the identity, so a caller can tell that a name it kept belongs to a volume that is gone: there `copy show` says `absent`, and `copy drop` succeeds on nothing.
+- **A `copy` command reads it once, on the one connection it uses, and never reconnects.** A replaced server ends that connection, and with it the command: exit 8. Every document carries the identity, so a caller can tell that a name it kept belongs to a volume that is gone: there `copy show` says `gone`, and `copy drop` succeeds on nothing.
 - **A caller's own directory of SQLite copies has none** (2.5): its documents say null.
 
 ### 3.6 Limits
@@ -686,6 +686,8 @@ Input to **one independent review, of two things: the final compiled hook, and t
   - **Accepted in advance, as a stated limit in the README:** an error PostgreSQL itself raises for want of a resource, or a crash.
   - **Returns to the deciders:** anything an ordinary caller can cause by its input or its privileges.
 - **T-7 holds it on the built hook:** with a fault planted in the close, and with one planted in the confirmation, no directory is left without a catalog row and no second session connects.
+
+**A stated limit: range-type constructors.** [Build round 2, Fable P3-8.] The event trigger closes routines whose command's class is `pg_proc`. A copy owner's `CREATE TYPE … AS RANGE` makes constructor functions that no such command reports, so they keep `PUBLIC EXECUTE`. They are immutable built-in code and no harm was found. **Reopens with:** any rule that every routine in a copy is closed.
 
 **The hook resolves every name itself.** [D: review 5's finding 2.] The prototype that passed G-29 read `pg_roles`, `pg_database` and several functions by unqualified names, through the caller's search path (`tests/gates/prototype/dl077_gate_hook.c:40-48` on the gates' branch).
 - **A namespace's owner controls the search path of its own session, and owns a schema in each of its copies.** From there it could put a relation of its own in front of a catalog. For this boundary the credential's holder acting on purpose is the realistic route (section 13).
@@ -1165,12 +1167,17 @@ Revised from what the gates showed. Every red asserts the outcome that is wanted
 | T-31 | **A command that only looks changes nothing.** `copy show`, `copy list`, `copy sweep --dry-run` and `reset --status`, against a copy in every state of 2.2 and a target at every kill point of section 14: every row, object, lease, file and phase is the same afterwards. | `show` made to finish a `dropping` copy; a dry run made to remove a `stale` row. | Each engine; each state; a SQLite file set aside; an unsettled and a `failed` reset. |
 | T-32 | **The service's SQLite working files keep a committed edit.** A sentinel row, written through the documented client, is read back after a restart of the generated service, after a reboot's restart, and after `down` then `up`; and a console reads it. **A reset of that database removes it; a reset of another does not; a replacement given `--discard engine` removes them all.** | The start made to copy the image's files over the volume. | Each working file; a file deleted by hand, which the next start seeds again; a stale image, which `up` refuses and does not reseed. **With a reset of a working database unsettled:** `megasamples up` starts no console, and a row committed since is kept by `--reconcile` [115-2]. |
 | T-33 | **A declared writer cannot change a MySQL database from its reset's first change until `done`, and has its grant back only after.** [116-2] **First in the reset slice, three cases.** **A declared writer reconnecting at each step:** after `suspended`, during the load, after `loaded`, and after `done` before `restored`, a fresh session is refused the write each time; after `restored` it writes. **A regrant failing after `done`:** the command reports the writer, exit 8; `--status` says `done` with that writer still suspended; `--reconcile` restores the grant, and neither loads nor verifies again. **A session ended mid-transaction:** a declared writer has a transaction open on the target when the reset begins; its session is ended, its transaction is rolled back, the drop does not wait on it, and none of its rows is in the verified data. | A grant restored before `done`; the writers' sessions left open after the revoke; the restore step made silent when it fails. | Each declared writer; a writer whose session is on another schema, ended too, as the consent says; the server restarted at each step, the writer still out [G-27b]; the start leaving the grant out until `restored`; a reset that ends `rolled-back`, which gives the grants back first; a declared writer that also holds a hand-made grant, which refuses the reset [115-1]. |
-| T-28 | **The package installs with the two drivers alone,** on each supported Python, and `uv sync --locked` is unchanged. Psycopg's licence is reviewed first. | A pipeline dependency imported by a `copy` module. | One `copy list` from that install, with no container runtime. |
+| T-28 | **The package installs with the two drivers alone,** on each supported Python, and `uv sync --locked` is unchanged. Psycopg's licence is reviewed first. **The PostgreSQL client also needs the system's libpq;** without it, exit 3 `client-library`. | A pipeline dependency imported by a `copy` module; the libpq guard removed. | One `copy list` from that install, with no container runtime, on the oldest supported Python. |
 
 ### 8.3 Every claim traces to a test
 
 **The rule.** [114-4] **Before the merge, every sentence of this record and of the README that says what the product does, refuses or keeps is traced to a passing test that drives the real commands:** `megasamples …`, the generated Compose file, the image's own start, or SQL sent as a named account. A sentence with no such test is removed, or reworded to what a test shows.
 - **The build keeps the trace beside the tests:** the claim, by section and sentence; the test; the command it drives.
+- **Not yet claimed for the slices 1 and 2 build** [build round 2]. These have no passing test through the real commands yet, so the build does not claim them, and the merge waits for each:
+  - T-11's dataset verification (`megasamples verify`) against a copy of each offered database;
+  - T-15's command-against-command pairs and the kill points;
+  - G-9 and T-14's full disk on the copy paths;
+  - the account-by-database matrix beyond the cases in `tests/test_v1_server_copy.py`, `tests/test_v1_postgres_policy.py` and the native strict-read suite.
 - **A gate's result is evidence about an engine. It is not such a test.** A gate that ran on a source or a prototype says so, and has a row below.
 - **An amendment the build needs lands in this file with its code and its reason.** One that adds to section 0 returns to the deciders first.
 
