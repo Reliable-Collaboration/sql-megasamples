@@ -1,10 +1,10 @@
 # Version 1, slices 1 and 2: review loop status
 
-This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5 to 9 are below.
+This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5 to 10 are below.
 
 ## Stop count
 
-**1 of 2.** Round 9 had no P1 or P2, so it counts clean, the coordinator's decision. Rounds 6, 7 and 8 had kept the count at 0. The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
+**0 of 2.** Round 10 found two P2s, fix-now, so the count returned to 0, the coordinator's decision. Round 9 had counted clean (1 of 2); rounds 6, 7 and 8 had kept it at 0. The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
 
 **Scope from round 8, the coordinator's decision:** a workstream brief is an input to that workstream's own design, which is reviewed in its own loop after this one ends. So findings about a brief's content are recorded there as that workstream's inputs, not fixed now here. That covers its facts, its test plan's coverage and its questions.
 
@@ -61,6 +61,7 @@ Each row can wait: there is no realistic route to harm, or the harm is stated as
 | The H-3 probe's client-only accounting has no reversal | round 4, S4-9 | A recorded limit of the control. |
 | `test_quiescence_gate` unrelated-holder case fails, also at `e61335f` | rounds 1–5 | A baseline failure; its cause is not isolated. |
 | MySQL `/*+ */` optimizer hints are treated as comments, so a schema name inside one is not rewritten | round 8, S8-8's class check | Not checked on a server. A hint names tables and query blocks, and no shipped template carries one. Reopens if a template does. |
+| A versioned executable comment above the server's version (`/*!99999 x*/`) is read as code by the replay, though MySQL ignores its content, so `source/*!99999 x*/.t` keeps `source` | round 10, Opus N3 | Constructed; no shipped template carries one. It sits with the optimizer-hint row and reopens with it. |
 | Design 8.3's claims not yet made | rounds 2–5 | T-11 `verify`, T-15 and the kill points, the full disk, and the wider account matrix. The merge waits for each. |
 
 ## Round 5's runs
@@ -267,6 +268,25 @@ These are the reviews of `cda80f25`: Sol (`S9-*`) and Opus (`O9-*`, and its note
 | O9-N4 | P3 | — | **Fixed now**: S7-9's wording | this file |
 | O9-N5 | P3 | — | **Fixed now**, the same as S9-4 | `40375c9` |
 
+## Round 10: each finding's disposition
+
+These are the reviews of `0909856a`: Sol (`S10-*`) and Opus (`O10-*`, with its notes `O10-N*`). Both P2s were fix-now, so the stop count is 0 of 2.
+
+| ID | Sev. | Area | Disposition | Commit or brief |
+|---|---|---|---|---|
+| O10-P2-1 | P2 | — | **Fixed now**: `megasamples/data_volumes.py` takes the engines' anonymous volumes on every Compose route. `down` and `clean --all` run Compose `rm --stop --force --volumes` before `down`, which keeps the named SQLite volume; `up`'s stale recreate removes what it replaced by name, the helper `reset_engines` now shares. A real down/up cycle and a renewed recreate in the isolated store left only the named volume; round 9's commands left 4 | `9d38710` (test), `c917a1f` |
+| S10-P2-1 | P2 | — | **Fixed now**: both image tests remove a leftover override container with its volumes, check the launch, query only the ID it returned and remove that ID. Every other `docker run` in `megasamples/` already checks its result | `b511dc0` (refactor), `e0e482a` (test), `a27880a`, and the fit to the existing fakes after it |
+| O10-P3-2, S10-P3-2 | P3 | — | **Fixed now**: the class test walks the syntax tree (both Docker spellings, podman, the helpers, shell strings, split calls, any flag spelling, the Compose forms), with exemptions by file and function | `86a5a84` |
+| O10-N2 | P3 | — | **Fixed now**: name-only matches keep their volumes, an exemption with its reason | `86a5a84` (test), `e247d73` |
+| S10-P3-3 | P3 | — | **Fixed now**: publication qualification is an explicit run (`STRICT_READ_V1_PUBLICATION=1`), and ordinary runs accept any dataset selection | `3143e9c` |
+| S10-P3-4 | P3 | — | **Fixed now**: every tracked receipt path must exist | `ed6d1a3` |
+| S10-P3-5 | P3 | — | **Fixed now**: the guide calls the MySQL boundary probe PR #14's evidence that fails on version 1, and points at the current checks | `ee32122` (test), `465c16b` |
+| S10-P3-6 | P3 | — | **Fixed now**: `demo` holds the whole set in every session; a role relying only on `PUBLIC` lacks one | `ee32122` (test), `465c16b` |
+| S10-P3-7 | P3 | 2 | **Fixed now** (faithfulness): WS2's S4 row marks DL-113's escalation historical and names DL-119 as the current rule | this round's records commit |
+| O10-N1 | P3 | — | **Fixed now**: the tokenizer test's comments | `65beaee` |
+| O10-N3 | P3 | — | **Backlog**, beside the optimizer-hint row: constructed, no shipped witness | this file |
+| O10-N4 | P3 | — | **Fixed now**: a failed store-wide listing, at the close and at the open | `65beaee` |
+
 ## Round 8: the class check for overwritten evidence
 
 The question: did any version 1 change overwrite an evidence file, or make one untrue? Two comparisons were made:
@@ -376,7 +396,7 @@ On the coordinator's go, after DataIntent's gateway `--all` ended at 13:07 UTC. 
 
 **Fix now**, the coordinator's decision: a defect found in use under `review-and-fix.md`. It is realistic, since any user running `test-image` hits it; it is cheap and in hand; and it lies outside the four areas.
 
-**The class:** every container removal in `megasamples/`. There were 20; 3 already used `-v` (`reset.py`, and the PostgreSQL image test's two later removals). Each of the other 17 was decided:
+**The class, as first recorded (corrected in round 10 below):** the 20 direct `docker rm` calls in `megasamples/`; 3 already used `-v` (`reset.py`, and the PostgreSQL image test's two later removals). Each of the other 17 was decided:
 
 | Removal | Container | Decision |
 |---|---|---|
@@ -390,7 +410,7 @@ On the coordinator's go, after DataIntent's gateway `--all` ended at 13:07 UTC. 
 | `sources/verify_oracle.py` (2) | the Oracle verifier's container | `-v` |
 | `workspace.py` `clean` (1) | the transient (labeled) containers | `-v` |
 
-**Why none keeps its volumes:** once a container is removed, no later `docker run` reattaches its anonymous volumes, so leaving them keeps nothing reachable. `-v` removes anonymous volumes only. Bind mounts and named volumes stay, so data that must persist is not affected. `tests/test_v1_container_removal.py` reads every removal in `megasamples/` and requires `-v`, unless a removal is listed with its reason as one that must keep its volumes. None is listed.
+**Why none keeps its volumes:** once a container is removed, no later `docker run` reattaches its anonymous volumes, so leaving them keeps nothing reachable. `-v` removes anonymous volumes only. Bind mounts and named volumes stay, so data that must persist is not affected. `tests/test_v1_container_removal.py` read every `docker rm` in `megasamples/` and required `-v`. **Round 10 (Opus P2-1) found the record incomplete:** the class also holds the Compose routes that remove or replace containers, `megasamples down`, `status clean --all`, `up`'s stale-image recreate (all leaking each engine's data volume) and `reset_engines` (which removed by name already). With them the class is 24 sites. The test now reads the syntax tree, and one exemption is listed, `workspace.remove_unlabelled` (Opus round 10, N2).
 
 **Commits:** `5bf374e` (test), then `53a2d1e` (the fix).
 
@@ -402,3 +422,27 @@ On the coordinator's go, after DataIntent's gateway `--all` ended at 13:07 UTC. 
 - **Not run:** SQLite's `test-image`, the MSSQL and Oracle verifiers, the build servers and `workspace clean`. They are covered by the class test only.
 
 **Restoration and isolation:** the 4 volumes of the red and reversal runs were checked unused and removed, so the store's volume set is the same 37 as before. The socket service is stopped. `isolation-check.sh` passed: the live entries are unchanged, and the store has the same 20 containers. The retained stack was not touched after the batch's fingerprint proof (13:20 to 13:26 UTC), so it was not fingerprinted again.
+
+## Round 10's runs
+
+Focused runs, one at a time, each with the 15 GiB check, while DataIntent's `test-changes` lane was the host's large run.
+
+**Passed**
+- **The real Compose cycle** (`build/dl114-r1-work/cycle-r10/`, `driver.py`), on a project of its own, `dl114-r10-cycle`. It used the policy-free PostgreSQL image (`localhost/sql-megasamples-postgres:dev`, which declares `/var/lib/postgresql`) with a named volume beside it. The isolated store's `megasamples-upgrade` project was never addressed.
+  - Through `data_volumes`, two down/up cycles, a renewed recreate and a final down left only the named volume.
+  - With round 9's plain commands, the same sequence left 4 anonymous volumes. That is the native red and reversal.
+  - All 5 volumes were checked unused and removed. The store is at its 37 again.
+- **The native publication checks** on `cf7325f4f9be`:
+  - an ordinary run, 6 passed, 1 skipped;
+  - a qualifying run, 7 passed;
+  - the selection case: round 9's test failed it (1 failed); this one passes it, and fails it only when qualifying (2 failed).
+- **Host tests:** override 4, the Compose routes 4, the removal class 27, the cleanup scope 16, tokenizer 37, inventory 9, documentation 10. Their reds and reversals are in the commits.
+
+**Failed**
+- **The host-only full suite, first run:** 7 failed. `a27880a` had broken five existing image-test fakes; it was committed without a full run. Fixed in the next commit, which records it.
+- **The host-only full suite, final run:** 2 failed, the two baselines; 1,176 passed, 345 skipped (`pytest-r11.log`).
+
+**Not run**
+- A real `make up` of the product stack. It would address the isolated store's own `megasamples-*` containers, which this task keeps unchanged. The cycle above runs the same helpers on a project of its own.
+- The other routes the class test covers: `clean --all`, SQLite's `test-image`, the verifiers and the build servers.
+- The MySQL batch. No MySQL code changed this round outside the image test's override function, which the fakes cover. A `test-image` run would exercise it natively; it is queued for the coordinator's next batch.

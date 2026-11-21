@@ -41,7 +41,7 @@ The outcomes to decide are `complete` with these warnings, or `incomplete` with 
 
 | Round | Finding | Gist | Disposition so far |
 |---|---|---|---|
-| 1 | S4 | a copy owner's statement timeout or cancel during `copy`'s `CREATE DATABASE` may leave a directory with no catalog row | handled as DL-113 says: 480 caller interrupts left none, and every committed copy was closed; a planted `base/424242` is reported (`h3-interrupts-control.log`); not a proof that the window is closed. If a caller-caused leftover is seen, it returns to the deciders, and the design keeps that rule |
+| 1 | S4 | a copy owner's statement timeout or cancel during `copy`'s `CREATE DATABASE` may leave a directory with no catalog row | handled as DL-113 says: 480 caller interrupts left none, and every committed copy was closed; a planted `base/424242` is reported (`h3-interrupts-control.log`); not a proof that the window is closed. That return to the deciders was DL-113's disposition, now historical: DL-119, the later decision, accepts this cancel-or-timeout leftover as a stated limit with the detective control (the next row), and is the current rule for it |
 | 2 | S2-3 | the same cancel or timeout at the commit boundary | **decided by DL-119**: a stated limit, with the detective control in `up` and `reset --status postgres`, the README's removal route, the planted-orphan test and the 480-attempt regression |
 | 3 | S3-2, O3-5 | a concurrent drop crashed the parser; the tablespace path lacked `PG_*` | fixed |
 | 4 | S4-3 | a dangling or unlistable tablespace, or partial `du` output, gave `complete` | fixed |
