@@ -4,8 +4,13 @@ import re
 
 DEFINER = re.compile(r"^((?:CREATE)(?:\s+ALGORITHM\s*=\s*\w+)?)\s+DEFINER\s*=\s*"
                      r"`(?:[^`]|\x60\x60)*`\s*@\s*`(?:[^`]|\x60\x60)*`", re.I)
+# MySQL's lexical rules (Sol round 8, P3-8): `--` opens a comment only before whitespace, a control
+# character or the end; `/*!` opens an executable comment, whose content is code, so only its opener is
+# one token; an unquoted identifier holds ASCII letters, digits, `_`, `$` and U+0080 to U+FFFF.
+# ANSI_QUOTES and NO_BACKSLASH_ESCAPES programs are withheld before replay (design 2.4).
 SQL_TOKEN = re.compile(r"'(?:''|\\.|[^'\\])*'|\"(?:\"\"|\\.|[^\"\\])*\"|`(?:``|[^`])*`|"
-                       r"/\*[\s\S]*?\*/|--[^\n]*|#[^\n]*|[A-Za-z0-9_]+|\s+|.")
+                       r"/\*![0-9]*|/\*[\s\S]*?\*/|--(?=[\s\x00-\x1f\x7f]|$)[^\n]*|#[^\n]*|"
+                       r"[A-Za-z0-9_$\u0080-\uffff]+|\s+|.")
 
 
 def quote(name):
