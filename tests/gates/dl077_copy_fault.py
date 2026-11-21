@@ -12,7 +12,9 @@ just before the command's first metadata read after sign-in. POINT `corrupt-afte
 the NAME of another copy) rewrites that copy's ledger record to an unknown tag right after the
 sweep's first removal. POINT `corrupt-before-recheck` (WHEN is a copy's NAME) rewrites that
 record just before the sweep takes its change lock the second time. POINT `unlock-fails` makes the
-change-lock release fail after the sweep's first removal.
+change-lock release fail after the sweep's first removal. POINT `state-second` closes the connection
+just before the command's second state read (a drop's proof read at the removal). POINT
+`forget-fails` makes the ledger row's deletion fail after the database or schema is dropped.
 """
 
 import subprocess
@@ -123,6 +125,24 @@ def run():
             return one(self, sql, params)
 
         copies.remove, copies.one = remove_and_mark, failing_unlock
+        return main(["copy", *args])
+    if point == "state-second":
+        state_read = copies.state
+        calls = {"count": 0}
+
+        def second_read(self, *arguments, **keywords):
+            calls["count"] += 1
+            if calls["count"] == 2:
+                self.connection.close()
+            return state_read(self, *arguments, **keywords)
+
+        copies.state = second_read
+        return main(["copy", *args])
+    if point == "forget-fails":
+        def failing_forget(self, name):
+            raise self.errors.OperationalError("planted failure deleting the ledger row")
+
+        copies.forget = failing_forget
         return main(["copy", *args])
     original = getattr(copies, point)
 

@@ -355,6 +355,43 @@ def test_sweep_whose_unlock_fails_lists_its_removal_once(server):
             copy_command(server, "drop", engine + ":" + row["name"], "--identity", row["identity"])
 
 
+def test_drop_losing_its_connection_at_the_proof_read_is_exit_3(server):
+    """Sol round 4, P2-5: the removal's own proof read comes before any write."""
+    engine = server["engine"]
+    row = copy_command(server, "create", engine + ":chinook", "--prefix", "copy", "--label", "proofread")["result"]
+    target, proof = engine + ":" + row["name"], ("--identity", row["identity"])
+    try:
+        reply = copy_command(server, "drop", target, *proof, status=3, fault=("state-second", "-"))
+        assert reply["error"]["code"] == "connection" and reply["error"]["identity"] == row["identity"]
+        shown = copy_command(server, "show", target)["result"]
+        assert (shown["state"], shown["revision"]) == ("ready", row["revision"])
+    finally:
+        copy_command(server, "drop", target, *proof)
+
+
+def test_a_confirmed_removal_whose_ledger_row_remains_is_reported_removed(server):
+    """Sol round 4, P2-4: the engine dropped the copy; only its ledger row is unsettled."""
+    engine = server["engine"]
+    first, second = two_released(server, "forgetfirst", "forgetsecond")
+    admin = {"user": "dl077_fixture_admin"}
+    try:
+        reply = copy_command(server, "sweep", engine, "--prefix", "copy", status=8, fault=("forget-fails", "-"))
+        assert reply["error"]["code"] == "drop-unsettled" and reply["error"]["identity"] == first["identity"]
+        removed = {item["name"]: item for item in reply["result"]["removed"]}
+        assert removed[first["name"]]["state"] == "gone" and removed[first["name"]]["ledger"] == "unsettled"
+        assert first["name"] not in [item["copy"]["name"] for item in reply["result"]["kept"]]
+        assert copy_command(server, "show", engine + ":" + first["name"])["result"]["state"] == "gone"
+        single = copy_command(server, "drop", engine + ":" + second["name"], "--identity", second["identity"],
+                              status=8, fault=("forget-fails", "-"))
+        assert single["error"]["code"] == "drop-unsettled" and single["result"]["state"] == "gone"
+        assert single["result"]["ledger"] == "unsettled"
+    finally:
+        for row in (first, second):
+            copy_command(server, "drop", engine + ":" + row["name"], "--identity", row["identity"])
+        native(server, "DELETE FROM copy_ledger_copy WHERE name IN (%s, %s)",
+               parameters=(first["name"], second["name"]), **admin)
+
+
 def test_create_refuses_a_namespace_whose_records_it_cannot_read(server):
     """Astra round 2, 4: admission validates the namespace's records first and writes nothing."""
     engine = server["engine"]
