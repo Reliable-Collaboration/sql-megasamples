@@ -129,3 +129,20 @@ The orphan, start, MySQL-off image and native runs were first refused for memory
 | 10 | WS3 | What is the result field for an unsettled cleanup step: `ledger: unsettled`, or one that names the step? |
 | 11 | WS3 | Is there a third per-copy outcome (unknown or partial), and a list for the copies a stopped sweep never reached? Any change to a public exit or to `removed`/`kept`. |
 | 12 | WS4 | **Security posture:** may the suite authenticate to a listener it has not yet proved to be the checked instance? |
+
+## Round 6's runs
+
+These are focused runs only, because DataIntent's gateway `--all` was running. No large batch was run. The image is `ce3b539fb522`, built from `ae61776` (PostgreSQL `chinook`), and `cf7325f4f9be` (`chinook employees pubs`). Logs are under `build/dl114-r1-work/`.
+
+**Passed**
+- The health tests, 3 passed: only `demo` and `postgres` may call the report, healthy probes raise no ERROR, and the placeholder case fails.
+- The start suite (`start-r6-start2.log`), and its reversal: a skipped path-form override fails (`start-r6-path-reversal2.log`).
+- The PostgreSQL policy suite (`policy-r6-policy.log`).
+- `test-image` on `chinook`.
+- The native PostgreSQL suite, 46 passed (`native-r6-pg-full.log`).
+
+**Failed**
+- The full suite: 2 failed, 1,078 passed, 313 skipped (`pytest-r6.log`, 11:03:52). These are the same two baseline failures as before.
+
+**Not run**
+- The MySQL suites and images, and the TCP copy suite. Round 6 changed no MySQL or copy code; their last runs are round 5's.
