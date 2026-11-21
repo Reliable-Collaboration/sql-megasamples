@@ -185,3 +185,22 @@ def test_help_says_what_teardown_discards():
     down = (ROOT / 'megasamples/job.py').read_text().split('def down', 1)[1].split('ap.parse_args', 1)[0]
     assert phrase in down
     assert phrase in workspace.__doc__.split('clean --all', 1)[1].splitlines()[0]
+
+
+def test_rendered_help_says_what_teardown_discards_and_keeps():
+    """Sol round 13, 3: the help as a person sees it, for both commands, with the named SQLite volume kept."""
+    import re
+    import subprocess
+    import sys
+
+    def rendered(*args):
+        result = subprocess.run([sys.executable, '-m', 'megasamples', *args], capture_output=True, text=True,
+                                cwd=ROOT)
+        return result.stdout + result.stderr
+    listing = rendered('--help')
+    for command in ('down', 'clean'):
+        line = re.search(rf'^\s+{command}\s+(.+)$', listing, re.M)
+        assert line and "each engine's working data" in line.group(1), (command, line and line.group(0))
+    for command in ('down', 'clean'):
+        text = ' '.join(rendered(command, '--help').split())
+        assert "each engine's working data" in text and 'the named SQLite volume stays' in text, (command, text)
