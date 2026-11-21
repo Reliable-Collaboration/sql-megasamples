@@ -70,7 +70,7 @@ def seed_mysql(container, marker, password):
     podman("exec", "-i", container, "sh", "-ec", "umask 077; cat > /tmp/dl077-client.cnf",
            stdin="[client]\nuser=root\npassword=root\n")
     wait_for(lambda: mysql(container, "SELECT 1", check=False))
-    for schema in ("sample", "sample_start"):
+    for schema in ("sample",):
         mysql(container, f"""
         CREATE DATABASE {schema};
         SET SESSION sql_mode=CONCAT_WS(',',NULLIF(@@session.sql_mode,''),'NO_AUTO_VALUE_ON_ZERO');
@@ -105,18 +105,12 @@ def seed_mysql(container, marker, password):
     """)
     for name in ("mysql_templates.py", "mysql_template_build.py"):
         podman("cp", str(ROOT / "megasamples" / name), f"{container}:/tmp/{name}")
+    # The template is made by the image build's own per-database step, as a shipped database's is.
+    mysql(container, "INSERT INTO megasamples.datasets (name, tier, record, build_id) "
+                     "VALUES ('sample', 'fixture', 'fixture', 'fixture')")
     script = """
-import json
-from mysql_template_build import available_objects, query, run
-name = "sample"
-charset, collation = query(
-    "SELECT DEFAULT_CHARACTER_SET_NAME,DEFAULT_COLLATION_NAME FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=?", (name,)
-)[0]
-tables, objects = available_objects(name)
-metadata = {"tag": "megasamples-template/1", "database": "sample",
-            "build": "fixture", "digest": "fixture", "charset": charset, "collation": collation,
-            "tables": tables, "objects": objects}
-run("INSERT INTO megasamples.template_ddl (name,metadata) VALUES (?,?)", ("sample", json.dumps(metadata)))
+from mysql_template_build import offer
+offer("sample", "fixture", ["sample"])
 """
     podman("exec", "-i", container, "sh", "-ec", "cat >/tmp/dl077-inventory.py", stdin=script)
     socket = mysql(container, "SELECT @@socket").stdout.strip()

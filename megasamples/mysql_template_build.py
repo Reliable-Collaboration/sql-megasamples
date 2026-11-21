@@ -109,36 +109,41 @@ def build_offers(settings):
     run("CREATE TABLE megasamples.template_ddl (name varchar(64) PRIMARY KEY, "
         "reason varchar(32), detail text, metadata json)")
     for name, build in query("SELECT name, build_id FROM megasamples.datasets ORDER BY name"):
-        args = (name,)
-        size = allocated_bytes(name)
-        triggers = query("SELECT TRIGGER_NAME FROM information_schema.TRIGGERS "
-                         "WHERE TRIGGER_SCHEMA=? ORDER BY TRIGGER_NAME", args)
-        functions = query("SELECT ROUTINE_NAME FROM information_schema.ROUTINES "
-                          "WHERE ROUTINE_SCHEMA=? AND ROUTINE_TYPE='FUNCTION' ORDER BY ROUTINE_NAME", args)
-        reason, detail = exclusion(name, settings["templates"], size, triggers, functions)
-        metadata = None
-        if reason is None:
-            charset, collation = query(
-                "SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME "
-                "FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=?", args,
-            )[0]
-            table_ddl, objects = available_objects(name)
-            registry_row = list(query("SELECT * FROM megasamples.datasets WHERE name=?", args)[0])
-            digest = hashlib.sha256(json.dumps(registry_row).encode()).hexdigest()
-            template = name + "_start"
-            metadata = {"tag": "megasamples-template/1", "database": name, "charset": charset,
-                        "collation": collation, "tables": table_ddl, "objects": objects,
-                        "build": build, "digest": digest, "bytes": int(size)}
-            create_schema(run, template, charset, collation)
-            replay(run, query, metadata, name, template, remove_definer=False)
-            run(f"ALTER DATABASE {quote(template)} READ ONLY=1")
-            print(f"template {name}: {size} allocated bytes")
-        else:
-            definitions = ["trigger " + row[0] for row in triggers] + ["function " + row[0] for row in functions]
-            suffix = " (" + ", ".join(definitions) + ")" if definitions and reason != "not-replayable" else ""
-            print(f"withheld {name}: {reason}: {detail}{suffix}")
-        run("INSERT INTO megasamples.template_ddl VALUES (?,?,?,?)",
-            (name, reason, detail, json.dumps(metadata) if metadata is not None else None))
+        offer(name, build, settings["templates"])
+
+
+def offer(name, build, selected):
+    """Record one database's template definition and make its template, or record why it has none."""
+    args = (name,)
+    size = allocated_bytes(name)
+    triggers = query("SELECT TRIGGER_NAME FROM information_schema.TRIGGERS "
+                     "WHERE TRIGGER_SCHEMA=? ORDER BY TRIGGER_NAME", args)
+    functions = query("SELECT ROUTINE_NAME FROM information_schema.ROUTINES "
+                      "WHERE ROUTINE_SCHEMA=? AND ROUTINE_TYPE='FUNCTION' ORDER BY ROUTINE_NAME", args)
+    reason, detail = exclusion(name, selected, size, triggers, functions)
+    metadata = None
+    if reason is None:
+        charset, collation = query(
+            "SELECT DEFAULT_CHARACTER_SET_NAME, DEFAULT_COLLATION_NAME "
+            "FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=?", args,
+        )[0]
+        table_ddl, objects = available_objects(name)
+        registry_row = list(query("SELECT * FROM megasamples.datasets WHERE name=?", args)[0])
+        digest = hashlib.sha256(json.dumps(registry_row).encode()).hexdigest()
+        template = name + "_start"
+        metadata = {"tag": "megasamples-template/1", "database": name, "charset": charset,
+                    "collation": collation, "tables": table_ddl, "objects": objects,
+                    "build": build, "digest": digest, "bytes": int(size)}
+        create_schema(run, template, charset, collation)
+        replay(run, query, metadata, name, template, remove_definer=False)
+        run(f"ALTER DATABASE {quote(template)} READ ONLY=1")
+        print(f"template {name}: {size} allocated bytes")
+    else:
+        definitions = ["trigger " + row[0] for row in triggers] + ["function " + row[0] for row in functions]
+        suffix = " (" + ", ".join(definitions) + ")" if definitions and reason != "not-replayable" else ""
+        print(f"withheld {name}: {reason}: {detail}{suffix}")
+    run("INSERT INTO megasamples.template_ddl VALUES (?,?,?,?)",
+        (name, reason, detail, json.dumps(metadata) if metadata is not None else None))
 
 
 def escaped_pattern(name):
