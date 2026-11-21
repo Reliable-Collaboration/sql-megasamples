@@ -312,6 +312,19 @@ def test_postgres_employee_views_do_not_require_mutating_helpers():
 
 
 
+def test_mysql_library_mode_shows_escapes_as_the_cli_does(monkeypatch):
+    """Sol round 14, 3: query()'s library mode, through which the exact-grant check runs, brings the text to
+    the CLI's form on every selection, by a value that always holds an escaped underscore."""
+    if 'mysql' not in TARGETS:
+        pytest.skip('no mysql target named')
+    sql = "SELECT 'GRANT SELECT ON `copy\\\\_x`.*'"
+    results = {}
+    for driver in ('', 'library'):
+        monkeypatch.setenv('STRICT_READ_NATIVE_DRIVER', driver)
+        results[driver or 'cli'] = accepted('mysql', MY_SELECTED[0], sql)
+    assert results['cli'] == results['library'] == 'GRANT SELECT ON `copy\\\\_x`.*', results
+
+
 @pytest.mark.parametrize('engine', ['postgres', 'mysql'])
 def test_native_protocol_matches_cli(engine, monkeypatch):
     from docs.validation.strict_read_clients import query as protocol_query

@@ -53,10 +53,10 @@ class Checks:
     def expect(self, cond, label): (self.ok if cond else self.fail)(label)
 
 
-def refused(result):
-    """MySQL's own permission refusal: 1142 (table), 1370 (routine), or its "denied" wording, not any failure."""
-    return result.returncode != 0 and ("ERROR 1142" in result.stderr or "ERROR 1370" in result.stderr
-                                       or "denied" in result.stderr.lower())
+def refused(result, code):
+    """MySQL's own permission refusal for this operation (Sol round 14, 1): 1142 for a table statement, 1370
+    for a routine. Not an authentication or database-access error (1045, 1044) or any other failure."""
+    return result.returncode != 0 and f"ERROR {code} " in result.stderr
 
 
 def demo_write_checks(checks, table, created, routine):
@@ -69,8 +69,8 @@ def demo_write_checks(checks, table, created, routine):
             (f"UPDATE {table} SET n=2 WHERE id=1", "UPDATE"),
             (f"DELETE FROM {table} WHERE id=1", "DELETE"),
             (f"DROP TABLE {table}", "DROP")]:
-        checks.expect(refused(q(statement, user=reader, pw=reader)), f"demo cannot {label}")
-    checks.expect(refused(q(f"CALL {routine}()", user=reader, pw=reader)), "demo cannot write through a routine")
+        checks.expect(refused(q(statement, user=reader, pw=reader), 1142), f"demo cannot {label}")
+    checks.expect(refused(q(f"CALL {routine}()", user=reader, pw=reader), 1370), "demo cannot write through a routine")
 
 
 def account_checks(checks, schema, read_table, expected_count):

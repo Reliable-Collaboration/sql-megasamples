@@ -137,8 +137,8 @@ docker compose up -d mysql        # the database alone, no consoles
 ```
 
 A `megasamples` database inside the image holds the provenance registry: one row per database (an
-`append: true` dataset joins its base's row) with its tier, knowledge record, licences, source artifacts and digests, and pinned row counts. The
-landing page and the image tests read it, so neither can drift from what was baked. The catalogue
+`append: true` dataset joins its base's row) with its tier, knowledge record, licences, source artifacts and digests, and row counts (pinned, or for live datasets such as Chicago Crimes the snapshot verified on that
+build). The landing page and the image tests read it, so neither can drift from what was baked. The catalogue
 `make catalogue` is generated from the repository's dataset definitions and pinned counts, not from
 a running image, so it lists every dataset whatever an image carries.
 

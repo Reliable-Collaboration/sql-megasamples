@@ -11,6 +11,9 @@ BUILTIN_SCHEMAS = {
     "sqlite_master", "megasamples",
 }
 SERVICE_NAMES = {"postgres", "root", "admin", "demo", "mysql_root", "mysql_demo", "megasamples"}
+# The roles engines/postgres/init/00-users.sql creates (tests/test_v1_service_role_names.py reads them there).
+POSTGRES_ROLES = {"admin", "demo", "megasamples_read", "megasamples_write_routines", "megasamples_working_read",
+                  "megasamples_working_write"}
 
 
 @dataclass(frozen=True)
@@ -73,7 +76,10 @@ class CopySettings:
             prefixes.append(prefix)
 
         def reserve_account(name):
-            if not prefix_is_valid(name) or name in names or name.endswith("_start"):
+            # The PostgreSQL service's own roles (Sol round 14, 6): those initialisation creates, and every
+            # megasamples_ name the generated DDL derives, would collide with its CREATE ROLE.
+            if (not prefix_is_valid(name) or name in names or name.endswith("_start")
+                    or name in POSTGRES_ROLES or name.startswith("megasamples_")):
                 raise ValueError(f"invalid or duplicate account/key name {name!r}")
             names.add(name)
 
