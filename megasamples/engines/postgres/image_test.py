@@ -57,6 +57,7 @@ def demo_write_checks(c, schema, table):
     c.expect(bool(column), f"the probe table {table} has a column")
     for statement, label in [
             ("CREATE TABLE nope (i int)", "CREATE"),
+            (f'INSERT INTO "{table}" ("{column}") SELECT "{column}" FROM "{table}" WHERE false', "INSERT"),
             (f'DELETE FROM "{table}" WHERE false', "DELETE"),
             (f'UPDATE "{table}" SET "{column}" = "{column}" WHERE false', "UPDATE"),
             (f'DROP TABLE "{table}"', "DROP")]:
