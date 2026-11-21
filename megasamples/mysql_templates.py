@@ -16,6 +16,15 @@ def qualify(database, name):
     return f"{quote(database)}.{quote(name)}"
 
 
+def demo_read_grants(working, foreign):
+    schemas = [*working, *(prefix + "_%" for prefix, readable in foreign if readable)]
+    return [
+        ("SELECT", "megasamples.datasets"),
+        ("SELECT", "megasamples.copy_service"),
+        *(("SELECT, SHOW VIEW", quote(name.replace("_", r"\_")) + ".*") for name in schemas),
+    ]
+
+
 def definition(sql, source, target, remove_definer):
     if remove_definer:
         sql = DEFINER.sub(r"\1", sql, count=1)

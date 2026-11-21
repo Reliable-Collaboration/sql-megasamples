@@ -6,7 +6,7 @@ from pathlib import Path
 import sys
 
 from mysqlsh import globals as mysqlsh
-from mysql_templates import create_schema, qualify, quote, replay
+from mysql_templates import create_schema, demo_read_grants, qualify, quote, replay
 
 
 def run(sql, parameters=()):
@@ -129,9 +129,6 @@ def grant_rights(settings):
     run("INSERT INTO megasamples.copy_service VALUES ('megasamples-service/1')")
     run("CREATE TABLE megasamples.copy_namespaces "
         "(prefix varchar(16) PRIMARY KEY, owner varchar(16) NOT NULL, max_copies integer NOT NULL)")
-    run("REVOKE SELECT, SHOW VIEW ON *.* FROM 'demo'@'%'")
-    run("GRANT SELECT ON megasamples.datasets TO 'demo'@'%'")
-    run("GRANT SELECT ON megasamples.copy_service TO 'demo'@'%'")
     working = [row[0] for row in query("SELECT name FROM megasamples.datasets")]
     templates = [row[0] + "_start" for row in query("SELECT name FROM megasamples.template_ddl WHERE reason IS NULL")]
 
@@ -139,9 +136,8 @@ def grant_rights(settings):
         for schema in schemas:
             run(f"GRANT {privileges} ON {quote(schema)}.* TO {grantee}")
 
-    grant("SELECT, SHOW VIEW", map(escaped_pattern, working), "'demo'@'%'")
-    grant("SELECT, SHOW VIEW", (escaped_pattern(prefix) + "\\_%" for prefix, enabled in settings["foreign"] if enabled),
-          "'demo'@'%'")
+    for privileges, scope in demo_read_grants(working, settings["foreign"]):
+        run(f"GRANT {privileges} ON {scope} TO 'demo'@'%'")
 
     for prefix, owner, limit in settings["namespaces"]:
         principal = account(owner)

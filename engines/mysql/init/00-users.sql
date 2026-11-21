@@ -16,7 +16,6 @@ GRANT ALL PRIVILEGES ON *.* TO 'admin'@'%' WITH GRANT OPTION;
 
 -- read-only demo account: SELECT and SHOW VIEW everywhere, no write privilege anywhere.
 CREATE USER IF NOT EXISTS 'demo'@'%'  IDENTIFIED BY 'demo';
-GRANT SELECT, SHOW VIEW ON *.* TO 'demo'@'%';
 
 -- provenance registry; megasamples/registry.py regenerates 10-registry.sql with the real rows.
 CREATE DATABASE IF NOT EXISTS megasamples;
