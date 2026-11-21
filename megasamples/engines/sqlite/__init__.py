@@ -16,6 +16,9 @@ from megasamples.engines.mysql import server as mysql
 from megasamples.engines.sqlite import image_test as tester, port
 from megasamples.paths import ROOT, engine_build_dir, engine_dir, rel
 from megasamples import container_engine
+from megasamples.config import load as load_config
+from megasamples.copy_config import CopySettings
+from megasamples.sqlite_templates import stage_templates
 
 
 class SQLite(Engine):
@@ -39,6 +42,7 @@ class SQLite(Engine):
         return verifier.verify(dataset, stages, engine=self.name, pin=pin)
 
     def image_build(self, datasets, keep=False, threads=4, from_dumps=False):
+        settings = CopySettings(load_config(), self.name, datasets)
         context = os.path.join(engine_build_dir(self.name), "image")
         shutil.rmtree(context, ignore_errors=True)
         os.makedirs(os.path.join(context, "data"))
@@ -48,6 +52,7 @@ class SQLite(Engine):
                 sys.exit(f"no SQLite port of `{database}` at {rel(src)}; run: make build ENGINE=sqlite D=<dataset>")
             os.link(src, os.path.join(context, "data", f"{database}.sqlite"))
         port.write_registry(os.path.join(context, "data", "megasamples.sqlite"), datasets)
+        stage_templates(context, settings)
         cmd = ["docker", "build", "-f", os.path.join(engine_dir(self.name), "Dockerfile"), "-t", self.image, ROOT]
         print(f"  . docker build -t {self.image} ({len(datasets)} datasets from {rel(context)})")
         if subprocess.run(cmd, cwd=ROOT, env=container_engine.build_env()).returncode != 0:

@@ -15,6 +15,7 @@ COMMANDS = {
     "up":           ("megasamples.job", "up", "regenerate the landing page and start the stack"),
     "down":         ("megasamples.job", "down", "stop the stack"),
     "reset":        ("megasamples.reset", "main", "put databases back as the images ship them: all, engines, or engine:dataset pairs"),
+    "copy":         ("megasamples.copying", "main", "create and manage leased copies of templates"),
     "status":       ("megasamples.workspace", "main_status", "what is running: the stack, and any transient container"),
     "clean":        ("megasamples.workspace", "main_clean", "remove the transient containers (--all: the stack too)"),
     # the pipeline

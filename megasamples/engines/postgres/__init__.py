@@ -18,6 +18,8 @@ from megasamples.engines.postgres import image_test as tester, port, server
 from megasamples.paths import ROOT, engine_build_dir, engine_dir, rel
 from megasamples import container_engine, config as stack
 from megasamples.credentials import client
+from megasamples.copy_config import CopySettings
+from megasamples.postgres_templates import stage_roles
 
 
 class Postgres(Engine):
@@ -45,6 +47,7 @@ class Postgres(Engine):
 
     def image_build(self, datasets, keep=False, threads=4, from_dumps=False):
         from megasamples.engines.mysql import link_tree
+        settings = CopySettings(stack.load(), self.name, datasets)
         context = os.path.join(engine_build_dir(self.name), "image")
         shutil.rmtree(context, ignore_errors=True)
         os.makedirs(context)
@@ -55,6 +58,9 @@ class Postgres(Engine):
             link_tree(src, os.path.join(context, s))
         with open(os.path.join(context, "registry.sql"), "w", encoding="utf-8") as fh:
             fh.write(registry.render(datasets, os.environ.get("MEGASAMPLES_BUILD_ID", "dev"), "postgres", "postgres"))
+        with open(os.path.join(context, "templates.list"), "w", encoding="utf-8") as fh:
+            fh.writelines(name + "\n" for name in settings.templates)
+        stage_roles(context, settings)
         cmd = ["docker", "build", "-f", os.path.join(engine_dir(self.name), "Dockerfile"), "-t", self.image, ROOT]
         print(f"  . docker build -t {self.image} ({len(datasets)} datasets from {rel(context)})")
         if subprocess.run(cmd, cwd=ROOT, env=container_engine.build_env()).returncode != 0:

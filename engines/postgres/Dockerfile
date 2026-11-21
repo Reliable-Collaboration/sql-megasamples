@@ -80,10 +80,13 @@ while IFS= read -r db; do
 done < <(psql -At -c 'SELECT datname FROM pg_database ORDER BY datname' postgres)
 psql -v ON_ERROR_STOP=1 -q -c 'ALTER DATABASE template0 ALLOW_CONNECTIONS false' postgres
 printf "shared_preload_libraries = 'read_policy'\n" >> "$PGDATA/postgresql.conf"
+if [ -f /build/databases/copy-roles.sql ]; then
+    psql -v ON_ERROR_STOP=1 -q -f /build/databases/copy-roles.sql megasamples
+fi
 pg_ctl -w -m fast stop >/dev/null
 SH
 # Keep the packaging pass separate so changing it does not invalidate the bulk-load cache.
-COPY engines/postgres/init/99-trim-wal.sql /build/init/99-trim-wal.sql
+COPY engines/postgres/init/30-template-grants.sql engines/postgres/init/40-register-template.sql engines/postgres/init/99-trim-wal.sql /build/init/
 RUN <<'SH'
 #!/bin/bash
 set -euo pipefail
@@ -92,6 +95,14 @@ export PGDATA
 # private restart with a small WAL budget lets CHECKPOINT remove unneeded segments; no WAL files
 # are deleted by hand, and command-line settings leave the shipped configuration unchanged.
 pg_ctl -w -o "-c listen_addresses='' -c max_wal_size=64MB -c min_wal_size=32MB -c wal_level=minimal -c max_wal_senders=0" start >/dev/null
+if [ -f /build/databases/templates.list ]; then
+    while IFS= read -r name; do
+        psql -v ON_ERROR_STOP=1 -q -f /build/init/30-template-grants.sql "$name"
+        psql -v ON_ERROR_STOP=1 -v working="$name" -v template="${name}_start" -q \
+            -f /build/init/40-register-template.sql megasamples
+        psql -v ON_ERROR_STOP=1 -q -f /build/init/20-grants.sql "$name"
+    done < /build/databases/templates.list
+fi
 psql -v ON_ERROR_STOP=1 -q -f /build/init/99-trim-wal.sql postgres
 pg_ctl -w -m fast stop >/dev/null
 SH

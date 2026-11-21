@@ -225,9 +225,9 @@ Otherwise exit 5, and nothing was changed.
 - **It is frozen before it is closed:** `VACUUM (FREEZE, ANALYZE)` in the image build. [D]
 
 **How the image makes it.** [D]
-1. The dataset is loaded into `<database>_start`, as `admin`, as today (`SM:engines/postgres/Dockerfile:43-53`).
+1. The private builder loads the dataset under its working name, as `admin`. This reuses the loader for databases with and without a template.
 2. The read grants of 4.1 and the read profile are applied there. **No write grant to any group is.**
-3. It is frozen, given to `postgres`, registered and closed.
+3. The builder freezes the selected database, then renames it to `<database>_start`, gives it to `postgres`, registers it and closes it before the image is published.
 4. The working copy is made from it, and given its own grants (4.1).
 5. A database with no template is loaded straight into `<database>`, as today, with the same grants.
 
@@ -238,7 +238,7 @@ Otherwise exit 5, and nothing was changed.
 - **Its owner is the one ordinary account that can write it** (4.1). [G-23]
 - **What it carries from its template** is 4.1's, each a gate of its own. [G-2a to G-2d]
 
-**A drop** is a plain `DROP DATABASE`, never with force [G-8b]. With `--wait` it is tried again until the wait ends. A drop that gives up has changed nothing.
+**A drop** is a plain `DROP DATABASE`, never with force [G-8b]. With `--wait` a refusal is retried within the wait budget. If the engine reports the database is in use, the CLI checks the proof again and can restore a previously ready record. The target data and sessions are preserved. The ledger's revision advances for the durable dropping and ready writes. The namespace owner needs no access to the activity view for this route.
 
 ### 2.4 MySQL
 
