@@ -136,8 +136,8 @@ mysql -h 127.0.0.1 -P 3306 -u demo -p sakila
 docker compose up -d mysql        # the database alone, no consoles
 ```
 
-A `megasamples` database inside the image holds the provenance registry: one row per dataset with
-its tier, knowledge record, licences, source artifacts and digests, and pinned row counts. The
+A `megasamples` database inside the image holds the provenance registry: one row per database (an
+`append: true` dataset joins its base's row) with its tier, knowledge record, licences, source artifacts and digests, and pinned row counts. The
 catalogue, the landing page and the image tests all read it, so none can drift from what was baked.
 
 ### PostgreSQL

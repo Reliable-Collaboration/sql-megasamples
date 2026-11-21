@@ -82,13 +82,15 @@ MY_DATABASES = MY_SELECTED + ['megasamples']
 
 
 def selection_matches(names, datasets):
-    """Whether the registry's names (one per database) are the configured datasets' databases."""
-    return sorted(names) == sorted(datasets)
+    """Whether the registry's names (one per database) are the configured datasets' databases: an append
+    dataset shares its base's database and row, so the comparison is per database (Sol and Opus round 12)."""
+    return sorted(names) == sorted(unique_databases(datasets))
 
 
 # Sol round 11, 7: the checks follow the target's own dataset selection. The checkout's configuration must
-# name exactly the datasets the checked image carries (its registry), and dataset-specific cases run only
-# where the selection holds their dataset.
+# name the databases the checked image carries (its registry, one row per database), and dataset-specific
+# cases run only where the selection holds their dataset. Whether an append dataset's tables are present is
+# not something the registry's names show.
 @pytest.mark.parametrize('engine', ['postgres', 'mysql'])
 def test_target_carries_the_configured_selection(engine):
     if engine not in TARGETS:
