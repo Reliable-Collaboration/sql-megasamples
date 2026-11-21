@@ -61,7 +61,11 @@ class PolicyStartupTests(unittest.TestCase):
                                                        check=False).returncode, 0, "the override started")
                             time.sleep(0.1)
                         logs = podman("logs", probe)
-                        self.assertIn("refuses a data directory other than PGDATA", logs.stdout + logs.stderr)
+                        # postgres has no --pgdata option; asked for its configuration it refuses that
+                        # argument, so the wrapper refuses it unread. Either refusal is the outcome.
+                        self.assertTrue(any(message in logs.stdout + logs.stderr for message in (
+                            "refuses a data directory other than PGDATA",
+                            "could not read the server configuration")), logs.stdout + logs.stderr)
                         self.assertNotIn("ready to accept connections", logs.stdout + logs.stderr)
                     finally:
                         podman("rm", "-f", probe, check=False)
