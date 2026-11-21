@@ -37,6 +37,29 @@ class PolicyStartupTests(unittest.TestCase):
             else:
                 self.fail("pre-policy image did not start")
             podman("stop", name + "-seed")
+            # sol round 2, P2-2: the marker must certify the directory the server opens.
+            retained = name + ":/retained"
+            for index, override in enumerate((["-D", "/retained/18/docker"], ["-D/retained/18/docker"],
+                                              ["--pgdata=/retained/18/docker"],
+                                              ["-c", "data_directory=/retained/18/docker"],
+                                              ["--data-directory=/retained/18/docker"])):
+                with self.subTest(override=override):
+                    capacity()
+                    probe = f"{name}-override{index}"
+                    podman("run", "-d", "--name", probe, "--network", "none", "--memory", "1g",
+                           "-v", retained, os.environ["DL077_PG_POLICY_IMAGE"], "postgres", *override)
+                    try:
+                        for _ in range(100):
+                            if podman("inspect", "--format", "{{.State.Status}}", probe).stdout.strip() == "exited":
+                                break
+                            self.assertNotEqual(podman("exec", probe, "pg_isready", "-U", "postgres",
+                                                       check=False).returncode, 0, "the override started")
+                            time.sleep(0.1)
+                        logs = podman("logs", probe)
+                        self.assertIn("refuses a data directory other than PGDATA", logs.stdout + logs.stderr)
+                        self.assertNotIn("ready to accept connections", logs.stdout + logs.stderr)
+                    finally:
+                        podman("rm", "-f", probe, check=False)
             capacity()
             podman("run", "-d", "--name", name, "--network", "none", "--memory", "1g",
                    "-v", mount, os.environ["DL077_PG_POLICY_IMAGE"], "postgres")
