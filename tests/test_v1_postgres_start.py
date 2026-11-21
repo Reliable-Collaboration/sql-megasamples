@@ -134,6 +134,11 @@ class PolicyStartupTests(unittest.TestCase):
                            user="copier", database="megasamples")
             self.assertNotEqual(outside.returncode, 0)
             self.assertIn("namespace", outside.stderr)
+            # The positive control (Sol round 7, P3-8): a create of the namespace's own form succeeds.
+            inside = psql(probes[-1], "CREATE DATABASE copy_chinook_0123456789ab TEMPLATE chinook_start",
+                          user="copier", database="megasamples")
+            self.assertEqual(inside.returncode, 0, inside.stderr)
+            self.assertEqual(psql(probes[-1], "DROP DATABASE copy_chinook_0123456789ab").returncode, 0)
             # ALTER SYSTEM persists in the volume; the next start must refuse it.
             self.assertEqual(psql(probes[-1], "ALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements'").returncode, 0)
             podman("stop", probes[-1])
@@ -176,26 +181,45 @@ class PolicyStartupTests(unittest.TestCase):
         def psql(probe, sql, user="postgres", database="postgres"):
             return podman("exec", probe, "psql", "-XqAt", "-U", user, "-d", database, "-c", sql, check=False)
 
-        def tcp_key_accepted(probe, key="r4-synthetic-key"):
+        def tcp_key(probe, key="r4-synthetic-key"):
             # Password-authenticated TCP. The image trusts its own loopback, so the probe connects to the
             # container's network address, where pg_hba requires scram-sha-256; the key reaches psql
             # through the podman call's environment.
-            result = podman("exec", "-e", "PGPASSWORD", probe, "sh", "-c",
-                            'psql -XqAt -w -h "$(hostname -i | cut -d" " -f1)" -U postgres -d postgres -c "SELECT 1"',
-                            check=False, env={**os.environ, "PGPASSWORD": key})
-            return result.returncode == 0
+            return podman("exec", "-e", "PGPASSWORD", probe, "sh", "-c",
+                          'psql -XqAt -w -h "$(hostname -i | cut -d" " -f1)" -U postgres -d postgres -c "SELECT 1"',
+                          check=False, env={**os.environ, "PGPASSWORD": key})
+
+        def tcp_key_accepted(probe, key="r4-synthetic-key"):
+            result = tcp_key(probe, key)
+            return result.returncode == 0 and result.stdout.strip() == "1"
+
+        def tcp_key_refused(probe, key):
+            # A refusal for the stated reason: scram rejected this key, not a failed exec or connection.
+            result = tcp_key(probe, key)
+            return result.returncode == 2 and "password authentication failed" in result.stderr
+
+        def namespace_enforced(probe):
+            # Opus round 3, 1 and Sol round 7, P3-8: the owner's out-of-namespace create is refused for
+            # its namespace, and a create of the namespace's own form succeeds, as a positive control.
+            outside = psql(probe, "CREATE DATABASE outside_namespace TEMPLATE chinook_start", "copier", "megasamples")
+            inside = psql(probe, "CREATE DATABASE copy_chinook_0123456789ab TEMPLATE chinook_start", "copier",
+                          "megasamples")
+            if inside.returncode == 0:
+                psql(probe, "DROP DATABASE copy_chinook_0123456789ab")
+            return outside.returncode != 0 and "namespace" in outside.stderr and inside.returncode == 0
 
         # Round 6 (Sol P2-6, Opus 1): a case whose outcome is a credential gets a volume of its own, so
         # an earlier case's password change cannot satisfy it.
-        volumes = [name, name + "-nonroot", name + "-path"]
-        for volume in volumes:
-            podman("volume", "create", volume)
-        probes = []
+        volumes, probes = [], []
         try:
-            # Opus P3-1, reconciled by test: as a non-root user the image fails closed before any start
-            # (its health passfile is root's to write), so no override is silently skipped there.
-            # The private password start can answer on its local socket for a moment first (Sol round 5,
-            # P3-7, a workstream 1 input), so the outcome asserted is the container's exit, not readiness.
+            # Sol round 7, P3-9: every resource is created inside the cleanup scope, and tracked.
+            for volume in (name, name + "-nonroot", name + "-path"):
+                podman("volume", "create", volume)
+                volumes.append(volume)
+            # Opus P3-1, reconciled by test: as a non-root user the image exits before the public server
+            # starts, because its health passfile is root's to write. With an override set, the private
+            # password start runs first and applies it (Sol round 5, P3-7, a workstream 1 input), so the
+            # outcome asserted is the container's exit and what it left behind, not readiness.
             nonroot = name + "-nonroot:/var/lib/postgresql"
             probes.append(name + "-nonroot")
             capacity()
@@ -209,11 +233,14 @@ class PolicyStartupTests(unittest.TestCase):
             self.assertNotEqual(podman("inspect", "--format", "{{.State.ExitCode}}", probes[-1]).stdout.strip(), "0")
             # What it leaves behind, pinned until workstream 1 decides: nothing listened on TCP, and the
             # private start had already applied the override before the exit.
-            self.assertNotIn("listening on IPv4", logs(probes[-1]))
+            # The private server's log goes to /dev/null, so these lines witness the public server only.
+            self.assertNotIn("listening on IPv4", logs(probes[-1]), "a public server listened on IPv4")
+            self.assertNotIn("listening on IPv6", logs(probes[-1]), "a public server listened on IPv6")
             probes.append(name + "-nonroot-after")
             self.assertTrue(start(probes[-1], "postgres", volume=nonroot))
-            self.assertTrue(tcp_key_accepted(probes[-1]), "the non-root start's key state changed")
-            self.assertFalse(tcp_key_accepted(probes[-1], "root"))
+            self.assertTrue(tcp_key_accepted(probes[-1]), "the non-root start had not applied the override")
+            self.assertTrue(tcp_key_refused(probes[-1], "root"), "the probe did not reach scram authentication")
+            podman("stop", probes[-1])
             # The path form as root is the server named by its path: on a volume of its own, it starts with
             # the override applied and the image's default key refused.
             probes.append(name + "-path")
@@ -221,7 +248,8 @@ class PolicyStartupTests(unittest.TestCase):
                                   options=("--env-file", str(secret)), volume=name + "-path:/var/lib/postgresql"),
                             logs(probes[-1])[-300:])
             self.assertTrue(tcp_key_accepted(probes[-1]), "the path form skipped the password override")
-            self.assertFalse(tcp_key_accepted(probes[-1], "root"), "the path form left the default key working")
+            # Under scram a role has one key: this witnesses the probe reaching scram, not a second key.
+            self.assertTrue(tcp_key_refused(probes[-1], "root"), "the probe did not reach scram authentication")
             # Sol P3-7: a quoted preload entry is refused rather than split on its commas.
             probes.append(name + "-quoted")
             podman("stop", probes[-2])
@@ -240,8 +268,7 @@ class PolicyStartupTests(unittest.TestCase):
             # Without password overrides there is no private start, and the public one has the hook.
             probes.append(name + "-public")
             self.assertTrue(start(probes[-1], "postgres", "-c", "shared_preload_libraries=read_policy"))
-            outside = psql(probes[-1], "CREATE DATABASE outside_namespace TEMPLATE chinook_start", "copier", "megasamples")
-            self.assertNotEqual(outside.returncode, 0)
+            self.assertTrue(namespace_enforced(probes[-1]), "the public start lacks the namespace hook")
             self.assertEqual(psql(probes[-1], "ALTER SYSTEM RESET shared_preload_libraries").returncode, 0)
             podman("stop", probes[-1])
             # Opus P3-4: files the upstream image would repair are repaired before the check.
@@ -250,6 +277,7 @@ class PolicyStartupTests(unittest.TestCase):
             probes.append(name + "-owned")
             self.assertTrue(start(probes[-1], "postgres"), logs(probes[-1])[-400:])
         finally:
-            podman("rm", "-f", *probes, check=False)
-            podman("volume", "rm", *volumes, check=False)
+            removed = [podman("rm", "-f", "--ignore", *probes, check=False).returncode if probes else 0,
+                       podman("volume", "rm", *volumes, check=False).returncode if volumes else 0]
             secret.unlink()
+            self.assertEqual(removed, [0, 0], "teardown left task containers or volumes")

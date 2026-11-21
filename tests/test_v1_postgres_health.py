@@ -42,11 +42,11 @@ class HealthPlaceholderTests(unittest.TestCase):
                                   check=check, input=stdin)
 
         capacity()
-        # The wrapper bypassed and the library not loaded: the route the in-depth check exists for.
-        podman("run", "-d", "--name", name, "--network", "none", "--memory", "1g", "--entrypoint",
-               "docker-entrypoint.sh", os.environ["DL077_PG_POLICY_IMAGE"], "postgres", "-c",
-               "shared_preload_libraries=")
         try:
+            # The wrapper bypassed and the library not loaded: the route the in-depth check exists for.
+            podman("run", "-d", "--name", name, "--network", "none", "--memory", "1g", "--entrypoint",
+                   "docker-entrypoint.sh", os.environ["DL077_PG_POLICY_IMAGE"], "postgres", "-c",
+                   "shared_preload_libraries=")
             for _ in range(150):
                 if podman("exec", name, "pg_isready", "-U", "postgres", check=False).returncode == 0:
                     break
@@ -57,7 +57,9 @@ class HealthPlaceholderTests(unittest.TestCase):
                    stdin="*:*:*:demo:demo\n")
             self.assertNotEqual(podman("exec", name, "sh", "-c", probe()[1], check=False).returncode, 0)
         finally:
-            podman("rm", "-fv", name, check=False)   # its anonymous data volume too (Sol round 6, P3-10)
+            # Its anonymous data volume too (Sol round 6, P3-10); a failed removal fails the test (round 7, P3-9).
+            removed = podman("rm", "-fv", "--ignore", name, check=False)
+            self.assertIn(removed.returncode, (0,), removed.stderr)
 
     def test_a_healthy_probe_raises_no_server_error(self):
         """Round 5: the probe on a healthy server leaves no ERROR in the server's log."""
@@ -69,9 +71,9 @@ class HealthPlaceholderTests(unittest.TestCase):
             return subprocess.run(target.podman_args(*args), capture_output=True, text=True, timeout=90, check=check)
 
         capacity()
-        podman("run", "-d", "--name", name, "--network", "none", "--memory", "1g",
-               os.environ["DL077_PG_POLICY_IMAGE"], "postgres")
         try:
+            podman("run", "-d", "--name", name, "--network", "none", "--memory", "1g",
+                   os.environ["DL077_PG_POLICY_IMAGE"], "postgres")
             for _ in range(150):
                 if podman("exec", name, "pg_isready", "-U", "postgres", check=False).returncode == 0:
                     break
@@ -95,4 +97,6 @@ class HealthPlaceholderTests(unittest.TestCase):
                                  "'pg_catalog.megasamples_policy_loaded()', 'EXECUTE')")
                 self.assertEqual(allowed.stdout.strip(), "demo,postgres", database)
         finally:
-            podman("rm", "-fv", name, check=False)   # its anonymous data volume too (Sol round 6, P3-10)
+            # Its anonymous data volume too (Sol round 6, P3-10); a failed removal fails the test (round 7, P3-9).
+            removed = podman("rm", "-fv", "--ignore", name, check=False)
+            self.assertIn(removed.returncode, (0,), removed.stderr)
