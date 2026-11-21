@@ -92,16 +92,24 @@ For example:
 **Owner decisions in this brief:** questions 1, 2, 6, 7, 8 and 9.
 
 1. Is the private password start kept at all, or are passwords applied another way (for example by the public server's first boot, before it listens)? **Owner decision:** it changes when a credential takes effect.
+   - **Answered, DL-122 Q1:** Keep the private password start, made exact. With overrides set, an argument that would move the socket or data directory is refused before any launch.
 2. Are non-root starts supported (move the health passfile), or refused before any launch? **Owner decision:** it is a supported-deployment question.
+   - **Answered, DL-122 Q2:** Non-root starts are refused before any launch, as the wrapper's first check; the README says platforms that force a non-root user are unsupported in version 1.
 3. Does the private start take the public launch's arguments verbatim, with an image-chosen socket directory, or is any argument that changes sockets or data refused when overrides are set?
 4. Which unchecked routes are stated, and which are refused because they are detectable? A wrapping command whose argv contains this image's postgres could be refused.
 5. Is the `PG_VERSION`-missing path (upstream `initdb`) refused explicitly?
 6. What exactly does the one-line refusal say for each rule, and is it a stable code a supervisor can match? **Owner decision** once it is a supervisor-facing contract (Sol round 6, P2-5).
+   - **Answered, DL-122 Q3:** Each start refusal carries a stable code in its line, exit 1 kept. Tokens are fixed at the freeze; additions are allowed; a matcher treats an unknown code as a refusal.
 7. **Owner decision, an on-disk format:** how the read-policy marker and the extension's version are bumped and migrated for retained volumes. Today the marker stays `1` while the version-1 script changed in round 5, so a volume from an earlier build certifies and then fails every probe (Opus round 6, 4; P3-2).
+   - **Answered, DL-122 Q4:** Bump the marker and the extension to 2 before the freeze, and both on any later script or grant change. Before either server starts, refuse any marker but the image's exact own (newer, older or unrecognised), keep the volume, and name the upgrade route. A test pins a digest of the extension script and its grants to the marker and version.
 8. **Owner decision:** whether the image carries its own `HEALTHCHECK`, so a hand-run container has the signal too (Opus round 6, 4; Sol round 6, P3-9).
+   - **Answered, DL-122 Q5:** The PostgreSQL image carries its own HEALTHCHECK, from one source shared with Compose; a test checks it survives the Podman build format; the README notes orchestrators that ignore it.
 9. **Owner decision:** what a failed start may leave behind. That is the keys in force after a failure that follows a password change, each role's key and the health passfile after each failure, a change whose reply was lost, and whether such a failure must roll the change back (Sol round 6, P2-5; Sol round 7, 1).
+   - **Answered, DL-122 Q6:** Applied keys stay as applied. The log reports each requested role, by name only, as confirmed applied, confirmed refusal, unattempted or uncertain. A stale or partial health passfile is never usable after a failure. A retry with the same keys converges.
 10. Is a later preload library that replaces the utility hook without chaining detectable (for example, the report checks that the hook is still installed), or is it a stated limit?
 11. Is a library reached through `dynamic_library_path` detected by the report? Opus's reading says it is, because the call loads `$libdir/read_policy` and answers false. That must be confirmed by test, and then moved from stated to detected.
+
+**Also recorded in DL-122:** WS1 states which refusal appears first when both the marker and slice 3's build identity mismatch (one message per cause); whether the MySQL image gets the same `HEALTHCHECK`, or the README states the difference; and the contract at merge to `main` (the refusal codes, the format pair) recorded with consumer impact notes, conformance tests and the unknown-value rule.
 
 ## Test plan
 

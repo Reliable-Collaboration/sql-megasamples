@@ -57,6 +57,7 @@ The outcomes to decide are to run or stop, and where the stop is raised.
 2. Should the library driver connect through `docker exec` port forwarding tied to the ID, instead of a published host port?
 3. Does `docs/validation/strict_read_clients.py`, a validation tool, take the same binding, or is it retired in favour of the suite's own client?
 4. **Owner decision, security posture:** may the suite authenticate, with the fixture's credentials, to a listener it has not yet proved to be the checked instance? Proving the marker needs a connection first (Sol round 6, P2-8).
+   - **Answered, DL-122 Q12:** No authenticating to an unproven listener: every native-suite connection is bound to the checked container ID before authentication. Without such a transport for a driver, its cases are Not run before any credential is sent, and the question returns to the deciders.
 5. **Scope:** the H-3 probe (`tests/gates/dl077_h3_interrupts.py`) binds through `tests/gates/native.py`'s manifest and exec-by-ID only, and opens no TCP connection. It is in scope for the store and owner rules (N1, N2), not for N3. The other `tests/gates` launchers are out of scope unless they gain a TCP client.
 
 ## Test plan

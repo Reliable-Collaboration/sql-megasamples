@@ -62,8 +62,11 @@ The outcomes to decide are `complete` with these warnings, or `incomplete` with 
 1. How is the instance pinned? By container ID, with a check that the ID still runs after the last read, or with an in-container marker the scan reads first and last?
 2. Is the listing done by one script that reports each location's own status, so that Python credits only what was positively listed?
 3. Should `reset --status` exit non-zero when the scan is `incomplete`? It is 0 today, per design 3.5a. **Owner decision:** it is a contract for supervisors.
+   - **Answered, DL-122 Q7:** Exit 0 on an incomplete scan, with an opt-in --fail-on-incomplete that exits 5 with reason orphan-scan-incomplete. The JSON is identical with or without it; a complete scan with orphans exits 0.
 4. **Owner decision:** does `up` ever block or fail on an incomplete scan, or only warn? Are partial warnings shown when incomplete? It only warns today, and an incomplete scan shows no directory.
+   - **Answered, DL-122 Q8:** up warns only. An orphan is shown under incomplete only when its location was listed and matched against a catalog read from the same pinned instance; otherwise the banner with its reason and no directories. reset --status follows the same rule, and 3.5a is amended.
 5. **Owner decision:** is an invalid database (an interrupted drop) reported, and how: as its own warning code, as an orphan, or not at all? It is the drop-side twin of DL-119's create window.
+   - **Answered, DL-122 Q9:** Its own invalid-database warning. For a managed copy the route is copy drop again; raw DROP DATABASE is for an unmanaged database only.
 6. How does a restart under the same container ID get detected? By the postmaster start time (`pg_postmaster_start_time()`) read first and last, or by the container's start time?
 
 ## Test plan

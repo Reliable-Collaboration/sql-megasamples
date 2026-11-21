@@ -83,10 +83,13 @@ The outcomes to decide are the exit, this copy's list and reason, and the result
 
 1. Is there one shared removal state machine, with engine adapters for steps 4 to 8, rather than three hand-written `remove()` functions?
 2. What is the result field for an unsettled cleanup step? `ledger: unsettled` today. Should it name the step (sidecar, retained link, sync)? **Owner decision:** it is an interface field before freeze.
+   - **Answered, DL-122 Q10:** One always-present unsettled list with a documented vocabulary (ledger, sidecar, link, sync, lock); ledger agrees with it; an unknown step name is treated as unsettled.
 3. After a lost connection on unlock, is 8 `connection-lost` right when the copy was fully removed, or should the copy be listed removed with `lock: unsettled`?
 4. Is SQLite's directory sync failure "removed" or "unsettled"?
 5. **Owner decision:** is there a third per-copy outcome (unknown, or partly removed), and a list for the copies a stopped sweep never reached? Today R1's "exactly once" does not hold for them: they are in no list.
+   - **Answered, DL-122 Q11:** Two new lists, unknown and unreached, always present. Exit codes and the meanings of removed and kept unchanged. An unknown entry carries its recovery identity.
 6. A `not-exclusive` copy aborts a real sweep with exit 5 before any write. Should the sweep skip it and continue instead?
+   - **Recorded in DL-122:** it still aborts the sweep, exit 5 before any write. And for fact E, a copy whose change lock is contended stays `kept` with its reason, keeping the lock's semantics.
 
 ## Test plan
 

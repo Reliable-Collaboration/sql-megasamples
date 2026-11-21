@@ -4,7 +4,7 @@ This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.Data
 
 ## Stop count
 
-**2 of 2: the loop is closed** (rounds 13 and 14). Round 14 had no P1 or P2, so it counts clean, the coordinator's decision, and the slice 1 and 2 review loop ends here. Its P3s were applied as one set, which WS1's first review round also reviews. Next: the owner questions go to the two deciders (`docs/design/dl077-v1-owner-questions.md`); the workstreams start after their answers, one at a time.
+**2 of 2: the loop is closed** (rounds 13 and 14). Round 14 had no P1 or P2, so it counts clean, the coordinator's decision, and the slice 1 and 2 review loop ends here. Its P3s were applied as one set, which WS1's first review round also reviews. The owner questions were answered by DL-122. The workstreams now run one at a time, in the coordinator's order: WS1, WS4, WS2, WS3, WS5. Each is designed from its brief and DL-122, reviewed as a design by Sol and Opus, built test-first, and reviewed to two clean rounds.
 
 Round 13 counted clean, the coordinator's decision: its one P2 (Sol P2-1) is in WS4's area, a WS4 input with no stopgap, and nothing else was fix-now outside the five areas. Round 12 had found a P2 (Sol) and kept the count at 0. Round 11 had found a P2 (both reviewers). Round 10 had found two P2s, fix-now, and returned it to 0, the coordinator's decision. Round 9 had counted clean (1 of 2); rounds 6, 7 and 8 had kept it at 0. The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
 
@@ -122,24 +122,26 @@ The orphan, start, MySQL-off image and native runs were first refused for memory
 
 **Reopens with:** a supported caller acting on the scan's `complete` without the README's route, or a native run against a store that holds a non-disposable target.
 
-## Owner questions, for the two deciders (DL-104) once the briefs pass review
+## Owner questions, for the two deciders (DL-104): answered by DL-122
+
+The two deciders answered all fourteen in **DL-122** (RCC.DataIntent `docs/work/decision-log.md`, 2026-11-21), on the options paper `docs/design/dl077-v1-owner-questions.md`. They differ from its recommendations on Q4 (bump to 2 now, refuse any marker but the image's own, a digest guard), Q6 (four per-role states), Q7 (exit 5, `orphan-scan-incomplete`), Q8 (narrowed to same-instance, catalog-matched findings, 3.5a amended) and Q14 (removal by observed full container ID). Each brief's question carries its answer. Also recorded: console volumes to be established; the runbook's `make down` wording is DataIntent's; the contract at merge with impact notes and conformance tests; one message per cause; WS3's contended copy stays `kept` and `not-exclusive` still aborts; the MySQL image's healthcheck to be decided by WS1.
 
 | # | Workstream | Question |
 |---|---|---|
-| 1 | WS1 | Is the private password start kept, or are passwords applied another way? It changes when a credential takes effect. |
-| 2 | WS1 | Are non-root starts supported (move the health passfile), or refused before any launch? |
-| 3 | WS1 | Is each start refusal's one-line message a stable, supervisor-facing code? |
-| 4 | WS1 | **On-disk format:** how are the read-policy marker and the extension's version bumped and migrated for retained volumes? |
-| 5 | WS1 | Does the image carry its own `HEALTHCHECK`, so a hand-run container has the signal? |
-| 6 | WS1 | What may a failed start leave behind after a password change, and must it roll the change back? |
-| 7 | WS2 | Does `reset --status` exit non-zero when the scan is incomplete? |
-| 8 | WS2 | Does `up` block or fail on an incomplete scan, and are partial warnings shown? |
-| 9 | WS2 | Is an invalid database (an interrupted drop) reported, and how? |
-| 10 | WS3 | What is the result field for an unsettled cleanup step: `ledger: unsettled`, or one that names the step? |
-| 11 | WS3 | Is there a third per-copy outcome (unknown or partial), and a list for the copies a stopped sweep never reached? Any change to a public exit or to `removed`/`kept`. |
-| 12 | WS4 | **Security posture:** may the suite authenticate to a listener it has not yet proved to be the checked instance? |
-| 13 | WS5 | **What a person sees, in the interim until slice 3** (which decides that `down` keeps named data volumes, [114-2F]): whether today's `make down` should warn or refuse before discarding changes; this does not reopen [114-2F] |
-| 14 | WS5 | **On a shared daemon:** what ownership evidence permits `status clean` to remove a container, and whether a pre-label name match (build, test and audit names) is listed with a hint or removed when its image is megasamples' own. Slice 3's U-5 does not decide it |
+| 1 | WS1 | Is the private password start kept, or are passwords applied another way? It changes when a credential takes effect. **DL-122:** Keep the private password start, made exact. With overrides set, an argument that would move the socket or data directory is refused before any launch. |
+| 2 | WS1 | Are non-root starts supported (move the health passfile), or refused before any launch? **DL-122:** Non-root starts are refused before any launch, as the wrapper's first check; the README says platforms that force a non-root user are unsupported in version 1. |
+| 3 | WS1 | Is each start refusal's one-line message a stable, supervisor-facing code? **DL-122:** Each start refusal carries a stable code in its line, exit 1 kept. Tokens are fixed at the freeze; additions are allowed; a matcher treats an unknown code as a refusal. |
+| 4 | WS1 | **On-disk format:** how are the read-policy marker and the extension's version bumped and migrated for retained volumes? **DL-122:** Bump the marker and the extension to 2 before the freeze, and both on any later script or grant change. Before either server starts, refuse any marker but the image's exact own (newer, older or unrecognised), keep the volume, and name the upgrade route. A test pins a digest of the extension script and its grants to the marker and version. |
+| 5 | WS1 | Does the image carry its own `HEALTHCHECK`, so a hand-run container has the signal? **DL-122:** The PostgreSQL image carries its own HEALTHCHECK, from one source shared with Compose; a test checks it survives the Podman build format; the README notes orchestrators that ignore it. |
+| 6 | WS1 | What may a failed start leave behind after a password change, and must it roll the change back? **DL-122:** Applied keys stay as applied. The log reports each requested role, by name only, as confirmed applied, confirmed refusal, unattempted or uncertain. A stale or partial health passfile is never usable after a failure. A retry with the same keys converges. |
+| 7 | WS2 | Does `reset --status` exit non-zero when the scan is incomplete? **DL-122:** Exit 0 on an incomplete scan, with an opt-in --fail-on-incomplete that exits 5 with reason orphan-scan-incomplete. The JSON is identical with or without it; a complete scan with orphans exits 0. |
+| 8 | WS2 | Does `up` block or fail on an incomplete scan, and are partial warnings shown? **DL-122:** up warns only. An orphan is shown under incomplete only when its location was listed and matched against a catalog read from the same pinned instance; otherwise the banner with its reason and no directories. reset --status follows the same rule, and 3.5a is amended. |
+| 9 | WS2 | Is an invalid database (an interrupted drop) reported, and how? **DL-122:** Its own invalid-database warning. For a managed copy the route is copy drop again; raw DROP DATABASE is for an unmanaged database only. |
+| 10 | WS3 | What is the result field for an unsettled cleanup step: `ledger: unsettled`, or one that names the step? **DL-122:** One always-present unsettled list with a documented vocabulary (ledger, sidecar, link, sync, lock); ledger agrees with it; an unknown step name is treated as unsettled. |
+| 11 | WS3 | Is there a third per-copy outcome (unknown or partial), and a list for the copies a stopped sweep never reached? Any change to a public exit or to `removed`/`kept`. **DL-122:** Two new lists, unknown and unreached, always present. Exit codes and the meanings of removed and kept unchanged. An unknown entry carries its recovery identity. |
+| 12 | WS4 | **Security posture:** may the suite authenticate to a listener it has not yet proved to be the checked instance? **DL-122:** No authenticating to an unproven listener: every native-suite connection is bound to the checked container ID before authentication. Without such a transport for a driver, its cases are Not run before any credential is sent, and the question returns to the deciders. |
+| 13 | WS5 | **What a person sees, in the interim until slice 3** (which decides that `down` keeps named data volumes, [114-2F]): whether today's `make down` should warn or refuse before discarding changes; this does not reopen [114-2F] **DL-122:** Before slice 3, make down states what it discards and prints one warning line before the discard. |
+| 14 | WS5 | **On a shared daemon:** what ownership evidence permits `status clean` to remove a container, and whether a pre-label name match (build, test and audit names) is listed with a hint or removed when its image is megasamples' own. Slice 3's U-5 does not decide it **DL-122:** status clean removes only labelled transients, by the observed full container ID. Name-only matches are listed with ID, image, creation time and a hint. --all follows the same rule. |
 
 ## Round 6's runs
 
