@@ -1,8 +1,8 @@
 # Workstream 1: PostgreSQL start certification, the design
 
-**Status: design, revision 15, for round 15 of the design review. No build yet.**
+**Status: design, revision 16, for round 16 of the design review. No build yet.**
 
-This document stands alone: one ordered check list (section 3), one current row table with an outcome rule per class (section 10.2), and the conformance replay and the brief's inputs inline. Section 13 traces rounds 5 to 14.
+This document stands alone: one ordered check list (section 3), one current row table with an outcome rule per class (section 10.2), and the conformance replay and the brief's inputs inline. Section 13 traces rounds 5 to 15.
 
 **The coordinator's decisions on the upgrade, applying DL-122 Q4:**
 - **Round 6:** the automated, grant-reconstructing restore was removed, in favour of a documented manual route. Round 6's P1 (both reviewers) was a confidentiality regression the restore introduced.
@@ -26,6 +26,7 @@ This document stands alone: one ordered check list (section 3), one current row 
 | 12 | revision 12, `218a6eae` | `sol-ws1-design12.md` (4 P2, 1 P3), `opus-ws1-design12.md` (1 P2, 3 P3) | 13.8 |
 | 13 | revision 13, `95a87498` | `sol-ws1-design13.md` (3 P2, 2 P3), `opus-ws1-design13.md` (7 P3) | 13.9 |
 | 14 | revision 14, `58838ec8` | `sol-ws1-design14.md` (3 P2, 3 P3), `opus-ws1-design14.md` (6 P3) | 13.10 |
+| 15 | revision 15, `8cb48bf3` | `sol-ws1-design15.md` (3 P2, 2 P3), `opus-ws1-design15.md` (4 P3) | 13.11 |
 
 **The decisions applied:**
 - **DL-122, Q1 to Q6,** and the items DL-122 recorded for WS1.
@@ -245,7 +246,7 @@ docker run --rm --entrypoint /bin/sh -v VOLUME:/var/lib/postgresql IMAGE -c \
 ### 5.1 The interpreter and the environments
 - **`#!/bin/bash -p`.** The `ENTRYPOINT` is `["/usr/local/bin/entrypoint-wrapper.sh"]`.
 - **Shell settings:** `set -euo pipefail`, `shopt -s inherit_errexit execfail`, and job control off.
-- **Signals:** `TERM`, `INT`, `HUP` and `QUIT` are trapped explicitly.
+- **Signals:** `TERM`, `INT`, `HUP`, `QUIT` and `PIPE` are trapped explicitly (Opus round 15, 3). `PIPE` only records itself in the main path (5.4).
 - **Waits:** `wait "$pid" || status=$?`.
 - **`PATH`** is pinned and exported first: `/usr/lib/postgresql/18/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin`.
 - **Absolute paths** for `postgres`, `psql`, `pg_isready`, `gosu`, `perl`, `flock`, `setsid` and `docker-entrypoint.sh`.
@@ -321,7 +322,7 @@ local  megasamples  all       scram-sha-256
 **Its values:**
 1. **Discovered** by `-C` with no arguments.
 2. **Validated** by R11 to R16.
-3. **Built into an argv array** pinning `data_directory`, `listen_addresses=`, the socket directory, `port=5432`, the `hba_file`, the discovered preload, `dynamic_library_path=$libdir`, empty session and local preloads, and stderr logging.
+3. **Built into an argv array** pinning `data_directory`, `fsync=on` (Sol round 15, 1), `listen_addresses=`, the socket directory, `port=5432`, the `hba_file`, the discovered preload, `dynamic_library_path=$libdir`, empty session and local preloads, and stderr logging.
 4. **Rechecked** by `-C` with that array.
 
 **The process:**
@@ -355,6 +356,7 @@ SET log_statement = 'none'; SET log_min_error_statement = 'panic'; SET log_min_d
 SET log_min_duration_sample = -1; SET log_statement_sample_rate = 0; SET log_transaction_sample_rate = 0;
 SET log_parameter_max_length_on_error = 0; SET debug_print_parse = off; SET debug_print_rewritten = off;
 SET debug_print_plan = off; SET pg_stat_statements.track_utility = off;
+SET synchronous_commit = on;
 \warn megasamples-sending
 ALTER ROLE "ROLE" PASSWORD 'SCRAM-SHA-256$4096:…';
 \warn megasamples-applied
@@ -371,19 +373,34 @@ ALTER ROLE "ROLE" PASSWORD 'SCRAM-SHA-256$4096:…';
   1. it makes its own session with `setsid --wait`, so its group is its own PID and a terminal's `SIGINT` cannot reach it;
   2. it blocks reading one byte from a release pipe held by the wrapper.
 
-  The start step is `setsid --wait` running the program's gate script, `exec`ed in the background child, so `$!` is its PID. **The pipes:** the wrapper holds the release pipe's write end and a ready pipe's read end; every child is launched with both closed (`N>&-`), so only the wrapper holds the release write end and end-of-file reaches the child when the wrapper closes it (Opus round 14, 1c; Sol round 14, 1).
+  The start step is `setsid --wait` running the program's gate script, `exec`ed in the background child, so `$!` is its PID. **The pipes** (Opus round 14, 1c; Sol round 14, 1; Opus round 15, 1):
+  - **one fresh pair per launch:** a release pipe and a ready pipe, created just before the fork and closed by the wrapper once that launch is released or reaped;
+  - **the wrapper's ends:** the release pipe's write end and the ready pipe's read end. Every child is launched with both closed (`N>&-`), so only the wrapper holds the release write end, and end-of-file reaches the child when the wrapper closes it;
+  - **the gate's ends:** it closes its release read end and its ready write end before it `exec`s the program. So the postmaster, its backends and the clients hold neither pipe, and a release write to a dead gate child meets no reader. 10.3 checks the postmaster's `/proc/PID/fd` natively.
+
+  **The bookkeeping** (Sol round 15, 2; Opus round 15, 2):
+  - **a spawn flag for each launch** (the server, and R and C for each role), set immediately before its fork;
+  - **two slots:** the current client's PID (R's or C's), cleared when it is reaped; and the server's PID;
+  - **a separate list** of every PID ever saved, used only for the trap's `$!` test;
+  - **no other background job** in the private phase: no `&`, no process substitution, nothing else that sets `$!`.
 
   **The confirmation, bounded** (Opus round 14, 1d and 6d): after `setsid`, the gate script writes one ready byte. The wrapper reads it with `read -t 2`, then reads the child's process group from `/proc/PID/stat`, parsing the fields after the last `)` (the fifth field overall), and requires it to equal the PID. A missing byte or another group is `internal`, naming the gated start; a `setsid` that forked fails this check.
 
-  Only then does the wrapper set the role's **release flag** in memory and write the release byte. The child then `exec`s its program. If the trap runs before the release, it closes the pipe; the child reads end-of-file and exits without running its program, and the trap reaps it.
+  Only then does the wrapper set the launch's **release flag** in memory and write the release byte. The child then `exec`s its program. If the trap runs before the release, it closes the pipe; the child reads end-of-file and exits without running its program, and the trap reaps it. A confirmation failure takes the same path: its exit enters the trap at step 0, so the child is still reaped.
 
   **Signals during the launch:**
-  - **`PIPE`** (Opus round 14, 2): it has the same recording handler as the other signals, never set to ignored. A release write to a gate child that died before the release fails as an ordinary error: `internal`, naming the gated start, with the role E5.
+  - **`PIPE`** (Opus round 14, 2; Opus round 15, 3): in the main path its handler only records the signal, never set to ignored. It never starts the stop and never counts toward `interrupted`. A `wait` it interrupts is retried like any other, never taken as a status. A release write to a gate child that died before the release fails as an ordinary error: `internal`, naming the gated start, with the role E5.
   - **Group `kill`s** tolerate `ESRCH` under `set -e`.
-- **An interrupted `wait`:** a `wait` that returns above 128 because a trapped signal arrived is never taken as the child's status, in the main path or in the trap (Sol round 14, 2; Opus round 14, 5). The child's status is only what a `wait PID` returns with no signal recorded during the call. The trap repeats `wait PID`, against the same shutdown deadline, until such a return, and reads no evidence before it.
+- **An interrupted `wait`,** in the main path or in the trap (Sol round 14, 2; Opus round 14, 5; Opus round 15, 4):
+  - any return of 128 or less is the child's status;
+  - a return above 128 while a signal was recorded during the call is retried: `wait PID` again;
+  - a return above 128 with no signal recorded is the child's status, a signal death;
+  - **the deadline** is step 2's `SIGKILL` plus 5 seconds. On expiry, the role is E5 and the code `interrupted`;
+  - no evidence is read before the status is settled.
 - **The rotation client (R):** the `psql` above, run with `\set VERBOSITY sqlstate` so that a server error appears as `ERROR:  SQLSTATE`. Its stderr, which carries its `\warn` markers, psql's own messages and the server's errors, goes to a per-role evidence file in this run's state directory. Its exit status is kept.
 - **The confirmation client (C):** the libpq sign-in, also in its own process group. Only its exit status is used, and only to decide `applied` against `uncertain`, after R exited 0 with `megasamples-applied`. **C's output never decides the rotation's state.**
-- **The spawn and release flags:** in the wrapper's memory. The spawn flag is set immediately before R is forked for a role. The release flag is set immediately before the release byte is written.
+- **The spawn and release flags:** in the wrapper's memory, one pair per launch. The table reads R's: its spawn flag is set immediately before R is forked for a role, and its release flag immediately before R's release byte is written.
+- **A durable rotation** (Sol round 15, 1): R's session sets `synchronous_commit = on`, and the private launch pins `fsync=on`, so the `ALTER`'s commit is flushed before R sees `CommandComplete`. E2's `applied` therefore rests on C's success after a durable commit, whatever the retained volume configures.
 - **The record and the refusal flag:** **authoritative in memory**. The state directory's files are checked copies, written for the private server's children and the trap's cleanup, and a failed copy write never changes a state or adds a refusal line (Opus round 13, 6). The record holds `applied` only once C has succeeded.
 - **Complete evidence only** (Sol round 13, 2; Opus round 13, 4): E3 and E4 match only complete, LF-terminated lines in exactly these forms, observed natively from psql 18.7 in the image (2026-11-21):
   - **E3's error line:** `ERROR:  ` followed by five characters from `[0-9A-Z]` and the LF, for example `ERROR:  42704`;
@@ -410,27 +427,33 @@ ALTER ROLE "ROLE" PASSWORD 'SCRAM-SHA-256$4096:…';
 - a mid-session connection loss, `connected` written or lost;
 - C failed, was killed, or succeeded without being recorded.
 
-**A spawned client that was killed is never `unattempted`.**
+**At the release boundary** (Sol round 15, 3), the first-match table decides:
+- **R's gate killed before its release flag was set:** E1, `unattempted`. The byte was never written, so psql never ran, and the prior key holds;
+- **after the flag, before the byte:** E5, `uncertain`, with the prior key still in force;
+- **a spawned client whose release flag was set and that was killed** is never `unattempted`.
 
 **The records.** Before the private start, every requested role's spawn flag is unset and its record empty. A start with no override requests no role. Before the private start has begun (the checks, the self-test), no per-role line is printed. After it has begun, every exit prints one line per requested role, computed by the table.
 
 **The trap's order** (the coordinator's round 12 decision; Sol round 12, 3):
 0. **the first statement of every signal handler and of the `EXIT` trap** (Opus round 14, 5): point the `TERM`, `INT`, `HUP`, `QUIT` and `PIPE` traps at a handler that only records the signal in memory and returns, never setting any to ignored (Opus round 13, 5). An in-memory guard lets the report be printed once only. **Its second act** closes the release pipe's write end (Opus round 14, 1c);
-1. choose the child, then send `SIGTERM` to **both its PID and its group**. It is never `SIGINT`, and psql has no `SIGTERM` handler. **The trap's choice of PID** (Opus round 14, 1a): the saved PID; or `$!`, only when the spawn flag is set, the saved PID is empty, and `$!` differs from every PID already saved. Bash sets `$!` before any trap can run, so a signal between the fork and the save still finds the child, and a signal before the fork never takes the private server's PID;
+1. choose the child, then send `SIGTERM` to **both its PID and its group**. It is never `SIGINT`, and psql has no `SIGTERM` handler.
+   - **Which children:** the current client (its slot), and any gate child whose launch has not yet been released, the server's included. A released server is never signalled here; it is stopped only at step 5, in 5.5's order (Opus round 15, 2).
+   - **The trap's choice of PID** (Opus round 14, 1a): a launch's slot; or `$!`, only when that launch's spawn flag is set, its slot is empty, and `$!` is not in the list of saved PIDs. Bash sets `$!` before any trap can run, so a signal between the fork and the save still finds the child, and a signal before a fork never takes another launch's PID;
 2. wait up to 2 seconds, then **always** `SIGKILL` the group (and the PID), even after an `ESRCH` on step 1, and reap the child by 5.4's interrupted-wait rule;
 3. compute every requested role's state by the table;
 4. write the refusal line, then the per-role lines;
 5. only then stop the private server (5.5), with any `also:` lines after.
 
+**Every exit after the private start began,** a signal's or an error's, enters the trap at step 0. Steps 1 and 2 have nothing to do when no client and no unreleased gate child is current.
+
 **The bound:** the report is printed within 2 seconds of the signal, plus the time to compute and write it, well inside Docker's default 10-second grace. Bash runs a trap only after the current foreground command ends, so **every foreground command in the private phase is bounded** (Opus round 13, 7b): `pg_isready -t 1`, `sleep 1`, and no unbounded read; the clients and the server run in the background and are `wait`ed. A private shutdown that outlasts the grace can still be killed by the runtime, but only after the report is in the log. The next start recovers the cluster (row 42b).
 
-A failure with no signal (`password-setup`, `private-start`, an `internal` after the private start began) takes the same order from step 3.
 
 **The handover steps:**
 1. the endpoint written;
 2. a snapshot taken of the in-memory record (Sol round 14, 5);
 3. the run's directories removed;
-4. the trap cleared: **`trap - EXIT TERM INT HUP QUIT`**, restoring the default dispositions and never setting any to ignored (Opus round 11, 3);
+4. the trap cleared: **`trap - EXIT TERM INT HUP QUIT PIPE`** (Opus round 15, 3), restoring the default dispositions and never setting any to ignored (Opus round 11, 3);
 5. the lines printed from memory;
 6. `exec`.
 
@@ -459,7 +482,7 @@ The rows assert the count (one line per requested role) and the order.
 ### 5.5 Supervision and the stop
 - **Waits:** clients and the server run in the background and are `wait`ed.
 - **The trap,** in 5.4's order:
-  - ends a running client with `SIGTERM` to its process group, then `SIGKILL` after 2 seconds, and reaps it;
+  - ends the current client, and any unreleased gate child, with `SIGTERM` to its PID and its group, then always `SIGKILL` to both after 2 seconds, and reaps it by 5.4's interrupted-wait rule;
   - computes and prints the role report;
   - only then sends `SIGINT` to the server's group, waits up to 60 seconds, then `SIGQUIT` for 10 seconds, then `SIGKILL`, and reaps it.
 - **Codes:** a forced stop is `private-stop`; a signal during the start is `interrupted`, with each role's state.
@@ -519,7 +542,7 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS-BEFORE-- PINS -- ARGS-AFT
 **The rules for codes:** codes are added, never renamed or removed. An unknown code is a refusal.
 
 **`policy-marker`'s sentence** depends on what was found (DL-122 Q4; Sol round 6, 11; Opus round 7, 4):
-- **marker `1`:** a pre-release volume. The sentence carries 7.4's items in short form: not upgraded in place; kept untouched; export your own work with `pg_dump` using the old image and load it yourself on a fresh volume; copy the volume first; run the old image socket-only (`listen_addresses=''`, no network) and export from inside its container with `docker exec`; not carried over (sample data, passwords, custom client-authentication rules, which you should inspect first, and grants: export with `pg_dump --no-acl --no-owner`, pass `--no-owner` to `pg_restore` too, and review default privileges); on the new image, tables `admin` creates in `public` are readable by `demo`; how to get the old image back. It names the README section with the full text;
+- **marker `1`:** a pre-release volume. The sentence carries 7.4's items in short form: not upgraded in place; kept untouched; export your own work with `pg_dump` using the old image and load it yourself on a fresh volume; copy the volume first; run the old image socket-only (`listen_addresses=''`, no network) and export from inside its container with `docker exec`; not carried over (sample data, passwords, custom client-authentication rules, which you should inspect first, putting equivalent protection in place before exposing the new server, and grants: export with `pg_dump --no-acl --no-owner`, pass `--no-owner` to `pg_restore` too, and review default privileges); on the new image, tables `admin` creates in `public` are readable by `demo`; how to get the old image back. It names the README section with the full text;
 - **a newer marker** (`3` or more): the volume was made by a newer image. Use that image;
 - **no marker:** not a megasamples format-2 volume. If it is an earlier megasamples volume, the marker-`1` advice applies; otherwise, start this image on a fresh volume;
 - **any other content:** the value found and the image's own, and the same advice as for no marker.
@@ -811,7 +834,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 42c | (A) the ownership repair fails (a fault on `chown`) | `internal`, naming the repair; keys old |
 | 42d | (W) the endpoint write fails just before the handover (a read-only endpoint path, by fault) | `internal`, naming the endpoint, then the per-role lines once each; keys as applied; no listener |
 | 42b | an unclean previous stop, a long recovery | start, after waiting |
-| 43 | (W) one table test of 5.4's evidence table. **Inputs:** held landing points (the test's fault **holds**, not the wrapper's gated start; Opus round 14, 6c), each mapped to the evidence it produces: before a role's spawn; R spawned, before `megasamples-connected`; after `connected`; after `sending`; the `ALTER` committed with `CommandComplete` held by the fault relay, then `SIGINT` to R's process group and the reply forwarded; after `megasamples-applied`; during C; after C, before the record; after the record; each handover step, H1 to H6b. **Races:** at each boundary, the hold releases the client after the signal, so it advances before the reap. **Lost evidence:** `/dev/shm` filled during `\warn megasamples-sending`. **Server refusal:** an `ALTER` the server rejects, giving exit 3 and a SQLSTATE; and the same with its error line truncated, injected by a fault on that one descriptor: R's stderr passes through a fault writer that stops before the line's LF (Opus round 14, 6b). **Connection failure:** row 39's relay refusal; a mid-session loss with `connected` lost; an exit-2 start-up failure whose line lacks only its final LF (Sol round 14, 4). **Gated start:** a signal after the fork and before `$!` is saved, and after it but before the release, for R, C and the private server, each asserting that the program never ran and that this specific child was reaped (Sol round 14, 1); the gate child killed before the release, so the release write meets `PIPE` (Opus round 14, 2). **A second signal:** during the reap, proving the reap as well as the single report, and during the private stop. **The wrapper's normal private stop,** after the rotation, interrupted | **Before the `exec` (the points before the handover, H1 to H3):** the state from the evidence actually produced; the refusal code; the per-role lines once each, after the refusal line; **H6b:** row 46's outcome, the per-role lines once each, then the `handover` line only, endpoint removed, no listener; the (W) class; stopped and reaped; no listener. **Keys,** on a witness start: for each `unattempted` or `refused` role, the prior key works and the new one fails; for `applied`, the reverse. **For each `uncertain` case the hold decides whether the `ALTER` reached the server, and the row states the key it implies** (Opus round 13, 2): the new key works and the distinct prior key fails over SCRAM where the commit passed the relay (after `sending` released; the `SIGINT` case; during C; after C, before the record; the lost-evidence case, since psql does not stop on a failed `\warn`; C's gated start before its release); the reverse where the relay held the `ALTER` back, and for the truncated-error case (the server refused), the unterminated start-up line and the gate child killed before the release (psql never ran); and where a race leaves it uncontrolled, exactly one of the two keys works. **The wrapper's normal private stop, interrupted:** every role `applied` by E2, the new keys, the code `interrupted` (Sol round 14, 6; Opus round 14, 4). **Codes:** the gate child killed before the release is `internal`, naming the gated start; the `SIGINT` case, a signal to R's group only, leaves the wrapper on the `password-setup` path; the gated-start and race cases are `interrupted`; the lost-evidence and truncated-error cases are `password-setup`, one line; a second signal adds no line and loses no cleanup. **H4, H5 and H6 as PID 1:** the Start rule, readiness checked before teardown. **H6, in three parts** (Sol round 13, 3; Sol round 14, 3): (i) **the upstream handoff** (after the `exec`, before PostgreSQL installs its handlers): ignored as PID 1 and the start proceeds; outside PID 1 the process ends with the (P) outcome. (ii) **PostgreSQL's startup, before readiness** (handlers installed, for example during row 42b's long recovery): a `SIGTERM` makes PostgreSQL shut down without becoming ready; the per-role lines already printed once, before the `exec`; the keys as applied, on a witness start; the endpoint names a dead PID; no surviving server; unhealthy. (iii) **ready service:** scoped to the signal sent: `SIGTERM`, `SIGINT` or `SIGQUIT` is PostgreSQL's shutdown, its exit status, the endpoint then naming a dead PID; `SIGHUP` is a reload, and the server stays ready and healthy. **"None", outside PID 1 at H4 and H5:** the endpoint names a dead PID; no private or state directory left; no listener; unhealthy; the per-role lines absent or a prefix of them; the wrapper ended by the signal |
+| 43 | (W) one table test of 5.4's evidence table. **Inputs:** held landing points (the test's fault **holds**, not the wrapper's gated start; Opus round 14, 6c), each mapped to the evidence it produces: before a role's spawn; R spawned, before `megasamples-connected`; after `connected`; after `sending`; the `ALTER` committed with `CommandComplete` held by the fault relay, then `SIGINT` to R's process group and the reply forwarded; after `megasamples-applied`; during C; after C, before the record; after the record; each handover step, H1 to H6b. **Races:** at each boundary, the hold releases the client after the signal, so it advances before the reap. **Lost evidence:** `/dev/shm` filled during `\warn megasamples-sending`. **Server refusal:** an `ALTER` the server rejects, giving exit 3 and a SQLSTATE; and the same with its error line truncated, injected by a fault on that one descriptor: R's stderr passes through a fault writer that stops before the line's LF (Opus round 14, 6b). **Connection failure:** row 39's relay refusal; a mid-session loss with `connected` lost; an exit-2 start-up failure whose line lacks only its final LF (Sol round 14, 4). **Gated start:** a signal after the fork and before `$!` is saved, and after it but before the release, for R, C and the private server, each asserting that the program never ran, that this specific child was reaped, and that the client cleanup left a running private server for step 5 (Sol round 14, 1; Sol round 15, 2); for R, **two separate holds** (Sol round 15, 3): before its release flag is set (E1, `unattempted`, the prior key), and after the flag, before the byte (E5, `uncertain`, the prior key); a gate-confirmation failure, its child still reaped; the gate child killed before the release, so the release write meets `PIPE`, run outside PID 1 and as PID 1 (Opus round 14, 2; Opus round 15, 3). **Durability:** `synchronous_commit=off` and `fsync=off` configured on the retained volume, and the private server killed with `SIGKILL` right after C's success; the next start recovers, and the new key survives on the witness start (Sol round 15, 1). **A second signal:** during the reap, proving the reap as well as the single report, and during the private stop. **The wrapper's normal private stop,** after the rotation, interrupted | **Before the `exec` (the points before the handover, H1 to H3):** the state from the evidence actually produced; the refusal code; the per-role lines once each, after the refusal line; **H6b:** row 46's outcome, the per-role lines once each, then the `handover` line only, endpoint removed, no listener; the (W) class; stopped and reaped; no listener. **Keys,** on a witness start: for each `unattempted` or `refused` role, the prior key works and the new one fails; for `applied`, the reverse. **For each `uncertain` case the hold decides whether the `ALTER` reached the server, and the row states the key it implies** (Opus round 13, 2): the new key works and the distinct prior key fails over SCRAM where the commit passed the relay (after `sending` released; the `SIGINT` case; during C; after C, before the record; the lost-evidence case, since psql does not stop on a failed `\warn`; C's gated start before its release); the reverse where the relay held the `ALTER` back, and for the truncated-error case (the server refused), the unterminated start-up line and the gate child killed before the release (psql never ran); and where a race leaves it uncontrolled, exactly one of the two keys works. **The wrapper's normal private stop, interrupted:** every role `applied` by E2, the new keys, the code `interrupted` (Sol round 14, 6; Opus round 14, 4). **The repeated `wait`:** a client exiting 3 with its SQLSTATE as a second signal arrives is E3, `refused`. **Codes:** the gate child killed before the release is `internal`, naming the gated start; the `SIGINT` case, a signal to R's group only, leaves the wrapper on the `password-setup` path; the gated-start and race cases are `interrupted`; the lost-evidence and truncated-error cases are `password-setup`, one line; a second signal adds no line and loses no cleanup. **H4, H5 and H6(i) as PID 1:** the Start rule, readiness checked before teardown (Sol round 15, 4). **H6, in three parts** (Sol round 13, 3; Sol round 14, 3): (i) **the upstream handoff** (after the `exec`, before PostgreSQL installs its handlers): ignored as PID 1 and the start proceeds; outside PID 1 the process ends with the (P) outcome. (ii) **PostgreSQL's startup, before readiness** (handlers installed, for example during row 42b's long recovery): a `SIGTERM` makes PostgreSQL shut down without becoming ready: the endpoint's postmaster PID exits by itself after logging its shutdown request, and the log never shows `database system is ready to accept connections`; the per-role lines already printed once, before the `exec`; the keys as applied, on a witness start; the endpoint names a dead PID; no surviving server; unhealthy. (iii) **ready service:** scoped to the signal sent: `SIGTERM`, `SIGINT` or `SIGQUIT` is PostgreSQL's shutdown, its exit status, the endpoint then naming a dead PID; `SIGHUP` is a reload, and the server stays ready and healthy. **"None", outside PID 1 at H4 and H5:** the endpoint names a dead PID; no private or state directory left; no listener; unhealthy; the per-role lines absent or a prefix of them; the wrapper ended by the signal |
 | 43c | (W) a real `docker stop` (10-second grace) during the rotation, with the private server's shutdown delayed past the grace by a fault | the refusal line and the per-role lines in the log, once each, **within 3 seconds of the stop signal** by the log's timestamps (the 2-second client bound plus writing); then the runtime kill: exit 137, no server survives, the endpoint removed; the next start recovers (row 42b) |
 | 43b | (W) a signal while a client stalls | as row 43, promptly |
 | 44 | (W) a forced private stop | `private-stop` |
@@ -839,11 +862,12 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 58 | the image build | the baked `pg_authid` holds only the image's roles; the stock volume `pg_hba.conf` equals the repository file |
 | 59 | informational and handover `exec`s, repeated in one container | no state or private directory left behind |
 | 60 | the probe's negative control: a fault image whose loaded report returns false, started through the wrapper | a real endpoint, live PID and probe socket; the probe reaches its query, gets `f`, unhealthy. Reversal: the probe without its result check calls it healthy |
-| 61 | the pre-release message: a marker-`1` volume from each earlier build | the `policy-marker` sentence carries each item of 7.4 (not upgraded in place; kept untouched; `pg_dump` with the old image, then load on a fresh volume; copy the volume first; run the old image socket-only (`listen_addresses=''`, no network) and export from inside its container with `docker exec`; not carried over: sample data, passwords, custom client-authentication rules with the inspection first, grants, with `pg_dump --no-acl --no-owner` named, `--no-owner` for `pg_restore` too, and default privileges left to the deployer's review; tables `admin` creates in `public` readable by `demo`; how to get the old image back) and names the README section; that section holds each item in full; the volume byte for byte unchanged |
+| 61 | the pre-release message: a marker-`1` volume from each earlier build | the `policy-marker` sentence carries each item of 7.4 (not upgraded in place; kept untouched; `pg_dump` with the old image, then load on a fresh volume; copy the volume first; run the old image socket-only (`listen_addresses=''`, no network) and export from inside its container with `docker exec`; not carried over: sample data, passwords, custom client-authentication rules with the inspection first and equivalent protection in place before exposing the new server (Sol round 15, 5), grants, with `pg_dump --no-acl --no-owner` named, `--no-owner` for `pg_restore` too, and default privileges left to the deployer's review; tables `admin` creates in `public` readable by `demo`; how to get the old image back) and names the README section; that section holds each item in full, the equivalent-protection sentence asserted in both the refusal and the README; the volume byte for byte unchanged |
 
 ### 10.3 Confirmed natively
 - **The `psql` exit mapping,** by the fault relay;
 - **E3's and E4's line forms** from the image's psql, re-checked on any base-image change (the Dockerfile pins `postgres:18.7-trixie`): `ERROR:  ` with a five-character SQLSTATE; the start-up `psql: error: connection to server on socket "…" failed: ` line; a mid-session loss's `connection to server was lost` without that prefix (Opus round 14, 6a);
+- **The gate's pipes:** the private postmaster's `/proc/PID/fd` holds neither the release nor the ready pipe (Opus round 15, 1);
 - **Bash's behaviour** that 5.4 relies on: `$!` set before any trap runs; an untrapped `SIGPIPE` ending Bash without its `EXIT` trap; re-entry of a handler for the same signal;
 - **the `dynamic_library_path` report;**
 - **the precedence** of pins and session `SET`s;
@@ -867,7 +891,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
   - R9b's place before R10;
   - the per-role lines printed exactly once on every exit after the private start began: a second printing in `handover_failed`, or none from the trap, fails rows 42, 45, 46 and 47; dropping the final print fails rows 46, 46b, 47 and 47b;
   - **each state boundary of 5.4's table, in both directions** (Opus round 12, 4), each failing a case of row 43:
-    - `unattempted` / `uncertain`: a killed R with no `sending` reported `unattempted` (absence used as evidence) fails "after `connected`" and the full `/dev/shm` case; every spawned role reported `uncertain` (revision 10's conservative rule) fails the never-spawned and connection-failure cases; E1 without the release flag fails the gated-start-before-release case (Opus round 14, 4);
+    - `unattempted` / `uncertain`: a killed R with no `sending` reported `unattempted` (absence used as evidence) fails "after `connected`" and the full `/dev/shm` case; every spawned role reported `uncertain` (revision 10's conservative rule) fails the never-spawned and connection-failure cases; E1 without the release flag fails the hold before R's release flag (Opus round 14, 4; Sol round 15, 3);
     - `uncertain` / `applied`: an unrecorded confirmation reported `applied` fails "after C, before the record"; a recorded `applied` reported `uncertain` fails "after the record";
     - `uncertain` / `refused`: a bare exit 3 reported `refused` fails the `SIGINT` case; a SQLSTATE refusal reported `uncertain` fails the server-refusal case;
     - C's output deciding the rotation fails "during C";
@@ -876,7 +900,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
   - the trap ending R with `SIGINT` instead of `SIGTERM` fails the wrapper-stop cases, where a fault psql shim records the signal its group received (Sol round 13, 4);
   - the gated start removed (R running before its group is confirmed) fails the gated-start cases;
   - E3 or E4 accepting a partial or unlisted line fails the truncated-error and mid-session-loss cases; E4 without its LF check fails the unterminated start-up case (Sol round 14, 4);
-  - the trap taking `$!` without its three conditions, or skipping the group `SIGKILL` after an `ESRCH`, fails the gated-start cases; the trap's `wait` taken once, not repeated, fails the second-signal-during-the-reap case; no `PIPE` handler fails the gate-killed case;
+  - the trap taking `$!` without its three conditions, or skipping the group `SIGKILL` after an `ESRCH`, fails the gated-start cases; the trap's `wait` taken once, not repeated, fails the second-signal-during-the-reap case; no `PIPE` handler fails the gate-killed case outside PID 1; the gate keeping its pipe ends fails the gate-killed case (the write finds a reader) and 10.3's descriptor check; the trap signalling a released server in step 1 fails the gated-start cases' running-server check; a status of 128 or less retried fails the repeated-`wait` case; `synchronous_commit = on` or `fsync=on` removed fails the durability case, with the WAL writer held by the test so that the commit is not flushed;
   - the trap's re-entry handler removed fails the second-signal cases;
   - the report printed after the server's shutdown fails row 43c;
   - the trap reading the removed record fails H3; step 4 clearing only `EXIT` fails H4 as PID 1;
@@ -1070,3 +1094,18 @@ Every fix is a specification sentence or a row 43 case, with no new mechanism (t
 | Sol P3 6; Opus P3 4: row 43's keys and labels | row 43: the three keys; the private stop `applied` with `interrupted`; 10.4's E1-without-release reversal |
 | Sol P3 4: E4's reversal | row 43's unterminated start-up case; 10.4 |
 | Opus P3 6 (a) to (d) | 10.3's native forms; the truncated-error injection; the test's "holds"; `/proc/PID/stat` after the last `)` |
+
+### 13.11 Design round 15
+
+Every fix is a specification sentence, one setting or a row 43 case, with no new mechanism (the coordinator's round 15 instruction).
+
+| Finding | Where answered |
+|---|---|
+| Sol 1: `applied` lost by crash recovery | 5.3: `fsync=on` pinned; 5.4: R sets `synchronous_commit = on`, so E2 rests on a durable commit; row 43's durability case |
+| Sol 2; Opus P3 2: every gated launch identified | 5.4: a spawn flag per launch, the client and server slots, the list of saved PIDs, no other background job; step 1 acts on the current client and unreleased gate children, never a released server; every exit enters at step 0, so a confirmation failure still reaps; 5.5 matches |
+| Sol 3: the release boundary | 5.4's release-boundary prose matching the table; row 43's two holds |
+| Opus P3 1: the gate's own pipe ends | 5.4: one fresh pair per launch, the gate closing its ends before `exec`; 10.3's descriptor check |
+| Opus P3 3; Sol P3 4: `PIPE` wired in | 5.1's list; step 4's `trap -`; main-path recording only; the gate-killed case in both modes |
+| Opus P3 4: the repeated `wait` | 5.4: 128 or less is the status; retry above 128 only with a signal recorded; the deadline `SIGKILL` plus 5 seconds |
+| Sol P3 4: row 43's recovery case | row 43: the blanket Start rule for H4, H5 and H6(i); H6(ii)'s exit assertion |
+| Sol P3 5: the marker-1 message | section 6's short message and row 61, in the refusal and the README |
