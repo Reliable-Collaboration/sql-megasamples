@@ -1,9 +1,8 @@
-# DL-077 version 1 feasibility gates
+# Version 1 feasibility gates
 
-Each executable named `G-…` corresponds to one row in section 8.1 of
-[the design](../../docs/design/templates-copies-and-accounts.md#81-version-1s-feasibility-gates).
-The test uses native SQL, clients and filesystem operations. See the
-[validation record](../../docs/validation/dl-077-v1-gates.md) for the run status.
+Each executable named `G-…` is one native feasibility check behind version 1's copies and accounts.
+The test uses native SQL, clients and filesystem operations. The design and run records that
+described each gate are in the repository's history.
 
 Use a fresh disposable target for each gate. Several tests intentionally alter accounts,
 kill clients, restart servers, fill a data mount or replace a container. Create the
