@@ -83,14 +83,16 @@ class HealthPlaceholderTests(unittest.TestCase):
             new = (after.stdout + after.stderr)[len(before.stdout + before.stderr):]
             self.assertNotIn("ERROR", new)
             # The probe's own account may call the report, and only through its grant.
-            # Round 6 (Sol P2-1, Opus P3-1): of the shipped roles, only demo, the probe's account, and
-            # the superuser may call it; admin's default EXECUTE on postgres's routines must not reach it.
-            rights = podman("exec", name, "psql", "-XqAt", "-U", "postgres", "-d", "megasamples", "-c",
-                            "SELECT string_agg(r.rolname || '=' || has_function_privilege(r.oid, "
-                            "'pg_catalog.megasamples_policy_loaded()', 'EXECUTE')::text, ',' ORDER BY r.rolname) "
-                            "FROM pg_roles r WHERE r.rolname IN ('admin','copier','demo','megasamples_read',"
-                            "'megasamples_working_read','megasamples_working_write','reader_b','postgres')")
-            self.assertEqual(rights.stdout.strip(), "admin=false,copier=false,demo=true,megasamples_read=false,"
-                             "megasamples_working_read=false,megasamples_working_write=false,postgres=true,reader_b=false")
+            # Rounds 6 and 7 (Sol P2-1, Opus P3-1): of every role that is not built in, only demo, the
+            # probe's account, and the superuser may call it, in every connectable database.
+            databases = podman("exec", name, "psql", "-XqAt", "-U", "postgres", "-d", "postgres", "-c",
+                               "SELECT datname FROM pg_database WHERE datallowconn ORDER BY 1").stdout.split()
+            self.assertTrue({"megasamples", "postgres", "template1"} <= set(databases), databases)
+            for database in databases:
+                allowed = podman("exec", name, "psql", "-XqAt", "-U", "postgres", "-d", database, "-c",
+                                 "SELECT string_agg(rolname, ',' ORDER BY rolname) FROM pg_roles "
+                                 "WHERE rolname NOT LIKE 'pg\\_%' AND has_function_privilege(oid, "
+                                 "'pg_catalog.megasamples_policy_loaded()', 'EXECUTE')")
+                self.assertEqual(allowed.stdout.strip(), "demo,postgres", database)
         finally:
             podman("rm", "-fv", name, check=False)   # its anonymous data volume too (Sol round 6, P3-10)

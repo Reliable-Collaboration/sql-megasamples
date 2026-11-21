@@ -38,6 +38,11 @@ class RestoreTests(unittest.TestCase):
         return result.stdout.strip()
 
     def assert_policy(self, database):
+        # Sol round 7, P3-7: a restored database keeps the loaded report's ACL from template0.
+        self.assertEqual(self.accept("SELECT string_agg(rolname, ',' ORDER BY rolname) FROM pg_roles "
+                                     "WHERE rolname NOT LIKE 'pg\\_%' AND has_function_privilege(oid, "
+                                     "'pg_catalog.megasamples_policy_loaded()', 'EXECUTE')", database),
+                         "demo,postgres")
         self.assertEqual(self.accept("SELECT extname || ' ' || extnamespace::regnamespace FROM pg_extension "
                                      "WHERE extname = 'read_policy'", database), "read_policy pg_catalog")
         self.assertEqual(self.accept("SELECT evtenabled FROM pg_event_trigger "
