@@ -249,6 +249,24 @@ def test_lost_connection_during_metadata_is_exit_3_with_the_identity(server):
         copy_command(server, "drop", target, *proof)
 
 
+@pytest.mark.parametrize("command", ["renew", "list"])
+def test_lost_connection_before_any_write_is_exit_3_past_initialisation(server, command):
+    """Sol round 3, P2-5: a disconnect while reading a copy's record, before any write, changed nothing."""
+    engine = server["engine"]
+    row = copy_command(server, "create", engine + ":chinook", "--prefix", "copy", "--label", "read" + command)["result"]
+    target, proof = engine + ":" + row["name"], ("--identity", row["identity"])
+    try:
+        args = (("renew", target, *proof, "--lease", "7d") if command == "renew"
+                else ("list", engine, "--prefix", "copy"))
+        reply = copy_command(server, *args, status=3, fault=("load", "before"))
+        assert reply["error"]["code"] == "connection"
+        if command == "renew":
+            assert reply["error"]["identity"] == row["identity"]
+        assert copy_command(server, "show", target)["result"]["revision"] == row["revision"]
+    finally:
+        copy_command(server, "drop", target, *proof)
+
+
 def test_sweep_that_stops_after_a_removal_reports_what_it_removed(server):
     """Astra round 2, 3 / Fable round 2, 4: exit 8 with the completed removals and where it stopped."""
     engine = server["engine"]
@@ -272,6 +290,69 @@ def test_sweep_that_stops_after_a_removal_reports_what_it_removed(server):
         native(server, f"DROP DATABASE IF EXISTS {quote}{name}{quote}", database=database, **admin)
         native(server, "DELETE FROM copy_ledger_copy WHERE name=%s", parameters=(name,), **admin)
         copy_command(server, "drop", engine + ":" + removed_first["name"], "--identity", removed_first["identity"])
+
+
+def two_released(server, *labels):
+    engine = server["engine"]
+    rows = [copy_command(server, "create", engine + ":chinook", "--prefix", "copy", "--label", label)["result"]
+            for label in labels]
+    for row in rows:
+        copy_command(server, "release", engine + ":" + row["name"], "--identity", row["identity"])
+    return sorted(rows, key=lambda row: row["name"])
+
+
+def discard(server, row):
+    engine = server["engine"]
+    admin = {"user": "dl077_fixture_admin"}
+    database = "postgres" if engine == "postgres" else "megasamples"
+    quote = '"' if engine == "postgres" else "`"
+    native(server, f"DROP DATABASE IF EXISTS {quote}{row['name']}{quote}", database=database, **admin)
+    native(server, "DELETE FROM copy_ledger_copy WHERE name=%s", parameters=(row["name"],), **admin)
+
+
+def test_dry_run_that_meets_an_unreadable_record_changes_nothing_and_says_so(server):
+    """Opus round 3, 2: a dry run removes nothing, so its refusal is 5, never 8."""
+    engine = server["engine"]
+    first, second = two_released(server, "dryfirst", "drysecond")
+    try:
+        reply = copy_command(server, "sweep", engine, "--prefix", "copy", "--dry-run", status=5,
+                             fault=("corrupt-before-recheck", second["name"]))
+        assert reply["error"]["code"] == "format-unknown" and reply["result"] is None
+        assert copy_command(server, "show", engine + ":" + first["name"])["result"]["revision"] == first["revision"] + 1
+    finally:
+        discard(server, second)
+        copy_command(server, "drop", engine + ":" + first["name"], "--identity", first["identity"])
+
+
+def test_sweep_after_a_busy_rollback_reports_the_change(server):
+    """Sol round 3, P2-4 / Opus round 3, 2: a busy rollback advanced a revision, so a later refusal is 8."""
+    engine = server["engine"]
+    first, second = two_released(server, "busyfirst", "busysecond")
+    busy = hold_busy(server, first["name"])
+    try:
+        reply = copy_command(server, "sweep", engine, "--prefix", "copy", status=8,
+                             fault=("corrupt-before-recheck", second["name"]))
+        assert reply["error"]["code"] == "format-unknown"
+        assert removed_names(reply) == []
+        assert {"name": first["name"], "reason": "busy"} in [
+            {"name": item["copy"]["name"], "reason": item["reason"]} for item in reply["result"]["kept"]]
+    finally:
+        busy.close()
+        discard(server, second)
+        copy_command(server, "drop", engine + ":" + first["name"], "--identity", first["identity"])
+
+
+def test_sweep_whose_unlock_fails_lists_its_removal_once(server):
+    """Sol round 3, P2-4: a copy removed is reported removed, and never also kept."""
+    engine = server["engine"]
+    first, second = two_released(server, "unlockfirst", "unlocksecond")
+    try:
+        reply = copy_command(server, "sweep", engine, "--prefix", "copy", status=8, fault=("unlock-fails", "-"))
+        assert removed_names(reply) == [first["name"]]
+        assert first["name"] not in [item["copy"]["name"] for item in reply["result"]["kept"]]
+    finally:
+        for row in (first, second):
+            copy_command(server, "drop", engine + ":" + row["name"], "--identity", row["identity"])
 
 
 def test_create_refuses_a_namespace_whose_records_it_cannot_read(server):

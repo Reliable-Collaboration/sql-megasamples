@@ -10,7 +10,9 @@ that name's change lock the second time: the selection has read the copy under i
 renewal lands between the sweep's selection and its removal. POINT `metadata` closes the connection
 just before the command's first metadata read after sign-in. POINT `corrupt-after-first` (WHEN is
 the NAME of another copy) rewrites that copy's ledger record to an unknown tag right after the
-sweep's first removal.
+sweep's first removal. POINT `corrupt-before-recheck` (WHEN is a copy's NAME) rewrites that
+record just before the sweep takes its change lock the second time. POINT `unlock-fails` makes the
+change-lock release fail after the sweep's first removal.
 """
 
 import subprocess
@@ -86,6 +88,41 @@ def run():
             return result
 
         copies.remove = remove_then_corrupt
+        return main(["copy", *args])
+    if point == "corrupt-before-recheck":
+        lock = copies.lock
+        calls = {"count": 0}
+
+        def corrupt_then_lock(self, name, *rest, **keywords):
+            if name == when:
+                calls["count"] += 1
+                if calls["count"] == 2:
+                    if engine == "postgres":
+                        self.connection.execute(f"UPDATE {self.ledger} SET record = jsonb_set(record, '{{tag}}', "
+                                                "'\"megasamples-copy/99\"') WHERE name = %s", (when,))
+                    else:
+                        self.execute(f"UPDATE {self.ledger} SET record = JSON_SET(record, '$.tag', "
+                                     "'megasamples-copy/99') WHERE name = %s", (when,))
+            return lock(self, name, *rest, **keywords)
+
+        copies.lock = corrupt_then_lock
+        return main(["copy", *args])
+    if point == "unlock-fails":
+        remove, one = copies.remove, copies.one
+        state = {"removed": False}
+
+        def remove_and_mark(self, *arguments, **keywords):
+            result = remove(self, *arguments, **keywords)
+            state["removed"] = True
+            return result
+
+        def failing_unlock(self, sql, params=()):
+            if state["removed"] and ("advisory_unlock" in sql or "RELEASE_LOCK" in sql):
+                state["removed"] = False
+                raise self.errors.OperationalError("planted failure releasing the change lock")
+            return one(self, sql, params)
+
+        copies.remove, copies.one = remove_and_mark, failing_unlock
         return main(["copy", *args])
     original = getattr(copies, point)
 
