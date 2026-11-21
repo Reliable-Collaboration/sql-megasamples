@@ -86,8 +86,16 @@ def seed_mysql(container, marker, password):
         CREATE VIEW {schema}.v2 AS SELECT id FROM {schema}.v1;
         SET SESSION sql_mode='ONLY_FULL_GROUP_BY,STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION';
         CREATE PROCEDURE {schema}.read_value() SELECT id FROM {schema}.parent ORDER BY id;
+        SET SESSION sql_mode='STRICT_TRANS_TABLES,NO_ZERO_DATE', time_zone='+05:30';
         CREATE EVENT {schema}.read_event ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 YEAR
             ON COMPLETION PRESERVE DISABLE DO SELECT id FROM {schema}.parent;
+        """)
+    # A program created under ANSI_QUOTES: its double-quoted names are not rewritten, so it is withheld.
+    mysql(container, """
+        CREATE DATABASE replay_ansi;
+        CREATE TABLE replay_ansi.t (id int PRIMARY KEY);
+        SET SESSION sql_mode='ANSI_QUOTES';
+        CREATE PROCEDURE replay_ansi.read_t() SELECT id FROM "replay_ansi"."t";
         """)
     mysql(container, f"""
         ALTER USER 'copier'@'%' IDENTIFIED BY '{password}' ACCOUNT UNLOCK;
@@ -106,11 +114,12 @@ def seed_mysql(container, marker, password):
     for name in ("mysql_templates.py", "mysql_template_build.py"):
         podman("cp", str(ROOT / "megasamples" / name), f"{container}:/tmp/{name}")
     # The template is made by the image build's own per-database step, as a shipped database's is.
-    mysql(container, "INSERT INTO megasamples.datasets (name, tier, record, build_id) "
-                     "VALUES ('sample', 'fixture', 'fixture', 'fixture')")
+    mysql(container, "INSERT INTO megasamples.datasets (name, tier, record, build_id) VALUES "
+                     "('sample', 'fixture', 'fixture', 'fixture'), ('replay_ansi', 'fixture', 'fixture', 'fixture')")
     script = """
 from mysql_template_build import offer
-offer("sample", "fixture", ["sample"])
+offer("sample", "fixture", ["sample", "replay_ansi"])
+offer("replay_ansi", "fixture", ["sample", "replay_ansi"])
 """
     podman("exec", "-i", container, "sh", "-ec", "cat >/tmp/dl077-inventory.py", stdin=script)
     socket = mysql(container, "SELECT @@socket").stdout.strip()

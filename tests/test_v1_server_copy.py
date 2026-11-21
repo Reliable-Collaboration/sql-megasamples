@@ -667,14 +667,18 @@ def test_mysql_copy_lifecycle_and_schema_replay(server):
             assert row["name"] in definition and "sample_start" not in definition
             # Astra round 2, 5: each stored program keeps the SQL mode its source was created with.
             # Read as the fixture's administrator: the owner holds no routine privilege on the template.
-            for source in ("sample_start", row["name"]):
+            # Each program has its own mode, and the event its own time zone (Sol and Opus round 3).
+            for source in ("sample", "sample_start", row["name"]):
                 modes = native(server, """
                     SELECT (SELECT SQL_MODE FROM information_schema.ROUTINES
                             WHERE ROUTINE_SCHEMA=%s AND ROUTINE_NAME='read_value'),
                            (SELECT SQL_MODE FROM information_schema.EVENTS
+                            WHERE EVENT_SCHEMA=%s AND EVENT_NAME='read_event'),
+                           (SELECT TIME_ZONE FROM information_schema.EVENTS
                             WHERE EVENT_SCHEMA=%s AND EVENT_NAME='read_event')
-                """, user="dl077_fixture_admin", parameters=(source, source))[0]
-                assert tuple(modes) == ("ONLY_FULL_GROUP_BY,STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION",) * 2, source
+                """, user="dl077_fixture_admin", parameters=(source, source, source))[0]
+                assert tuple(modes) == ("ONLY_FULL_GROUP_BY,STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION",
+                                        "STRICT_TRANS_TABLES,NO_ZERO_DATE", "+05:30"), source
     command("release", target, *identity)
     assert row["name"] in removed_names(command("sweep", "mysql", "--prefix", "copy", "--dry-run"))
     assert row["name"] in removed_names(command("sweep", "mysql", "--prefix", "copy"))
@@ -765,6 +769,31 @@ def test_mysql_create_that_fails_verification_is_interrupted_and_kept(server):
     finally:
         native(server, f"DROP DATABASE IF EXISTS `{name}`", **admin)
         native(server, "DELETE FROM copy_ledger_copy WHERE name=%s", parameters=(name,), **admin)
+
+
+def test_mysql_ansi_quotes_program_is_withheld_before_any_reservation(server):
+    """Sol round 3, P3: double-quoted names are not rewritten, so ANSI_QUOTES programs are withheld."""
+    if server["engine"] != "mysql":
+        pytest.skip("requires the MySQL fixture")
+    reply = copy_command(server, "create", "mysql:replay_ansi", "--prefix", "copy", "--label", "ansi", status=4)
+    assert reply["error"]["code"] == "not-replayable" and "ANSI_QUOTES" in reply["error"]["message"]
+    assert copy_command(server, "list", "mysql", "--prefix", "copy", "--label", "ansi")["result"]["copies"] == []
+
+
+def test_mysql_template_of_an_older_format_is_refused_before_any_reservation(server):
+    """Opus round 3, 4: a template whose programs carry no recorded settings is format-unknown, exit 5."""
+    if server["engine"] != "mysql":
+        pytest.skip("requires the MySQL fixture")
+    admin = {"user": "dl077_fixture_admin"}
+    original = native(server, "SELECT metadata FROM template_ddl WHERE name='sample'", **admin)[0][0]
+    metadata = json.loads(original)
+    metadata["objects"] = [item["ddl"] if isinstance(item, dict) else item for item in metadata["objects"]]
+    native(server, "UPDATE template_ddl SET metadata=%s WHERE name='sample'", parameters=(json.dumps(metadata),), **admin)
+    try:
+        reply = copy_command(server, "create", "mysql:sample", "--prefix", "copy", "--label", "older", status=5)
+        assert reply["error"]["code"] == "format-unknown" and reply["error"]["identity"] is None
+    finally:
+        native(server, "UPDATE template_ddl SET metadata=%s WHERE name='sample'", parameters=(original,), **admin)
 
 
 def test_mysql_template_size_uses_allocated_tablespace_bytes(server):
