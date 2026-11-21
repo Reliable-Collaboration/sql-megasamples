@@ -68,7 +68,7 @@ class PolicyStartupTests(unittest.TestCase):
                             "could not read the server configuration")), logs.stdout + logs.stderr)
                         self.assertNotIn("ready to accept connections", logs.stdout + logs.stderr)
                     finally:
-                        podman("rm", "-f", probe, check=False)
+                        podman("rm", "-fv", probe, check=False)   # the image's declared volume too
             capacity()
             podman("run", "-d", "--name", name, "--network", "none", "--memory", "1g",
                    "-v", mount, os.environ["DL077_PG_POLICY_IMAGE"], "postgres")
