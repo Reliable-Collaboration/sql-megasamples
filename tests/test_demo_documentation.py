@@ -54,8 +54,8 @@ def postgres_scope(document):
     assert re.search(r'ALTER DEFAULT PRIVILEGES FOR ROLE admin IN SCHEMA public GRANT SELECT ON TABLES TO megasamples_read;', grant_sql)
     assert 'tables `admin` later creates' in document and 'public' in document
     assert 'sample database' in document
-    assert all(not set(privileges) & {'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'TEMPORARY'}
-               for privileges, _ in grants)
+    # An allow-list: any privilege beyond reading (TRUNCATE, ALL, ...) fails.
+    assert all(set(privileges) <= {'SELECT', 'USAGE', 'CONNECT'} for privileges, _ in grants), grants
     assert re.search(r'\breads (?:persistent )?sample tables\b', document)
     for capability in ('TEMPORARY', 'large objects', 'routines'):
         assert capability in document
