@@ -58,3 +58,22 @@ Each row can wait: there is no realistic route to harm, or the harm is stated as
 | The H-3 probe's client-only accounting has no reversal | round 4, S4-9 | A recorded limit of the control. |
 | `test_quiescence_gate` unrelated-holder case fails, also at `e61335f` | rounds 1–5 | A baseline failure; its cause is not isolated. |
 | Design 8.3's claims not yet made | rounds 2–5 | T-11 `verify`, T-15 and the kill points, the full disk, and the wider account matrix. The merge waits for each. |
+
+## Round 5's runs
+
+These are the runs on the candidates built from `8102f35`: PostgreSQL `9fbee1a14d05` and `9a8e07e91aca`, MySQL `87dd365119ac` and `887f1224214a`, and the fallback fault image `acd0a1d82f47`. Logs are under `build/dl114-r1-work/`.
+
+**Passed**
+- **The TCP server suite:** PostgreSQL 23 passed, 12 skipped; MySQL 32 passed, 3 skipped in each mode; the fallback case passed.
+- **PostgreSQL suites:** policy OK; restore and the real reset OK; orphans OK; start OK, with the non-root case asserting the exit; health, 3 passed.
+- **`test-image`, 0 failures each:** PostgreSQL `chinook`; PostgreSQL `chinook employees pubs`; MySQL in both modes.
+- **The native strict-read suite:** PostgreSQL 46 passed; MySQL 7 passed in each mode.
+
+The orphan, start, MySQL-off image and native runs were first refused for memory below 15 GiB. They were then held by DL-081's host-wide rule for DataIntent's runs, and ran after the coordinator's go, 10:36–10:38 UTC (`r5-final2.txt`).
+
+**Failed**
+- **The full suite:** 2 failed, 1,078 passed, 313 skipped (`pytest-r5.log`, 08:24:35). These are the same two baseline failures as before.
+
+**Not run**
+- the claims design 8.3 lists as not yet made;
+- the workstreams themselves.
