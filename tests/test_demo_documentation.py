@@ -147,6 +147,12 @@ def test_strict_read_guide_states_the_grants_the_generator_makes():
             'foreign namespaces') in guide
     assert '`SELECT` on the registry tables ' + ' and '.join(f'`{t}`' for t in tables) + ', and `USAGE`' in guide
     assert not any('closed' in scope for _, scope in grants)
+    # Sol round 9, 5: the scope's escaping as well. The generator's exact patterns (pinned in
+    # mysql_scope) escape each underscore, so a working schema matches only itself and a foreign
+    # namespace only its own prefix; the guide must say so.
+    assert {scope for _, scope in demo_read_grants(['working_example'], [('external', True)])
+            if scope.endswith('.*')} == {r'`working\_example`.*', r'`external\_%`.*'}
+    assert "(each pattern's underscores escaped)" in guide and 'unescaped' not in guide
     # The report: granted to demo directly, and executable otherwise only by the superuser.
     assert 'granted to `demo` directly' in guide
     assert '`admin` and every other role except the superuser `postgres` are refused it' in guide
