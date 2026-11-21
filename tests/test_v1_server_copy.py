@@ -458,6 +458,32 @@ def test_mysql_copy_replacement_grant_refuses_sweep(server):
         copy_command(server, "drop", target, *proof)
 
 
+def test_mysql_create_that_fails_verification_is_interrupted_and_kept(server):
+    """Fable 10: the count and checksum step, and the interrupted outcome after a failed step."""
+    if server["engine"] != "mysql":
+        pytest.skip("requires the MySQL fixture")
+    admin = {"user": "dl077_fixture_admin"}
+    reply = copy_command(server, "create", "mysql:sample", "--prefix", "copy", "--label", "shortfill",
+                         status=8, fault=("short-fill", "-"))
+    assert reply["error"]["code"] == "create-unsettled"
+    identity = reply["error"]["identity"]
+    rows = copy_command(server, "list", "mysql", "--prefix", "copy", "--label", "shortfill")["result"]["copies"]
+    assert [(row["identity"], row["state"]) for row in rows] == [(identity, "interrupted")]
+    name = rows[0]["name"]
+    try:
+        assert native(server, f"SELECT COUNT(*) FROM `{name}`.parent", **admin)[0][0] == 1
+        swept = copy_command(server, "sweep", "mysql", "--prefix", "copy")["result"]
+        assert {"name": name, "reason": "interrupted"} in [
+            {"name": item["copy"]["name"], "reason": item["reason"]} for item in swept["kept"]]
+        assert copy_command(server, "drop", "mysql:" + name, "--identity", identity,
+                            status=5)["error"]["code"] == "interrupted"
+        assert native(server, "SELECT COUNT(*) FROM information_schema.SCHEMATA WHERE SCHEMA_NAME=%s",
+                      parameters=(name,), **admin)[0][0] == 1
+    finally:
+        native(server, f"DROP DATABASE IF EXISTS `{name}`", **admin)
+        native(server, "DELETE FROM copy_ledger_copy WHERE name=%s", parameters=(name,), **admin)
+
+
 def test_mysql_template_size_uses_allocated_tablespace_bytes(server):
     if server["engine"] != "mysql" or "chinook_allocated_bytes" not in server:
         pytest.skip("requires the MySQL fixture with a file-allocation witness")
