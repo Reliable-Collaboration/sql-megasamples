@@ -74,10 +74,14 @@ For example:
 | 6 | Sol P2-6, Opus 1 | the start suite's shared volume and trusted-loopback probe masked the path-form check | fixed in the tests; the plan requires a fresh volume per row |
 | 6 | Opus 4 | facts missing: another build's volume, healthcheck location, `dynamic_library_path`, other libraries, server modes | **input** (facts B, E, E2, H, M; questions 7, 8, 10, 11) |
 | 6 | Opus P3-2 | the extension script changed without a version or marker bump | **input** (question 7) |
+| 7 | Opus 1 | the test plan asks for every combination of 14 facts on real targets, with no rule for which count | **input**: state the coverage criterion (precedence that makes later facts moot; the full product in a cheap model under shimmed `postgres -C` and `pg_ctl`; real targets for each value against a base row and for named interactions; impossible combinations with reasons) |
+| 7 | Sol 1 | no outcome for a failed public start (the port does not bind) or for an informational command that exits 0 without a listener; a confirmed password change versus one whose reply was lost; each role's key and the passfile after each failure | **input** (facts L and B; I4; question 9 covers credentials and the passfile) |
+| 7 | Opus P3-4 | question 6 is missing from the owner list | **input**: question 6 is an owner decision |
+| 7 | Sol P3-7, Opus P3-7 | retained volumes from round 5 or 6 images keep `admin`'s EXECUTE or lack the routine, under marker `1` | **input** (question 7) |
 
 ## Questions the design must answer
 
-**Owner decisions in this brief:** questions 1, 2, 7, 8 and 9.
+**Owner decisions in this brief:** questions 1, 2, 6, 7, 8 and 9.
 
 1. Is the private password start kept at all, or are passwords applied another way (for example by the public server's first boot, before it listens)? **Owner decision:** it changes when a credential takes effect.
 2. Are non-root starts supported (move the health passfile), or refused before any launch? **Owner decision:** it is a supported-deployment question.

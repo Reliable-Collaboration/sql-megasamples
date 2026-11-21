@@ -48,6 +48,7 @@ The outcomes to decide are `complete` with these warnings, or `incomplete` with 
 | 5 | Sol P2-5 | the container replaced between the listing and the catalog: two volumes mixed | **input** |
 | 6 | Sol P2-7 | a restart under the same container ID; `pg_tblspc` not listable; malformed or empty results per observation; faults between reads | **input** (facts A, D0, F; question 6; test plan) |
 | 6 | Opus 5 | an invalid database after an interrupted drop; a link with no catalog row; timeouts; faults at each read | **input** (facts E2, F, G; question 5; test plan) |
+| 7 | Sol 2 | the basic warning cannot be derived: no fact says whether a directory's OID has a catalog row; an empty location is not told apart from missing output; round 1 S4 and round 2 S2-3 not named | **input**: the directory-to-catalog match for `base/` and tablespaces; empty versus missing; both CLI routes asserted; a different leftover class names its warning and whether the README's removal route applies |
 
 ## Questions the design must answer
 

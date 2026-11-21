@@ -71,6 +71,9 @@ The outcomes to decide are the exit, this copy's list and reason, and the result
 | 5 | Opus P3-5 | the per-copy reason taken from the command-wide `wrote` flag | **input** |
 | 6 | Sol P2-4 | the table cannot derive the reply for a lost reply to a committed `DROP`, a dry-run loss, or a busy copy then an unlock loss (which can list it kept twice) | **input** (fact A; R2 and R5 reconciled; test plan) |
 | 6 | Opus 2 | busy and contended, already gone, partly done, sweep selection and unreached copies, concurrent commands | **input** (facts A, A2, E, F; questions 5, 6) |
+| 7 | Opus 1 | the full product of 9 steps and facts A to F is not buildable; no coverage criterion | **input**: state the criterion, as for WS1, with the full product only in the fault-switch harness |
+| 7 | Sol 3 | rollback and cleanup are not steps; a skipped dry-run step and an unsent request share `not issued`; R1's "exactly once" against unreached copies | **input**: selection, rollback and cleanup as steps; step execution separate from what the caller can confirm; object and ledger state asserted with the reply; question 6 in the owner summary if skipping a `not-exclusive` copy is considered |
+| 7 | Opus P3-5 | fact E (two parties changing the same copy) is an owner category under `AGENTS.md` | **input**: keep the change lock's semantics, or make E's outcomes part of question 5 |
 
 ## Questions the design must answer
 

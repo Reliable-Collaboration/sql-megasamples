@@ -43,6 +43,8 @@ The outcomes to decide are to run or stop, and where the stop is raised.
 | 5 | Sol P2-1 | library TCP connections by cached port reach a replacement that reuses the port | **input** |
 | 6 | Sol P2-8 | the TCP proof and its bootstrap are outside the table; zero statements on the replacement must be witnessed | **input** (fact P; question 4; test plan) |
 | 6 | Opus 3 | the store and engine facts, the gone and store controls, marker-read faults, F19, the H-3 scope | **input** (facts S, T; question 5; test plan) |
+| 7 | Opus 2 | the table test spans only A to D | **input**: the table spans S, T, A, P, B, C and D under a stated coverage criterion, with controls for each value of P (reaches another, nothing listens, copied with the volume) and each timing of C |
+| 7 | Sol 4 | the proof and its oracle disagree: a copied marker is untested, and the absence of a probe database cannot show that no read, authentication or cleanup reached the replacement | **input**: authentication, bootstrap, proof reads and test SQL as separate steps; each replacement boundary, the direct parity connection included; evidence that detects each prohibited operation; authentication before proof stays an owner decision; H-3's manifest graph check and exec-by-ID reconciled with N1 and N3 |
 
 ## Questions the design must answer
 
