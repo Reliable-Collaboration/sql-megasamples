@@ -53,6 +53,20 @@ class Checks:
     def expect(self, cond, label): (self.ok if cond else self.fail)(label)
 
 
+def demo_write_checks(checks, table, created, routine):
+    """demo is refused each write to the probe table, and the write through a routine."""
+    reader = "demo"
+    for statement, label in [
+            (f"CREATE TABLE {created} (id integer)", "CREATE"),
+            (f"INSERT INTO {table} VALUES (2, 2)", "INSERT"),
+            (f"UPDATE {table} SET n=2 WHERE id=1", "UPDATE"),
+            (f"DELETE FROM {table} WHERE id=1", "DELETE"),
+            (f"DROP TABLE {table}", "DROP")]:
+        checks.expect(q(statement, user=reader, pw=reader).returncode != 0, f"demo cannot {label}")
+    checks.expect(q(f"CALL {routine}()", user=reader, pw=reader).returncode != 0,
+                  "demo cannot write through a routine")
+
+
 def account_checks(checks, schema, read_table, expected_count):
     """Exercise valid statements against fixtures in a database this image actually carries."""
     reader, writer = "demo", "admin"
@@ -72,15 +86,7 @@ def account_checks(checks, schema, read_table, expected_count):
         checks.expect(q("SELECT 1", user=reader, pw=reader).returncode == 0, "demo can connect")
         result = q(f"SELECT COUNT(*) FROM `{schema}`.`{read_table}`", user=reader, pw=reader)
         checks.expect(result.returncode == 0 and result.stdout.strip() == str(expected_count), "demo can read")
-        for statement, label in [
-                (f"CREATE TABLE {created} (id integer)", "CREATE"),
-                (f"INSERT INTO {table} VALUES (2, 2)", "INSERT"),
-                (f"UPDATE {table} SET n=2 WHERE id=1", "UPDATE"),
-                (f"DELETE FROM {table} WHERE id=1", "DELETE"),
-                (f"DROP TABLE {table}", "DROP")]:
-            checks.expect(q(statement, user=reader, pw=reader).returncode != 0, f"demo cannot {label}")
-        checks.expect(q(f"CALL {routine}()", user=reader, pw=reader).returncode != 0,
-                      "demo cannot write through a routine")
+        demo_write_checks(checks, table, created, routine)
         checks.expect(q(f"INSERT INTO {table} VALUES (2, 2)", user=writer, pw=writer).returncode == 0,
                       "admin can write")
     finally:
