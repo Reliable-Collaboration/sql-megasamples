@@ -77,3 +77,22 @@ The orphan, start, MySQL-off image and native runs were first refused for memory
 **Not run**
 - the claims design 8.3 lists as not yet made;
 - the workstreams themselves.
+
+## Round 5: restoration and isolation
+
+- **Retained isolated stack.** The fingerprint ledgers (phase `r5-final`) are byte-identical to build 1's `after` ledgers:
+  - PostgreSQL `ee0f1a8b…711e`;
+  - MySQL `a5c0466a…a72f`;
+  - SQLite `5b0c2768…da98`.
+- **Removed:**
+  - every task container this round started;
+  - this round's 28 anonymous volumes, each checked unused;
+  - the superseded and reversal images.
+- **Kept for review:**
+  - the round 5 candidates `localhost/dl114-r5-pg:candidate`, `:candidate-full`, `localhost/dl114-r5-mysql:candidate-true`, `:candidate-false`;
+  - the fault images `localhost/dl114-r5-pg:fault-fallback`, `localhost/dl114-r1c-pg:fault-close`;
+  - the runner.
+- **The isolated socket service** is stopped.
+- **Isolation** (`build/dl114-r1-work/isolation-check.sh`, read-only):
+  - **Live deployment:** the nine live `megasamples-*` entries are unchanged by ID, state, health, start time and image.
+  - **Isolated store:** the same 20 containers.
