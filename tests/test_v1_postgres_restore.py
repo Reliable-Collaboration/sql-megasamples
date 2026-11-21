@@ -42,15 +42,21 @@ class RestoreTests(unittest.TestCase):
                                      "WHERE extname = 'read_policy'", database), "read_policy pg_catalog")
         self.assertEqual(self.accept("SELECT evtenabled FROM pg_event_trigger "
                                      "WHERE evtname = 'megasamples_close_routines'", database), "A")
-        # The superuser creates the probe: a restored database's public schema is not admin's to
-        # create in, and the trigger closes routines from every creator.
-        self.accept("CREATE FUNCTION public.v1_restored_probe() RETURNS int LANGUAGE sql AS 'SELECT 1'",
-                    database)
+        # Opus round 3, 3: the creator has no default ACL of its own, so only the event trigger can
+        # take PUBLIC's EXECUTE away; postgres and admin carry defaults that would hide its absence.
+        self.accept("DO $$ BEGIN CREATE ROLE v1_plain_creator LOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$")
+        self.accept(f'GRANT CONNECT ON DATABASE "{database}" TO v1_plain_creator')
+        self.accept("CREATE SCHEMA IF NOT EXISTS v1_probe AUTHORIZATION v1_plain_creator", database)
+        self.assertEqual(self.accept("SELECT count(*) FROM pg_default_acl WHERE defaclrole = 'v1_plain_creator'::regrole",
+                                     database), "0")
+        self.accept("CREATE FUNCTION v1_probe.restored() RETURNS int LANGUAGE sql AS 'SELECT 1'",
+                    database, "v1_plain_creator")
         try:
-            self.assertEqual(self.accept("SELECT has_function_privilege('demo', 'public.v1_restored_probe()', "
-                                         "'EXECUTE')", database), "f")
+            self.assertEqual(self.accept("SELECT has_function_privilege('demo', 'v1_probe.restored()', 'EXECUTE')",
+                                         database), "f")
         finally:
-            self.accept("DROP FUNCTION public.v1_restored_probe()", database)
+            self.accept("DROP SCHEMA v1_probe CASCADE", database)
+            self.accept(f'REVOKE CONNECT ON DATABASE "{database}" FROM v1_plain_creator')
 
     def counts(self, database):
         return self.accept("""SELECT format('SELECT %L || '':'' || count(*) FROM %I.%I', n.nspname || '.' || c.relname,
@@ -60,9 +66,11 @@ class RestoreTests(unittest.TestCase):
                               ORDER BY 1 \\gexec""", database)
 
     def test_every_shipped_database_restores_into_a_template0_database(self):
-        databases = self.accept("SELECT datname FROM pg_database WHERE datallowconn AND NOT datistemplate "
+        # Every connectable database the image ships, template1 included; this suite's own scratch
+        # databases (v1_) are excluded by name.
+        databases = self.accept("SELECT datname FROM pg_database WHERE datallowconn "
                                 "AND datname NOT LIKE 'v1\\_%' ORDER BY 1").split()
-        self.assertIn("chinook", databases)
+        self.assertTrue({"chinook", "template1", "megasamples", "postgres"} <= set(databases), databases)
         for database in databases:
             with self.subTest(database=database):
                 scratch = "v1_restore_" + database
