@@ -72,9 +72,14 @@ class SQLite(Engine):
         # and `up --wait` waits for the whole 900 MB rather than for the first file. The copy of
         # that much data was OOM-killed under a 64 MB limit on the first start (2026-09-10), so the
         # limit is 256 MB and the health check has a start period long enough for a slow disk.
+        # A console writing when the stack stopped can leave a hot journal (or -wal and -shm) beside a
+        # file; SQLite would apply it to the fresh copy on its next open, so each file's three siblings
+        # are removed before the copy is moved into place.
         # `$$`: Compose interpolates a single `$` in compose.yaml; the doubled one reaches the shell
         copy = ("rm -f /shared/.complete; for f in /data/*.sqlite; do n=$$(basename \"$$f\"); "
-                "cp -f \"$$f\" \"/shared/.$$n.part\" && mv -f \"/shared/.$$n.part\" \"/shared/$$n\" || exit 1; done; "
+                "cp -f \"$$f\" \"/shared/.$$n.part\" && "
+                "rm -f \"/shared/$$n-journal\" \"/shared/$$n-wal\" \"/shared/$$n-shm\" && "
+                "mv -f \"/shared/.$$n.part\" \"/shared/$$n\" || exit 1; done; "
                 "touch /shared/.complete && exec sleep infinity")
         return {
             "image": f"${{MEGASAMPLES_SQLITE_IMAGE:-{self.image}}}",
