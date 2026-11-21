@@ -1,4 +1,4 @@
--- Accounts for the megasamples image (PLAN.md section 1, decisions/database-naming-convention.md).
+-- Accounts for the megasamples image (knowledge/decisions/database-naming-convention.md).
 -- Runs in the BUILDER stage: the official entrypoint's docker_setup_db never executes on a
 -- pre-populated data directory, so root@'%', the demo user and the admin user are all created here.
 -- entrypoint-wrapper.sh applies MYSQL_ROOT_PASSWORD / DEMO_PASSWORD / ADMIN_PASSWORD at run time.

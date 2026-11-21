@@ -1,4 +1,4 @@
-# The build-time loader image (PLAN.md task P-04, deferred until something actually needed it --
+# The build-time loader image (deferred until something actually needed it --
 # which is now: SSB has to compile dbgen from source, and TPC-C needs sysbench).
 #
 # Nothing here reaches the published MySQL image. This container compiles or drives generators and

@@ -1,6 +1,7 @@
-# Version 1 feasibility gates
+# Feasibility gates
 
-Each executable named `G-…` is one native feasibility check behind version 1's copies and accounts.
+Each executable named `G-…` is one native feasibility check behind the copies and accounts:
+whether an engine can do what the copy commands and the read-only accounts rely on.
 The test uses native SQL, clients and filesystem operations. The design and run records that
 described each gate are in the repository's history.
 
@@ -35,7 +36,7 @@ filesystem and uses only the manifest's filesystem path there.
 | Fixtures | Provisioning |
 |---|---|
 | `postgres`, `mysql`, `sqlite` | Images from main at `e61335f`. Use isolated copies with the baseline datasets when a gate reads the image catalog or fingerprint. PostgreSQL's local socket must use the shipped local maintenance path. |
-| `postgres_pr14` | PostgreSQL image built from PR #14 at `2879fc4`. |
+| `postgres_pr14` | PostgreSQL image built from the earlier strict read-only branch at commit `2879fc4`. |
 | `postgres_hook`, `postgres_hook_unloaded` | Two fresh volumes with the same PostgreSQL 18 test image. Build the test library under `prototype/` with matching server headers and PGXS. Preload `dl077_gate_hook` in the first target only. |
 | `mysql_no_binlog` | Same MySQL image as `mysql`, with `--skip-log-bin` and the same existing server limits. |
 | `mysql`, `mysql_replacement` for G-33a | Build a fixture from a scratch copy of `engines/mysql/Dockerfile`. Remove `/var/lib/mysql/auto.cnf` in the builder immediately after its final MySQL shutdown. Seed each container from that fixture into a distinct fresh volume. |

@@ -30,6 +30,8 @@ one-line shims over `python3 -m megasamples <command>` (section 7).
 │   ├── cli.py  paths.py  config.py  datasets.py  consoles.py  compose.py  job.py  matrix.py
 │   ├── fetch.py  stage.py  canon.py  verify.py  registry.py  catalogue.py  console_page.py
 │   ├── provenance.py  prepub.py  audit.py  workspace.py  okf_check.py  okf_fix_quotes.py
+│   ├── copying.py  copy_server.py  copy_postgres.py  copy_mysql.py  copy_sqlite.py  copy_config.py   `megasamples copy` (section 4.5)
+│   ├── postgres_templates.py  mysql_templates.py  mysql_template_build.py  sqlite_templates.py   templates and copy accounts baked into the images
 │   ├── engines/                one subpackage per engine: mysql/, postgres/, sqlite/ (server, load or port, adapter, image_test)
 │   ├── port/                   the MySQL corpus -> engine-neutral model -> other engines (model, typemap, ddl, tsv, record)
 │   └── sources/                upstream-format translators and exporters (T-SQL, PL/SQL, .bak, CSV, XML)
@@ -101,9 +103,9 @@ integers widen to the next signed type and `tinyint(1)` is never a boolean; enum
 membership check and set becomes text; an identity column keeps an integer type; names over 63
 bytes are shortened by one function the adapters share; stored generated columns are recomputed by
 the target from the translated expression; geometry is standard WKB with longitude first; foreign
-keys into another database are dropped and named. Not ported anywhere: views, routines, triggers,
-FULLTEXT and SPATIAL indexes, `ON UPDATE CURRENT_TIMESTAMP`, and on SQLite a CHECK using
-`regexp_like`. `megasamples ports-check` (part of `make check`) regenerates every committed port
+keys into another database are dropped and named. Views, routines, triggers, FULLTEXT indexes and
+`ON UPDATE CURRENT_TIMESTAMP` are ported as sections 4.2 to 4.4 describe (SQLite has no stored
+routines). Not ported anywhere: the SPATIAL index; and on SQLite, a CHECK using `regexp_like`. `megasamples ports-check` (part of `make check`) regenerates every committed port
 record and fails on a byte of difference, which is what makes the ports reproducible by construction.
 
 Conventions every dataset follows: one database per dataset, lower snake_case names, multi-schema
@@ -143,8 +145,8 @@ is the registry the configuration names.
   the passwords at container start.
 * **Registry.** The `megasamples.datasets` table inside the image: one row per dataset with tier,
   knowledge record, licence ids, source artifacts with digests, pinned row counts and the build id.
-  The catalogue, the landing page and the image tests all read it, so none can drift from what was
-  actually baked.
+  The landing page and the image tests read it, so neither can drift from what was actually baked.
+  The catalogue is generated from the repository's dataset definitions, not from an image.
 * **Loader image.** `engines/mysql/loader.Dockerfile` builds the generators the generated tier needs
   (SSB's dbgen, sysbench for TPC-C); nothing from it reaches any published image.
 
@@ -169,9 +171,12 @@ is the registry the configuration names.
   written, starts a private server with bulk-load settings, creates the accounts and the registry,
   replays every port's files, and stops; the final stage is the official image plus that cluster.
   First start answers a real query in under a second; the data directory is 2.6 GB for the 21 core
-  databases and the image is 4.1 GB. Details: `knowledge/decisions/postgres-image-shape.md`.
-* **Accounts.** `postgres` (superuser, `root`), `admin` (create, alter, drop; `ALL` on every table),
-  `demo` (`SELECT` everywhere). `POSTGRES_PASSWORD`, `ADMIN_PASSWORD`, `DEMO_PASSWORD` override them
+  databases and the image is 4.1 GB (measured before copy templates, which store each templated
+  database a second time). Details: `knowledge/decisions/postgres-image-shape.md`.
+* **Accounts.** `postgres` (superuser, `root`), `admin` (owns the sample databases; `CREATEDB`,
+  `CREATEROLE`; not a superuser), `demo` (the restricted read profile of
+  `engines/postgres/init/10-read-profile.sql` and `20-grants.sql`, backed by the `read_policy`
+  extension; see `docs/strict-read-account.md`), and `copier` (section 4.5). `POSTGRES_PASSWORD`, `ADMIN_PASSWORD`, `DEMO_PASSWORD` override them
   at start through the wrapper entrypoint. Tag: `sql-megasamples-postgres:dev`.
 * **Registry.** Database `megasamples`, table `datasets`: MySQL's columns plus `engine` and
   `not_ported`.
@@ -192,7 +197,8 @@ is the registry the configuration names.
 * **Image.** `engines/sqlite/Dockerfile`: Alpine 3.24.4 (digest-pinned) with SQLite 3.54.1 built from its verified vendor source
   (SQLite 3.54.1.2), the files under `/data` and `/data/megasamples.sqlite` as the registry; its default
   command sleeps so the container holds the files for `docker exec` and for the consoles. The 21 core
-  databases are 899 MB of files and a 1.3 GB image. The same files stay under
+  databases are 899 MB of files and a 1.3 GB image (measured before the templates under
+  `/templates` were added). The same files stay under
   `build/sqlite/<database>/` for readers that want a database without a server.
 * **Stack.** The `sqlite` service copies the image's files into the named volume `megasamples-sqlite`
   at every start, and the consoles that can open SQLite mount that volume read-only, so a rebuilt
@@ -231,6 +237,26 @@ One program produces every port, and nothing in it is written by hand per datase
   `ports/notes.yaml`. `megasamples ports-check` (part of `make check`) re-renders every port's DDL,
   routines, views and triggers from the build server and fails on any byte of difference from what
   is committed, so a port is reproducible by construction and reviewed as a diff.
+
+### 4.5 Copies (`megasamples copy`)
+
+* **Templates.** At image build each selected database gets a pristine template: on PostgreSQL a
+  database `<database>_start` registered as a template (`engines/postgres/init/40-register-template.sql`);
+  on MySQL a schema `<database>_start` with its replayable definitions recorded in
+  `megasamples.template_ddl` (`megasamples/mysql_template_build.py`); on SQLite a file under
+  `/templates` with a `templates.json` manifest (`megasamples/sqlite_templates.py`). Which databases
+  get one is `engines.<engine>.templates` (default `core`).
+* **Namespaces and accounts.** `copies.namespaces` (default `copy`, owner `copier`, 32 copies) and
+  the declared `accounts.readers` and `accounts.writers` are baked into the images by
+  `megasamples/copy_config.py` and the template builders. The accounts are created without a usable
+  password.
+* **The command.** `megasamples/copying.py` parses the command and prints the one JSON reply;
+  `copy_server.py` holds the shared server logic (records in a per-namespace ledger table, leases,
+  states, the sweep), with `copy_postgres.py` (`CREATE DATABASE … TEMPLATE`) and `copy_mysql.py`
+  (schema replay) for the servers; `copy_sqlite.py` copies template files into the user's directory
+  and keeps its records in `<dir>/.megasamples`.
+* **Resets.** A whole-engine reset or `make down` replaces the engine's volume, so server copies go
+  with it; SQLite copies live outside the stack.
 
 ## 5. Verification
 
@@ -281,7 +307,7 @@ build: {threads: 4, keep_build_server: false, scale_factor: 1}
 downloads: {concurrency: 3}
 ```
 
-Without the file, the built-in default is that example. `make configure` writes it from an
+Without the file, the built-in default is MySQL with the core tier and the four consoles. `make configure` writes it from an
 interactive engine × dataset matrix and a console list; `megasamples.config` validates it (unknown
 engines, consoles that need an engine not selected, port clashes) before any command uses it.
 
@@ -292,10 +318,10 @@ runs first), so the stack is exactly what was chosen. Rules the generated file f
   `megasamples-<console>`. It comes up and goes down together; `docker compose up -d mysql` is the
   database alone.
 * Every service has a `mem_limit`: a container with no limit can see the whole VM, so one process
-  going wide takes the machine down rather than failing on its own. MySQL is given 1 GB with a 256 MB
+  going wide takes the machine down rather than failing on its own. MySQL is given 2 GB with a 256 MB
   buffer pool named explicitly, because MySQL sizes its pool from the host's memory, not the container's.
 * Every port binds to `127.0.0.1`. Publishing a console more widely is a deliberate edit.
-* Images are pinned by digest. `megasamples pull-image` fetches an image over IPv4 for daemons that
+* Third-party images are pinned by digest; the engine images are built locally. `megasamples pull-image` fetches an image over IPv4 for daemons that
   cannot reach the registry, and the digest is what makes the two paths name the same bytes.
 * A console is started only when an engine it can browse is selected, and is configured for every
   engine present, read-only account first. `megasamples/consoles.py` is the registry: which engines
@@ -360,7 +386,7 @@ before handing off to the server. The daemon owner still controls container conf
 | bundle and generated files | `make check` | seconds, no Docker | before every commit |
 | the quick subset end to end | `make build D="$(make -s list-quick)"` or a config with `datasets: quick` | 15 datasets, minutes | before a push that touches the pipeline |
 | the image and S8 | `make image` then `make test-image` | one bake | with the above |
-| everything | a config with `datasets: core`, then `make run` and `make test-image` | 21 datasets, a 3.5 GB image | before publishing an image |
+| everything | a config with `datasets: core`, then `make run` and `make test-image` | 21 datasets, a 3.5 GB image (approximate; templates add space) | before publishing an image |
 | the console | `make up` then `make test-console` | seconds | when the stack or a console changes |
 
 `make check` runs the knowledge-bundle checker (`okf_check.py`: frontmatter, sections, trust rules,
