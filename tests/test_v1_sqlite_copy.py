@@ -57,6 +57,84 @@ def target(row):
     return "sqlite:" + row["name"]
 
 
+def test_sweep_checks_unknown_formats_before_any_deletion(copying):
+    run, _, copies = copying
+    row = create(run)
+    run("release", target(row), "--identity", row["identity"])
+    invalid = copies / ".megasamples" / "copy_zzzz_000000000000.json"
+    invalid.write_text(json.dumps({"tag": "megasamples-sidecar/99"}))
+    before = {p: p.read_bytes() for p in copies.rglob("*") if p.is_file()}
+    assert run("sweep", "sqlite", "--prefix", "copy", exit=5)["error"]["code"] == "format-unknown"
+    assert {p: p.read_bytes() for p in copies.rglob("*") if p.is_file()} == before
+
+
+@pytest.mark.parametrize("phase", ["reserved", "ready", "dropping"])
+def test_sweep_preserves_previous_format_without_a_final_file(copying, phase):
+    run, _, copies = copying
+    row = create(run)
+    run("release", target(row), "--identity", row["identity"])
+    sidecar = copies / ".megasamples" / (row["name"] + ".json")
+    record = json.loads(sidecar.read_text())
+    record.update(tag="megasamples-sidecar/0", phase=phase)
+    sidecar.write_text(json.dumps(record))
+    (copies / (row["name"] + ".sqlite")).unlink()
+    for flags in [("--dry-run",), ()]:
+        swept = run("sweep", "sqlite", "--prefix", "copy", *flags)["result"]
+        assert swept["removed"] == []
+        assert swept["kept"][0]["reason"] == "previous-format"
+        assert sidecar.exists()
+    assert run("drop", target(row), "--identity", row["identity"])["result"]["state"] == "gone"
+    assert not sidecar.exists()
+
+
+@pytest.mark.parametrize("moved", [False, True])
+def test_sweep_recovers_expired_drop(copying, moved):
+    run, _, copies = copying
+    row = create(run)
+    run("release", target(row), "--identity", row["identity"])
+    sidecar = copies / ".megasamples" / (row["name"] + ".json")
+    record = json.loads(sidecar.read_text())
+    record.update(phase="dropping", aside=row["identity"] + ".aside")
+    sidecar.write_text(json.dumps(record))
+    final = copies / (row["name"] + ".sqlite")
+    aside = sidecar.parent / record["aside"]
+    if moved:
+        final.rename(aside)
+    assert run("show", target(row))["result"]["state"] == "dropping"
+    assert run("sweep", "sqlite", "--prefix", "copy", "--dry-run")["result"]["removed"]
+    assert sidecar.exists() and (aside.exists() if moved else final.exists())
+    assert run("sweep", "sqlite", "--prefix", "copy")["result"]["removed"]
+    assert not sidecar.exists() and not final.exists() and not aside.exists()
+
+
+def test_namespace_inventory_includes_unmanaged_file(copying):
+    run, _, copies = copying
+    scratch = copies / "copy_scratch.sqlite"
+    scratch.write_bytes(b"unmanaged")
+    rows = run("list", "sqlite", "--prefix", "copy")["result"]["copies"]
+    assert [(row["name"], row["state"]) for row in rows] == [("copy_scratch", "unmanaged")]
+    swept = run("sweep", "sqlite", "--prefix", "copy")["result"]
+    assert swept["removed"] == []
+    assert swept["kept"][0]["reason"] == "unmanaged"
+    assert scratch.read_bytes() == b"unmanaged"
+
+
+@pytest.mark.parametrize("arguments", [
+    ("--password-stdin", "private-test-canary"),
+    ("--password-stdin=private-test-canary",),
+    ("--password-file", "/dev/null", "--port", "private-test-canary"),
+])
+def test_copy_usage_never_echoes_password_like_arguments(arguments):
+    result = subprocess.run(
+        [sys.executable, "-m", "megasamples", "copy", "list", "postgres", "--prefix", "copy",
+         "--host", "127.0.0.1", "--user", "copier", *arguments],
+        capture_output=True, text=True, timeout=10,
+    )
+    assert result.returncode == 2
+    assert "private-test-canary" not in result.stdout + result.stderr
+    assert json.loads(result.stdout)["error"]["code"] == "usage"
+
+
 def test_lifecycle_and_release(copying):
     run, source, copies = copying
     row = create(run)

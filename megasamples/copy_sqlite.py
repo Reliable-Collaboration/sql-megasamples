@@ -14,7 +14,7 @@ import time
 from uuid import uuid4
 
 from megasamples.copying import (
-    CopyError, IDENTITY, LABEL, copy_name_is_valid, database_is_valid, expiry, now,
+    CopyError, IDENTITY, LABEL, database_is_valid, expiry, now,
     prefix_is_valid,
 )
 
@@ -172,7 +172,7 @@ class SQLiteCopies:
     def names(self, prefix):
         names = {file.stem for file in self.directory.glob(prefix + "_*.sqlite")}
         names.update(file.stem for file in self.metadata.glob(prefix + "_*.json"))
-        return sorted(name for name in names if copy_name_is_valid(name))
+        return sorted(names)
 
     def namespace_for(self, name):
         for prefix in self.namespaces:
@@ -188,11 +188,13 @@ class SQLiteCopies:
             return False
         return stat.S_ISREG(chosen.st_mode) and stat.S_ISREG(kept.st_mode) and os.path.samestat(chosen, kept)
 
-    def state(self, name, row):
+    def state(self, name, row, *, explicit_drop=False):
         file = self.final(name)
         exists = present(file)
         if row is None:
             return "unmanaged" if exists else "gone"
+        if row["tag"] == PREVIOUS_SIDECAR and not explicit_drop:
+            return "previous-format"
         if row["phase"] in ("reserved", "issuing", "created"):
             return "interrupted" if exists or row["phase"] == "created" else "stale"
         aside = self.aside(row)
@@ -202,8 +204,6 @@ class SQLiteCopies:
             return "gone"
         if not self.matches(file, row):
             return "inconsistent"
-        if row["tag"] == PREVIOUS_SIDECAR:
-            return "previous-format"
         return row["phase"]
 
     def result(self, name, row, state):
@@ -350,7 +350,7 @@ class SQLiteCopies:
         name, identity = row["name"], row["identity"]
         file, aside, retained = self.final(name), self.aside(row), self.retained(row)
         try:
-            if state in ("ready", "dropping", "previous-format"):
+            if state in ("ready", "dropping"):
                 if row["phase"] != "dropping":
                     row = self.update(row, phase="dropping", aside=aside.name)
                 if not present(aside):
@@ -393,38 +393,46 @@ class SQLiteCopies:
             if not acquired:
                 raise CopyError(6, "busy", "copy is changing", identity)
             row = self.load(name)
-            state = self.state(name, row)
+            state = self.state(name, row, explicit_drop=True)
             if row is None and state == "gone":
                 return self.result(name, None, "gone")
             self.require_identity(row)
-            if state not in ("ready", "dropping", "previous-format", "stale", "gone"):
+            if state not in ("ready", "dropping", "stale", "gone"):
                 raise CopyError(5, state, "copy is kept", identity)
             return self.finish_drop(row, state)
 
     def sweep(self):
         removed, kept = [], []
-        for name in self.names(self.args.prefix):
-            item = self.inspect(name)
-            if item["state"] not in ("ready", "stale", "gone"):
+        selected = [self.inspect(name) for name in self.names(self.args.prefix)]
+        for item in selected:
+            name = item["name"]
+            if item["state"] not in ("ready", "dropping", "stale", "gone"):
                 kept.append({"copy": item, "reason": item["state"]})
                 continue
-            if item["state"] == "ready" and datetime.fromisoformat(item["lease_until"]) > now():
+            if item["state"] in ("ready", "dropping") and datetime.fromisoformat(item["lease_until"]) > now():
                 kept.append({"copy": item, "reason": "leased"})
                 continue
             if self.args.dry_run:
                 removed.append(item)
                 continue
             with self.lock(name, write=True) as acquired:
-                row = self.load(name) if acquired else None
-                if row is None or (row["identity"], row["revision"]) != (item["identity"], item["revision"]):
-                    kept.append({"copy": item, "reason": "changed" if acquired else "changing"})
-                    continue
-                state = self.state(name, row)
-                if state != item["state"]:
-                    kept.append({"copy": item, "reason": state})
-                    continue
-                if state == "ready" and datetime.fromisoformat(row["lease_until"]) > now():
-                    kept.append({"copy": item, "reason": "leased"})
-                    continue
-                removed.append(self.finish_drop(row, state))
+                try:
+                    row = self.load(name) if acquired else None
+                    if row is None or (row["identity"], row["revision"]) != (item["identity"], item["revision"]):
+                        kept.append({"copy": item, "reason": "changed" if acquired else "changing"})
+                        continue
+                    state = self.state(name, row)
+                    if state != item["state"]:
+                        kept.append({"copy": item, "reason": state})
+                        continue
+                    if state in ("ready", "dropping") and datetime.fromisoformat(row["lease_until"]) > now():
+                        kept.append({"copy": item, "reason": "leased"})
+                        continue
+                    removed.append(self.finish_drop(row, state))
+                except CopyError as failure:
+                    if not removed:
+                        raise
+                    error = CopyError(8, failure.code, str(failure), failure.identity or item["identity"])
+                    error.result = {"removed": removed, "kept": kept + [{"copy": item, "reason": failure.code}]}
+                    raise error from None
         return {"removed": removed, "kept": kept}

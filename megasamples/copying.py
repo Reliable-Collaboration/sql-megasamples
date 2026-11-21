@@ -30,7 +30,8 @@ class Help(Exception):
 
 class Parser(argparse.ArgumentParser):
     def error(self, message):
-        raise CopyError(2, "usage", message)
+        # argparse diagnostics can interpolate any token from argv.
+        raise CopyError(2, "usage", "invalid copy arguments; use copy ACTION --help")
 
     def print_help(self, file=None):
         raise Help(self.format_help())
@@ -177,8 +178,10 @@ def main(argv):
             from megasamples.copy_sqlite import SQLiteCopies
 
             copies = SQLiteCopies(args)
-            reply["result"] = getattr(copies, args.action)()
-            reply["warnings"] = copies.warnings
+            try:
+                reply["result"] = getattr(copies, args.action)()
+            finally:
+                reply["warnings"] = copies.warnings
         else:
             if args.engine == "postgres":
                 from megasamples.copy_postgres import open_postgres as open_server
@@ -194,6 +197,7 @@ def main(argv):
         reply["result"] = {"usage": str(help_message)}
     except CopyError as error:
         reply["exit"] = error.status
+        reply["result"] = getattr(error, "result", None)
         reply["error"] = {"code": error.code, "message": str(error), "identity": error.identity}
     except Exception:
         reply["exit"] = 1
