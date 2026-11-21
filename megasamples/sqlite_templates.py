@@ -46,6 +46,8 @@ def stage_templates(context, settings):
             json.dump(manifest, stream, sort_keys=True)
             stream.write("\n")
             stream.flush()
+            # Nonsecret and shared: any consumer of the templates must be able to read it.
+            temporary.chmod(0o444)
             os.replace(temporary, directory.parent / "templates.json")
         finally:
             temporary.unlink(missing_ok=True)
