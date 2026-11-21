@@ -1,7 +1,7 @@
 """MySQL gate cases using SQL and stock clients."""
 
 import re
-from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 
 from clients import Client, kill_managed_client, managed_client, until
 from native import ControlNotShown, checked, denied, require, same
@@ -63,13 +63,21 @@ def concurrent_read_only_copies(target):
     for copy in copies:
         value(target, f"CREATE DATABASE {copy}; CREATE TABLE {copy}.gate_data LIKE {SOURCE}.gate_data")
     read_only_error(target.mysql(f"INSERT INTO {SOURCE}.gate_data VALUES (3, 'control')"))
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        jobs = [
-            pool.submit(value, target, f"INSERT INTO {copy}.gate_data SELECT * FROM {SOURCE}.gate_data")
-            for copy in copies
-        ]
-        for job in jobs:
-            job.result()
+    with ExitStack() as stack:
+        sessions = [stack.enter_context(Client(target, target.mysql_args())) for _ in copies]
+        identifiers = [client.query("SELECT CONNECTION_ID();") for client in sessions]
+        require(all(identifier.isdecimal() for identifier in identifiers), "missing copy session identifiers")
+        for session, copy in zip(sessions, copies):
+            session.send(f"""
+                INSERT INTO {copy}.gate_data
+                SELECT id, IF(SLEEP(3)=0, payload, NULL) FROM {SOURCE}.gate_data;
+            """)
+        until(lambda: value(target, f"""
+            SELECT COUNT(*) FROM performance_schema.processlist
+            WHERE ID IN ({','.join(identifiers)}) AND INFO LIKE 'INSERT INTO gate_copy_%';
+        """) == "2")
+        for session in sessions:
+            same(session.query("SELECT ROW_COUNT();"), "2")
     expected = checksum(target, SOURCE)
     for copy in copies:
         same(checksum(target, copy), expected)
@@ -168,75 +176,95 @@ def create_sql(target, db, kind, name, column, key):
     return re.sub(r"\bDEFINER\s*=\s*`[^`]+`@`[^`]+`\s*", "", fields[column], flags=re.I)
 
 
-def replay_into_copy(target):
+def replay_mode(target, key, binlog):
     definitions = (
         ("TABLE", "gate_data", 1), ("TABLE", "gate_child", 1), ("TABLE", "gate_audit", 1),
         ("PROCEDURE", "gate_routine", 2), ("VIEW", "gate_view", 1),
         ("TRIGGER", "gate_trigger", 2), ("EVENT", "gate_event", 3),
     )
-    for key, binlog in (("mysql", "1"), ("mysql_no_binlog", "0")):
-        same(value(target, "SELECT @@global.log_bin", key=key), binlog)
-        grant_namespace(target, COPY_USER, "gate_copy", key)
-        value(target, f"""
-            CREATE DATABASE {SOURCE};
-            GRANT SELECT ON `gate\\_work\\_start`.* TO '{COPY_USER}'@'localhost';
-            USE {SOURCE};
-            CREATE TABLE gate_data (
-                id int PRIMARY KEY, payload varchar(40),
-                generated varchar(44) AS (concat(payload,'-gen')) STORED,
-                FULLTEXT (payload)
-            );
-            CREATE TABLE gate_child (
-                id int PRIMARY KEY, FOREIGN KEY (id) REFERENCES gate_data(id)
-            );
-            CREATE TABLE gate_audit (payload varchar(40));
-            CREATE PROCEDURE gate_routine() SELECT payload FROM gate_data WHERE id=1;
-            CREATE VIEW gate_view AS SELECT payload FROM gate_data WHERE id=1;
-            CREATE TRIGGER gate_trigger AFTER INSERT ON gate_data FOR EACH ROW
-                INSERT INTO gate_audit SELECT payload FROM gate_data WHERE id=NEW.id;
-            CREATE EVENT gate_event ON SCHEDULE EVERY 1 DAY DISABLE
-                DO INSERT INTO gate_audit SELECT payload FROM gate_data WHERE id=1;
-            INSERT INTO gate_data (id,payload) VALUES (1,'initial');
-            INSERT INTO gate_child VALUES (1);
-            DELETE FROM gate_audit;
-        """, key=key)
-        replay = {
-            name: create_sql(target, SOURCE, kind, name, column, key)
-            for kind, name, column in definitions
-        }
-        value(target, f"""
-            CREATE DATABASE {DEST};
-            USE {DEST};
-            SET FOREIGN_KEY_CHECKS=0;
-            {replay['gate_data']};
-            {replay['gate_child']};
-            {replay['gate_audit']};
-            INSERT INTO gate_data(id,payload) SELECT id,payload FROM {SOURCE}.gate_data;
-            INSERT INTO gate_child SELECT * FROM {SOURCE}.gate_child;
-            SET FOREIGN_KEY_CHECKS=1;
-            {replay['gate_routine']};
-            {replay['gate_view']};
-            {replay['gate_trigger']};
-            {replay['gate_event']};
-        """, user=COPY_USER, key=key)
-        same(checksum(target, DEST, key=key), checksum(target, SOURCE, key=key))
-        value(target, f"UPDATE {SOURCE}.gate_data SET payload='source-only' WHERE id=1", key=key)
-        for sql in ("SELECT payload FROM gate_view", "CALL gate_routine()"):
-            same(value(target, sql, SOURCE, key=key), "source-only")
-            same(value(target, sql, DEST, COPY_USER, key), "initial")
+    same(value(target, "SELECT @@global.log_bin", key=key), binlog)
+    grant_namespace(target, COPY_USER, "gate_copy", key)
+    value(target, f"""
+        CREATE DATABASE {SOURCE};
+        GRANT SELECT ON `gate\\_work\\_start`.* TO '{COPY_USER}'@'localhost';
+        USE {SOURCE};
+        CREATE TABLE gate_data (
+            id int PRIMARY KEY, payload varchar(40),
+            derived_payload varchar(44) AS (concat(payload,'-gen')) STORED,
+            FULLTEXT (payload)
+        );
+        CREATE TABLE gate_child (
+            id int PRIMARY KEY, FOREIGN KEY (id) REFERENCES gate_data(id)
+        );
+        CREATE TABLE gate_audit (payload varchar(40));
+        CREATE PROCEDURE gate_routine() SELECT payload FROM gate_data WHERE id=1;
+        CREATE VIEW gate_view AS SELECT payload FROM gate_data WHERE id=1;
+        CREATE TRIGGER gate_trigger AFTER INSERT ON gate_data FOR EACH ROW
+            INSERT INTO gate_audit SELECT payload FROM gate_data WHERE id=NEW.id;
+        CREATE EVENT gate_event ON SCHEDULE EVERY 1 DAY DISABLE
+            DO INSERT INTO gate_audit SELECT payload FROM gate_data WHERE id=1;
+        INSERT INTO gate_data (id,payload) VALUES (1,'initial');
+        INSERT INTO gate_child VALUES (1);
+        DELETE FROM gate_audit;
+    """, key=key)
+    replay = {
+        name: create_sql(target, SOURCE, kind, name, column, key)
+        for kind, name, column in definitions
+    }
+    value(target, f"""
+        CREATE DATABASE {DEST};
+        USE {DEST};
+        SET FOREIGN_KEY_CHECKS=0;
+        {replay['gate_data']};
+        {replay['gate_child']};
+        {replay['gate_audit']};
+        INSERT INTO gate_data(id,payload) SELECT id,payload FROM {SOURCE}.gate_data;
+        INSERT INTO gate_child SELECT * FROM {SOURCE}.gate_child;
+        SET FOREIGN_KEY_CHECKS=1;
+    """, user=COPY_USER, key=key)
+    refused = {}
+    for name in ("gate_routine", "gate_view", "gate_trigger", "gate_event"):
+        result = target.mysql(replay[name], DEST, COPY_USER, key)
+        if result.returncode:
+            code = re.search(r"ERROR (\d+) \(", result.stderr)
+            refused[name] = code[1] if code else f"exit {result.returncode}"
+    print(f"binary log {binlog}: replay refusals {refused}")
+    same(checksum(target, DEST, key=key), checksum(target, SOURCE, key=key))
+    value(target, f"UPDATE {SOURCE}.gate_data SET payload='source-only' WHERE id=1", key=key)
+    for name, statement in (("gate_view", "SELECT payload FROM gate_view"),
+                            ("gate_routine", "CALL gate_routine()")):
+        same(value(target, statement, SOURCE, key=key), "source-only")
+        if name not in refused:
+            same(value(target, statement, DEST, COPY_USER, key), "initial")
+    if "gate_trigger" not in refused:
         value(target, "INSERT INTO gate_data(id,payload) VALUES (2,'copy-only')", DEST, COPY_USER, key)
         same(value(target, "SELECT payload FROM gate_audit", DEST, key=key), "copy-only")
         same(value(target, "SELECT COUNT(*) FROM gate_audit", SOURCE, key=key), "0")
-        same(value(target, "SELECT generated FROM gate_data WHERE id=1", DEST, key=key), "initial-gen")
-        same(value(target, """
-            SELECT COUNT(*) FROM information_schema.statistics
-            WHERE table_schema=DATABASE() AND table_name='gate_data' AND index_type='FULLTEXT'
-        """, DEST, key=key), "1")
-        denied(target.mysql("INSERT INTO gate_child VALUES (999)", DEST, COPY_USER, key), "1452")
+    same(value(target, "SELECT derived_payload FROM gate_data WHERE id=1", DEST, key=key), "initial-gen")
+    same(value(target, """
+        SELECT COUNT(*) FROM information_schema.statistics
+        WHERE table_schema=DATABASE() AND table_name='gate_data' AND index_type='FULLTEXT'
+    """, DEST, key=key), "1")
+    denied(target.mysql("INSERT INTO gate_child VALUES (999)", DEST, COPY_USER, key), "1452")
+    if "gate_event" not in refused:
         same(value(target, """
             SELECT STATUS FROM information_schema.events
             WHERE event_schema=DATABASE() AND event_name='gate_event'
         """, DEST, key=key), "DISABLED")
+    require(not refused, f"replay refused {refused}")
+
+
+def replay_into_copy(target):
+    failures = []
+    for key, binlog in (("mysql", "1"), ("mysql_no_binlog", "0")):
+        try:
+            replay_mode(target, key, binlog)
+        except AssertionError as error:
+            failures.append(f"binary log {binlog}: {error}")
+            print(failures[-1], flush=True)
+        else:
+            target.observed_control(f"replay with binary log {binlog} kept the marked source separate")
+    require(not failures, "; ".join(failures))
 
 
 def named_lock_held_after_client_dies(target):

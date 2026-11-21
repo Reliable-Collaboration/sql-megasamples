@@ -26,7 +26,11 @@ def pressure(target, key, path, reserve_kib):
         [ "$blocks" -gt 0 ] || exit 89
         set -C
         : > "$data/$fill"
-        fallocate -l "$((blocks * 1024))" "$data/$fill"
+        if command -v fallocate >/dev/null 2>&1; then
+            fallocate -l "$((blocks * 1024))" "$data/$fill"
+        else
+            dd if=/dev/zero of="$data/$fill" bs=1024 count="$blocks" status=none
+        fi
         df -Pk "$data"
         """, "dl077", path, str(reserve_kib), name,
     )
@@ -54,7 +58,7 @@ def pg_fingerprint(target, key="postgres", exclude=()):
             continue
         data[db] = pg_value(target, r"""
             SELECT format(
-                'SELECT %L, count(*), md5(coalesce(string_agg(md5(to_jsonb(t)::text), '''' ORDER BY md5(to_jsonb(t)::text)),'''')) FROM %I.%I t',
+                'SELECT %L, count(*), bit_xor(hashtextextended(t::text,0)),sum(hashtextextended(t::text,1)::numeric) FROM %I.%I t',
                 nspname||'.'||relname, nspname, relname
             ) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
             WHERE relkind='r' AND nspname NOT IN ('pg_catalog','information_schema')
@@ -100,18 +104,31 @@ def postgres_copy_pressure(target):
     path = checked(target.podman(
         "exec", target.container(key), "sh", "-ec", 'printf "%s" "$PGDATA"',
     ))
-    for strategy, destination in (("WAL_LOG", COPY), ("FILE_COPY", COPY), ("FILE_COPY", "gate__new_01234567")):
+    failures = []
+    for strategy, destination in (("WAL_LOG", COPY), ("FILE_COPY", COPY + "_file"),
+                                  ("FILE_COPY", "gate__new_01234567")):
         statement = f"CREATE DATABASE {destination} TEMPLATE {TEMPLATE} STRATEGY {strategy}"
-        with pressure(target, key, path, 2048):
-            failed = target.pg(statement, key=key)
-            require(failed.returncode and re.search(r"no space left on device|53100", failed.stderr, re.I),
-                    "the server did not report disk exhaustion during database copy")
-            same(pg_value(target, "SELECT 1", key=key), "1")
-            same(pg_value(target, f"SELECT count(*) FROM pg_database WHERE datname='{destination}'", key=key), "0")
-        same(pg_fingerprint(target, key), before)
         pg_value(target, statement, key=key)
         same(pg_value(target, CHECKSUM, destination, key=key), template_hash)
         pg_value(target, f"DROP DATABASE {destination}", key=key)
+        target.observed_control(f"{strategy} copied and matched the template with free space")
+
+        with pressure(target, key, path, 2048):
+            failed = target.pg(statement, key=key)
+            ready = target.pg("SELECT 1", key=key)
+            catalog = target.pg(f"SELECT count(*) FROM pg_database WHERE datname='{destination}'", key=key)
+        try:
+            require(failed.returncode, f"{destination} unexpectedly fit on the full volume")
+            same(checked(ready), "1")
+            same(checked(catalog), "0")
+            same(pg_fingerprint(target, key), before)
+        except AssertionError as error:
+            failures.append(f"{strategy} {destination}: {error}")
+            print(failures[-1], flush=True)
+
+    pg_value(target, f"ALTER DATABASE {TEMPLATE} ALLOW_CONNECTIONS true", key=key)
+    same(pg_value(target, CHECKSUM, TEMPLATE, key=key), template_hash)
+    require(not failures, "; ".join(failures))
 
 
 def mysql_big_table(target, key):
@@ -172,13 +189,24 @@ def mysql_reset_pressure(target):
     with pressure(target, key, "/var/lib/mysql", 2048):
         disk_error(target.podman(*target.mysql_args("gate_working", key=key),
                                  stdin=load + b"\n", show_input=False))
-        disk_error(target.mysql(update, key=key))
-        same(mysql_value(target, "SELECT phase FROM megasamples.gate_operations", key=key), "loading")
+        checked(target.podman("exec", target.container(key), "df", "-Pk", "/var/lib/mysql"))
+        phase_write = target.mysql(update, key=key)
+        phase = mysql_value(target, "SELECT phase FROM megasamples.gate_operations", key=key)
         same(mysql_value(target, "SELECT 1", key=key), "1")
-    same(mysql_fingerprint(target, key, ("gate_working",)), before)
+    after = mysql_fingerprint(target, key, ("gate_working",))
+    if phase_write.returncode == 0:
+        # Compare the other data independently of the observed change to the operation's row.
+        del before["megasamples"]["gate_operations"]
+        del after["megasamples"]["gate_operations"]
+    same(after, before)
     checked(target.podman(*target.mysql_args(key=key), stdin=dump, show_input=False))
     image = mysql_value(target, "CHECKSUM TABLE gate_working.bulk EXTENDED", key=reference).split("\t")[1]
     same(mysql_value(target, "CHECKSUM TABLE gate_working.bulk EXTENDED", key=key).split("\t")[1], image)
+    target.observed_control("reload with free space matched the reference checksum")
+    require(phase_write.returncode != 0,
+            f"the operation row update succeeded during disk exhaustion; phase read {phase!r}")
+    disk_error(phase_write)
+    same(phase, "loading")
 
 
 CASES = {"G-9": postgres_copy_pressure, "G-17a": mysql_copy_pressure, "G-17b": mysql_reset_pressure}

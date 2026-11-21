@@ -48,8 +48,9 @@ def publication(target):
             else:
                 raise AssertionError("host operation replaced an occupied name")
         for expression in ('set -C; printf other > copy', 'ln container copy'):
-            require(container_fs(target, directory, expression).returncode == 1,
-                    "container operation did not fail on the occupied name")
+            result = container_fs(target, directory, expression)
+            require(result.returncode != 0 and "File exists" in result.stderr,
+                    "container operation did not report an occupied name")
         same(final.read_text(), "original")
         final.unlink()
 
@@ -79,7 +80,10 @@ def publication(target):
                 peer_result = peer.result()
                 (directory / "start").touch()
                 host_result = host.result()
-            same(sorted([host_result, peer_result.returncode]), [0, 1])
+            if peer_result.returncode:
+                require("File exists" in peer_result.stderr,
+                        "container race loser did not report an occupied name")
+            same(sorted([host_result, int(peer_result.returncode != 0)]), [0, 1])
             same(final.read_text(), "host" if host_result == 0 else "container")
             final.unlink()
             (directory / "start").unlink()

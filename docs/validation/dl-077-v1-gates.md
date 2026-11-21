@@ -1,128 +1,138 @@
 # DL-077 version 1 feasibility gates
 
-20 November 2026 · DL-108 item 12 · design revision `0896ebc8205f3b04063afcd1e11d7b09ab146c7a`
+DL-108 item 12 · design revision `0896ebc8205f3b04063afcd1e11d7b09ab146c7a`
 
-The design names 58 gates, 52 engine-only and six needing the PostgreSQL hook
-prototype. All 58 test entry points were invoked. G-19b reached its native
-filesystem assertion and control. The other 57 stopped before their assertions
-when the isolated Podman store could not be opened. Neither a PostgreSQL nor a
-MySQL behavior was observed. There were no Failed or Unsupported **gates** in
-this run. The native feasibility requirement for design review remains open.
+Run concluded 2026-11-21 00:43:58 UTC. **55 Passed, 3 Failed, 0 Not run, 0 Unsupported.**
 
-The worktree did not contain an `AGENTS.md` at the applicable locations.
-The repository rules reproduced in the task were followed.
+The 58 launchers cover 52 engine-only gates and six hook gates. This record supersedes the earlier sandbox attempt in full. G-19b was run again. The design remains at the reviewed revision. The failures below return their affected capabilities to the deciders under section 8.1.
 
 ## Gate results
 
-Each gate ID links to the command's executable. The Podman preflight shown below
-applies to every row that stopped before an assertion. The last column is the
-consequence of a failure as written in section 8.1, for reference when the gate
-can be run.
+Each linked gate was invoked as `DL077_GATE_TARGET=<private manifest> tests/gates/<gate-id>` unless the row gives a different invocation. G-19b needs only a scratch directory. SQL below was sent to stock `psql` or `mysql`; the full task-owned logs are under the ignored `build/dl077-evidence/logs/` directory. The last column transcribes section 8.1's consequence on failure.
 
-| Gate | Kind | Result | Observed | Control | What the design withholds on failure |
+| Gate | Kind | Result | Command and observed output | Control | What the design withholds on failure |
 |---|---|---|---|---|---|
-| [G-1a](../../tests/gates/G-1a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | every PostgreSQL template, copy, and reset from a template |
-| [G-1b](../../tests/gates/G-1b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | every PostgreSQL template, copy, and reset from a template |
-| [G-1c](../../tests/gates/G-1c) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | **every use of a template as pristine:** PostgreSQL copies, template resets, and rule 2's registration |
-| [G-2a](../../tests/gates/G-2a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | the read group and the owner's writing: all PostgreSQL copies and reset-made working copies |
-| [G-2b](../../tests/gates/G-2b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | the closed defaults of pull request #14 on every copy and reset-made working copy |
-| [G-2c](../../tests/gates/G-2c) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | **the strict profile on every copy and reset-made working copy** |
-| [G-2d](../../tests/gates/G-2d) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | 4.1's `CONNECT` table; the copy's own comment as its proof |
-| [G-23](../../tests/gates/G-23) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | a copy's owner writing its copy: PostgreSQL copies |
-| [G-7a](../../tests/gates/G-7a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | on PostgreSQL: every `copy` command that changes anything; `reset` of one database |
-| [G-7b](../../tests/gates/G-7b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | nothing by itself: it fixes where the lock is taken. If the key did conflict across databases, the design is unchanged. |
-| [G-8a](../../tests/gates/G-8a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | template records; rule 2's registered template; a copy's proof |
-| [G-8b](../../tests/gates/G-8b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | on PostgreSQL: `copy drop`, `copy sweep`, and the reconciliation's drop of a transient |
-| [G-24p](../../tests/gates/G-24p) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | the proof on PostgreSQL: `copy drop`, `copy sweep`, the reset's steps b and f |
-| [G-24w](../../tests/gates/G-24w) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | `copy drop` and `copy sweep` on that engine |
-| [G-3a](../../tests/gates/G-3a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | PostgreSQL's reset of one database |
-| [G-3b](../../tests/gates/G-3b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | PostgreSQL's reset of one database |
-| [G-3c](../../tests/gates/G-3c) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | the door and the session decision on PostgreSQL |
-| [G-26p](../../tests/gates/G-26p) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | **PostgreSQL's reset from the image** |
-| [G-9](../../tests/gates/G-9) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | on PostgreSQL: `copy create`; `reset` of one database |
-| [G-32a](../../tests/gates/G-32a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | ending any session without `--discard sessions` |
-| [G-32b](../../tests/gates/G-32b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | **the default itself:** if a console holds sessions by itself, every default reset would refuse. That returns to the deciders. |
-| [G-5a](../../tests/gates/G-5a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | P-1's reason. If the role can already, P-1 is still applied, and H-1 is recorded as not reproduced. |
-| [G-5b](../../tests/gates/G-5b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | P-3, P-5 |
-| [G-5c](../../tests/gates/G-5c) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | P-6; a declared writer |
-| [G-6a](../../tests/gates/G-6a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | nothing: it shows the hazard that rule 4 is for |
-| [G-6b](../../tests/gates/G-6b) | H | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | rule 4. **Only a failure to refuse the password change while it still reads selects 4.5's fallback.** |
-| [G-4a](../../tests/gates/G-4a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | rule 1's reason. Whatever it shows, rule 3 confirms. |
-| [G-4b](../../tests/gates/G-4b) | H | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | H-3's resolution, or the deciders |
-| [G-29a](../../tests/gates/G-29a) | H | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | **PostgreSQL copies, here and from elsewhere.** Returns to the deciders. |
-| [G-29b](../../tests/gates/G-29b) | H | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | **PostgreSQL copies, here and from elsewhere.** Returns to the deciders. |
-| [G-29c](../../tests/gates/G-29c) | H | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | **PostgreSQL copies, here and from elsewhere.** Returns to the deciders. |
-| [G-29d](../../tests/gates/G-29d) | H | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | the claim that rule 2 binds namespace owners only |
-| [G-35p](../../tests/gates/G-35p) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | default 2 on PostgreSQL |
-| [G-10a](../../tests/gates/G-10a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | every MySQL template and copy |
-| [G-10b](../../tests/gates/G-10b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | every MySQL template and copy |
-| [G-10c](../../tests/gates/G-10c) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | the claim that only an administrator can open a template |
-| [G-11a](../../tests/gates/G-11a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | every grant the product makes on MySQL |
-| [G-11b](../../tests/gates/G-11b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | MySQL namespaces; a MySQL owner's credential used away from the service |
-| [G-11c](../../tests/gates/G-11c) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | `demo`'s narrowing; declared readers and writers; `demo_reads` |
-| [G-13](../../tests/gates/G-13) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | MySQL copies of each dataset that uses a kind that fails |
-| [G-15a](../../tests/gates/G-15a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | on MySQL: every `copy` command that changes anything; `reset` of one database |
-| [G-15b](../../tests/gates/G-15b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | `copy drop` and `copy sweep` on MySQL |
-| [G-24m](../../tests/gates/G-24m) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | the proof on MySQL: `copy drop`, `copy sweep`. With no proof no MySQL copy can be removed, so **MySQL copies are not offered.** |
-| [G-26m](../../tests/gates/G-26m) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | **MySQL's reset of one database** |
-| [G-27a](../../tests/gates/G-27a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | MySQL's reset of one database, where a writer is declared |
-| [G-27b](../../tests/gates/G-27b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | MySQL's reset of one database, where a writer is declared |
-| [G-16](../../tests/gates/G-16) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | nothing: it selects the branch of 4.5 |
-| [G-17a](../../tests/gates/G-17a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | `copy create` on MySQL |
-| [G-17b](../../tests/gates/G-17b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | MySQL's reset of one database |
-| [G-18a](../../tests/gates/G-18a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | the `binary_log` key: withdrawn, and the log stays on |
-| [G-18b](../../tests/gates/G-18b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | **nothing of this work:** a failure here is a defect of the image as it is, and returns to the deciders |
-| [G-35m](../../tests/gates/G-35m) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | default 2 on MySQL |
-| [G-33a](../../tests/gates/G-33a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | item 9's rule, on that engine |
-| [G-33b](../../tests/gates/G-33b) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | `copy` and `reset` commands on that engine, beside anything that replaces a volume. **Without it, `megasamples up --discard engine` and a whole engine's reset say that callers elsewhere must be stopped first.** |
-| [G-19a](../../tests/gates/G-19a) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | every SQLite `copy` command |
-| [G-19b](../../tests/gates/G-19b) | E | Passed | Untouched copy matched. The replacement differed and was put back without overwriting. None of 1,000 new files shared the inode. | Shown | the proof on SQLite: `copy drop`, `copy sweep` |
-| [G-19c](../../tests/gates/G-19c) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | SQLite `copy create`; SQLite's reset of one database |
-| [G-20](../../tests/gates/G-20) | E | Not run | Podman preflight exited 1. Gate driver exited 77. | Control not shown | every SQLite `copy` command that changes anything |
+| [G-1a](../../tests/gates/G-1a) | E | Passed | `SELECT current_user` against the closed template failed with “is not currently accepting connections” on the local socket and from the bridge. | **Shown.** Opening the template returned `postgres`. | every PostgreSQL template, copy, and reset from a template |
+| [G-1b](../../tests/gates/G-1b) | E | Passed | Two named sessions were active in CREATE DATABASE at the same time. The twin and both copies returned `300000\|-3931052097271155810`. | **Shown.** The CREATEDB role's copy from the non-template twin returned `42501`. | every PostgreSQL template, copy, and reset from a template |
+| [G-1c](../../tests/gates/G-1c) | E | Passed | `ALTER`, rename, `COMMENT` and `DROP` on the superuser's template each returned `42501` as `admin`. | **Shown.** The four commands on the admin-owned database exited 0. | **every use of a template as pristine:** PostgreSQL copies, template resets, and rule 2's registration |
+| [G-2a](../../tests/gates/G-2a) | E | Passed | The object owner and ACL query returned five equal rows, including `gate_data … gate_group=r/postgres,pg_database_owner=w/postgres`. | **Shown.** After `GRANT DELETE` the twin had `gate_group=rd/postgres` and the copy still had `r`. | the read group and the owner's writing: all PostgreSQL copies and reset-made working copies |
+| [G-2b](../../tests/gates/G-2b) | E | Passed | `pg_default_acl` returned two equal rows from the template and the copy. | **Shown.** The later `GRANT DELETE` changed only the template's group ACL from `r` to `rd`. | the closed defaults of pull request #14 on every copy and reset-made working copy |
+| [G-2c](../../tests/gates/G-2c) | E | Passed | In the policy-loaded fixture, the extension membership query returned `1`. A new routine in the copy returned `0` PUBLIC EXECUTE rows. | **Shown.** Removing the extension in the comparison database returned `1` PUBLIC EXECUTE row. | **the strict profile on every copy and reset-made working copy** |
+| [G-2d](../../tests/gates/G-2d) | E | Passed | The owner, comment and CONNECT query returned `postgres \| template comment \| t` for the twin and `gate_owner \| [empty] \| f` for the copy. | **Shown.** The tagged, granted twin showed both source properties were present before the native create. | 4.1's `CONNECT` table; the copy's own comment as its proof |
+| [G-23](../../tests/gates/G-23) | E | Passed | The copy owner's update returned `2`. The namespace reader and working writer each received `42501` for the copy's table. | **Shown.** The copy owner's update against the working database returned `42501`. | a copy's owner writing its copy: PostgreSQL copies |
+| [G-7a](../../tests/gates/G-7a) | E | Passed | After killing the client, the second session's `pg_try_advisory_lock` returned `f` while the create ran. The copy later appeared in the catalog. | **Shown.** After the backend finished, the same lock attempt returned `t`. | on PostgreSQL: every `copy` command that changes anything; `reset` of one database |
+| [G-7b](../../tests/gates/G-7b) | E | Passed | `pg_try_advisory_lock` returned `t` with the same key held from another database. | **Shown.** The competing session in the original database returned `f`. | nothing by itself: it fixes where the lock is taken. If the key did conflict across databases, the design is unchanged. |
+| [G-8a](../../tests/gates/G-8a) | E | Passed | The reader saw the template comment via `shobj_description` from `megasamples`. The namespace owner got `42501` trying to set it. | **Shown.** The owner could set and read the comment on its own copy. | template records; rule 2's registered template; a copy's proof |
+| [G-8b](../../tests/gates/G-8b) | E | Passed | Plain `DROP DATABASE gate_drop` returned `55006`, “being accessed by other users”, with one connected session. | **Shown.** It exited 0 after the session left. | on PostgreSQL: `copy drop`, `copy sweep`, and the reconciliation's drop of a transient |
+| [G-24p](../../tests/gates/G-24p) | E | Passed | The OID for the reused name changed from `270053` to `270054`. | **Shown.** The untouched OID `270052` survived a restart. | the proof on PostgreSQL: `copy drop`, `copy sweep`, the reset's steps b and f |
+| [G-24w](../../tests/gates/G-24w) | E | Passed | Outside roles could not drop or take the name. PostgreSQL reported `42501` or `42P04`. MySQL reported `1044` for the schema/marker operations. | **Shown.** The owner could replace each object, and the original OID or marker no longer matched. | `copy drop` and `copy sweep` on that engine |
+| [G-3a](../../tests/gates/G-3a) | E | Passed | Rollback left the phase and connection admission intact. Commit wrote the new phase and PostgreSQL refused a new connection with “is not currently accepting connections.” | **Shown.** The rollback exercised the opposite outcome on both members. | PostgreSQL's reset of one database |
+| [G-3b](../../tests/gates/G-3b) | E | Passed | The commit catalog showed `dl077_gate_twin \| 270053 \| t` and `gate_old \| 270032 \| f`, phase `swapped`, and the reader saw `new data`. | **Shown.** Rollback retained both original names and OIDs, no CONNECT grant, the `closed` phase and a refused reader. | PostgreSQL's reset of one database |
+| [G-3c](../../tests/gates/G-3c) | E | Passed | After the door closed, an old session still answered. A fresh connection was refused. `pg_terminate_backend` returned `t`, and the backend count went to `0`. | **Shown.** The open session and new connection returned different outcomes under the same closed state. | the door and the session decision on PostgreSQL |
+| [G-26p](../../tests/gates/G-26p) | E | Passed | `pg_restore` stayed blocked on the first transient while the coordinator was killed and the two raw admissions raced. Working checksum remained `63bc030b07197d0fc0f03fea8e2357d6`. The two transient OIDs were `270049` and `270058`. | **Shown.** Deliberately targeting the working database changed its checksum to the image digest `de2cf7d356595d2a9639491c7554e7e4`. | **PostgreSQL's reset from the image** |
+| [G-9](../../tests/gates/G-9) | E | Passed | At `2048` KiB free, WAL_LOG reported `XX000` “buffer is pinned in InvalidateBuffer” and both FILE_COPY attempts reported `53100`. Each failed create left the server answering `1`, zero catalog rows for the destination, and matching database checksums. | **Shown.** With free space each statement succeeded and the new database matched the template. | on PostgreSQL: `copy create`; `reset` of one database |
+| [G-32a](../../tests/gates/G-32a) | E | Passed | The browser executed `SELECT 17077 AS dl077_editor` twice through CloudBeaver's SQL editor and both returned `17077`. PostgreSQL reported matching idle demo sessions with no transaction. The reserved name matched exactly one session. | **Shown.** Changing only `application_name` to `other idle client` changed the reserved-name count from `1` to `0`. | ending any session without `--discard sessions` |
+| [G-32b](../../tests/gates/G-32b) | E | Passed | Three polls of the four consoles' addresses returned no PostgreSQL rows and MySQL count `0` before anyone opened a session. | **Shown.** Opening the PostgreSQL demo connection in CloudBeaver produced idle Main and Metadata backend rows. | **the default itself:** if a console holds sessions by itself, every default reset would refuse. That returns to the deciders. |
+| [G-5a](../../tests/gates/G-5a) | E | Passed | `SELECT 1 = 1` for a new role was rejected with `42501` for function `int4eq`. | **Shown.** `demo` ran the same statement and returned `t`. | P-1's reason. If the role can already, P-1 is still applied, and H-1 is recorded as not reproduced. |
+| [G-5b](../../tests/gates/G-5b) | E | Passed | All three routines returned values with backend XID `none` before and after and equal catalog digests. A second transaction imported the snapshot and read `1` after the base row became `2`. | **Shown.** The three routines were each denied before the explicit grants. | P-3, P-5 |
+| [G-5c](../../tests/gates/G-5c) | E | Passed | The writer's INSERT returned `42501` for `current_setting` and left the probe table empty. | **Shown.** Granting EXECUTE only on `current_setting(text)` let the same INSERT write `declared-writer`. | P-6; a declared writer |
+| [G-6a](../../tests/gates/G-6a) | E | Passed | The role's own `ALTER ROLE … PASSWORD NULL` changed its password-present flag from `t` to `f`. | **Shown.** Changing the other role returned `42501`. | nothing: it shows the hazard that rule 4 is for |
+| [G-6b](../../tests/gates/G-6b) | H | Passed | All three role statements returned `42501` with “gate prototype: role change refused”. The role read `42`, and its password-present flag remained `t`. | **Shown.** The admin altered its own managed role. On the same image with no preload, all three operations exited 0 and the password-present flag changed to `f`. | rule 4. **Only a failure to refuse the password change while it still reads selects 4.5's fallback.** |
+| [G-4a](../../tests/gates/G-4a) | E | Passed | The non-owner's `REVOKE` returned exit 0 and warning `01006`, “no privileges could be revoked”, and PUBLIC privileges remained. | **Shown.** The owner's revoke exited 0 and the PUBLIC ACL query returned zero rows. | rule 1's reason. Whatever it shows, rule 3 confirms. |
+| [G-4b](../../tests/gates/G-4b) | H | Passed | The prototype's post-copy error was `P0001`. The catalog returned no row. The data-directory difference contained one OID with no catalog row. | **Shown.** The ordinary create added only its registered directory. With the library unloaded the injected create unexpectedly succeeded, so the fault assertion failed. | H-3's resolution, or the deciders |
+| [G-29a](../../tests/gates/G-29a) | H | Passed | Four forms returned `42501` with “gate prototype: destination refused”. | **Shown.** The exact `lab_gate_123456789abc` from the fixed source was created. The unloaded negative run allowed the first invalid destination. | **PostgreSQL copies, here and from elsewhere.** Returns to the deciders. |
+| [G-29b](../../tests/gates/G-29b) | H | Passed | Five unregistered sources returned `42501` with “gate prototype: source refused”. | **Shown.** The registered source created the copy with the same name. The unloaded negative run accepted the first invalid source. | **PostgreSQL copies, here and from elsewhere.** Returns to the deciders. |
+| [G-29c](../../tests/gates/G-29c) | H | Passed | Renaming the owner's copy inside or outside the namespace returned `42501` with “gate prototype: rename refused”. | **Shown.** Admin renamed its own database. The unloaded negative run allowed the first rename. | **PostgreSQL copies, here and from elsewhere.** Returns to the deciders. |
+| [G-29d](../../tests/gates/G-29d) | H | Passed | An unmarked CREATEDB role created both names and renamed its own database. The catalog classified its in-prefix creation as `unmanaged`. | **Shown.** After adding the marker, both create and rename returned `42501`. The unloaded negative run allowed the attempted restricted create. | the claim that rule 2 binds namespace owners only |
+| [G-35p](../../tests/gates/G-35p) | E | Passed | `admin` and `postgres` with null passwords were rejected with “password authentication failed” on both TCP paths. The local socket still returned the exact user. | **Shown.** The original configured users signed in on both paths before setting the passwords to null. | default 2 on PostgreSQL |
+| [G-10a](../../tests/gates/G-10a) | E | Passed | UPDATE and ALTER were rejected for all three accounts with `3989`, “Schema … is in read only mode.” | **Shown.** With the option off, both operations succeeded as admin. | every MySQL template and copy |
+| [G-10b](../../tests/gates/G-10b) | E | Passed | `performance_schema.processlist` saw both INSERT … SELECT sessions active. Both `ROW_COUNT()` calls returned `2`. Source and copies returned `2742102162`. | **Shown.** A write into the source returned `3989`. | every MySQL template and copy |
+| [G-10c](../../tests/gates/G-10c) | E | Passed | The SELECT-only owner got `1044` on `ALTER DATABASE … READ ONLY = 0`. | **Shown.** Admin opened the schema and changed a row. | the claim that only an administrator can open a template |
+| [G-11a](../../tests/gates/G-11a) | E | Passed | The escaped grant let `a_b` return `2` while `axb` returned `1142`. | **Shown.** The unescaped grant let both return `2`. | every grant the product makes on MySQL |
+| [G-11b](../../tests/gates/G-11b) | E | Passed | `CREATE`, fill and `DROP` of the granted namespace succeeded. DDL on outside schemas got `1044`, and GRANT was refused. | **Shown.** The inside-schema statements proved the account was usable. | MySQL namespaces; a MySQL owner's credential used away from the service |
+| [G-11c](../../tests/gates/G-11c) | E | Passed | `demo` read the working and `fa_x` fixtures. Reads of `fb_x`, `fax`, `mysql.user` and the template got `1142`. | **Shown.** The readable foreign schema returned `2` after the grant. | `demo`'s narrowing; declared readers and writers; `demo_reads` |
+| [G-13](../../tests/gates/G-13) | E | Failed | Binary log on reported `{'gate_trigger': '1419'}`. Binary log off reported `{}`. The other replayed definitions passed the source/copy checks. | **Shown.** With logging off the replayed trigger wrote only into the copy. After the marked source update the source returned `source-only` while the copy's view and routine returned `initial`. | MySQL copies of each dataset that uses a kind that fails |
+| [G-15a](../../tests/gates/G-15a) | E | Passed | After killing the client, `GET_LOCK(...,0)` returned `0` while the holder's statement continued. | **Shown.** The same attempt returned `1` after the session finished. | on MySQL: every `copy` command that changes anything; `reset` of one database |
+| [G-15b](../../tests/gates/G-15b) | E | Passed | `DROP DATABASE gate_drop` returned `1205 (HY000)`, “Lock wait timeout exceeded”. The table checksum stayed `2742102162`. | **Shown.** The plain drop exited 0 without the transaction. | `copy drop` and `copy sweep` on MySQL |
+| [G-24m](../../tests/gates/G-24m) | E | Passed | In both log modes the marker was `DISABLED` before and after restart. Recreate finished within the same second (`1`), returned no event row, and the table checksum stayed `2742102162`. | **Shown.** The same event remained visible while the original schema was untouched. | the proof on MySQL: `copy drop`, `copy sweep`. With no proof no MySQL copy can be removed, so **MySQL copies are not offered.** |
+| [G-26m](../../tests/gates/G-26m) | E | Passed | All five intervals ran for each of coordinator death, worker death and restart. Lock and phase reads kept admission out. Fenced late streams returned `3141 (22032)` on line 2, with equal checksums. | **Shown.** Removing the fence let the late stream load and read `image`. | **MySQL's reset of one database** |
+| [G-27a](../../tests/gates/G-27a) | E | Passed | The already connected writer still returned `writer` after revoke alone. After its connection was killed, a new update returned `1142`. | **Shown.** The writer updated before revocation, and the retained session distinguished revoke alone from revoke plus termination. | MySQL's reset of one database, where a writer is declared |
+| [G-27b](../../tests/gates/G-27b) | E | Passed | After restart, the writer's UPDATE still returned `1142`. | **Shown.** The same UPDATE passed before revocation. | MySQL's reset of one database, where a writer is declared |
+| [G-16](../../tests/gates/G-16) | E | Passed | All four native statements changed the credential. Only the two global read-only settings rejected all four while the probe, client and reported console routes stayed usable. See the matrix below. | **Shown.** In the unmodified mode the alternate credential signed in and the prior credential was refused. With PASSWORD REQUIRE CURRENT, SET PASSWORD with REPLACE still changed it. | nothing: it selects the branch of 4.5 |
+| [G-17a](../../tests/gates/G-17a) | E | Passed | The bounded fixture's `INSERT … SELECT` returned `1114 (HY000)`, “The table 'bulk' is full”. The server read back `1` and unchanged template and working checksums. | **Shown.** After freeing space, source and destination each returned `32768` rows. | `copy create` on MySQL |
+| [G-17b](../../tests/gates/G-17b) | E | Failed | The dump dropped and recreated the target. The bulk load reported `1114 (HY000)`, “The table 'bulk' is full”. The operation UPDATE exited 0 and the next read was `done`. The server still answered `1` and the other schemas matched. | **Shown.** After space was freed, reloading the dump matched the reference checksum `2301797223`. | MySQL's reset of one database |
+| [G-18a](../../tests/gates/G-18a) | E | Passed | `@@global.log_bin` returned `0`. The complete shipped image suite reported `image test: 0 failure(s)` and exited 0, including the override start and sign-ins. | **Shown.** The same image with logging on returned `1` in the mode control and completed G-18b. | the `binary_log` key: withdrawn, and the log stays on |
+| [G-18b](../../tests/gates/G-18b) | E | Passed | `@@global.log_bin` returned `1`. The shipped full image suite returned `image test: 0 failure(s)` and exited 0, including both password override checks. | **Shown.** The same image with logging off returned `0` on the witness query. | **nothing of this work:** a failure here is a defect of the image as it is, and returns to the deciders |
+| [G-35m](../../tests/gates/G-35m) | E | Passed | Each locked account and route returned `3118`; after restart demo signed in as `demo@%` and those locks still returned `3118`. | **Shown.** Before locking, `CURRENT_USER()` identified `admin@%`, `root@%` and `root@localhost` on the specified routes. | default 2 on MySQL |
+| [G-33a](../../tests/gates/G-33a) | E | Failed | The baked MySQL directory already contained `auto.cnf`. `SELECT @@server_uuid` returned `5bcc6b55-e2b0-11f1-a4f6-a85e4555b8e9` before restart, after restart and on the fresh volume. | **Shown.** PostgreSQL's row and SQLite's file survived restart and were absent on replacement. MySQL's untouched UUID survived restart. The failure is specific to MySQL's fresh volume. | item 9's rule, on that engine |
+| [G-33b](../../tests/gates/G-33b) | E | Passed | Three old command roles lost their connections. PostgreSQL reported termination and MySQL `2013`. A late restore found no `gate__new_1` and the late MySQL stream got `1146` at the epoch query. Fresh volume catalogs and table fingerprints matched the references. | **Shown.** The unfenced MySQL stream created the control table and loaded `42`. `CHECKSUM TABLE … EXTENDED` returned `3104386219` for that table. | `copy` and `reset` commands on that engine, beside anything that replaces a volume. **Without it, `megasamples up --discard engine` and a whole engine's reset say that callers elsewhere must be stopped first.** |
+| [G-19a](../../tests/gates/G-19a) | E | Passed | Host and container exclusive opens and hard links refused occupied names. Shell diagnostics said “File exists”. Each host/container race had one winner and preserved its content. | **Shown.** The vacant name could be published and read across the bind mount. | every SQLite `copy` command |
+| [G-19b](../../tests/gates/G-19b) | E | Passed | The replacement failed the same-file assertion. The put-back preserved an occupied name. None of `1000` new files shared the retained inode. | **Shown.** The untouched copy matched the retained file. | the proof on SQLite: `copy drop`, `copy sweep` |
+| [G-19c](../../tests/gates/G-19c) | E | Passed | On a 64 MiB task-owned tmpfs, copy, sidecar, reset and operation staging each returned ENOSPC. Publication at capacity produced the full expected hash in all four paths. | **Shown.** Partial staging differed from the target hash. After freeing space, complete staging matched the final hash. | SQLite `copy create`; SQLite's reset of one database |
+| [G-20](../../tests/gates/G-20) | E | Passed | Host held `flock`; the container saw exit `42`. Replacing the name gave another file, so the old lock was detected as stale. | **Shown.** The container could lock the vacant/replacement path. | every SQLite `copy` command that changes anything |
 
-## Command evidence
+## Run and restoration evidence
 
-The command for each row was `tests/gates/<gate-id>`, with
-`DL077_GATE_TARGET` pointing to a private scratch manifest identifying the
-specified isolated environment. Each of the 57 blocked launchers sourced
-`env.sh` and produced the same Podman result before opening a test container.
+### Targets and versions
 
-```text
-$ podman info --format '{{.Store.GraphRoot}}'
-exit 1
-Failed to obtain podman configuration: set sticky bit on: chmod /run/user/1000/libpod: read-only file system
-```
+- The original worktree matched all 75 bundle entries by blob and executable mode. The verified bundle commit `70e621c9e278d5c2fdd2e203920adfcb495e74d5` was pushed before this run. The source and design were read from the clone at their recorded revisions. [Design](https://github.com/Reliable-Collaboration/sql-megasamples/blob/0896ebc8205f3b04063afcd1e11d7b09ab146c7a/docs/design/templates-copies-and-accounts.md#81-version-1s-feasibility-gates)
+- The engine images came from the retained baseline in the isolated store. The runtime engine, console, dataset and CLI source trees match between the image receipt's implementation revision and `e61335f`. The documentation copied into the images comes from the retained build. The run reused the recorded image bytes. [Main engine receipt and pins](https://github.com/Reliable-Collaboration/sql-megasamples/blob/e61335fdd067be33b83c86d029999555d8c241b7/docs/credential-prerequisite-evidence.md)
+- `SHOW server_version` reported PostgreSQL **18.7**. `pg_config --version` returned `PostgreSQL 18.7 (Debian 18.7-1.pgdg13+2)` in the owned compiler container. MySQL `SELECT VERSION()` reported **9.7.4**. SQLite `SELECT sqlite_version()` reported **3.54.1**. The pinned release sources were read at 2026-11-16 18:58:36 UTC for PostgreSQL, 2026-11-17 16:46:19 UTC for MySQL and 2026-11-20 23:57 UTC for SQLite. [PostgreSQL release](https://www.postgresql.org/docs/release/18.7/), [MySQL release](https://dev.mysql.com/doc/relnotes/mysql/9.7/en/news-9-7-4.html), [SQLite release history](https://sqlite.org/changes.html), [repository engine pins](https://github.com/Reliable-Collaboration/sql-megasamples/blob/e61335fdd067be33b83c86d029999555d8c241b7/engines/images.lock.yaml)
+- The consoles used the retained CloudBeaver **26.2.5**, DbGate **7.3.6**, Adminer **6.3.0**, and phpMyAdmin **5.2.3** images. The cited repository lock was read at 2026-11-21 00:13:34 UTC. The CloudBeaver SQL editor steps were checked against the vendor guide at 2026-11-21 00:30:49–00:30:50 UTC. [Console pins](https://github.com/Reliable-Collaboration/sql-megasamples/blob/e61335fdd067be33b83c86d029999555d8c241b7/clients.lock.yaml#L184), [CloudBeaver SQL editor](https://dbeaver.com/docs/cloudbeaver/SQL-Editor/)
+- G-2c and G-5a to G-5c used the exact PR #14 policy source, compiled with the matching headers. Its two SQL policy files were applied to each database and the templates on disposable copies of the main data, and the compiled library was preloaded. This run did not reproduce the prior candidate image ID. The procedure and policy files were read from the clone at 2026-11-20 23:44:26 UTC. [PR #14 build recipe](https://github.com/Reliable-Collaboration/sql-megasamples/blob/2879fc472ad1ebc2d0bf808a7d7bd4a5206f52c4/engines/postgres/Dockerfile)
+- The six H gates previously had a prototype in the verified bundle. This run built it inside the owned build container with `make -C /src/prototype`. Each launcher first failed against an unloaded test target with `statement unexpectedly succeeded`, then completed against the preloaded fixture. G-4b reproduced the post-copy orphan. Section 4.3 requires H-3's resolution before the merge.
 
-G-19b ran on a private directory under `/tmp`, with real filesystem calls.
+### G-16 password mechanism matrix
 
-```text
-$ tests/gates/G-19b
-untouched copy: same file
-control rejected replacement: the moved file is not the retained file
-put-back preserved the replacement without overwriting
-1000 newly created files: none shared the retained inode
-exit 0
-```
+`tests/gates/G-16` tried four statements as `demo` in each row. The statement labels below omit all values. The sign-in column records the probe, a stock client, the Adminer form, the phpMyAdmin database page, the DbGate driver, and CloudBeaver's connection/navigation request. A separate DbGate browser check returned HTTP `200` and loaded `megasamples.datasets` through the read-only connection.
+
+| Mechanism | ALTER CURRENT_USER | ALTER explicit demo | SET PASSWORD | SET PASSWORD with REPLACE | Sign-in |
+|---|---|---|---|---|---|
+| Existing demo privileges | Exit 0 | Exit 0 | Exit 0 | Exit 0 | Accepted |
+| PASSWORD REQUIRE CURRENT | `3892` | `3892` | `3892` | Exit 0 | Accepted |
+| ACCOUNT LOCK | `3118` | `3118` | `3118` | `3118` | Refused |
+| PASSWORD EXPIRE | Exit 1 | Exit 1 | Exit 1 | Exit 1 | Refused |
+| Global `read_only` | `1290` | `1290` | `1290` | `1290` | Accepted |
+| Global `super_read_only` | `1290` | `1290` | `1290` | `1290` | Accepted |
+
+Changing the credential in the control was verified by a new client accepting the alternate value and rejecting the original. Both usable refusals are global settings. Their documented restrictions reach ordinary writes needed by version 1, so this run established no account-local refusal that keeps those writes. That tradeoff goes to the deciders under section 4.5. The vendor pages were read at 2026-11-21 00:30:49–00:30:50 UTC. [MySQL server variables](https://dev.mysql.com/doc/refman/9.7/en/server-system-variables.html#sysvar_read_only), [MySQL stored program binary logging](https://dev.mysql.com/doc/refman/9.7/en/stored-programs-logging.html)
+
+### Preflight and repository checks
 
 | Check | Result | Observed output |
 |---|---|---|
-| Initial `free -m` | Passed | The `available` column reported 23,472 MiB, above the 15 GiB threshold. No stack start was attempted. |
-| Isolated `podman ps -a --format '{{.Names}} {{.ID}} {{.Status}}'`, with `env.sh`, before and after | Failed | Both attempts exited 1 with the same read-only error shown above. Neither emitted a container list. |
-| Live `podman ps -a --format '{{.Names}} {{.ID}} {{.Status}}'`, without `env.sh`, before and after | Failed | Both read-only attempts exited 1 with the same error and emitted no container list. Equality of these empty outputs provides no isolation proof. |
-| `findmnt -no OPTIONS -T` for the isolated `run` and `tmp` directories | Passed | Both mounts reported `ro,nosuid,nodev,relatime`. Neither directory was cleared. |
-| `unshare --user --map-root-user true` | Failed | `unshare: write failed /proc/self/uid_map: Operation not permitted`. |
-| `python3 -m compileall -q tests/gates` | Passed | Exit 0, no output. The 58 executable gate IDs match the design. |
-| `make -C tests/gates/prototype` | Failed | `make: pg_config: No such file or directory`; exit 2. The six H launchers were invoked before the C prototype was written, but their target checks prevented a native red. The prototype was never loaded. |
-| `git add tests/gates docs/validation/dl-077-v1-gates.md` | Failed | Git could not create `.git/index.lock` on the read-only mount. The local branch could not be updated. |
-| `git diff --cached --check` with a temporary Git index | Passed | The staged gate files and validation record passed the whitespace check. |
-| GitHub tree creation for branch publication | Failed | The tool reported `MCP tool call requires approval, but approval policy is never`. |
-| Baseline and restored stack fingerprints at `e61335f` | Not run | The isolated store could not be opened. Neither image identities nor dataset fingerprints could be captured. No stack was started, stopped, modified or restored. |
+| `git bundle verify`, blob/mode comparison, `git diff --check 0896ebc8 70e621c9`, initial branch push | Passed | Bundle verified, 75 paths matched, initial push created `gates/dl-077-v1`. |
+| Initial `free -m` | Passed | `23407` MiB available. Every subsequent start or restart checked the 15 GiB minimum. Trials interrupted by capacity are recorded as setup results. |
+| Initial isolated `podman ps -a` | Failed | Exit 125, cached boot ID differed. Removed only `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/run` and `/home/rcc-vstudio/working/sql-megasamples-upgrade-env/tmp`. |
+| Isolated `podman info --format '{{.Store.GraphRoot}} {{.Store.RunRoot}}'` after removal | Passed | GraphRoot and RunRoot were `…-env/graph` and `…-env/run`. Podman logged two inherited-container lock refresh warnings and opened the store. |
+| Isolated bridge startup | Failed, then Passed | Pasta reported permission denied opening the isolated network namespace. A task-local slirp4netns override brought up the same private bridge. |
+| Gate file parse and executable ID check | Passed | 58 executable IDs matched section 8.1. All 72 launchers and Python modules parsed. |
+| `python3 -m pytest -q tests/test_mysql_image_startup.py tests/test_catalogue_validation.py tests/test_lts_validation.py` using existing repository packages | Passed | `10 passed`. |
+| Full product regression suite | Not run | This work changes feasibility tests and the validation record. |
 
-## Test coverage still to verify
 
-The native tests and prototype require execution on the owned isolated stack to
-verify their fixtures and assertions. G-32a drives two CloudBeaver catalog
-navigation sessions and inspects the PostgreSQL backends after SQL activity. A
-statement submitted through the SQL editor has yet to be exercised. G-16 uses
-DbGate's shipped driver and stored demo connection settings for that console's
-probe. No G-16 password-change outcome or usable refusal mechanism was established.
+### Restoration
+
+Eight task-owned application containers are running on the retained `e61335f` baseline image set. PostgreSQL and MySQL were reattached to their baseline volumes and passed `podman healthcheck run`. `podman port` returned `127.0.0.1:15432` and `127.0.0.1:13306` respectively. The five console endpoints on loopback ports 18080–18084 all returned HTTP success. The service memory limits were 1 GiB PostgreSQL, 2 GiB MySQL, 256 MiB SQLite, 32 MiB landing, 160 MiB Adminer, 256 MiB phpMyAdmin, 320 MiB DbGate, and 640 MiB CloudBeaver.
+
+| Engine | Image ID before and after | Configured datasets / database names | Matching SHA-256 of the fingerprint ledger |
+|---|---|---|---|
+| PostgreSQL | `41ab1eb7a3451ad2b319993cd452528d381eeeea3a35ce658c62aab721940fc3` | 31 / 28 | `ee0f1a8b4e17230f6f30ce23935a3bc946b8dd93b4d0cedde6e5091cff93711e` |
+| MySQL | `20ecf18761195a5c900e9370b3e4d996ecfefdb20c2a555d827110ba9a2f3134` | 33 / 30 | `a5c0466a547917d94827612cb3340cc4dd28b6cf4ca5f8314755f28eae11a72f` |
+| SQLite | `090695cab2b5085144862daaedc9839036058f5ec0387a866c653eb8b9670ebb` | 31 / 28 | `5b0c2768dc41466dc5256b5a510e02083ca6dd4224b6a9c839bb7618f2a4da98` |
+
+The snapshot commands were `podman inspect --format '{{.Image}}'`, PostgreSQL registry queries and per-table `COUNT(*)` and row-hash aggregates, MySQL registry queries and `CHECKSUM TABLE … EXTENDED` empty of NULL results, and SQLite `sha256sum *.sqlite` and a registry query. The SQLite `/data` and shared `/shared` file checksums also matched. `cmp` returned 0 for every before/after ledger. The restored console image IDs are retained with the complete inventory in `build/dl077-evidence/final-services.txt`.
+
+The landing and Adminer help pages use credential-free copies of the generated pages. The applications use private synthetic values supplied from files. The task did not rebuild the retained images or restart the inherited containers.
+
+### Isolation
+
+The before live listing was captured read-only at 2026-11-20 23:43 UTC. The after listing was captured at 2026-11-21 00:42 UTC. Both used `podman ps -a --format '{{.Names}} {{.ID}} {{.Status}}'` with the isolated settings removed for that command. All nine entries belonging to the live deployment matched by name, ID, running or exited state, and health or exit status. Elapsed uptime text advanced. A targeted read-only inspect verified that the eight active containers' start times all precede the first snapshot.
+
+| Live engine | Before and after ID | Before and after state |
+|---|---|---|
+| megasamples-postgres | `ba1a9f758681` | Up, healthy |
+| megasamples-mysql | `a3f5c1204ee4` | Up, healthy |
+| megasamples-sqlite | `7adacf6eca19` | Up, healthy |
+
+The isolated `podman ps -a` under `env.sh` contained 12 pre-existing exited containers initially and the same 12 IDs and states at the end. The ownership-filtered after list had exactly eight task-owned containers, all running. The unfiltered request to show only task containers cannot hold in this store because the 12 inherited entries had to remain. The live container inventory, the isolated inventories, the image digests and the fingerprint ledgers are under `build/dl077-evidence/`. All eight restored image IDs and digests matched the initial image inventory.

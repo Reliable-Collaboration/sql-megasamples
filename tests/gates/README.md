@@ -28,8 +28,10 @@ Point `DL077_GATE_TARGET` to a private JSON file. It supplies the following fiel
 The shell runner sources the designated environment for each Podman invocation. It
 checks GraphRoot before opening a target and checks each container's ownership label
 before it can run SQL, stop or restart that container. It checks `MemAvailable` before
-starting or restarting one. A guard failure exits 77. G-19b only needs a private
-temporary directory.
+starting or restarting one. Set `DL077_GATE_CAPACITY_WAIT` to a number of seconds
+to wait for the threshold before a start. A guard failure exits 77. G-19b only needs a private
+temporary directory. G-19c can run inside the container that owns its bounded
+filesystem and uses only the manifest's filesystem path there.
 
 | Fixtures | Provisioning |
 |---|---|
@@ -43,6 +45,7 @@ temporary directory.
 | `postgres_peer`, `mysql_peer` | Client containers on the isolated stack network, with the relevant server container reachable by its name. |
 | `postgres_published_peer`, `mysql_published_peer` | Client containers that reach the task-owned server's published loopback port. |
 | `adminer`, `phpmyadmin`, `dbgate`, `cloudbeaver` | Bundled consoles pointed at the task's engines with synthetic settings. Use fresh consoles with no prior sessions for G-32b. |
+| `browser` | For G-32a, an owned browser container on the console network with Python Playwright and Chromium. Bind this test directory at `/gates`. |
 
 Supply the PostgreSQL peer clients with a private libpq passfile. The MySQL clients
 read private synthetic option files under `/run/dl077/` named `mysql-root.cnf`,

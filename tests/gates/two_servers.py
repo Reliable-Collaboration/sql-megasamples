@@ -97,12 +97,13 @@ def volume_identities(target):
                   "megasamples", key="postgres_replacement"), "t")
 
     image = target.image("mysql")
-    checked(target.podman(
-        "run", "--rm", "--pull=never", "--network=none", "--memory=2g",
+    baked_uuid = target.podman(
+        "run", "--rm", "--pull=never", "--network=none", "--memory=2g", "--image-volume=ignore",
         "--label", "org.sql-megasamples.gates.owner=" + target.owner,
-        "--entrypoint", "sh", image, "-ec", "test ! -e /var/lib/mysql/auto.cnf",
+        "--entrypoint", "sh", image, "-ec",
+        'if test -e /var/lib/mysql/auto.cnf; then echo present; else echo absent; fi',
         timeout=180,
-    ))
+    )
     query = "SELECT @@server_uuid"
     first = mysql_value(target, query)
     require(re.fullmatch(r"[0-9a-f-]{36}", first), "missing initial MySQL server UUID")
@@ -111,7 +112,7 @@ def volume_identities(target):
     replace(target, "mysql", "mysql_replacement",
             lambda: target.mysql("SELECT 1", key="mysql_replacement"))
     second = mysql_value(target, query, key="mysql_replacement")
-    require(re.fullmatch(r"[0-9a-f-]{36}", second) and first != second, "fresh MySQL UUID did not change")
+    require(re.fullmatch(r"[0-9a-f-]{36}", second), "missing replacement MySQL server UUID")
 
     old_sqlite = target.container("sqlite")
     sqlite = lambda key, command: target.podman("exec", target.container(key), "sh", "-ec", command)
@@ -123,6 +124,10 @@ def volume_identities(target):
     replace(target, "sqlite", "sqlite_replacement",
             lambda: sqlite("sqlite_replacement", "test -f /shared/.complete"))
     checked(sqlite("sqlite_replacement", "test ! -e /shared/.dl077-volume"))
+
+    target.observed_control("untouched control identities survived each restart")
+    require(checked(baked_uuid) == "absent" and first != second,
+            f"MySQL baked auto.cnf: {checked(baked_uuid)}; fresh volume changed UUID: {first != second}")
 
 
 def after_volume_replacement(target):
@@ -169,6 +174,12 @@ def after_volume_replacement(target):
                     client.send(statement)
                 except BrokenPipeError:
                     print("old client reported a broken pipe after replacement")
+                else:
+                    message = client.line(timeout=10)
+                    require(any(text in message.lower() for text in (
+                        "closed the connection", "terminating connection", "connection to server was lost",
+                        "server has gone away", "lost connection",
+                    )), f"old connection did not report its loss: {message}")
     restore = target.podman(
         "exec", "-i", target.container(new_pg), "pg_restore", "-U", "postgres",
         "--dbname=gate__new_1", "--exit-on-error", stdin=archive,

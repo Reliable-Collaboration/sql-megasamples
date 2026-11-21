@@ -85,6 +85,13 @@ def pg_worker_isolated(target):
     other_oid = pg_value(target, oid_query.format(second))
     require(other_oid.isdecimal() and other_oid != first_oid, "second transient reused the first OID")
 
+    checked(target.podman(
+        "exec", "-i", target.container("postgres"), "pg_restore", "-U", "postgres",
+        "--clean", "--if-exists", "--exit-on-error", "-d", working, stdin=archive, show_input=False,
+    ))
+    same(pg_value(target, digest, working), baked)
+    require(baked != expected, "restoring into the working database did not change its checksum")
+
 
 def lock_statement(name):
     return f"SELECT GET_LOCK('{name}',0)"
@@ -128,7 +135,8 @@ def mysql_scenario(target, name, interval, fault):
         coordinator = stack.enter_context(managed_client(target, target.mysql_args(), "coordinator"))
         worker = stack.enter_context(managed_client(target, target.mysql_args(), "worker"))
         same(coordinator.query(lock_statement(coordinator_lock) + ";"), "1")
-        same(worker.query("SELECT 1;"), "1")
+        worker_connection = worker.query("SELECT CONNECTION_ID();")
+        require(worker_connection.isdecimal(), "worker session identifier missing")
         coordinator.send(f"INSERT INTO megasamples.gate_operations VALUES ('{name}','started',1);")
         expected_phase = "started"
         same(coordinator.query(phase + ";"), expected_phase)
@@ -145,10 +153,10 @@ def mysql_scenario(target, name, interval, fault):
             if interval == 3:
                 worker.send(dump.rsplit("INSERT", 1)[0])
                 worker.send(f"INSERT INTO {name}.gate_data SELECT 1,'image' WHERE SLEEP(30)=0;")
-                until(lambda: mysql_value(target, """
+                until(lambda: mysql_value(target, f"""
                     SELECT count(*) FROM information_schema.processlist
-                    WHERE info LIKE 'INSERT INTO gate_reset_%SLEEP(30)%'
-                      AND id <> CONNECTION_ID()
+                    WHERE id={worker_connection}
+                      AND info LIKE 'INSERT INTO {name}.gate_data%SLEEP(30)%'
                 """) == "1")
             else:
                 worker.send(dump)

@@ -1,6 +1,6 @@
 """PostgreSQL gate cases using SQL and stock clients."""
 
-from concurrent.futures import ThreadPoolExecutor
+from contextlib import ExitStack
 
 from native import checked, denied, require, same
 
@@ -51,20 +51,41 @@ def closed_to_every_login(target):
 
 
 def concurrent_copies(target):
+    from clients import Client, until
+
     fixture(target)
     same(value(target, "SELECT rolcreatedb AND NOT (rolsuper OR rolcreaterole OR rolreplication OR rolbypassrls) FROM pg_roles WHERE rolname='gate_owner'"), "t")
     denied(target.pg(f"CREATE DATABASE {COPY} TEMPLATE {TWIN}", user="gate_owner"), "42501")
-    with ThreadPoolExecutor(max_workers=2) as pool:
-        jobs = [
-            pool.submit(value, target, f"CREATE DATABASE {COPY}_{suffix} TEMPLATE {TEMPLATE}", "postgres", "gate_owner")
-            for suffix in ("a", "b")
-        ]
-        for job in jobs:
-            job.result()
-    digest = value(target, CHECKSUM, TWIN)
+    value(target, f"ALTER DATABASE {TEMPLATE} IS_TEMPLATE false")
+    value(target, f"DROP DATABASE {TEMPLATE}")
+    value(target, """
+        INSERT INTO gate_data
+        SELECT i, repeat(md5(i::text), 15) FROM generate_series(3, 300000) AS i;
+        CHECKPOINT;
+    """, TWIN)
+    value(target, f"CREATE DATABASE {TEMPLATE} TEMPLATE {TWIN} IS_TEMPLATE true ALLOW_CONNECTIONS false")
+
+    with ExitStack() as stack:
+        sessions = [stack.enter_context(Client(target, target.psql_args(user="gate_owner")))
+                    for _ in range(2)]
+        for suffix, session in zip(("a", "b"), sessions):
+            session.send(f"SET application_name='dl077-g1b-{suffix}';")
+            same(session.query("SELECT 1;"), "1")
+        for suffix, session in zip(("a", "b"), sessions):
+            session.send(f"CREATE DATABASE {COPY}_{suffix} TEMPLATE {TEMPLATE};")
+        until(lambda: value(target, f"""
+            SELECT count(*) FROM pg_stat_activity
+            WHERE application_name LIKE 'dl077-g1b-%' AND state='active'
+              AND query LIKE 'CREATE DATABASE {COPY}_%';
+        """) == "2")
+        for session in sessions:
+            same(session.query("SELECT 1;"), "1")
+
+    checksum = "SELECT count(*),bit_xor(hashtextextended(id::text || payload,0)) FROM gate_data"
+    digest = value(target, checksum, TWIN)
     require(bool(digest), "the template twin yielded no checksum")
     for suffix in ("a", "b"):
-        same(value(target, CHECKSUM, f"{COPY}_{suffix}"), digest)
+        same(value(target, checksum, f"{COPY}_{suffix}"), digest)
 
 
 def admin_cannot_change_template(target):
@@ -445,10 +466,10 @@ def trigger_runs_as_writer(target):
     value(target, f"CREATE DATABASE {db} TEMPLATE template0", key=key)
     value(target, """
         CREATE ROLE gate_writer LOGIN;
-        CREATE TABLE gate_data (name name);
+        CREATE TABLE gate_data (probe_value text);
         CREATE FUNCTION gate_trigger() RETURNS trigger LANGUAGE plpgsql AS $body$
         BEGIN
-            NEW.name := current_setting('application_name');
+            NEW.probe_value := current_setting('application_name');
             RETURN NEW;
         END
         $body$;
@@ -464,7 +485,7 @@ def trigger_runs_as_writer(target):
     same(value(target, "SELECT count(*) FROM gate_data", db, key=key), "0")
     value(target, "GRANT EXECUTE ON FUNCTION current_setting(text) TO gate_writer", db, key=key)
     value(target, write, db, "gate_writer", key)
-    same(value(target, "SELECT name FROM gate_data", db, key=key), "declared-writer")
+    same(value(target, "SELECT probe_value FROM gate_data", db, key=key), "declared-writer")
 
 
 def null_password(target):

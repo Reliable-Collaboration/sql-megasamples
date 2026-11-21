@@ -56,6 +56,11 @@ def role_changes(target):
 
 def after_copy_error(target):
     before = target.pg_database_dirs(KEY)
+    checked(sql(target, "CREATE DATABASE gate_after_copy_control TEMPLATE template0"))
+    oid = checked(sql(target, "SELECT oid FROM pg_database WHERE datname='gate_after_copy_control'"))
+    after_control = target.pg_database_dirs(KEY)
+    same(after_control - before, {oid})
+    target.observed_control("successful CREATE DATABASE added only its registered OID directory")
     name = "gate_after_copy_error"
     result = sql(target, f"CREATE DATABASE {name} TEMPLATE template0")
     denied(result, "P0001")
@@ -63,13 +68,10 @@ def after_copy_error(target):
             "the error was not injected after CREATE DATABASE")
     same(checked(sql(target, CATALOG.format(name))), "")
     after = target.pg_database_dirs(KEY)
-    leaked = after - before
+    leaked = after - after_control
     require(len(leaked) == 1, f"expected one orphaned directory, observed {len(leaked)}")
     registered = checked(sql(target, "SELECT oid FROM pg_database ORDER BY 1")).splitlines()
     require(leaked.isdisjoint(registered), "new directory has a catalog row")
-    checked(sql(target, "CREATE DATABASE gate_after_copy_control TEMPLATE template0"))
-    oid = checked(sql(target, "SELECT oid FROM pg_database WHERE datname='gate_after_copy_control'"))
-    same(target.pg_database_dirs(KEY) - after, {oid})
 
 
 def namespace(target):

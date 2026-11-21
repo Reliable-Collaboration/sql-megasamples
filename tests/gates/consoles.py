@@ -10,7 +10,7 @@ from html.parser import HTMLParser
 
 from clients import Client
 from mysql import value as mysql_value
-from native import ControlNotShown, checked, require, same
+from native import ControlNotShown, Unavailable, checked, require, same
 from postgres import value as pg_value
 
 PORTS = {"adminer": "8080", "phpmyadmin": "80", "cloudbeaver": "8978"}
@@ -43,7 +43,7 @@ def adminer_login(target, demo_canary):
     token = LoginToken()
     token.feed(first)
     payload = urllib.parse.urlencode({
-        "token": token.value, "auth[driver]": "server", "auth[server]": "mysql",
+        "token": token.value, "auth[driver]": "server", "auth[server]": target.config["containers"]["mysql"],
         "auth[username]": "demo", "auth[password]": demo_canary, "auth[db]": "megasamples",
     }).encode()
     with session.open(base + "/", data=payload, timeout=45) as response:
@@ -134,12 +134,22 @@ def pg_sessions(target, addresses):
     """).splitlines()
 
 
+def browser_sql(target, sessions):
+    browser = target.container("browser")
+    target.container("cloudbeaver")
+    console = target.config["containers"]["cloudbeaver"]
+    result = target.podman(
+        "exec", browser, "python3", "/gates/browser_sql.py",
+        f"http://{console}:8978/", str(sessions), timeout=150,
+    )
+    if result.returncode or result.stdout.count("CloudBeaver SQL editor returned 17077") != sessions:
+        raise Unavailable("the CloudBeaver SQL editor did not return the expected result")
+
+
 def disposable_name(target):
     addresses = address_list(target, ("cloudbeaver",))
     initial = pg_sessions(target, addresses)
-    first = cloudbeaver_login(target, "postgres")
-    second = cloudbeaver_login(target, "postgres")
-    require(first and second, "could not open two actual CloudBeaver sessions")
+    browser_sql(target, 2)
     idle = [row.split("|") for row in pg_sessions(target, addresses) if row not in initial]
     people = [row for row in idle if row[1] == "demo" and row[3:6] == ["idle", "t", "t"]]
     require(len(people) >= 2, "the console did not retain two idle demo backends after SQL activity")

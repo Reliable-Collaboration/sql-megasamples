@@ -2,4 +2,4 @@
 from filesystems import CASES
 from native import run
 
-raise SystemExit(run("G-19c", CASES["G-19c"]))
+raise SystemExit(run("G-19c", CASES["G-19c"], local_only=True))

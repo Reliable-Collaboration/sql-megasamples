@@ -63,5 +63,5 @@ def run(directory: Path) -> None:
 
 
 if __name__ == "__main__":
-    with tempfile.TemporaryDirectory(prefix="dl077-g19b-", dir="/tmp") as scratch:
+    with tempfile.TemporaryDirectory(prefix="dl077-g19b-") as scratch:
         run(Path(scratch))

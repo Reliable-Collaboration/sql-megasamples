@@ -12,6 +12,8 @@ from pathlib import Path
 OWNER_LABEL = "org.sql-megasamples.gates.owner"
 MIN_AVAILABLE_KIB = 15 * 1024 * 1024
 TARGET_ENV = "DL077_GATE_TARGET"
+
+
 class Unavailable(Exception):
     pass
 
@@ -30,13 +32,21 @@ def same(actual, expected):
 
 
 def capacity():
-    for line in Path("/proc/meminfo").read_text().splitlines():
-        if line.startswith("MemAvailable:"):
-            available = int(line.split()[1])
-            if available >= MIN_AVAILABLE_KIB:
-                return
+    wait_seconds = int(os.environ.get("DL077_GATE_CAPACITY_WAIT", "0"))
+    deadline = time.monotonic() + max(wait_seconds, 0)
+    while True:
+        for line in Path("/proc/meminfo").read_text().splitlines():
+            if line.startswith("MemAvailable:"):
+                available = int(line.split()[1])
+                break
+        else:
+            raise Unavailable("MemAvailable could not be read")
+        if available >= MIN_AVAILABLE_KIB:
+            return
+        delay = deadline - time.monotonic()
+        if delay <= 0:
             raise Unavailable(f"MemAvailable={available} KiB is below 15 GiB")
-    raise Unavailable("MemAvailable could not be read")
+        time.sleep(min(delay, 5))
 
 
 def checked(result):
@@ -58,7 +68,7 @@ def denied(result, code):
 
 
 class Target:
-    def __init__(self):
+    def __init__(self, *, local_only=False):
         name = os.environ.get(TARGET_ENV)
         if not name:
             raise Unavailable(f"set {TARGET_ENV} to an explicitly provisioned scratch target")
@@ -72,8 +82,11 @@ class Target:
             raise Unavailable("missing task ownership marker")
         self.containers = {}
         self.private_values = set()
+        self.control_shown = False
+        if local_only:
+            return
         identity = subprocess.run(self.podman_args("info", "--format", "{{.Store.GraphRoot}}"),
-                                  capture_output=True, text=True, timeout=15)
+                                  capture_output=True, text=True, timeout=60)
         if identity.returncode:
             print("$ podman info --format '{{.Store.GraphRoot}}'", flush=True)
             print(f"exit {identity.returncode}", flush=True)
@@ -86,6 +99,10 @@ class Target:
         for private in self.private_values:
             value = value.replace(private, "<port>")
         print(value, flush=True)
+
+    def observed_control(self, evidence):
+        self.control_shown = True
+        self.safe_print(f"Control shown: {evidence}")
 
     def podman_args(self, *args):
         return [
@@ -179,7 +196,7 @@ class Target:
             "exec", "--user", "postgres", self.container(key), "sh", "-ec",
             'find "$PGDATA/base" -mindepth 1 -maxdepth 1 -type d -printf "%f\\n" | sort',
         ))
-        directories = set(rows.splitlines())
+        directories = set(rows.splitlines()) - {"pgsql_tmp"}
         require(directories and all(value.isdecimal() for value in directories),
                 "could not enumerate PostgreSQL database directories")
         return directories
@@ -268,10 +285,10 @@ class Target:
         raise Unavailable(f"{key} did not recover after restart")
 
 
-def run(gate, case):
+def run(gate, case, *, local_only=False):
     target = None
     try:
-        target = Target()
+        target = Target(local_only=local_only)
         case(target)
     except Unavailable as error:
         print(f"{gate}: Not run ({error}); control not shown", file=sys.stderr)
@@ -281,7 +298,8 @@ def run(gate, case):
         return 77
     except (AssertionError, subprocess.TimeoutExpired) as error:
         if target:
-            target.safe_print(f"{gate}: Failed ({error}); control not shown")
+            control = "control shown" if target.control_shown else "control not shown"
+            target.safe_print(f"{gate}: Failed ({error}); {control}")
         else:
             print(f"{gate}: Not run (could not verify the scratch target); control not shown", file=sys.stderr)
             return 77
