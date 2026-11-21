@@ -6,7 +6,9 @@ MANIFEST is a private target manifest (tests/gates/native.py) whose `postgres` c
 task's ownership label; nothing runs until that is checked. As the namespace owner over the
 container's local socket: a statement_timeout of X ms, and a client cancel request (psql receiving
 SIGINT) after D seconds, across each strategy's whole duration. Every catalog and directory read must
-succeed; every attempt must end committed or with the server's own cancel message; a committed copy
+succeed; every attempt must end committed, with the server's own cancel message, or with the client
+stopped before any reply (counted apart, never as a server interrupt); each strategy and method must
+see at least one server interrupt; a committed copy
 must be closed to PUBLIC; and a directory with no catalog row, seen at any point, fails the run.
 Exit 0 only if all of that held. Random points are evidence, not proof (DL-119).
 """
@@ -65,11 +67,12 @@ def main():
     seen |= files - rows
     print("before: catalog", len(rows), "directories", len(files), "orphans", sorted(files - rows), flush=True)
     unexpected = 0
+    uncovered = []
     for strategy in ("wal_log", "file_copy"):
         baseline = sorted(timed_create(strategy) for _ in range(5))[2]
         print(f"{strategy}: median create through podman exec {baseline:.3f}s", flush=True)
         for method in ("statement_timeout", "cancel"):
-            committed = interrupted = other = 0
+            committed = interrupted = client_only = other = 0
             for _ in range(attempts):
                 name = "copy_chinook_" + uuid.uuid4().hex[:12]
                 create = f"CREATE DATABASE {name} TEMPLATE chinook_start STRATEGY {strategy}"
@@ -91,21 +94,23 @@ def main():
                 elif exists == "0" and any(message in r.stderr for message in INTERRUPTED):
                     interrupted += 1
                 elif exists == "0" and r.returncode in (124, 130) and not r.stderr.strip():
-                    interrupted += 1   # the client was stopped before the server reported anything
+                    client_only += 1   # stopped before the server reported anything: not a server interrupt
                 else:
                     other += 1
                     print(f"  unexpected outcome: exit {r.returncode}: {r.stderr.strip()[:160]}", flush=True)
             rows, files = catalog()
             seen |= files - rows
             unexpected += other
-            print(f"{strategy} {method}: attempts {attempts} committed {committed} interrupted {interrupted} "
-                  f"other {other} orphan directories {sorted(files - rows)}", flush=True)
+            if not interrupted:
+                uncovered.append(f"{strategy} {method}")
+            print(f"{strategy} {method}: attempts {attempts} committed {committed} server-interrupted {interrupted} "
+                  f"client-only {client_only} other {other} orphan directories {sorted(files - rows)}", flush=True)
     podman("exec", container, "psql", "-XqAt", "-U", "postgres", "-c", "CHECKPOINT")
     rows, files = catalog()
     seen |= files - rows
     print("after: catalog", len(rows), "directories", len(files), "orphans", sorted(files - rows),
-          "seen at any point", sorted(seen), flush=True)
-    return 1 if seen or unexpected else 0
+          "seen at any point", sorted(seen), "cells without a server interrupt", uncovered, flush=True)
+    return 1 if seen or unexpected or uncovered else 0
 
 
 if __name__ == "__main__":
