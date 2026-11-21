@@ -146,3 +146,23 @@ These are focused runs only, because DataIntent's gateway `--all` was running. N
 
 **Not run**
 - The MySQL suites and images, and the TCP copy suite. Round 6 changed no MySQL or copy code; their last runs are round 5's.
+
+## Round 6: restoration and isolation
+
+- **Retained isolated stack.** The fingerprint ledgers (phase `r6-final`) are byte-identical to build 1's `after` ledgers:
+  - PostgreSQL `ee0f1a8b…711e`;
+  - MySQL `a5c0466a…a72f`;
+  - SQLite `5b0c2768…da98`.
+- **Removed:**
+  - every task container this round started;
+  - 32 anonymous volumes, each checked unused, from round 5's runs and this round's;
+  - this round's reversal image.
+- **Kept for review:**
+  - the ACL images `localhost/dl114-r6-pg:acl` and `:acl-full`;
+  - the round 5 candidates;
+  - the fault images;
+  - the runner.
+- **The isolated socket service** is stopped.
+- **Isolation** (`build/dl114-r1-work/isolation-check.sh`, read-only):
+  - **Live deployment:** the nine live `megasamples-*` entries are unchanged by ID, state, health, start time and image.
+  - **Isolated store:** the same 20 containers.
