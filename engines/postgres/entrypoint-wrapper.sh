@@ -47,7 +47,7 @@ if [[ $(basename -- "${1:-}") == postgres ]]; then
     certify_libraries "${@:2}"
     if [ -n "${POSTGRES_PASSWORD:-}${DEMO_PASSWORD:-}${ADMIN_PASSWORD:-}" ]; then
         # The password setup's private start reads the files alone, without these arguments: it
-        # must be certified too (Sol round 4, P2-1).
+        # must be certified too.
         certify_directory
         certify_libraries
     fi

@@ -53,7 +53,7 @@ def recreate(services, containers, attached=attached, report=print):
                                     "--renew-anon-volumes", "--no-deps", "--wait", *services],
                                    cwd=ROOT).returncode != 0 else 0
     finally:
-        # On every exit (Opus and Sol round 11): Compose may have renewed the volumes before --wait gave up.
+        # On every exit: Compose may have renewed the volumes before --wait gave up.
         # A volume its container still mounts is skipped, so a recreate that failed earlier keeps its data.
         remove_replaced(replaced, attached, report)
 

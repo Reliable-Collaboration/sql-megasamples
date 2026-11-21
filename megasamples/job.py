@@ -164,13 +164,13 @@ def up(argv=None):
     # directory -- so the old data would shadow the new image. An engine whose running container is
     # not on the current image is recreated first, with its anonymous volumes renewed.
     stale = []
-    # The image Compose will run, with .env's overrides, not Python's default tag (Sol round 11, 2).
+    # The image Compose will run, with .env's overrides, not Python's default tag.
     resolved = data_volumes.compose_images()
     for name in cfg.engines:
         e = engine_registry.get(name)
         if name not in resolved:
             # Without Compose's answer the only comparison left is with Python's default tag, which can call
-            # a current container stale and discard its working data (Sol round 12, 3): renew nothing.
+            # a current container stale and discard its working data: renew nothing.
             print(f"  ! not recreating {name}: Compose could not resolve its image, so whether it is stale is "
                   f"unknown; check `docker compose -f {COMPOSE} config`", file=sys.stderr)
             continue
@@ -181,7 +181,7 @@ def up(argv=None):
             stale.append(name)
     if stale:
         print(f"  . recreating {', '.join(stale)}: the image was rebuilt since the container started")
-        # The volumes it replaces are removed by name, as reset's are (Opus round 10, P2-1).
+        # The volumes it replaces are removed by name, as reset's are.
         if data_volumes.recreate(stale, [engine_registry.get(name).container for name in stale]):
             return 1
     if "landing" in cfg.consoles:

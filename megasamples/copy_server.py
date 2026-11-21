@@ -13,9 +13,9 @@ SERVICE_TAG = "megasamples-service/1"
 
 class ServerCopies:
     recovery_identity = None
-    # Set as a write is issued: until then a lost connection has changed nothing (3.3, exit 3).
+    # Set as a write is issued: until then a lost connection has changed nothing, so the exit is 3.
     wrote = False
-    # The engine wait a drop without --wait, and a sweep's removal, allows (2.2).
+    # The engine wait a drop without --wait, and a sweep's removal, allows.
     default_drop_wait = 0
 
     def server_error(self, failure):
@@ -163,7 +163,7 @@ class ServerCopies:
                 if self.args.dry_run or not (removed or self.wrote or
                                              (isinstance(failure, CopyError) and failure.result)):
                     raise
-                # Something already changed: the reply must say what (3.3, exit 8).
+                # Something already changed: the reply must say what, with exit 8.
                 if isinstance(failure, CopyError) and isinstance(failure.result, dict) \
                         and failure.result.get("ledger") == "unsettled":
                     # The engine confirmed the removal; only the ledger row's deletion is uncertain.
@@ -192,7 +192,7 @@ class ServerCopies:
                 if reason == "not-exclusive" and not self.args.dry_run:
                     raise CopyError(8 if removed else 5, "not-exclusive",
                                     "another account can replace the copy", row["identity"])
-                # A proven `dropping` copy whose lease has ended is the sweep's to finish (2.2).
+                # A proven `dropping` copy whose lease has ended is the sweep's to finish.
                 if reason in ("ready", "dropping") and not self.expired(row):
                     reason = "leased"
                 if reason in ("ready", "dropping", "stale", "gone"):

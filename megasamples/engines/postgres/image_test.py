@@ -49,7 +49,7 @@ class Checks:
 
 
 def demo_write_checks(c, schema, table):
-    """demo is refused each write to a baked table, by permission (Sol round 12, P3-6): the UPDATE names one
+    """demo is refused each write to a baked table, by permission: the UPDATE names one
     of the table's real columns, and WHERE false keeps it harmless if it were ever allowed."""
     column = q(f"SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' "
                f"AND table_name = '{table}' ORDER BY ordinal_position LIMIT 1",
@@ -67,8 +67,8 @@ def demo_write_checks(c, schema, table):
 
 
 def override_checks(c):
-    """The password overrides, on a container of their own: only the one this run starts (Sol round 10,
-    P2-1). A leftover from an interrupted run goes first, with its volumes; a failed launch is a failure,
+    """The password overrides, on a container of their own: only the one this run starts.
+    A leftover from an interrupted run goes first, with its volumes; a failed launch is a failure,
     and every query names the ID the launch returned."""
     sh("docker", "rm", "-fv", NAME + "2")
     with environment_file({"POSTGRES_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:

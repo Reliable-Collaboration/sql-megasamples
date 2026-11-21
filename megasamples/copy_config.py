@@ -76,7 +76,7 @@ class CopySettings:
             prefixes.append(prefix)
 
         def reserve_account(name):
-            # The PostgreSQL service's own roles (Sol round 14, 6): those initialisation creates, and every
+            # The PostgreSQL service's own roles: those initialisation creates, and every
             # megasamples_ name the generated DDL derives, would collide with its CREATE ROLE.
             if (not prefix_is_valid(name) or name in names or name.endswith("_start")
                     or name in POSTGRES_ROLES or name.startswith("megasamples_")):

@@ -54,14 +54,13 @@ class Checks:
 
 
 def refused(result, code):
-    """MySQL's own permission refusal for this operation (Sol round 14, 1): 1142 for a table statement, 1370
+    """MySQL's own permission refusal for this operation: 1142 for a table statement, 1370
     for a routine. Not an authentication or database-access error (1045, 1044) or any other failure."""
     return result.returncode != 0 and f"ERROR {code} " in result.stderr
 
 
 def demo_write_checks(checks, table, created, routine):
-    """demo is refused each write to the probe table, and the write through a routine, by permission
-    (Opus round 13, 3)."""
+    """demo is refused each write to the probe table, and the write through a routine, by permission"""
     reader = "demo"
     for statement, label in [
             (f"CREATE TABLE {created} (id integer)", "CREATE"),
@@ -101,8 +100,8 @@ def account_checks(checks, schema, read_table, expected_count):
 
 
 def override_checks(c):
-    """The password overrides, on a container of their own: only the one this run starts (Sol round 10,
-    P2-1). A leftover from an interrupted run goes first, with its volumes; a failed launch is a failure,
+    """The password overrides, on a container of their own: only the one this run starts.
+    A leftover from an interrupted run goes first, with its volumes; a failed launch is a failure,
     and every query names the ID the launch returned."""
     sh("docker", "rm", "-fv", NAME + "2")
     with environment_file({"MYSQL_ROOT_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:

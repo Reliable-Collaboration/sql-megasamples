@@ -141,7 +141,7 @@ def reset_engines(names):
                                     "--renew-anon-volumes", "--no-deps", "--wait", *names],
                                    cwd=ROOT).returncode != 0 else 0
     finally:
-        # On every exit, as data_volumes.recreate does (Opus and Sol round 11).
+        # On every exit, as data_volumes.recreate does.
         volumes.remove_replaced(replaced, attached=lambda container: data_volumes(container))
 
 

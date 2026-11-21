@@ -54,7 +54,7 @@ def available_objects(database):
                    (database,))
     # A stored program keeps the SQL mode it was created under; record it with the definition.
     # A stored program keeps the settings it was created under; record them with the definition.
-    # character_set_client and collation_connection are recorded but not restored (design 2.4).
+    # character_set_client and collation_connection are recorded but not restored.
     objects = []
     for (name,) in routines:
         shown = query(f"SHOW CREATE PROCEDURE {qualify(database, name)}")[0]

@@ -1,4 +1,4 @@
-"""Report PostgreSQL data directories that have no database (DL-119's detective control).
+"""Report PostgreSQL data directories that have no database (a detective control: it reports, and changes nothing).
 
 A caller's cancel, a resource error or a crash between CREATE DATABASE's file copy and its commit can
 leave a directory under the data directory with no catalog row: no SQL reaches it, and it uses disk

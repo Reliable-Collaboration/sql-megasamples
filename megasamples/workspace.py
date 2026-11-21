@@ -87,7 +87,7 @@ def status():
 
 def remove_unlabelled(names):
     """Containers found only by a name from before the transient label. On a shared daemon such a name may be
-    another project's container, so its volumes stay (Opus round 10, N2); a labelled one goes with them."""
+    another project's container, so its volumes stay; a labelled one goes with them."""
     if names:
         docker("rm", "-f", *names, check=True)
 

@@ -194,7 +194,7 @@ class PostgresCopies(ServerCopies):
             self.forget(name)
         except self.errors.Error as failure:
             if not self.wrote and self.connection_lost(failure):
-                # Only reads have run: the copy is as it was (3.3, exit 3).
+                # Only reads have run: the copy is as it was, so the exit is 3.
                 raise CopyError(3, "connection", "server connection closed before any change", identity) from None
             gone = {**self.result(name, row, "gone"), "ledger": "unsettled"} if dropped else None
             raise CopyError(8, "drop-unsettled", "database removal did not finish", identity, result=gone) from None
