@@ -90,6 +90,10 @@ def seed_mysql(container, marker, password):
         CREATE EVENT {schema}.read_event ON SCHEDULE AT CURRENT_TIMESTAMP + INTERVAL 1 YEAR
             ON COMPLETION PRESERVE DISABLE DO SELECT id FROM {schema}.parent;
         """)
+    # Round 9 (Opus 1, Sol 1): a program whose qualifier MySQL reads past `1--1` and a comment before the
+    # dot. The client keeps comments, so the server stores the body as written.
+    mysql_exec(container, 'mysql --defaults-extra-file=/tmp/dl077-client.cnf --comments -N -B',
+               "CREATE PROCEDURE sample.read_lexed() SELECT 1--1 AS n, id FROM sample /* gap */ .parent ORDER BY id;\n")
     # A program created under ANSI_QUOTES: its double-quoted names are not rewritten, so it is withheld.
     mysql(container, """
         CREATE DATABASE replay_ansi;

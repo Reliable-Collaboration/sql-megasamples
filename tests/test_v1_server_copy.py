@@ -690,6 +690,11 @@ def test_mysql_copy_lifecycle_and_schema_replay(server):
             assert cursor.fetchall() == ((0,), (42,), (51,))
             while cursor.nextset():
                 pass
+            # Round 9: the copy's program reads the copy, through `1--1` and a comment before the dot.
+            cursor.execute("CALL read_lexed()")
+            assert cursor.fetchall() == ((2, 0), (2, 42), (2, 51))
+            while cursor.nextset():
+                pass
             with pytest.raises(pymysql.IntegrityError):
                 cursor.execute("INSERT INTO child (id, parent_id) VALUES (2,999)")
             cursor.execute("SELECT STATUS FROM information_schema.EVENTS WHERE EVENT_NAME=%s AND EVENT_SCHEMA=%s",
@@ -702,6 +707,13 @@ def test_mysql_copy_lifecycle_and_schema_replay(server):
             definer, event_status, definition = cursor.fetchone()
             assert definer == server["owner"] + "@%" and event_status == "DISABLED"
             assert row["name"] in definition and "sample_start" not in definition
+            bodies = native(server, "SELECT ROUTINE_SCHEMA, ROUTINE_DEFINITION FROM information_schema.ROUTINES "
+                            "WHERE ROUTINE_NAME='read_lexed' AND ROUTINE_SCHEMA IN (%s, %s, %s)",
+                            user="dl077_fixture_admin", parameters=("sample", "sample_start", row["name"]))
+            bodies = {schema: body for schema, body in bodies}
+            assert "1--1" in bodies["sample"] and "/* gap */" in bodies["sample"], bodies["sample"]
+            for schema in ("sample_start", row["name"]):
+                assert f"`{schema}` /* gap */ .parent" in bodies[schema], (schema, bodies[schema])
             # Astra round 2, 5: each stored program keeps the SQL mode its source was created with.
             # Read as the fixture's administrator: the owner holds no routine privilege on the template.
             # Each program has its own mode, and the event its own time zone (Sol and Opus round 3).
