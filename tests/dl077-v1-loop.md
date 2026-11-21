@@ -646,7 +646,7 @@ They run one at a time, in the coordinator's order: WS1, WS4, WS2, WS3, WS5. Eac
 
 | # | Workstream | State |
 |---|---|---|
-| 1 | Start certification | **Design revision 5**, `docs/design/dl077-ws1-start-certification-design.md`, answering design round 4 at `4c69e81b` (Sol 2 P1, 6 P2, 2 P3; Opus 3 P2, 9 P3), with the HBA contract decided by **DL-124 (a)**, the image's rules only, each finding traced in its section 14; waiting for design round 5. No build has started. |
+| 1 | Start certification | **Design revision 6**, `docs/design/dl077-ws1-start-certification-design.md`, consolidated (one check list, one row table), answering design round 5 at `398a9c42` (Sol 7 P2, 2 P3; Opus 2 P2, 6 P3), each finding traced in its section 13; waiting for design round 6. No build has started. |
 | 4 | Native suite binding | waiting for WS1 |
 | 2 | Orphan scan | waiting |
 | 3 | Removal outcomes | waiting |
