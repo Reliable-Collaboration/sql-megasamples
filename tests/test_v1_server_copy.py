@@ -458,6 +458,37 @@ def test_mysql_copy_replacement_grant_refuses_sweep(server):
         copy_command(server, "drop", target, *proof)
 
 
+def test_postgres_create_keeps_a_copy_the_hook_left_open(server):
+    """T-7 through copy create: the CLI's own closure check, and the read grant made last."""
+    if server["engine"] != "postgres" or os.environ.get("DL077_PG_UNCLOSED_FAULT") != "1":
+        pytest.skip("requires a PostgreSQL image built with tests/gates/faults/pg-fallback.patch")
+    admin = {"user": "dl077_fixture_admin"}
+    reply = copy_command(server, "create", "postgres:chinook", "--prefix", "copy", "--label", "unclosed", status=8)
+    assert reply["error"]["code"] == "create-unsettled"
+    identity = reply["error"]["identity"]
+    rows = copy_command(server, "list", "postgres", "--prefix", "copy", "--label", "unclosed")["result"]["copies"]
+    assert [(row["identity"], row["state"]) for row in rows] == [(identity, "interrupted")]
+    name = rows[0]["name"]
+    try:
+        opened, comment, readers = native(server, """
+            SELECT EXISTS (SELECT FROM aclexplode(coalesce(datacl, acldefault('d', datdba)))
+                           WHERE grantee = 0 AND privilege_type = 'CONNECT'),
+                   shobj_description(oid, 'pg_database'),
+                   (SELECT count(*) FROM aclexplode(coalesce(datacl, acldefault('d', datdba)))
+                    WHERE grantee = 'megasamples_copy_copy_read'::regrole)
+            FROM pg_database WHERE datname = %s
+        """, database="postgres", parameters=(name,), **admin)[0]
+        assert opened and comment is None and readers == 0
+        swept = copy_command(server, "sweep", "postgres", "--prefix", "copy")["result"]
+        assert {"name": name, "reason": "interrupted"} in [
+            {"name": item["copy"]["name"], "reason": item["reason"]} for item in swept["kept"]]
+        assert copy_command(server, "drop", "postgres:" + name, "--identity", identity,
+                            status=5)["error"]["code"] == "interrupted"
+    finally:
+        native(server, f'DROP DATABASE IF EXISTS "{name}"', database="postgres", **admin)
+        native(server, "DELETE FROM copy_ledger_copy WHERE name=%s", parameters=(name,), **admin)
+
+
 def test_mysql_create_that_fails_verification_is_interrupted_and_kept(server):
     """Fable 10: the count and checksum step, and the interrupted outcome after a failed step."""
     if server["engine"] != "mysql":

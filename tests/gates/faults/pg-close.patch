@@ -1,0 +1,9 @@
+diff --git a/engines/postgres/read-policy/read_policy.c b/engines/postgres/read-policy/read_policy.c
+index 856f25b..628a337 100644
+--- a/engines/postgres/read-policy/read_policy.c
++++ b/engines/postgres/read-policy/read_policy.c
+@@ -237 +237,3 @@ secure_new_database(Oid oid)
+-    CatalogTupleUpdate(relation, &tuple->t_self, updated);
++    /* FAULT (test image only): the close is not written for the planted names. */
++    if (!(strcmp(NameStr(db->datname), "v1_closure_fault") == 0 || strncmp(NameStr(db->datname), "copy_", 5) == 0))
++        CatalogTupleUpdate(relation, &tuple->t_self, updated);
