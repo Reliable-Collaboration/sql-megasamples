@@ -57,7 +57,7 @@ class HealthPlaceholderTests(unittest.TestCase):
                    stdin="*:*:*:demo:demo\n")
             self.assertNotEqual(podman("exec", name, "sh", "-c", probe()[1], check=False).returncode, 0)
         finally:
-            podman("rm", "-f", name, check=False)
+            podman("rm", "-fv", name, check=False)   # its anonymous data volume too (Sol round 6, P3-10)
 
     def test_a_healthy_probe_raises_no_server_error(self):
         """Round 5: the probe on a healthy server leaves no ERROR in the server's log."""
@@ -83,9 +83,14 @@ class HealthPlaceholderTests(unittest.TestCase):
             new = (after.stdout + after.stderr)[len(before.stdout + before.stderr):]
             self.assertNotIn("ERROR", new)
             # The probe's own account may call the report, and only through its grant.
+            # Round 6 (Sol P2-1, Opus P3-1): of the shipped roles, only demo, the probe's account, and
+            # the superuser may call it; admin's default EXECUTE on postgres's routines must not reach it.
             rights = podman("exec", name, "psql", "-XqAt", "-U", "postgres", "-d", "megasamples", "-c",
-                            "SELECT has_function_privilege('demo', 'pg_catalog.megasamples_policy_loaded()', 'EXECUTE'), "
-                            "has_function_privilege('copier', 'pg_catalog.megasamples_policy_loaded()', 'EXECUTE')")
-            self.assertEqual(rights.stdout.strip(), "t|f")
+                            "SELECT string_agg(r.rolname || '=' || has_function_privilege(r.oid, "
+                            "'pg_catalog.megasamples_policy_loaded()', 'EXECUTE')::text, ',' ORDER BY r.rolname) "
+                            "FROM pg_roles r WHERE r.rolname IN ('admin','copier','demo','megasamples_read',"
+                            "'megasamples_working_read','megasamples_working_write','reader_b','postgres')")
+            self.assertEqual(rights.stdout.strip(), "admin=false,copier=false,demo=true,megasamples_read=false,"
+                             "megasamples_working_read=false,megasamples_working_write=false,postgres=true,reader_b=false")
         finally:
-            podman("rm", "-f", name, check=False)
+            podman("rm", "-fv", name, check=False)   # its anonymous data volume too (Sol round 6, P3-10)
