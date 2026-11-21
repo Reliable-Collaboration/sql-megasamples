@@ -76,6 +76,9 @@ def available_objects(database):
     return definitions, objects
 
 
+UNREWRITABLE_MODES = {"ANSI_QUOTES", "NO_BACKSLASH_ESCAPES"}
+
+
 def exclusion(database, selected, size, triggers, functions, ansi_quoted=()):
     if database in ("oracle_hr", "oracle_oe"):
         return "dependency-group", "bound to the Oracle HR/OE dependency group"
@@ -83,8 +86,9 @@ def exclusion(database, selected, size, triggers, functions, ansi_quoted=()):
         reasons = ["trigger " + row[0] for row in triggers] + ["function " + row[0] for row in functions]
         return "not-replayable", ", ".join(reasons)
     if ansi_quoted:
-        # The schema rewrite does not rename double-quoted identifiers, so the copy would stay bound.
-        return "not-replayable", "ANSI_QUOTES mode: " + ", ".join(ansi_quoted)
+        # The schema rewrite tokenizes with the default quoting and escapes: it does not rename
+        # double-quoted identifiers, and misreads a string ending in a backslash without escapes.
+        return "not-replayable", "ANSI_QUOTES or NO_BACKSLASH_ESCAPES mode: " + ", ".join(ansi_quoted)
     if database not in selected:
         return "no-template", "not selected for templates"
     if size > 512 * 1024 * 1024:
@@ -130,7 +134,7 @@ def offer(name, build, selected):
     ansi_quoted = [kind + " " + program for kind, program, mode in query(
         "SELECT 'procedure', ROUTINE_NAME, SQL_MODE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA=? "
         "UNION ALL SELECT 'event', EVENT_NAME, SQL_MODE FROM information_schema.EVENTS WHERE EVENT_SCHEMA=? "
-        "ORDER BY 2", (name, name)) if "ANSI_QUOTES" in mode.split(",")]
+        "ORDER BY 2", (name, name)) if UNREWRITABLE_MODES & set(mode.split(","))]
     reason, detail = exclusion(name, selected, size, triggers, functions, ansi_quoted)
     metadata = None
     if reason is None:
