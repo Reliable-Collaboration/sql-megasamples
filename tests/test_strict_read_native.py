@@ -75,8 +75,23 @@ def denied(engine, database, sql):
             else 'denied' in result.stderr.lower()), result.stderr[:500]
 
 
-PG_DATABASES = unique_databases(CFG.datasets('postgres')) + ['megasamples', 'postgres', 'template1']
-MY_DATABASES = unique_databases(CFG.datasets('mysql')) + ['megasamples']
+PG_SELECTED = unique_databases(CFG.datasets('postgres'))
+MY_SELECTED = unique_databases(CFG.datasets('mysql'))
+PG_DATABASES = PG_SELECTED + ['megasamples', 'postgres', 'template1']
+MY_DATABASES = MY_SELECTED + ['megasamples']
+
+
+# Sol round 11, 7: the checks follow the target's own dataset selection. The checkout's configuration must
+# name exactly the datasets the checked image carries (its registry), and dataset-specific cases run only
+# where the selection holds their dataset.
+@pytest.mark.parametrize('engine', ['postgres', 'mysql'])
+def test_target_carries_the_configured_selection(engine):
+    if engine not in TARGETS:
+        pytest.skip(f'no {engine} target named')
+    names = accepted(engine, 'megasamples', 'SELECT name FROM datasets ORDER BY name',
+                     'postgres' if engine == 'postgres' else 'root').splitlines()
+    assert sorted(names) == sorted(CFG.datasets(engine)), (
+        'configure the checkout for the image under test: its registry lists ' + ', '.join(names))
 
 
 @pytest.mark.parametrize('database', PG_DATABASES)
@@ -265,6 +280,7 @@ def test_postgres_demo_reads_column_and_constraint_metadata(database):
     accepted('postgres', database, "SELECT constraint_name,column_name FROM information_schema.key_column_usage WHERE table_schema='public'")
 
 
+@pytest.mark.skipif('employees' not in PG_SELECTED, reason='the selection under test has no employees dataset')
 def test_postgres_employee_views_do_not_require_mutating_helpers():
     values = accepted('postgres', 'employees',
         "SELECT current_setting('megasamples.max_date',true) IS NULL; "
@@ -288,9 +304,10 @@ def test_native_protocol_matches_cli(engine, monkeypatch):
     statements = ['SELECT 1, NULL', 'BEGIN; SELECT 1; SELECT 2; ROLLBACK']
     statements += (['SELECT current_user', 'BEGIN; CREATE TEMP TABLE parity_denied(i int); ROLLBACK']
                    if engine == 'postgres' else ['SHOW GRANTS', 'CREATE TEMPORARY TABLE parity_denied(i int)'])
+    database = (PG_SELECTED if engine == 'postgres' else MY_SELECTED)[0]   # one the selection carries
     for sql in statements:
-        cli = query(engine, 'pubs', sql)
-        protocol = protocol_query(engine, container, 'demo', 'pubs', sql)
+        cli = query(engine, database, sql)
+        protocol = protocol_query(engine, container, 'demo', database, sql)
         assert (cli.returncode == 0) == (protocol.returncode == 0), sql
         if cli.returncode == 0:
             assert cli.stdout.strip() == protocol.stdout.strip(), sql
