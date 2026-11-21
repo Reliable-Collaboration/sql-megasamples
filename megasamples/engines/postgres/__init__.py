@@ -84,7 +84,8 @@ class Postgres(Engine):
                             "DEMO_PASSWORD": "${DEMO_PASSWORD:-demo}",
                             "ADMIN_PASSWORD": "${ADMIN_PASSWORD:-admin}"},
             "healthcheck": {"test": ["CMD-SHELL", "PGPASSFILE=/run/megasamples-health.pgpass psql -w -h 127.0.0.1 -U demo -d megasamples "
-                                     "-tAc \"SELECT current_setting('read_policy.loaded')\" | grep -qx on"],
+                                     "-tA -v VERBOSITY=verbose -c \"SELECT current_setting('read_policy.loaded')\" "
+                                     "-c 'SET read_policy.loaded TO off' 2>&1 | tr '\\n' ' ' | grep -Eq '^on .*55P02'"],
                             "interval": "5s", "timeout": "5s", "retries": 30},
             "restart": "unless-stopped",
         }
