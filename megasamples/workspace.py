@@ -3,7 +3,7 @@
 
   python3 -m megasamples status status     what is up: the compose stack, and any throwaway container
   python3 -m megasamples status clean      remove the throwaway containers, leave the stack alone
-  python3 -m megasamples status clean --all   also `docker compose down`
+  python3 -m megasamples status clean --all   also remove the stack, with each engine's working data
 
 Two kinds of container exist and they are not the same kind of thing:
 
@@ -117,7 +117,7 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("action", choices=["status", "clean"], nargs="?", default="status")
     ap.add_argument("--all", action="store_true",
-                    help="with `clean`: also bring the compose stack down")
+                    help="with `clean`: also remove the compose stack, with each engine's working data")
     a = ap.parse_args(argv)
     return status() if a.action == "status" else clean(a.all)
 

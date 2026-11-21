@@ -13,7 +13,7 @@ COMMANDS = {
     "run":          ("megasamples.job", "main", "the whole job from megasamples.yaml: fetch, build, image, up"),
     "compose":      ("megasamples.compose", "main", "write compose.yaml from megasamples.yaml"),
     "up":           ("megasamples.job", "up", "regenerate the landing page and start the stack"),
-    "down":         ("megasamples.job", "down", "stop the stack"),
+    "down":         ("megasamples.job", "down", "remove the stack and each engine's working data"),
     "reset":        ("megasamples.reset", "main", "put databases back as the images ship them: all, engines, or engine:dataset pairs"),
     "copy":         ("megasamples.copying", "main", "create and manage leased copies of templates"),
     "status":       ("megasamples.workspace", "main_status", "what is running: the stack, and any transient container"),

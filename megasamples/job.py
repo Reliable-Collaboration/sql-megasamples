@@ -204,7 +204,7 @@ def up(argv=None):
 
 
 def down(argv=None):
-    ap = argparse.ArgumentParser(description="stop the stack")
+    ap = argparse.ArgumentParser(description="remove the stack and each engine's working data; the named SQLite volume stays")
     ap.parse_args(argv)
     if not os.path.exists(COMPOSE):
         compose.main([])
