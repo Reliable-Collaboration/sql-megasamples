@@ -44,8 +44,16 @@ def create_schema(run, name, charset, collation):
     run(f"CREATE DATABASE {quote(name)} CHARACTER SET {quote(charset)} COLLATE {quote(collation)}")
 
 
+def objects_are_current(objects):
+    """Every object recorded with the settings this version replays: a view, or a program with its mode."""
+    kinds = {"view": ("ddl",), "procedure": ("ddl", "sql_mode"), "event": ("ddl", "sql_mode", "time_zone")}
+    return all(isinstance(item, dict) and item.get("kind") in kinds and all(
+        isinstance(item.get(key), str) for key in kinds[item["kind"]]) for item in objects)
+
+
 def replay(run, query, metadata, source, target, *, remove_definer):
-    old_checks, old_mode = query("SELECT @@session.foreign_key_checks, @@session.sql_mode")[0]
+    old_checks, old_mode, old_zone = query(
+        "SELECT @@session.foreign_key_checks, @@session.sql_mode, @@session.time_zone")[0]
     modes = old_mode.split(",") if old_mode else []
     if "NO_AUTO_VALUE_ON_ZERO" not in modes:
         modes.append("NO_AUTO_VALUE_ON_ZERO")
@@ -63,11 +71,12 @@ def replay(run, query, metadata, source, target, *, remove_definer):
             run(f"INSERT INTO {dst} ({columns}) SELECT {columns} FROM {src}")
         run(f"SET SESSION sql_mode='{old_mode}'")
         for item in metadata["objects"]:
-            # A view stores no SQL mode; a stored program is made under the one its source had.
-            ddl, mode = (item["ddl"], item["sql_mode"]) if isinstance(item, dict) else (item, old_mode)
-            run("SET SESSION sql_mode='" + mode.replace("'", "''") + "'")
-            run(definition(ddl, metadata["database"], target, remove_definer))
-        run(f"SET SESSION sql_mode='{old_mode}'")
+            # A view stores no settings; a stored program is made under the mode its source had, and an
+            # event under its time zone too.
+            mode, zone = item.get("sql_mode", old_mode), item.get("time_zone", old_zone)
+            run("SET SESSION sql_mode='" + mode.replace("'", "''") + "', time_zone='" + zone.replace("'", "''") + "'")
+            run(definition(item["ddl"], metadata["database"], target, remove_definer))
+        run(f"SET SESSION sql_mode='{old_mode}', time_zone='{old_zone}'")
         for table in metadata["tables"]:
             destination = qualify(target, table["name"])
             count = query(f"SELECT COUNT(*) FROM {destination}")[0][0]
@@ -75,5 +84,5 @@ def replay(run, query, metadata, source, target, *, remove_definer):
             if count != table["count"] or checksum is None or checksum != table["checksum"]:
                 raise ValueError("table verification failed")
     finally:
-        run(f"SET SESSION foreign_key_checks={int(old_checks)}, sql_mode='{old_mode}'")
+        run(f"SET SESSION foreign_key_checks={int(old_checks)}, sql_mode='{old_mode}', time_zone='{old_zone}'")
         run("USE megasamples")

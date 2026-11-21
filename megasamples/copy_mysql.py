@@ -9,7 +9,7 @@ import time
 
 from megasamples.copying import CopyError, prefix_is_valid
 from megasamples.copy_server import SERVICE_TAG, ServerCopies
-from megasamples.mysql_templates import create_schema, qualify, quote, replay
+from megasamples.mysql_templates import create_schema, objects_are_current, qualify, quote, replay
 
 
 class MySQLCopies(ServerCopies):
@@ -116,7 +116,8 @@ class MySQLCopies(ServerCopies):
             raise CopyError(4, row[0], row[1])
         try:
             metadata = json.loads(row[2])
-            if metadata["tag"] != "megasamples-template/1" or metadata["database"] != self.args.name:
+            if (metadata["tag"] != "megasamples-template/1" or metadata["database"] != self.args.name
+                    or not objects_are_current(metadata["objects"])):
                 raise ValueError("invalid template")
             return metadata, {"build": metadata["build"], "digest": metadata["digest"]}
         except (TypeError, KeyError, ValueError):

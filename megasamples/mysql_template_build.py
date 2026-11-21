@@ -53,31 +53,38 @@ def available_objects(database):
     events = query("SELECT EVENT_NAME FROM information_schema.EVENTS WHERE EVENT_SCHEMA=? ORDER BY EVENT_NAME",
                    (database,))
     # A stored program keeps the SQL mode it was created under; record it with the definition.
+    # A stored program keeps the settings it was created under; record them with the definition.
+    # character_set_client and collation_connection are recorded but not restored (design 2.4).
     objects = []
     for (name,) in routines:
         shown = query(f"SHOW CREATE PROCEDURE {qualify(database, name)}")[0]
-        objects.append({"ddl": shown[2], "sql_mode": shown[1]})
+        objects.append({"kind": "procedure", "ddl": shown[2], "sql_mode": shown[1],
+                        "character_set_client": shown[3], "collation_connection": shown[4]})
     while dependencies:
         ready = sorted(view for view, inputs in dependencies.items() if not inputs)
         if not ready:
             raise RuntimeError("cyclic view dependencies")
         for view in ready:
-            objects.append(query(f"SHOW CREATE VIEW {qualify(database, view)}")[0][1])
+            objects.append({"kind": "view", "ddl": query(f"SHOW CREATE VIEW {qualify(database, view)}")[0][1]})
             dependencies.pop(view)
         for inputs in dependencies.values():
             inputs.difference_update(ready)
     for (name,) in events:
         shown = query(f"SHOW CREATE EVENT {qualify(database, name)}")[0]
-        objects.append({"ddl": shown[3], "sql_mode": shown[1]})
+        objects.append({"kind": "event", "ddl": shown[3], "sql_mode": shown[1], "time_zone": shown[2],
+                        "character_set_client": shown[4], "collation_connection": shown[5]})
     return definitions, objects
 
 
-def exclusion(database, selected, size, triggers, functions):
+def exclusion(database, selected, size, triggers, functions, ansi_quoted=()):
     if database in ("oracle_hr", "oracle_oe"):
         return "dependency-group", "bound to the Oracle HR/OE dependency group"
     if triggers or functions:
         reasons = ["trigger " + row[0] for row in triggers] + ["function " + row[0] for row in functions]
         return "not-replayable", ", ".join(reasons)
+    if ansi_quoted:
+        # The schema rewrite does not rename double-quoted identifiers, so the copy would stay bound.
+        return "not-replayable", "ANSI_QUOTES mode: " + ", ".join(ansi_quoted)
     if database not in selected:
         return "no-template", "not selected for templates"
     if size > 512 * 1024 * 1024:
@@ -120,7 +127,11 @@ def offer(name, build, selected):
                      "WHERE TRIGGER_SCHEMA=? ORDER BY TRIGGER_NAME", args)
     functions = query("SELECT ROUTINE_NAME FROM information_schema.ROUTINES "
                       "WHERE ROUTINE_SCHEMA=? AND ROUTINE_TYPE='FUNCTION' ORDER BY ROUTINE_NAME", args)
-    reason, detail = exclusion(name, selected, size, triggers, functions)
+    ansi_quoted = [kind + " " + program for kind, program, mode in query(
+        "SELECT 'procedure', ROUTINE_NAME, SQL_MODE FROM information_schema.ROUTINES WHERE ROUTINE_SCHEMA=? "
+        "UNION ALL SELECT 'event', EVENT_NAME, SQL_MODE FROM information_schema.EVENTS WHERE EVENT_SCHEMA=? "
+        "ORDER BY 2", (name, name)) if "ANSI_QUOTES" in mode.split(",")]
+    reason, detail = exclusion(name, selected, size, triggers, functions, ansi_quoted)
     metadata = None
     if reason is None:
         charset, collation = query(
