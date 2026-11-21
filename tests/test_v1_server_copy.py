@@ -41,6 +41,13 @@ def server():
     return config
 
 
+def test_copy_service_is_the_images_own(server):
+    """The image records its own copy service: on a container the fixture did not seed, a read-only
+    command names the volume the image reports. The fixture reads that row and never writes it."""
+    reply = copy_command(server, "list", server["engine"], "--prefix", "copy")
+    assert reply["ok"] and reply["volume"] == server["volume"] and reply["volume"]
+
+
 def removed_names(reply):
     return [item["name"] for item in reply["result"]["removed"]]
 

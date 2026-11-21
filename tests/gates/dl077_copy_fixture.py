@@ -61,9 +61,10 @@ def seed_postgres(container, marker, password):
     postgres(container, "megasamples", f"""
         ALTER ROLE copier LOGIN PASSWORD '{password}';
         CREATE ROLE dl077_fixture_admin LOGIN SUPERUSER PASSWORD '{password}';
-        INSERT INTO copy_service VALUES (true, 'megasamples-service/1', '{marker}');
     """)
-    return marker
+    # The copy service row is the image's own: the fixture reads it and never writes it, so the suite
+    # runs against what a shipped image provides.
+    return postgres(container, "megasamples", "SELECT volume FROM copy_service WHERE singleton").stdout.strip()
 
 
 def seed_mysql(container, marker, password):
