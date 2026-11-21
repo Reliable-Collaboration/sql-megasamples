@@ -164,10 +164,13 @@ def up(argv=None):
     # directory -- so the old data would shadow the new image. An engine whose running container is
     # not on the current image is recreated first, with its anonymous volumes renewed.
     stale = []
+    # The image Compose will run, with .env's overrides, not Python's default tag (Sol round 11, 2).
+    resolved = data_volumes.compose_images()
     for name in cfg.engines:
         e = engine_registry.get(name)
         running = subprocess.run(["docker", "inspect", "-f", "{{.Image}}", e.container], capture_output=True, text=True)
-        current = subprocess.run(["docker", "image", "inspect", "-f", "{{.Id}}", e.image], capture_output=True, text=True)
+        current = subprocess.run(["docker", "image", "inspect", "-f", "{{.Id}}", resolved.get(name, e.image)],
+                                 capture_output=True, text=True)
         if running.returncode == 0 and current.returncode == 0 and running.stdout.strip() != current.stdout.strip():
             stale.append(name)
     if stale:

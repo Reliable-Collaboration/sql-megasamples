@@ -32,6 +32,19 @@ def remove_replaced(replaced, attached=attached, report=print):
                    else f"  ! could not remove the replaced data volume {volume}: {removed.stderr.strip()[:200]}")
 
 
+def compose_images():
+    """The image Compose resolves for each service, with .env's overrides applied ({} if it cannot say)."""
+    resolved = subprocess.run(["docker", "compose", "-f", COMPOSE, "config", "--format", "json"], cwd=ROOT,
+                              capture_output=True, text=True)
+    if resolved.returncode != 0:
+        return {}
+    try:
+        services = json.loads(resolved.stdout).get("services", {})
+    except json.JSONDecodeError:
+        return {}
+    return {name: service["image"] for name, service in services.items() if service.get("image")}
+
+
 def recreate(services, containers, attached=attached, report=print):
     """Recreate services from their images with fresh data directories, then remove the volumes replaced."""
     replaced = {container: attached(container) for container in containers}
