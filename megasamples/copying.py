@@ -110,7 +110,7 @@ def parse(argv):
         if action in ("create", "renew"):
             command.add_argument("--lease", required=action == "renew", type=duration, default="24h")
         if action == "drop":
-            command.add_argument("--wait", type=nonnegative_seconds, default=0)
+            command.add_argument("--wait", type=nonnegative_seconds)
         if action == "sweep":
             command.add_argument("--dry-run", action="store_true")
     args = parser.parse_args(argv)

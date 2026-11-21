@@ -151,7 +151,7 @@ class PostgresCopies(ServerCopies):
         self.connection.execute(f'GRANT CONNECT ON DATABASE "{name}" TO "megasamples_copy_{self.prefix}_read"')
         return self.result(name, self.change(row, phase="ready"), "ready")
 
-    def remove(self, row, state, wait=0):
+    def remove(self, row, state, deadline):
         name, identity = row["name"], row["identity"]
         try:
             if state in ("ready", "dropping"):
@@ -159,7 +159,6 @@ class PostgresCopies(ServerCopies):
                     raise CopyError(5, "inconsistent", "database identity changed", identity)
                 if state != "dropping":
                     row = self.change(row, phase="dropping")
-                deadline = time.monotonic() + wait
                 while True:
                     if self.state(name, row) != "dropping":
                         raise CopyError(8, "inconsistent", "database identity changed during drop", identity)

@@ -2,6 +2,7 @@
 
 from datetime import datetime
 import json
+import time
 from uuid import uuid4
 
 from megasamples.copying import CopyError, IDENTITY, LABEL, database_is_valid
@@ -12,6 +13,8 @@ SERVICE_TAG = "megasamples-service/1"
 
 class ServerCopies:
     recovery_identity = None
+    # The engine wait a drop without --wait, and a sweep's removal, allows (2.2).
+    default_drop_wait = 0
 
     def server_error(self, failure):
         """Map a driver error to section 3.3's exit codes, keeping the identity a caller recovers by."""
@@ -121,7 +124,10 @@ class ServerCopies:
 
     def drop(self):
         name, identity = self.args.name, self.args.identity
-        with self.lock(name, self.args.wait) as acquired:
+        wait = self.args.wait
+        # One deadline spans taking the change lock and the removal's engine wait.
+        deadline = time.monotonic() + (self.default_drop_wait if wait is None else wait)
+        with self.lock(name, wait or 0) as acquired:
             if not acquired:
                 raise CopyError(6, "busy", "copy is changing", identity)
             row = self.load(name)
@@ -131,7 +137,9 @@ class ServerCopies:
             self.ensure_identity(row)
             if state not in ("ready", "dropping", "stale", "gone"):
                 raise CopyError(5, state, "copy is kept", identity)
-            return self.remove(row, state, self.args.wait)
+            if wait and time.monotonic() >= deadline:
+                raise CopyError(6, "busy", "copy change deadline elapsed", identity)
+            return self.remove(row, state, deadline)
 
     def sweep(self):
         removed, kept = [], []
@@ -161,7 +169,7 @@ class ServerCopies:
                             removed.append(selected)
                         else:
                             try:
-                                removed.append(self.remove(row, reason))
+                                removed.append(self.remove(row, reason, time.monotonic() + self.default_drop_wait))
                             except CopyError as error:
                                 if error.status != 6:
                                     raise

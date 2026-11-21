@@ -389,7 +389,7 @@ class SQLiteCopies:
             return self.result(name, None, "gone")
         if not private_directory(self.metadata):
             raise CopyError(5, "unmanaged", "copy is unmanaged", identity)
-        with self.lock(name, write=True, wait=self.args.wait) as acquired:
+        with self.lock(name, write=True, wait=self.args.wait or 0) as acquired:
             if not acquired:
                 raise CopyError(6, "busy", "copy is changing", identity)
             row = self.load(name)

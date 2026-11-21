@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import hashlib
 import json
 import math
+import time
 
 from megasamples.copying import CopyError, prefix_is_valid
 from megasamples.copy_server import SERVICE_TAG, ServerCopies
@@ -13,6 +14,7 @@ from megasamples.mysql_templates import create_schema, qualify, quote, replay
 
 class MySQLCopies(ServerCopies):
     engine = "mysql"
+    default_drop_wait = 5
 
     def __init__(self, connection, args, errors):
         self.connection = connection
@@ -160,7 +162,7 @@ class MySQLCopies(ServerCopies):
             return "inconsistent"
         return phase
 
-    def remove(self, row, state, wait=0):
+    def remove(self, row, state, deadline):
         name, identity = row["name"], row["identity"]
         try:
             if state in ("ready", "dropping"):
@@ -169,7 +171,8 @@ class MySQLCopies(ServerCopies):
                     raise CopyError(5, current, "schema is kept", identity)
                 if state != "dropping":
                     row = self.change(row, phase="dropping")
-                self.execute("SET SESSION lock_wait_timeout=%s", (max(1, min(5, math.ceil(wait or 5))),))
+                seconds = max(1, min(31_536_000, math.ceil(deadline - time.monotonic())))
+                self.execute("SET SESSION lock_wait_timeout=%s", (seconds,))
                 try:
                     self.execute(f"DROP DATABASE {quote(name)}")
                 except self.errors.Error as failure:

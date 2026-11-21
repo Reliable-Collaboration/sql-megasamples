@@ -213,7 +213,7 @@ Otherwise exit 5, and nothing was changed.
 
 **The lease is the protection.** [108-5] [108-8]
 - A copy is created with a lease, 24 hours by default. A run that lasts longer renews it.
-- **A sweep removes a copy only when:** its state is `ready`; its lease has ended, read again under the lock; its change lock is taken without waiting; its identity and revision are as selected and its proof matches; and the engine lets it go. On PostgreSQL that last is a plain `DROP DATABASE`, which refuses while any session is connected [G-8b]; on MySQL a drop that gives up after five seconds on a lock [G-15b].
+- **A sweep removes a copy only when:** its state is `ready`, or `dropping` with its proof matching (the recovery row above); its lease has ended, read again under the lock; its change lock is taken without waiting; its identity and revision are as selected and its proof matches; and the engine lets it go. On PostgreSQL that last is a plain `DROP DATABASE`, which refuses while any session is connected [G-8b]; on MySQL a drop that gives up after five seconds on a lock [G-15b]. [Build round 1: a sweep finishes a proven `dropping` copy whose lease has ended, as the recovery row says.]
 - **What that does not protect, said plainly.** A copy whose lease has ended is the sweep's to take. On PostgreSQL a connected session still saves it. **On MySQL an idle session does not, and for SQLite an open file does not.** The product claims that a sweep never removes a copy inside its lease, and no more.
 - **`copy hold` waits** for a later stage (section 11).
 
@@ -238,7 +238,7 @@ Otherwise exit 5, and nothing was changed.
 - **Its owner is the one ordinary account that can write it** (4.1). [G-23]
 - **What it carries from its template** is 4.1's, each a gate of its own. [G-2a to G-2d]
 
-**A drop** is a plain `DROP DATABASE`, never with force [G-8b]. With `--wait` a refusal is retried within the wait budget. If the engine reports the database is in use, the CLI checks the proof again and can restore a previously ready record. The target data and sessions are preserved. The ledger's revision advances for the durable dropping and ready writes. The namespace owner needs no access to the activity view for this route.
+**A drop** is a plain `DROP DATABASE`, never with force [G-8b]. With `--wait` a refusal is retried within the wait budget. **One deadline covers taking the change lock and the removal.** PostgreSQL's own `DROP DATABASE` waits up to five seconds for other sessions before it refuses, so a drop gives up at the first refused attempt that ends past the deadline. [Build round 1.] If the engine reports the database is in use, the CLI checks the proof again and can restore a previously ready record. The target data and sessions are preserved. The ledger's revision advances for the durable dropping and ready writes. The namespace owner needs no access to the activity view for this route.
 
 ### 2.4 MySQL
 
@@ -333,7 +333,7 @@ Otherwise exit 5, and nothing was changed.
 | `megasamples copy renew ENGINE:NAME --identity ID --lease DURATION` | the owner | Sets the lease's end. |
 | `megasamples copy release ENGINE:NAME --identity ID` | the owner | Ends the lease now. |
 | `megasamples copy drop ENGINE:NAME --identity ID [--wait SECONDS]` | the owner | Dropping a copy that is already gone succeeds. |
-| `megasamples copy sweep ENGINE --prefix P [--dry-run]` | the owner | What it removed, and what it kept and why. **With `--dry-run` it changes nothing,** and says what a real sweep would do. |
+| `megasamples copy sweep ENGINE --prefix P [--dry-run]` | the owner | What it removed, and what it kept and why. **With `--dry-run` it changes nothing,** and says what a real sweep would select. **Narrowed in build round 1:** whether the engine lets a selected copy go is learned only at the removal, so a copy with a connected session (PostgreSQL) or a held lock (MySQL) is listed as removed by the preview and kept as `busy` by the real sweep. |
 | `megasamples reset …`; `megasamples up`; `megasamples down` | where the service runs | 3.5. |
 
 - **`copy` needs a TCP path to the engine's port, and nothing else:** no container runtime, no checkout. For SQLite it needs `--templates DIR` and `--dir DIR`. [D]
@@ -367,7 +367,7 @@ Otherwise exit 5, and nothing was changed.
 | Command | 6 means | 7 means | 8 is read by, and settled by |
 |---|---|---|---|
 | `copy create` | the namespace lock could not be had; no row was written | — | `copy list --label`. **An interrupted create is not settled by any command:** it is kept (2.2). |
-| `copy drop` | sessions remained at the end of the wait; the copy is untouched | — | `copy show`; `copy drop` again |
+| `copy drop` | sessions or a lock remained at the end of the wait; **the copy's data and every session are as they were, and its record is `ready` again. Its revision has advanced** by the durable `dropping` and `ready` writes (2.3). [Narrowed in build round 1.] | — | `copy show`; `copy drop` again |
 | `copy sweep` | — | — | `copy list`; `copy drop` for each `dropping` one it names |
 | `copy renew`, `release` | another change holds the name | — | — |
 | `reset`, one target | another reset holds the target's lock, or sessions were found; **its data is as it was, and nobody's session was ended.** Found at the first look: no record, and `--status` says `unknown`. Found at the second: `--status` says `rolled-back`. [115-6] | it failed before anything of the target changed: `rolled-back` | `reset --status`; `reset --reconcile`. **A reset whose target changed and did not verify is 8, never 0 and never 7.** |
