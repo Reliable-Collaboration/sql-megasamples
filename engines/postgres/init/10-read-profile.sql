@@ -42,9 +42,8 @@ GRANT EXECUTE ON FUNCTION pg_catalog.pg_database_size(oid) TO PUBLIC;
 -- Row defaults and dataset triggers can advance their own granted sequences.
 GRANT EXECUTE ON FUNCTION pg_catalog.nextval(regclass) TO megasamples_write_routines;
 
--- Packaging as an extension keeps template-resident policy objects out of
--- pg_dump's object list. CREATE EXTENSION IF NOT EXISTS on restore is safe even
--- though the freshly cloned template already contains the policy.
-CREATE SCHEMA megasamples_policy AUTHORIZATION postgres;
-REVOKE ALL ON SCHEMA megasamples_policy FROM PUBLIC;
-CREATE EXTENSION read_policy WITH SCHEMA megasamples_policy;
+-- Packaging as an extension keeps template-resident policy objects, its schema
+-- megasamples_policy included, out of pg_dump's object list. CREATE EXTENSION IF NOT
+-- EXISTS on restore is safe though the freshly cloned template already has the policy.
+-- The control file installs it in pg_catalog, which no copy owner can drop.
+CREATE EXTENSION read_policy;

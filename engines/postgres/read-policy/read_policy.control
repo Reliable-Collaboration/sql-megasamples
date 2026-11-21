@@ -1,5 +1,5 @@
 comment = 'Close public routine defaults in sample databases'
 default_version = '1'
 relocatable = false
-schema = 'megasamples_policy'
+schema = 'pg_catalog'
 superuser = true

@@ -1,3 +1,8 @@
+-- The schema is an extension member, so pg_dump never carries it, and is owned by the installing
+-- superuser, so no copy owner can drop it. The extension itself lives in pg_catalog (as plpgsql
+-- does): it depends on no schema an ordinary owner can drop.
+CREATE SCHEMA megasamples_policy;
+REVOKE ALL ON SCHEMA megasamples_policy FROM PUBLIC;
 CREATE FUNCTION megasamples_policy.close_routine_defaults() RETURNS pg_catalog.event_trigger
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
 DECLARE command pg_catalog.record;
