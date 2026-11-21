@@ -253,7 +253,7 @@ DBeaver, DataGrip, TablePlus, VS Code, a language driver or the engine's own cli
 
 <div class="creds">
   <b>Two accounts</b>, offered by every console and usable from any client:
-  <code>demo</code> / <code>{demo_pw}</code> — <b>read only</b>, no write privilege anywhere; each console opens on this one.
+  <code>demo</code> / <code>{demo_pw}</code> — <b>read only</b>, no write privilege on the samples; each console opens on this one.
   <code>admin</code> / <code>{admin_pw}</code> — <b>full privileges</b>, so anything you change here stays changed.
   SQLite files have no accounts. Both passwords are boilerplate for a disposable test database; change them by copying
   <code>.env.example</code> to <code>.env</code>, and the same value reaches every engine and every console.
