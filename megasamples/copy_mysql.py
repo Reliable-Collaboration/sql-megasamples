@@ -28,7 +28,11 @@ class MySQLCopies(ServerCopies):
                 "SELECT VERSION(), @@server_uuid, SUBSTRING_INDEX(CURRENT_USER(),'@',1)")
             limits = dict(self.all("SELECT prefix,max_copies FROM megasamples.copy_namespaces WHERE owner=%s",
                                    (self.owner,)))
-        except errors.Error:
+        except errors.Error as failure:
+            if self.connection_lost(failure):
+                # Only reads have run: nothing changed, and the caller keeps the identity it named.
+                raise CopyError(3, "connection", "server connection closed while reading copy metadata",
+                                getattr(args, "identity", None)) from None
             raise CopyError(5, "format-unknown", "service copy metadata cannot be read") from None
         if service != (SERVICE_TAG,) or not self.volume:
             raise CopyError(5, "unidentified-volume", "service copy volume is unqualified")

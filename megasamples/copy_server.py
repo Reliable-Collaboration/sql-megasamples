@@ -82,6 +82,9 @@ class ServerCopies:
                 with self.lock("namespace/" + self.prefix, wait=5) as admission:
                     if not admission:
                         raise CopyError(6, "busy", "namespace reservation is busy")
+                    # A record this version cannot read makes the namespace's count unknowable.
+                    for (other,) in self.all(f"SELECT name FROM {self.ledger}"):
+                        self.load(other)
                     if self.load(name) is not None or self.object(name):
                         continue
                     duplicate, total = self.reservation_counts(label)
@@ -149,31 +152,46 @@ class ServerCopies:
                 if selected["state"] == "not-exclusive":
                     raise CopyError(5, "not-exclusive", "another account can replace the copy", selected["identity"])
         for selected in selected_copies:
-            name = selected["name"]
-            with self.lock(name) as acquired:
-                row = self.load(name) if acquired else None
-                if not acquired or row is None:
-                    reason = "changing" if not acquired else selected["state"]
-                elif (row["identity"], row["revision"]) != (selected["identity"], selected["revision"]):
-                    reason = "changed"
+            try:
+                self.sweep_one(selected, removed, kept)
+            except (CopyError, self.errors.Error) as failure:
+                if not removed:
+                    raise
+                # Something already changed: the reply must say what (3.3, exit 8).
+                if isinstance(failure, CopyError):
+                    code, message = failure.code, str(failure)
                 else:
-                    reason = self.state(name, row)
-                    if reason == "not-exclusive" and not self.args.dry_run:
-                        raise CopyError(8 if removed else 5, "not-exclusive",
-                                        "another account can replace the copy", row["identity"])
-                    # A proven `dropping` copy whose lease has ended is the sweep's to finish (2.2).
-                    if reason in ("ready", "dropping") and not self.expired(row):
-                        reason = "leased"
-                    if reason in ("ready", "dropping", "stale", "gone"):
-                        if self.args.dry_run:
-                            removed.append(selected)
-                        else:
-                            try:
-                                removed.append(self.remove(row, reason, time.monotonic() + self.default_drop_wait))
-                            except CopyError as error:
-                                if error.status != 6:
-                                    raise
-                                kept.append({"copy": selected, "reason": "busy"})
-                        continue
-                kept.append({"copy": selected, "reason": reason})
+                    code, message = self.server_error(failure).code, "sweep stopped after a removal"
+                raise CopyError(8, code, message, selected["identity"],
+                                result={"removed": removed, "kept": kept + [{"copy": selected, "reason": code}]}) from None
         return {"removed": removed, "kept": kept}
+
+    def sweep_one(self, selected, removed, kept):
+        name = selected["name"]
+        with self.lock(name) as acquired:
+            row = self.load(name) if acquired else None
+            if not acquired or row is None:
+                # A row gone since the selection was removed by someone else: report it as gone.
+                reason = "changing" if not acquired else ("gone" if selected["identity"] else selected["state"])
+            elif (row["identity"], row["revision"]) != (selected["identity"], selected["revision"]):
+                reason = "changed"
+            else:
+                reason = self.state(name, row)
+                if reason == "not-exclusive" and not self.args.dry_run:
+                    raise CopyError(8 if removed else 5, "not-exclusive",
+                                    "another account can replace the copy", row["identity"])
+                # A proven `dropping` copy whose lease has ended is the sweep's to finish (2.2).
+                if reason in ("ready", "dropping") and not self.expired(row):
+                    reason = "leased"
+                if reason in ("ready", "dropping", "stale", "gone"):
+                    if self.args.dry_run:
+                        removed.append(selected)
+                    else:
+                        try:
+                            removed.append(self.remove(row, reason, time.monotonic() + self.default_drop_wait))
+                        except CopyError as error:
+                            if error.status != 6:
+                                raise
+                            kept.append({"copy": selected, "reason": "busy"})
+                    return
+            kept.append({"copy": selected, "reason": reason})

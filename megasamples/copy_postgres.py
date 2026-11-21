@@ -28,7 +28,11 @@ class PostgresCopies(ServerCopies):
             self.version = self.one("SHOW server_version")[0]
             self.owner = self.one("SELECT current_user")[0]
             self.namespaces = self.all("SELECT prefix, max_copies FROM copy_namespaces WHERE owner=current_user")
-        except errors.Error:
+        except errors.Error as failure:
+            if self.connection_lost(failure):
+                # Only reads have run: nothing changed, and the caller keeps the identity it named.
+                raise CopyError(3, "connection", "server connection closed while reading copy metadata",
+                                getattr(args, "identity", None)) from None
             raise CopyError(5, "format-unknown", "service copy metadata cannot be read") from None
         if service is None or service[0] != SERVICE_TAG or not service[1]:
             raise CopyError(5, "unidentified-volume", "service copy volume is unqualified")
@@ -114,6 +118,9 @@ class PostgresCopies(ServerCopies):
     def source(self):
         database = self.args.name
         source = self.object(database + "_start")
+        if source and source[2] and source[2].startswith("megasamples-template/") \
+                and not source[2].startswith(TEMPLATE_TAG):
+            raise CopyError(5, "format-unknown", "template registration has an unsupported version")
         if not source or source[2] is None or not source[2].startswith(TEMPLATE_TAG) or source[3] or not source[4]:
             raise CopyError(4, "no-template", "this database has no registered template")
         try:
@@ -182,7 +189,12 @@ class PostgresCopies(ServerCopies):
 
 @contextmanager
 def open_postgres(args, password):
-    import psycopg
+    try:
+        import psycopg
+    except ImportError:
+        # Psycopg's pure distribution loads the system's libpq; without it no engine is contacted.
+        raise CopyError(3, "client-library",
+                        "the PostgreSQL client needs libpq, which psycopg could not load") from None
 
     ambient = {key: os.environ.pop(key) for key in list(os.environ) if key.startswith("PG")}
     try:
