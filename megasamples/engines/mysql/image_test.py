@@ -88,6 +88,25 @@ def account_checks(checks, schema, read_table, expected_count):
         q(f"DROP TABLE IF EXISTS {table}, {created}")
 
 
+def override_checks(c):
+    """The password overrides, on a container of their own."""
+    with environment_file({"MYSQL_ROOT_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:
+        sh("docker", "run", "-d", "--name", NAME + "2",
+           "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
+           "--env-file", path, IMAGE)
+    for _ in range(150):
+        if q("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0:
+            break
+        time.sleep(0.2)
+    c.expect(q("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0,
+             "MYSQL_ROOT_PASSWORD override applied by the wrapper")
+    c.expect(q("SELECT 1", pw="root", container=NAME + "2").returncode != 0,
+             "the baked default root password no longer works after an override")
+    c.expect(q("SELECT 1", user="demo", pw="viewer", container=NAME + "2").returncode == 0,
+             "DEMO_PASSWORD override applied")
+    sh("docker", "rm", "-fv", NAME + "2")
+
+
 @session()
 def main(argv=None):
     datasets = list(sys.argv[1:] if argv is None else argv) or ["sakila"]
@@ -193,22 +212,7 @@ def main(argv=None):
     finally:
         # the override path needs its own container
         sh("docker", "rm", "-fv", NAME)
-        with environment_file({"MYSQL_ROOT_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:
-            sh("docker", "run", "-d", "--name", NAME + "2",
-               "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
-               "--env-file", path, IMAGE)
-        for _ in range(150):
-            if q("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0:
-                break
-            time.sleep(0.2)
-        c.expect(q("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0,
-                 "MYSQL_ROOT_PASSWORD override applied by the wrapper")
-        c.expect(q("SELECT 1", pw="root", container=NAME + "2").returncode != 0,
-                 "the baked default root password no longer works after an override")
-        c.expect(q("SELECT 1", user="demo", pw="viewer", container=NAME + "2").returncode == 0,
-                 "DEMO_PASSWORD override applied")
-        sh("docker", "rm", "-fv", NAME + "2")
-
+        override_checks(c)
     print(f"image test: {len(c.failures)} failure(s)")
     return 1 if c.failures else 0
 

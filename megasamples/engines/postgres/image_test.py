@@ -48,6 +48,27 @@ class Checks:
     def expect(self, cond, label): (self.ok if cond else self.fail)(label)
 
 
+def override_checks(c):
+    """The password overrides, on a container of their own."""
+    with environment_file({"POSTGRES_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:
+        sh("docker", "run", "-d", "--name", NAME + "2",
+           "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
+           "--env-file", path, IMAGE)
+    for _ in range(150):
+        if q("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0:
+            break
+        time.sleep(0.2)
+    c.expect(q_net("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0,
+             "POSTGRES_PASSWORD override applied by the wrapper (checked over the network)")
+    c.expect(q_net("SELECT 1", pw="root", container=NAME + "2").returncode != 0,
+             "the baked default superuser password no longer works after an override")
+    c.expect(q_net("SELECT 1", user="demo", pw="viewer", database="megasamples", container=NAME + "2").returncode == 0,
+             "DEMO_PASSWORD override applied")
+    c.expect(q_net("SELECT 1", user="demo", pw="demo", database="megasamples", container=NAME + "2").returncode != 0,
+             "the baked demo password no longer works after an override")
+    sh("docker", "rm", "-fv", NAME + "2")
+
+
 @session()
 def main(argv=None):
     datasets = list(sys.argv[1:] if argv is None else argv) or ["sakila"]
@@ -130,23 +151,7 @@ def main(argv=None):
         print(f"  . data directory: {size} MB across {n} databases")
     finally:
         sh("docker", "rm", "-fv", NAME)
-        with environment_file({"POSTGRES_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:
-            sh("docker", "run", "-d", "--name", NAME + "2",
-               "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
-               "--env-file", path, IMAGE)
-        for _ in range(150):
-            if q("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0:
-                break
-            time.sleep(0.2)
-        c.expect(q_net("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0,
-                 "POSTGRES_PASSWORD override applied by the wrapper (checked over the network)")
-        c.expect(q_net("SELECT 1", pw="root", container=NAME + "2").returncode != 0,
-                 "the baked default superuser password no longer works after an override")
-        c.expect(q_net("SELECT 1", user="demo", pw="viewer", database="megasamples", container=NAME + "2").returncode == 0,
-                 "DEMO_PASSWORD override applied")
-        c.expect(q_net("SELECT 1", user="demo", pw="demo", database="megasamples", container=NAME + "2").returncode != 0,
-                 "the baked demo password no longer works after an override")
-        sh("docker", "rm", "-fv", NAME + "2")
+        override_checks(c)
     print(f"image test: {len(c.failures)} failure(s)")
     return 1 if c.failures else 0
 
