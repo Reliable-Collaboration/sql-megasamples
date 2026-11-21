@@ -817,6 +817,14 @@ def test_mysql_ansi_quotes_program_is_withheld_before_any_reservation(server):
     assert copy_command(server, "list", "mysql", "--prefix", "copy", "--label", "ansi")["result"]["copies"] == []
 
 
+def test_mysql_no_backslash_escapes_program_is_withheld_before_any_reservation(server):
+    """Sol round 4, P3-8: the schema rewrite tokenizes with backslash escapes, so this mode is withheld."""
+    if server["engine"] != "mysql":
+        pytest.skip("requires the MySQL fixture")
+    reply = copy_command(server, "create", "mysql:replay_nobackslash", "--prefix", "copy", "--label", "nbe", status=4)
+    assert reply["error"]["code"] == "not-replayable" and "NO_BACKSLASH_ESCAPES" in reply["error"]["message"]
+
+
 def test_mysql_template_of_an_older_format_is_refused_before_any_reservation(server):
     """Opus round 3, 4: a template whose programs carry no recorded settings is format-unknown, exit 5."""
     if server["engine"] != "mysql":

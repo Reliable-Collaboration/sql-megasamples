@@ -96,6 +96,10 @@ def seed_mysql(container, marker, password):
         CREATE TABLE replay_ansi.t (id int PRIMARY KEY);
         SET SESSION sql_mode='ANSI_QUOTES';
         CREATE PROCEDURE replay_ansi.read_t() SELECT id FROM "replay_ansi"."t";
+        CREATE DATABASE replay_nobackslash;
+        CREATE TABLE replay_nobackslash.t (id int PRIMARY KEY, label varchar(8));
+        SET SESSION sql_mode='NO_BACKSLASH_ESCAPES';
+        CREATE PROCEDURE replay_nobackslash.read_t() SELECT 'ends\\', id FROM replay_nobackslash.t;
         """)
     mysql(container, f"""
         ALTER USER 'copier'@'%' IDENTIFIED BY '{password}' ACCOUNT UNLOCK;
@@ -115,11 +119,13 @@ def seed_mysql(container, marker, password):
         podman("cp", str(ROOT / "megasamples" / name), f"{container}:/tmp/{name}")
     # The template is made by the image build's own per-database step, as a shipped database's is.
     mysql(container, "INSERT INTO megasamples.datasets (name, tier, record, build_id) VALUES "
-                     "('sample', 'fixture', 'fixture', 'fixture'), ('replay_ansi', 'fixture', 'fixture', 'fixture')")
+                     "('sample', 'fixture', 'fixture', 'fixture'), ('replay_ansi', 'fixture', 'fixture', 'fixture'), "
+                     "('replay_nobackslash', 'fixture', 'fixture', 'fixture')")
     script = """
 from mysql_template_build import offer
-offer("sample", "fixture", ["sample", "replay_ansi"])
-offer("replay_ansi", "fixture", ["sample", "replay_ansi"])
+offer("sample", "fixture", ["sample", "replay_ansi", "replay_nobackslash"])
+offer("replay_ansi", "fixture", ["sample", "replay_ansi", "replay_nobackslash"])
+offer("replay_nobackslash", "fixture", ["sample", "replay_ansi", "replay_nobackslash"])
 """
     podman("exec", "-i", container, "sh", "-ec", "cat >/tmp/dl077-inventory.py", stdin=script)
     socket = mysql(container, "SELECT @@socket").stdout.strip()
