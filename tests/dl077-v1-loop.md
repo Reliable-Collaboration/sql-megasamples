@@ -1,15 +1,15 @@
 # Version 1, slices 1 and 2: review loop status
 
-This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5 to 11 are below.
+This is the loop over `feature/dl-077-v1`, run under DL-114, DL-120 and RCC.DataIntent's `knowledge/governance/review-and-fix.md`. The per-round triage records are `tests/dl077-v1-review-{1,2,3,4}.md`. The dispositions of rounds 5 to 12 are below.
 
 ## Stop count
 
-**0 of 2.** Round 11 found a P2 (both reviewers), so the count stays at 0. Round 10 had found two P2s, fix-now, and returned it to 0, the coordinator's decision. Round 9 had counted clean (1 of 2); rounds 6, 7 and 8 had kept it at 0. The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
+**0 of 2.** Round 12 found a P2 (Sol), so the count stays at 0, the coordinator's decision; both reviewers found the stopgaps remove their harms. Round 11 had found a P2 (both reviewers). Round 10 had found two P2s, fix-now, and returned it to 0, the coordinator's decision. Round 9 had counted clean (1 of 2); rounds 6, 7 and 8 had kept it at 0. The loop ends after two rounds in a row with nothing to fix now outside the workstreams.
 
 **Scope from round 8, the coordinator's decision:** a workstream brief is an input to that workstream's own design, which is reviewed in its own loop after this one ends. So findings about a brief's content are recorded there as that workstream's inputs, not fixed now here. That covers its facts, its test plan's coverage and its questions.
 
 This loop judges two things:
-- what lies outside the four areas: code, tests, documentation and records;
+- what lies outside the five areas: code, tests, documentation and records;
 - whether each brief carries every input faithfully.
 
 ## Hot areas, now workstreams
@@ -134,9 +134,9 @@ The orphan, start, MySQL-off image and native runs were first refused for memory
 | 9 | WS2 | Is an invalid database (an interrupted drop) reported, and how? |
 | 10 | WS3 | What is the result field for an unsettled cleanup step: `ledger: unsettled`, or one that names the step? |
 | 11 | WS3 | Is there a third per-copy outcome (unknown or partial), and a list for the copies a stopped sweep never reached? Any change to a public exit or to `removed`/`kept`. |
+| 12 | WS4 | **Security posture:** may the suite authenticate to a listener it has not yet proved to be the checked instance? |
 | 13 | WS5 | **What a person sees:** what `make down` and `make clean-all` promise about working data, and whether discarding changes asks first or offers a keep option |
 | 14 | WS5 | **On a shared daemon:** what ownership evidence permits removal, and what happens to a pre-label name match |
-| 12 | WS4 | **Security posture:** may the suite authenticate to a listener it has not yet proved to be the checked instance? |
 
 ## Round 6's runs
 
@@ -271,6 +271,25 @@ These are the reviews of `cda80f25`: Sol (`S9-*`) and Opus (`O9-*`, and its note
 | O9-N4 | P3 | — | **Fixed now**: S7-9's wording | this file |
 | O9-N5 | P3 | — | **Fixed now**, the same as S9-4 | `40375c9` |
 
+## Round 10: each finding's disposition
+
+These are the reviews of `0909856a`: Sol (`S10-*`) and Opus (`O10-*`, with its notes `O10-N*`). Both P2s were fix-now, so the stop count is 0 of 2.
+
+| ID | Sev. | Area | Disposition | Commit or brief |
+|---|---|---|---|---|
+| O10-P2-1 | P2 | — | **Fixed now on the success paths** (corrected in round 11: a failed recreate still stranded the replaced volume, O11-1 and S11-1, now WS5 with a stopgap): `megasamples/data_volumes.py` takes the engines' anonymous volumes on the Compose routes. `down` and `clean --all` run Compose `rm --stop --force --volumes` before `down`, which keeps the named SQLite volume; `up`'s stale recreate removes what it replaced by name, the helper `reset_engines` now shares. A real down/up cycle and a renewed recreate in the isolated store left only the named volume; round 9's commands left 4 | `9d38710` (test), `c917a1f` |
+| S10-P2-1 | P2 | — | **Fixed now**: both image tests remove a leftover override container with its volumes, check the launch, query only the ID it returned and remove that ID. Every other `docker run` in `megasamples/` already checks its result | `b511dc0` (refactor), `e0e482a` (test), `a27880a`, and the fit to the existing fakes after it |
+| O10-P3-2, S10-P3-2 | P3 | — | **Fixed now for the forms listed** (corrected in round 11: an argv held in a variable, and a cleanup bypassed by an early return, are not seen; WS5 inputs): the class test walks the syntax tree (both Docker spellings, podman, the helpers, shell strings, split calls, any flag spelling, the Compose forms), with exemptions by file and function | `86a5a84` |
+| O10-N2 | P3 | — | **Fixed now, reopened in round 11** (O11-3, S11-9; a WS5 input): name-only matches keep their volumes, an exemption with its reason | `86a5a84` (test), `e247d73` |
+| S10-P3-3 | P3 | — | **Fixed now**: publication qualification is an explicit run (`STRICT_READ_V1_PUBLICATION=1`), and ordinary runs accept a dataset selection (corrected in round 12: the selection check rejected an append dataset until it compared per database, S12-1) | `3143e9c` |
+| S10-P3-4 | P3 | — | **Fixed now**: every tracked receipt path must exist | `ed6d1a3` |
+| S10-P3-5 | P3 | — | **Fixed now**: the guide calls the MySQL boundary probe PR #14's evidence that fails on version 1, and points at the current checks | `ee32122` (test), `465c16b` |
+| S10-P3-6 | P3 | — | **Fixed now**: `demo` holds the whole set in every session; a role relying only on `PUBLIC` lacks one | `ee32122` (test), `465c16b` |
+| S10-P3-7 | P3 | 2 | **Fixed now** (faithfulness): WS2's S4 row marks DL-113's escalation historical and names DL-119 as the current rule | this round's records commit |
+| O10-N1 | P3 | — | **Fixed now**: the tokenizer test's comments | `65beaee` |
+| O10-N3 | P3 | — | **Backlog**, beside the optimizer-hint row: constructed, no shipped witness | this file |
+| O10-N4 | P3 | — | **Fixed now**: a failed store-wide listing, at the close and at the open | `65beaee` |
+
 ## Round 11: each finding's disposition
 
 These are the reviews of `5a75c237`: Sol (`S11-*`) and Opus (`O11-*`, with its notes `O11-N*`). Both found the same P2, so the stop count stays 0 of 2.
@@ -279,7 +298,7 @@ These are the reviews of `5a75c237`: Sol (`S11-*`) and Opus (`O11-*`, with its n
 
 | ID | Sev. | Area | Disposition | Commit or brief |
 |---|---|---|---|---|
-| O11-1, S11-1 | P2 | 5 | **Stopgap**: `remove_replaced` on every exit after the renewing `up`, in `recreate` and `reset_engines`. Fake-daemon reds cover a failure after renewal and one before it. The design is WS5's | `00bbf89` (test), `2482eaf` |
+| O11-1, S11-1 | P2 | 5 | **Stopgap**: `remove_replaced` on every exit after the renewing `up`, in `recreate` and `reset_engines`. Fake-daemon rows cover a failure after renewal and one before it. On red only the two "after" rows failed; the "before" rows are guards that cannot fail as the fake stands (Opus round 12, N1, a WS5 input). The design is WS5's | `00bbf89` (test), `2482eaf` |
 | S11-2 | P3 | 5 | **Stopgap**, triaged under DL-040: `.env.example` documents an image override in `.env`, so an operator reaches it on an ordinary route, and every `make up` would discard the working data. Staleness now uses the image Compose resolves. A WS5 input for L5 | `f769ff3` (test), `36c7b0f` |
 | S11-8 | P3 | 5 | **Fixed now** (what a person sees): the README says what `make down` and `make clean-all` discard, and what the named SQLite volume keeps | `913f3d4` (test), `d1151a1` |
 | S11-7 | P3 | — | **Fixed now**: the native suite follows the image's own dataset selection. The checkout's configuration must match the image's registry, and the employee-view and parity cases follow the selection. Run on a real chinook-only image | `f6a44e4` |
@@ -293,24 +312,24 @@ These are the reviews of `5a75c237`: Sol (`S11-*`) and Opus (`O11-*`, with its n
 | O11-N1 | P3 | 5 | WS5 input: the main image-test containers query by fixed name | WS5 |
 | O11-N2 | P3 | 5 | WS5 input (fact B): the `--rm` removals; recorded in the batch section now | WS5; this file |
 
-## Round 10: each finding's disposition
+## Round 12: each finding's disposition
 
-These are the reviews of `0909856a`: Sol (`S10-*`) and Opus (`O10-*`, with its notes `O10-N*`). Both P2s were fix-now, so the stop count is 0 of 2.
+These are the reviews of `9fe11377`: Sol (`S12-*`) and Opus (`O12-*`, with its notes `O12-N*`). Sol's P2 keeps the stop count at 0 of 2. Both reviewers find the stopgaps remove their harms, with no new harm.
 
 | ID | Sev. | Area | Disposition | Commit or brief |
 |---|---|---|---|---|
-| O10-P2-1 | P2 | — | **Fixed now on the success paths** (corrected in round 11: a failed recreate still stranded the replaced volume, O11-1 and S11-1, now WS5 with a stopgap): `megasamples/data_volumes.py` takes the engines' anonymous volumes on the Compose routes. `down` and `clean --all` run Compose `rm --stop --force --volumes` before `down`, which keeps the named SQLite volume; `up`'s stale recreate removes what it replaced by name, the helper `reset_engines` now shares. A real down/up cycle and a renewed recreate in the isolated store left only the named volume; round 9's commands left 4 | `9d38710` (test), `c917a1f` |
-| S10-P2-1 | P2 | — | **Fixed now**: both image tests remove a leftover override container with its volumes, check the launch, query only the ID it returned and remove that ID. Every other `docker run` in `megasamples/` already checks its result | `b511dc0` (refactor), `e0e482a` (test), `a27880a`, and the fit to the existing fakes after it |
-| O10-P3-2, S10-P3-2 | P3 | — | **Fixed now for the forms listed** (corrected in round 11: an argv held in a variable, and a cleanup bypassed by an early return, are not seen; WS5 inputs): the class test walks the syntax tree (both Docker spellings, podman, the helpers, shell strings, split calls, any flag spelling, the Compose forms), with exemptions by file and function | `86a5a84` |
-| O10-N2 | P3 | — | **Fixed now**: name-only matches keep their volumes, an exemption with its reason | `86a5a84` (test), `e247d73` |
-| S10-P3-3 | P3 | — | **Fixed now**: publication qualification is an explicit run (`STRICT_READ_V1_PUBLICATION=1`), and ordinary runs accept any dataset selection | `3143e9c` |
-| S10-P3-4 | P3 | — | **Fixed now**: every tracked receipt path must exist | `ed6d1a3` |
-| S10-P3-5 | P3 | — | **Fixed now**: the guide calls the MySQL boundary probe PR #14's evidence that fails on version 1, and points at the current checks | `ee32122` (test), `465c16b` |
-| S10-P3-6 | P3 | — | **Fixed now**: `demo` holds the whole set in every session; a role relying only on `PUBLIC` lacks one | `ee32122` (test), `465c16b` |
-| S10-P3-7 | P3 | 2 | **Fixed now** (faithfulness): WS2's S4 row marks DL-113's escalation historical and names DL-119 as the current rule | this round's records commit |
-| O10-N1 | P3 | — | **Fixed now**: the tokenizer test's comments | `65beaee` |
-| O10-N3 | P3 | — | **Backlog**, beside the optimizer-hint row: constructed, no shipped witness | this file |
-| O10-N4 | P3 | — | **Fixed now**: a failed store-wide listing, at the close and at the open | `65beaee` |
+| S12-1, O12-1 | P2 | — | **Fixed now**: the native selection check compares per database (`unique_databases`), with a host table (a base with its append dataset, without it, a base missing on either side). The guide and README say the registry is per database. Run natively on PostgreSQL and, for the first time, MySQL | `94a7b65` (test), `a10d1eb` |
+| O12-2 | P3 | 5 | **Fixed now**: `make help`, the CLI list, `down`'s description and workspace's usage name each engine's working data, under the README's test. The runbook's list is a WS5 input (question 2): DL-086's procedure, unchanged by version 1, never runs `make down` | `63a29fb` (test), `3067e07`, `4aebac5` (the test's own index corrected) |
+| S12-3 | P3 | 5 | **Stopgap** extended: no renewal for a service whose image Compose cannot resolve, with a message; a row with distinct IDs and exactly one stale service | `54e792c` (test), `922ee62` |
+| S12-6 | P3 | — | **Fixed now**: PostgreSQL `test-image`'s write probes name a real column and need a permission refusal. Run natively | `3cf1f10` (refactor), `70405d9` (test), `8eb964b` |
+| S12-2 | P3 | — | **Fixed now**: MySQL output compared in the batch form on both client paths. Native red and green, CLI and library modes | `e6ed4ef` |
+| S12-5 | P3 | 5 | **Fixed now**: the README's SQLite restart sentence, tested exactly | `5477d49` (test), `c3a3acd` |
+| S12-9, O12-N5 | P3 | — | **Fixed now**: the header's five areas; the recreate row's reds stated exactly; each round 11 host result with its revision; `c4745ba`'s order; owner questions and round sections in order | this file |
+| O12-3, S12-7 | P3 | 5 | **Fixed now** (faithfulness): WS5 carries S11-8, O10-N2 (reopened), S10-P3-2, S12-4, O12-N1 to N4, the guard cases, and a "decided elsewhere" section citing slice 3's [114-2F] and its U-table; questions 2 and 5 say they apply it, not reopen it. The stopgaps are interim | the brief |
+| S12-4 | P3 | 5 | WS5 input (test plan): collateral deletion | WS5 |
+| O12-N1 to N4 | P3 | 5 | WS5 inputs | WS5 |
+| S12-8 | P3 | 1 | **Fixed now** (faithfulness): WS1 carries S7-8 and O7-P3-3 | the brief |
+| O12-N6 | P3 | — | **Fixed now**: the selection test's MySQL row ran natively | `a10d1eb` |
 
 ## Round 8: the class check for overwritten evidence
 
@@ -464,7 +483,7 @@ Focused runs, one at a time, each with the 15 GiB check, while DataIntent's `tes
 - **Host tests:** override 4, the Compose routes 4, the removal class 26 (`tests/test_v1_container_removal.py` at `5a75c23`; it said 27), the cleanup scope 16, tokenizer 37, inventory 9, documentation 10. Their reds and reversals are in the commits.
 
 **Failed**
-- **The host-only full suite, first run:** 7 failed. `a27880a` had broken five existing image-test fakes; it was committed without a full run. Fixed in `c4745ba`, nine commits later, which records it.
+- **The host-only full suite, first run:** 7 failed. `a27880a` had broken five existing image-test fakes; it was committed without a full run. Fixed in `c4745ba`, which records it: nine commits came between them, so it is the tenth after `a27880a`.
 - **The host-only full suite, final run:** 2 failed, the two baselines; 1,176 passed, 345 skipped (`pytest-r11.log`).
 
 **Not run**
@@ -489,9 +508,9 @@ These were focused runs, one at a time, each after the 15 GiB check.
   - Reversal: a chinook configuration against the full image fails the selection test.
 - **Compose's resolution with a real `.env`** (`config-r11/`, a synthetic `.env` holding only an image name): with the override in `.env`, `published-mysql:9.7`; without it, `sql-megasamples-mysql:dev`.
 - **Host tests:**
-  - the Compose routes, with the failure rows and the `.env` row: 9;
-  - with `test_reset` and the class test: 70;
-  - documentation: 11.
+  - the Compose routes, with the failure rows and the `.env` row: 9, at `36c7b0f`;
+  - the Compose routes (then 8), `test_reset` and the class test: 70, at `2482eaf`, before the `.env` row was added;
+  - documentation: 11, at `d1151a1`.
   - The reds and reversals are in the commits.
 
 **Failed**
@@ -505,3 +524,28 @@ These were focused runs, one at a time, each after the 15 GiB check.
 - **Isolation** (`isolation-check.sh`, read-only): the live entries and the three live engines are unchanged. The isolated store holds the same 20 containers and 37 volumes.
 - **Every task container** this round started is removed. The socket service is stopped.
 - **The retained stack** was not addressed this round. Its last proof is round 9's.
+
+## Round 12's runs
+
+These were focused runs, one at a time, each after the 15 GiB check. Each names the revision it ran.
+
+**Passed**
+- **The selection check, natively:** PostgreSQL on `cf7325f4f9be` and MySQL on `58d4b695a90c` (its first native run, as `root`), each 1 passed, at `a10d1eb`. Neither image carries an append dataset; the host table covers that case.
+- **MySQL native, CLI and library mode,** on `58d4b695a90c`:
+  - red, at `922ee62`: the CLI failed parity on `SHOW GRANTS` (1 failed, 7 passed); library mode failed 6, with 2 passed;
+  - green, at `e6ed4ef`'s tree: 8 passed in each mode.
+- **PostgreSQL `test-image`** on `ce3b539fb522` (chinook), at `8eb964b`'s tree: each write probe refused, 0 failures, the store's volume set unchanged.
+- **Host tests,** each at its own commit as the commits record. The selection table, 6; the help and README, 12; the Compose routes, 11; the write probes, 7.
+
+**Failed**
+- **The host-only full suite,** at `c3a3acd` with this file's edits: 2 failed, the two baselines; 1,198 passed, 347 skipped (`pytest-r13.log`).
+
+**Not run**
+- An append-dataset image, natively.
+- A real recreate whose `--wait` fails (WS5).
+
+## Round 12: restoration and isolation
+
+- **Isolation** (`isolation-check.sh`, read-only): the live entries and engines are unchanged. The store holds the same 20 containers and 37 volumes.
+- **Every task container** this round started is removed. The socket service is stopped.
+- **The retained stack** was not addressed. Its last proof is round 9's.

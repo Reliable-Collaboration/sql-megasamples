@@ -79,9 +79,11 @@ For example:
 | 7 | Opus 1 | the test plan asks for every combination of 14 facts on real targets, with no rule for which count | **input**: state the coverage criterion (precedence that makes later facts moot; the full product in a cheap model under shimmed `postgres -C` and `pg_ctl`; real targets for each value against a base row and for named interactions; impossible combinations with reasons) |
 | 7 | Sol 1 | no outcome for a failed public start (the port does not bind) or for an informational command that exits 0 without a listener; a confirmed password change versus one whose reply was lost; each role's key and the passfile after each failure | **input**: carried as fact L's applied-but-reply-lost value and the two outcomes above (a failed public start, an informational exit); each role's key and the passfile after each failure are question 9 |
 | 7 | Opus P3-4 | question 6 is missing from the owner list | **input**: question 6 is an owner decision |
+| 7 | Sol P3-8 (S7-8), Opus P3-3 (O7-P3-3) | the start suite's assertions accepted any failed command as a refusal, and its listener checks could not tell a public server from the private start | fixed in the tests (`6ed9e2b`): a key refusal must be exit 2 with scram's message, so a failed exec or connection does not pass; the listener-log assertions witness the public server only, as the private start logs to `/dev/null`; the namespace check has a positive control; the probe's reversal (the trusted-loopback probe fails "the probe did not reach scram authentication") is recorded. **Input**: the design keeps these controls |
 | 7 | Sol P3-7, Opus P3-7 | retained volumes from round 5 or 6 images keep `admin`'s EXECUTE or lack the routine, under marker `1` | **input** (question 7) |
 | 8 | Opus P3-3 | the round 7 Sol 1 row said question 9 covered the passfile, and the facts and outcomes lacked its inputs | **input**: carried in fact L, the required outcomes and question 9 |
 | 8 | Sol P3-6 | fact H said round 5's image lacked the loaded report; its build includes the report and lacks `admin`'s revoke | **input**: fact H names the pre-report and pre-revoke builds separately |
+| 12 | Sol 8 | the round 7 start-probe findings were not in this table | **input**: the S7-8 and O7-P3-3 row above |
 
 ## Questions the design must answer
 
