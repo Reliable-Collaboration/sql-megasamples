@@ -1,30 +1,26 @@
 # sql-megasamples
 
-Sample databases for **MySQL, PostgreSQL and SQLite**: 38 well-known sample and public datasets,
-each converted from its authoritative upstream source by a scripted, rerunnable pipeline and
-verified against pinned expectations, shipped as engine images and files — with a set of web
-consoles that come up beside them, already connected, so you can start looking at data instead of
-configuring clients. You choose the engines, the databases and the consoles; one file holds the
-choice and one command builds it.
+Sample database servers for **MySQL, PostgreSQL and SQLite**, ready to query: 38 well-known sample
+and public datasets, each converted from its upstream source by a scripted, rerunnable pipeline and
+checked against pinned expectations. They ship as engine images and files, with web consoles that
+come up beside them already connected. You choose the engines, the databases and the consoles; one
+file holds the choice and one command builds it.
 
-| engine | what ships | size |
-|---|---|---|
-| **MySQL 9.7.4** | `sql-megasamples-mysql`: an image with the databases baked into its data directory | depends on the selected datasets; see [LTS upgrade evidence](docs/lts-upgrade-evidence.md) |
-| **PostgreSQL 18.7** | `sql-megasamples-postgres`: an image with the databases in its cluster, ported from the verified MySQL corpus | depends on the selected datasets; see [LTS upgrade evidence](docs/lts-upgrade-evidence.md) |
-| **SQLite 3.54.1** | `sql-megasamples-sqlite`: one `.sqlite` file per database with the `sqlite3` shell beside them; the files are also under `build/sqlite/` to copy anywhere | depends on the selected datasets; see [LTS upgrade evidence](docs/lts-upgrade-evidence.md) |
+There is no sensitive data here. The servers are for looking at data, trying queries, and testing
+on a copy you can throw away.
 
-The maintained deployment ran the upgrade to these versions on **2026-11-18**, including new
-passwords. MySQL uses the 9.7 LTS line; PostgreSQL uses supported major 18. Release/support sources,
-read times and the executed checks are in the [live-upgrade evidence](docs/live-upgrade-evidence.md).
-As of **2026-11-18**, acceptance was held for a DataIntent test failure outside this service;
-the acceptance record is DataIntent’s.
+| engine | what ships |
+|---|---|
+| **MySQL 9.7.4** | `sql-megasamples-mysql`: an image with the databases baked into its data directory |
+| **PostgreSQL 18.7** | `sql-megasamples-postgres`: an image with the databases in its cluster, ported from the verified MySQL corpus |
+| **SQLite 3.54.1** | `sql-megasamples-sqlite`: one `.sqlite` file per database with the `sqlite3` shell beside them; the files are also under `build/sqlite/` to copy anywhere |
 
-Datasets are built and verified on their supported engines; see the
-[supported matrix](docs/dataset-upgrade-evidence.md). BTS and WideWorldImporters OLTP are
-**Unsupported on PostgreSQL and SQLite**. PostgreSQL and SQLite are **ports of the MySQL corpus**: the same rows, proved by the same per-table content digests, foreign-key checks and
-index parity that MySQL is checked against — and produced by one deterministic program, never by hand.
+PostgreSQL and SQLite are **ports of the MySQL corpus**: the same rows, proved by the same
+per-table content digests, foreign-key checks and index parity that MySQL is checked against, and
+produced by one deterministic program, never by hand. BTS and WideWorldImporters OLTP are not
+offered on PostgreSQL and SQLite.
 
-Every dataset keeps its own upstream licence — this project never places a single licence over the
+Every dataset keeps its own upstream licence; this project never places a single licence over the
 data. [`CATALOGUE.md`](CATALOGUE.md) lists all 38 datasets with what each licence asks of you, and
 [Licensing](#licensing) is worth reading before you publish anything built from this.
 
@@ -37,10 +33,10 @@ data. [`CATALOGUE.md`](CATALOGUE.md) lists all 38 datasets with what each licenc
 </p>
 <p align="center"><sub>The console index at <code>http://127.0.0.1:8080/</code>, then CloudBeaver and DbGate on Sakila's <code>film</code> table — all three engines, every database, one <code>make up</code>. Retake them with <code>make screenshots</code>.</sub></p>
 
-**Status: not published yet.** There is no image to `docker pull`; you build them locally, which
-is what the rest of this page is about. [`ARCHITECTURE.md`](ARCHITECTURE.md) describes how the
-pieces fit, [`PLAN.md`](PLAN.md) what is being built next, and [`knowledge/`](knowledge/index.md)
-is the evidence bundle behind every claim in both.
+**Status: not published as images.** There is no image to `docker pull`; you build them locally.
+What changed in this version is in the [release notes](docs/release-notes.md).
+[`ARCHITECTURE.md`](ARCHITECTURE.md) describes how the pieces fit, and
+[`knowledge/`](knowledge/index.md) is the evidence behind the data.
 
 ## Quick start
 
@@ -52,8 +48,8 @@ make up            # start the stack, then open http://127.0.0.1:8080/
 ```
 
 `make configure` is a full-screen chooser: the engines, then a matrix of every dataset against
-every engine — with each dataset's tier, download size and whether that download is already
-verified on this machine — then the consoles. It writes `megasamples.yaml`, which every other
+every engine, with each dataset's tier, download size and whether that download is already
+verified on this machine, then the consoles. It writes `megasamples.yaml`, which every other
 command reads. You can also copy [`megasamples.example.yaml`](megasamples.example.yaml) and edit
 it, or run with no file at all: the built-in default is MySQL with the 21 core databases and the
 four consoles.
@@ -64,13 +60,15 @@ up to 8.7 GB of images for the three engines. A full core build converts and loa
 and is not a five-minute job; the 15-dataset **quick** subset (196 MB of downloads) builds in
 minutes, and the PostgreSQL and SQLite ports of an already-built MySQL corpus take minutes too.
 
+`make up` starts the engines and the consoles; `make down` stops them and throws away what you
+changed (see [Stopping, and what is kept](#stopping-and-what-is-kept)).
+
 ## The databases
 
 Each one is converted from its authoritative upstream source; the description is the one its own
-research record carries, so it says what the thing actually is rather than what a blurb writer
-guessed. These 21 are the **core** tier, the ones an image holds by default; full detail — every
-tier, licence and obligation — is in [`CATALOGUE.md`](CATALOGUE.md), and `make list` prints every
-dataset with its tier, download size and shape.
+research record carries. These 21 are the **core** tier, the ones an image holds by default; full
+detail (every tier, licence and obligation) is in [`CATALOGUE.md`](CATALOGUE.md), and `make list`
+prints every dataset with its tier, download size and shape.
 
 <!-- databases:start -->
 | database | what it is | tables | rows |
@@ -104,32 +102,24 @@ Beyond these, the extended, generated and user-fetched datasets are in
 ## The engines
 
 **MySQL is the hub.** Every dataset is converted into MySQL first, loaded into a throwaway build
-server, verified there — row counts, a canonical content digest of every table, foreign-key
+server, verified there (row counts, a canonical content digest of every table, foreign-key
 integrity, the index set, every view's digest, the output of every stored routine and trigger,
-query plans, canonical query results — and dumped. The other engines are ports of that verified
-corpus, checked against the same expectations, so a database in PostgreSQL or SQLite is provably
-the same rows, the same views and the same behaviour as in MySQL.
+query plans, canonical query results) and dumped. The other engines are ports of that verified
+corpus, checked against the same expectations.
 
 ### MySQL
 
 `sql-megasamples-mysql:dev` is `mysql:9.7.4` (`utf8mb4`, InnoDB) with the chosen databases already
 in its data directory. First start copies that directory into a fresh volume, then starts the
-server; [LTS validation](docs/lts-upgrade-evidence.md) records these separate readiness costs.
-Two accounts are offered from every console, and both are usable from any client:
+server. Two accounts are offered from every console, and both work from any client:
 
 | account | factory password (without overrides) | privileges |
 |---|---|---|
 | `demo` | `demo` | `SELECT` and `SHOW VIEW` on working schemas and explicitly enabled foreign namespaces. `SELECT` on the `megasamples.datasets` and `megasamples.copy_service` registry tables. Holds no write privilege. |
 | `admin` | `admin` | `ALL PRIVILEGES WITH GRANT OPTION` |
 
-Each console opens on `demo`, because the safe account should be the one you get without choosing.
-The table lists factory defaults. **They do not apply where `.env` sets new passwords**, including
-the upgraded deployment. The private `.env` is the single source for all four passwords:
-`DEMO_PASSWORD`, `ADMIN_PASSWORD`, `MYSQL_ROOT_PASSWORD`, `POSTGRES_PASSWORD`. For a new setup,
-copy `.env.example` to `.env` with `umask 077`, set mode 0600 and edit it privately. Preserve an
-existing `.env` when rotating; never commit, print or source it. Unset exported overrides for
-these keys so Compose and repository tools read the file. The values reach the engines at startup
-and the consoles together.
+The working schemas are the sample databases themselves (`sakila`, `chinook`, …). Each console
+opens on `demo`, so the read-only account is the one you get without choosing.
 
 ```sh
 mysql -h 127.0.0.1 -P 3306 -u demo -p sakila
@@ -138,81 +128,39 @@ docker compose up -d mysql        # the database alone, no consoles
 
 A `megasamples` database inside the image holds the provenance registry: one row per database (an
 `append: true` dataset joins its base's row) with its tier, knowledge record, licences, source artifacts and digests, and row counts (pinned, or for live datasets such as Chicago Crimes the snapshot verified on that
-build). The landing page and the image tests read it, so neither can drift from what was baked. The catalogue
-`make catalogue` is generated from the repository's dataset definitions and pinned counts, not from
+build). The landing page and the image tests read it, so neither can drift from what was baked.
+The catalogue `make catalogue` is generated from the repository's dataset definitions and pinned counts, not from
 a running image, so it lists every dataset whatever an image carries.
 
 ### PostgreSQL
 
-`sql-megasamples-postgres:dev` is `postgres:18.7-trixie` with each dataset's database already in its cluster (an `append: true`
-dataset shares its base's), the same `demo` (reads sample tables, including tables `admin` later creates
-in a sample database's `public` schema) and `admin` accounts, the superuser `postgres` with
-factory password `root` (overridden by the private `.env`), and a `megasamples` database holding the registry. `POSTGRES_PASSWORD`,
-`DEMO_PASSWORD` and `ADMIN_PASSWORD` override the passwords at start. Tables, data, primary and
-unique keys, secondary indexes, foreign keys, check constraints, stored generated columns, views,
-stored routines (as PL/pgSQL; a procedure that returns rows is a function you `SELECT * FROM`),
-triggers, `ON UPDATE CURRENT_TIMESTAMP` columns and full-text indexes (GIN over `to_tsvector`) are
-all ported. Of the corpus's 69 views two are not carried (they reach into another database), and
-the one spatial index is not; each database's registry row and [`CATALOGUE.md`](CATALOGUE.md) say
-exactly which, and [`knowledge/decisions/programmable-object-parity.md`](knowledge/decisions/programmable-object-parity.md)
-says why. The identical table set is kept, so a query written for one engine names the same tables
-on the other.
+`sql-megasamples-postgres:dev` is `postgres:18.7-trixie` with each dataset's database already in its
+cluster (an `append: true` dataset shares its base's), the same `demo` and `admin` accounts, the
+superuser `postgres` with factory password `root`, and a `megasamples` database holding the
+registry. Tables, data, keys, indexes, foreign keys, check constraints, stored generated columns,
+views, stored routines (as PL/pgSQL; a procedure that returns rows is a function you
+`SELECT * FROM`), triggers, `ON UPDATE CURRENT_TIMESTAMP` columns and full-text indexes (GIN over
+`to_tsvector`) are all ported. Of the corpus's 69 views two are not carried (they reach into
+another database), and the one spatial index is not; each database's registry row and
+[`CATALOGUE.md`](CATALOGUE.md) say exactly which. The identical table set is kept, so a query
+written for one engine names the same tables on the other.
 
 ```sh
 psql -W -h 127.0.0.1 -p 5432 -U demo sakila
 ```
 
-PostgreSQL `demo` cannot modify the persistent sample tables in the tested DML/DDL paths.
-Its read scope includes tables `admin` later creates in a sample database's `public` schema.
-It has no `TEMPORARY` privilege, cannot create large objects, and can execute only allowlisted routines.
-
-**What the PostgreSQL image refuses to start.** Before the server starts, the image asks
-PostgreSQL itself, with the same arguments and as `postgres`, which data directory and which preload
-libraries it would use. These include every configuration file, `postgresql.auto.conf` (what
-`ALTER SYSTEM` persisted) and every `-c` option, in any case. It then refuses to start:
-- a data directory other than `PGDATA`;
-- a data directory without the image's read-policy marker, which is a volume from before the policy;
-- a preload list without `read_policy`, checked for the server and also for the private start that
-  applies password overrides;
-- a quoted preload entry;
-- a server binary other than its own `postgres`.
-
-As root, it first makes the data directory `postgres`'s own, as the upstream image does. A start as
-a non-root user exits before the public server starts. A data directory or preload list that fails
-the checks above exits before any server starts. When both pass and password overrides are set, the
-private password start runs first, listening only on its local socket; each override it applied
-stays in effect although the start then fails writing the health passfile. The healthcheck is healthy only
-while the `read_policy` library is loaded. **What is not checked:** a replaced entrypoint, or a
-command that wraps the server (for example `gosu postgres postgres …`), bypasses these checks, and
-the healthcheck is then the only signal that the policy is missing. That healthcheck is the one
-the generated Compose file defines; the image itself defines none, so a hand-run container has no
-such signal.
+**How `demo` is kept read-only on PostgreSQL.** `demo` reads sample tables, including
+tables `admin` later creates in a sample database's `public` schema. It has no write privilege on them,
+no `TEMPORARY` privilege, cannot create large objects, and can execute only allowlisted routines.
+A small server extension, `read_policy`, loaded into every PostgreSQL server the image starts,
+backs this up by refusing the few ways a read-only role could otherwise create or change things.
+The image refuses to start if that extension would not be loaded, or on a data directory made
+before it existed. This keeps a samples server tidy for people who should only look; it is not a
+security product, and the `postgres` superuser can change it.
 
 **The PostgreSQL `copy` client needs libpq.** The package installs the pure Psycopg distribution,
-which loads the system's libpq (for example Debian's `libpq5`). Without it, `megasamples copy … postgres`
-exits 3 with the code `client-library` and contacts no server.
-
-**A stated limit of PostgreSQL copies (DL-113, DL-119).** The image's hook does all of its own work
-before `CREATE DATABASE` copies any file, and PostgreSQL removes a half-made copy's files when the
-copy itself fails. It does not clean up after anything that ends the transaction between the file copy
-and the commit: an error PostgreSQL raises for want of a resource, a crash, or the caller's own cancel
-or statement timeout landing in that window. Any of these can leave a directory under the data
-directory with no database in the catalog. No SQL reaches it; it takes disk, persists in backups, and
-lasts until the volume is next replaced, which clears it. This is accepted, not prevented.
-
-`megasamples up` and `megasamples reset --status postgres` report every such directory as a warning,
-with its tablespace, OID, path and size. They also say when the scan could not complete. A create or a
-drop in progress can appear once; run it again. To remove one, as the administrator:
-
-1. stop every create and drop on the server (no `copy create`, `copy drop`, `copy sweep` or reset);
-2. run the check again, and confirm the OID is still absent from `pg_database`;
-3. shut PostgreSQL down cleanly;
-4. move the directory out of the data directory into a quarantine location;
-5. start the server, confirm it is healthy, and only then delete the quarantined directory.
-
-Caller interrupts were tried on the build: a statement timeout and a client cancel, at random points
-across each copy strategy, 480 attempts, left no such directory (`tests/gates/dl077_h3_interrupts.py`).
-That is evidence, not proof that the window is closed.
+which loads the system's libpq (for example Debian's `libpq5`). Without it,
+`megasamples copy … postgres` exits 3 with the code `client-library` and contacts no server.
 
 ### SQLite
 
@@ -225,35 +173,36 @@ declared and verified, and enforced by the reader's `PRAGMA foreign_keys=ON`, as
 Views, triggers, `ON UPDATE` columns and full-text indexes (an FTS5 table beside each indexed
 table, kept in step by triggers) are ported; SQLite has no stored routines, so the 42 routines are
 not, nor are the views that call them, the three views that read XML, and a handful of others the
-catalogue names — every one with its reason in `datasets/<name>/ports/not_ported.yaml`.
+catalogue names, every one with its reason in `datasets/<name>/ports/not_ported.yaml`.
 
 ```sh
 docker exec -it megasamples-sqlite sqlite3 /data/sakila.sqlite
 docker run --rm -it sql-megasamples-sqlite:dev sqlite3 /data/chinook.sqlite
 ```
 
+The consoles read the SQLite files from a shared volume, `megasamples-sqlite`. Every time the SQLite
+container starts, it copies the image's files into that volume again, so changes made there through
+a console last only until the next start.
+
 ### How the ports are made, and why you can trust them
 
 One program, `megasamples/port/`, reads each database's schema, views, routines and triggers from
 the MySQL build server's `information_schema` and its rows from the MySQL Shell dump, applies one
 type-mapping table and one DDL emitter with two dialects, translates every view, routine body and
-trigger by rule (sqlglot for the statements, a scanner over the constructs the corpus uses for the
-procedural bodies), and loads the result with the engine's own tools (`psql \copy`, the `sqlite3`
+trigger by rule, and loads the result with the engine's own tools (`psql \copy`, the `sqlite3`
 driver). Nothing is written by hand and nothing is guessed: a type with no mapping or a function the
 target lacks stops that object with its name. The DDL, the translated objects and the not-ported
 list of every dataset are committed under `datasets/<name>/ports/`, so a rule change shows up as a
-diff, and `make check` regenerates them and fails on any byte of difference. Then the port is
-verified against the same `datasets/<name>/tests/` files as MySQL — counts, canonical content
-digests, foreign keys, indexes, the digest of every view, and the printed output of every routine
-call and trigger scenario, pinned from MySQL.
+diff, and `make check` regenerates them and fails on any byte of difference. The port is then
+verified against the same `datasets/<name>/tests/` files as MySQL.
 
 ### What the ports do not carry, and why
 
-Everything an engine cannot carry is refused by name, with its reason, and the reason is the same
-in three places: `datasets/<name>/ports/not_ported.yaml`, the `not_ported` column of that
-database's registry row inside the image, and the tooltip behind "n not ported" on the landing
-page. There are seven kinds, and every one is an engine's limitation rather than a translation
-left undone ([the record](knowledge/decisions/programmable-object-parity.md) has the evidence):
+Everything an engine cannot carry is refused by name, with its reason, in three places:
+`datasets/<name>/ports/not_ported.yaml`, the `not_ported` column of that database's registry row
+inside the image, and the tooltip behind "n not ported" on the landing page. Every one is an
+engine's limitation rather than a translation left undone
+([the record](knowledge/decisions/programmable-object-parity.md) has the evidence):
 
 | what | engines | why |
 |---|---|---|
@@ -263,34 +212,223 @@ left undone ([the record](knowledge/decisions/programmable-object-parity.md) has
 | `sakila.actor_info` | SQLite | `group_concat` cannot combine DISTINCT with a separator or an ORDER BY |
 | the `oracle_oe` trigger that assigns `line_item_id` before an insert | SQLite | a SQLite trigger cannot modify the row being inserted, and the key must be there first |
 | 4 AdventureWorks `AUTO_INCREMENT` columns inside composite keys | SQLite | SQLite auto-assigns only a single-column INTEGER PRIMARY KEY; an insert must supply the value |
-| the spatial index on `sakila.address` | both | core PostgreSQL indexes geometry only with PostGIS, which would change the image's base; SQLite has no geometry type. The column itself is ported as standard WKB |
+| the spatial index on `sakila.address` | both | core PostgreSQL indexes geometry only with PostGIS; SQLite has no geometry type. The column itself is ported as standard WKB |
 
 Two comparisons are weaker than a digest and say so in the verification output: a view whose
-`GROUP_CONCAT` has no ORDER BY is held to its row count (MySQL leaves that order unspecified), and
-on SQLite, which does decimal arithmetic in floating point, a view's computed decimal columns are
-left out of the digest while every other column is still compared exactly.
+`GROUP_CONCAT` has no ORDER BY is held to its row count, and on SQLite, which does decimal
+arithmetic in floating point, a view's computed decimal columns are left out of the digest.
 
-Runtime password overrides use `DEMO_PASSWORD`, `ADMIN_PASSWORD`, `MYSQL_ROOT_PASSWORD`
-and `POSTGRES_PASSWORD` in the private `.env` file. Recreate the services after editing it (`make up`).
-Reset, its row-count checks and registry readers use that same configuration. Native maintenance
-clients use private option/pass files; password values do not enter process arguments. Interactive
-connection examples prompt for the password. For a cutover, verify every new password and require
-every previous password to be refused; see the [live runbook](docs/live-upgrade-runbook.md).
-Rotate all four values together, keep the previous file privately for rollback, run `make up`
-to apply them, then verify new-password sign-ins and authentication refusal of every old password
-with `PYTHONPATH=. .venv/bin/python docs/validation/verify-configured-passwords.py --previous-dir <private-backup-directory>`.
-Run that verifier with the repository environment and the same container socket/project as the
-stack; do not put password values on the command line or in receipts.
+## The accounts
+
+| account | engines | what it can do |
+|---|---|---|
+| `demo` | MySQL, PostgreSQL | read the sample databases and the registry; no writes (details above) |
+| `admin` | MySQL, PostgreSQL | change anything in the sample databases; on PostgreSQL it owns them but is not a superuser |
+| `root` / `postgres` | MySQL / PostgreSQL | the engine's superuser |
+| `copier` | MySQL, PostgreSQL | make, change and remove copies under the prefix `copy_` (see [Copies](#copies-a-database-to-test-on-then-throw-away)) |
+| readers and writers you declare | MySQL, PostgreSQL | readers read the sample databases or a copy namespace; writers can also insert, update and delete rows in the sample databases |
+
+**Passwords.** `demo`, `admin`, `root` and `postgres` take their passwords from the private `.env`
+file: `DEMO_PASSWORD`, `ADMIN_PASSWORD`, `MYSQL_ROOT_PASSWORD` and `POSTGRES_PASSWORD`. For a new
+setup, `umask 077; cp .env.example .env; chmod 600 .env`, edit it, then `make up`. The factory
+values above apply only where `.env` does not change them. Never commit `.env`.
+
+`copier` and the readers and writers you declare are created **without a usable password**: set one
+before first use, as the copy walkthrough shows. They lose it again whenever the engine is
+recreated from its image (`make down`, a whole-engine reset, or `make up` after a rebuild).
+
+**Declaring readers and writers.** In `megasamples.yaml`, before building the image:
+
+```yaml
+accounts:
+  readers: [{name: analyst, scopes: [working]}]      # working = the sample databases; or a copy prefix such as copy
+  writers: [{name: loader, scopes: [working]}]       # writers: rows in the sample databases only
+```
+
+## Copies: a database to test on, then throw away
+
+A copy is a private, writable database made from a pristine snapshot of a sample database (its
+**template**, baked into the image). Make one, run your tests against it, change anything, and
+throw it away; the sample databases and other copies are untouched. Copies are made with the
+`megasamples copy` command, which prints one JSON document and exits with a code a script can act
+on.
+
+**The words used:**
+- **target:** `ENGINE:DATABASE` to create, `ENGINE:COPYNAME` to look at or change one copy, and
+  just `ENGINE` to list or sweep;
+- **prefix:** the namespace copies are made in. The image sets up one, `copy`, owned by the
+  `copier` account, holding at most 32 copies;
+- **label:** your short name for the copy (lower-case letters and digits, up to 24); one label per
+  copy at a time;
+- **name and identity:** `create` answers with the copy's database name, such as
+  `copy_chinook_5cbcc8902b8a`, and its 32-character **identity**. Commands that change or remove a
+  copy need both, so you cannot remove someone else's copy by mistake;
+- **lease:** how long the copy is wanted, from `1m` to `7d` (default `24h`). Nothing removes a copy
+  when its lease ends; `sweep` removes copies whose lease has ended.
+
+**The commands:**
+
+| command | what it does |
+|---|---|
+| `create ENGINE:DATABASE --prefix copy --label L [--lease 24h]` | makes a new copy of the database and answers with its name and identity |
+| `list ENGINE --prefix copy [--label L]` | lists the copies in the namespace, with their state and lease |
+| `show ENGINE:COPYNAME` | one copy's state, lease and details |
+| `renew ENGINE:COPYNAME --identity ID --lease 2h` | sets the copy's lease to end that long from now |
+| `release ENGINE:COPYNAME --identity ID` | ends the lease now, so the next `sweep` removes the copy |
+| `drop ENGINE:COPYNAME --identity ID [--wait SECONDS]` | removes the copy now; `--wait` waits that long for its sessions to end |
+| `sweep ENGINE --prefix copy [--dry-run]` | removes every copy in the namespace whose lease has ended, and lists what it kept and why; `--dry-run` only reports |
+
+**Exit codes:** `0` done; `2` the command line or password source was wrong; `3` the server could
+not be reached and nothing changed; `4` that database has no template; `5` refused and nothing
+changed (the JSON's `error.code` says why, for example `label-in-use` or `limit`); `6` busy, try
+again; `8` something may have changed and did not finish: the reply carries the copy's identity,
+so run `show` and then `drop` or `sweep`.
+
+### PostgreSQL, step by step
+
+Copies are made from the database's template, `<database>_start`, with PostgreSQL's own
+`CREATE DATABASE … TEMPLATE`, so a copy of a large database takes seconds. PostgreSQL offers a
+template for each sample database in the image's core selection.
+
+```sh
+# once, and again whenever the engine is recreated: give copier a password (you type it twice)
+docker exec -it megasamples-postgres psql -U postgres -c '\password copier'
+umask 077; printf '%s\n' 'the-same-password' > ~/.copier-pg; chmod 600 ~/.copier-pg
+
+C="--host 127.0.0.1 --user copier --password-file $HOME/.copier-pg"
+python3 -m megasamples copy create postgres:chinook --prefix copy --label mytest $C
+python3 -m megasamples copy list   postgres --prefix copy $C
+psql -h 127.0.0.1 -U copier copy_chinook_5cbcc8902b8a              # use the name create printed
+python3 -m megasamples copy drop   postgres:copy_chinook_5cbcc8902b8a --identity <identity> $C
+```
+
+The password file must belong to you and be readable by nobody else; `--password-stdin` reads it
+from standard input instead.
+
+### MySQL, step by step
+
+MySQL has no database templates, so `create` rebuilds the copy from `<database>_start`: the
+tables, views and data, inside the namespace that `copier` controls. On MySQL a database with
+triggers or stored functions cannot be copied this way, and neither can `oracle_hr` or `oracle_oe`
+(they depend on each other) or a database over 512 MB: `create` exits 4 and names the reason.
+`chinook` is a good one to start with.
+
+```sh
+# once, and again whenever the engine is recreated: unlock copier and give it a password, as root
+docker exec -it megasamples-mysql mysql -uroot -p
+#   mysql> ALTER USER 'copier'@'%' IDENTIFIED BY 'a-password' ACCOUNT UNLOCK;
+umask 077; printf '%s\n' 'a-password' > ~/.copier-my; chmod 600 ~/.copier-my
+
+C="--host 127.0.0.1 --user copier --password-file $HOME/.copier-my"
+python3 -m megasamples copy create  mysql:chinook --prefix copy --label mytest --lease 1h $C
+python3 -m megasamples copy renew   mysql:copy_chinook_5cbcc8902b8a --identity <identity> --lease 2h $C
+python3 -m megasamples copy release mysql:copy_chinook_5cbcc8902b8a --identity <identity> $C
+python3 -m megasamples copy sweep   mysql --prefix copy $C          # removes it: its lease has ended
+```
+
+### SQLite, step by step
+
+A SQLite copy is a file. The templates are in the image under `/templates`; take them out once,
+then make copies into a directory of your own:
+
+```sh
+docker cp megasamples-sqlite:/templates ./sqlite-templates
+mkdir -m 700 copies
+T="--templates ./sqlite-templates --dir ./copies"
+python3 -m megasamples copy create sqlite:sakila --prefix copy --label mytest $T
+sqlite3 copies/copy_sakila_5cbcc8902b8a.sqlite                    # use the name create printed
+python3 -m megasamples copy drop sqlite:copy_sakila_5cbcc8902b8a --identity <identity> $T
+```
+
+SQLite copies need no account or password. The command keeps its records in `copies/.megasamples`,
+which must stay private to you.
+
+## Putting the data back
+
+MySQL `admin` has `ALL PRIVILEGES WITH GRANT OPTION` on every database (`*.*`).
+
+PostgreSQL `admin` has `CREATEDB` and `CREATEROLE`, owns the sample databases,
+and has registry-table privileges without grant option; it is not a superuser.
+
+So anything `admin` or a writer changes can be undone. Nothing a client writes reaches the images,
+so the shipped state is always one command away. `make reset` returns what you name to exactly
+what the images ship; nothing is reset without naming it:
+
+```sh
+make reset R=all                                 # every engine in the stack
+make reset R=postgres                            # one engine, every database it has
+make reset R="postgres:northwind mysql:sakila"   # single databases; the rest are not touched
+make reset ENGINE=postgres D=quick               # configure's selectors: core | quick | all | a tier | a list
+python3 -m megasamples reset --help              # the same, without make
+```
+
+* **A whole engine** is recreated with a fresh copy of its image's data directory, in seconds.
+  Everything made since goes: rows, tables, databases, **copies**, accounts, roles, privileges and
+  the passwords you set for `copier` and declared accounts.
+* **A single database** is restored from a disposable container running the same image: MySQL and
+  PostgreSQL dump it there and load it over the running one, then check each table's row count
+  against the image; SQLite restores both `/data` and the shared console copy from the pristine
+  file and checks their SHA-256 hashes. Copies, accounts and privileges stay as they are.
+
+Datasets sharing a database reset together. Both SQLite reset paths briefly stop and restart the
+running SQLite consoles, closing their connections. Close any SQLite shell you opened by hand first.
+Resets use the private `.env` passwords. Two resets of the same engine at once are refused; retry
+after the first finishes.
+
+`python3 -m megasamples reset --status postgres` prints, as JSON, any PostgreSQL data directory left
+without a database (see [Limits](#limits)); `make up` warns about them too.
+
+## Stopping, and what is kept
+
+`make up` brings the engines and the consoles up as one stack, and `make down` takes it away again.
+`make down` and `make clean-all` remove each engine's working data with its container: the
+volume holding its data directory goes too, so **every change and every copy is lost**, and the
+next `make up` starts every engine from its image again. `make down` prints a line saying so before
+it starts. For SQLite, the named `megasamples-sqlite` volume stays, and the next start
+replaces the files the image carries and leaves any other file in the volume (a database from an earlier
+selection stays until removed).
+
+`make up` after you rebuild an image recreates that engine from the new image, which also
+discards its working data and copies. Save anything you want to keep first, with `mysqldump`,
+`pg_dump` or by copying a SQLite file out.
+
+## Upgrading from an earlier build
+
+1. Save anything you made that you want to keep (see above). The new images start from their own data.
+2. Update the checkout, then `uv sync --locked`.
+3. Rebuild: `make run` (or `make image ENGINE=...` for one engine).
+4. `make up`. Each engine whose image changed is recreated from the new image. Your `.env`
+   passwords are reapplied; set the `copier` passwords again before making copies.
+
+The new PostgreSQL image will not start on a data directory made by an earlier image: it stops with
+a message instead of serving it. `make up` gives it a fresh one. If you start it by hand on an old
+volume, start it on a new volume instead, and move your own work across with `pg_dump` from the old
+image and a load into the new one.
+
+## Limits
+
+- `make down`, and `make up` after a rebuild, discard each engine's working data and every copy.
+- SQLite samples are copied into the console volume again at every start, so console edits to them
+  do not survive a restart.
+- MySQL copies are rebuilt with the image's default character set (`utf8mb4`); a database whose
+  objects were made under another character set may not copy exactly.
+- On MySQL, databases with triggers or stored functions, the Oracle HR/OE pair and databases over
+  512 MB have no template.
+- Interrupted commands and full disks are not certified. A `copy create` cut off part way can leave
+  a copy that `drop` and `sweep` keep (state `interrupted`); a whole-engine reset clears it. On
+  PostgreSQL, a crash or cancel at the wrong moment of a copy can leave a data directory with no
+  database: it only takes disk, `make up` and `reset --status` report it, and the next whole-engine
+  reset or `make down` removes it.
+- PostgreSQL's read-only `demo` is a convenience for a samples server, not a security boundary.
+- The console ports and the database ports listen on `127.0.0.1` only; publishing them wider is a
+  deliberate edit of your own.
 
 ## Connect with your own tool
 
-Every server engine listens on `127.0.0.1` of the machine running the stack, with the same two
-accounts. DBeaver, DataGrip, TablePlus, VS Code's database extensions, a language driver or the
-engine's own client take these details as they are; the console index page repeats them with the
-ports and passwords you actually configured.
-
-The password entries and URLs below are **factory examples only**. Use the configured `.env`
-password through the client's prompt or a private client credential file on an upgraded stack.
+Every server engine listens on `127.0.0.1` of the machine running the stack. DBeaver, DataGrip,
+TablePlus, VS Code's database extensions, a language driver or the engine's own client take these
+details as they are; the console index page repeats them with the ports you configured. The
+passwords below are the **factory** ones; use yours where `.env` changed them.
 
 | | MySQL | PostgreSQL | SQLite |
 |---|---|---|---|
@@ -303,130 +441,59 @@ password through the client's prompt or a private client credential file on an u
 | URL | `mysql://demo:demo@127.0.0.1:3306/sakila` | `postgresql://demo:demo@127.0.0.1:5432/sakila` | the file's path |
 | JDBC | `jdbc:mysql://127.0.0.1:3306/sakila` | `jdbc:postgresql://127.0.0.1:5432/sakila` | `jdbc:sqlite:/path/to/sakila.sqlite` |
 
-From another machine on an already configured LAN forward, use the read account `demo` and
-the configured `DEMO_PASSWORD`, obtained privately from the deployment owner. Set `DB_HOST`
-to that forward's address and use its configured ports (the examples assume the standard ports):
-
-```sh
-mysql -h "$DB_HOST" -P 3306 -u demo -p sakila
-psql -X -W -h "$DB_HOST" -p 5432 -U demo -d sakila
-```
-
-These commands run on the other machine and prompt for the password; its own `127.0.0.1` would
-refer to itself. The maintained deployment already has SQL forwards; this upgrade leaves them
-unchanged. Its web consoles remain bound to loopback. Host-side forward checks and their limits
-are in the [runbook](docs/live-upgrade-runbook.md#verify-before-resuming-clients).
-
 MySQL 9 authenticates with `caching_sha2_password` only, so use a client or driver from the MySQL 8
-era or newer. The SQLite files live inside the `megasamples-sqlite` container under `/data/`, one
-`<database>.sqlite` each plus `megasamples.sqlite` (the registry), and under
-`build/sqlite/<database>/` on the machine that built them; `docker cp megasamples-sqlite:/data/sakila.sqlite .`
-takes one out, and DB Browser for SQLite, DBeaver, DataGrip or Python's `sqlite3` open it as it is.
-Run `PRAGMA foreign_keys=ON` to enforce the foreign keys the file declares; a full-text index is an
-FTS5 table named `<table>_<index>_fts`. Ports and passwords are yours to change in
-`megasamples.yaml` and `.env`, and every page and console follows.
-
-## Putting the data back
-
-MySQL `admin` has `ALL PRIVILEGES WITH GRANT OPTION` on every database (`*.*`).
-
-PostgreSQL `admin` has `CREATEDB` and `CREATEROLE`, owns the sample databases,
-and has registry-table privileges without grant option; it is not a superuser.
-
-Nothing a client writes reaches the images, so
-the out-of-the-box state is always one command away. `make reset` returns what you name to exactly
-what the images ship; it is chosen the way `make configure` chooses, by engine and dataset, and
-nothing is reset without naming it:
-
-```sh
-make reset R=all                                 # every engine in the stack
-make reset R=postgres                            # one engine, every database it has
-make reset R="postgres:northwind mysql:sakila"   # single databases; the rest are not touched
-make reset ENGINE=postgres D=quick               # configure's selectors: core | quick | all | a tier | a list
-python3 -m megasamples reset --help              # the same, without make
-```
-
-* **A whole engine** is recreated with a fresh copy of its image's data directory, in seconds.
-  Everything made since goes: rows, tables, databases, accounts, roles and privileges. The data
-  volume it replaced is removed by name.
-* **A single database** is restored from a disposable container pinned to the running server’s immutable image ID: MySQL and
-  PostgreSQL dump it there and load it over the running copy, then check each table's row count
-  against the image; SQLite restores both `/data` and the shared console copy from the pristine
-  file and verifies their SHA-256 hashes. PostgreSQL disconnects the database's clients first; MySQL waits for their
-  open transactions. Accounts and roles are server-wide and stay as they are, and so do MySQL
-  privileges, which MySQL keeps in its account tables; reset the engine whole for those.
-
-Reset selectors do not add build prerequisites in other databases. Datasets sharing a database
-reset together. Both SQLite reset paths briefly stop and restart the running SQLite consoles,
-closing their existing connections (including connections to other engines in those consoles).
-Close any manually opened SQLite shells before resetting. Disposable containers and their
-anonymous volumes are removed on success or failure. Whole-engine SQLite reset removes stale
-WAL, SHM and rollback-journal files before replacing the shared databases.
-
-Resets use the current private `.env` credentials, including non-default superuser passwords;
-whole-engine recreation reapplies them. Keep that file mode 0600, unset exported password
-overrides and run reset from the stack's configured checkout/socket/project. A reset restores
-image data and is destructive to application writes; it is not the live-upgrade rollback procedure.
-
-Overlapping resets of the same engine by the same user on one host are rejected before any
-changes; retry after the active reset finishes. This also applies across local checkouts. Resets
-from different hosts or users sharing a container daemon must be coordinated separately.
+era or newer. `docker cp megasamples-sqlite:/data/sakila.sqlite .` takes a SQLite file out, and DB
+Browser for SQLite, DBeaver, DataGrip or Python's `sqlite3` open it as it is. Run
+`PRAGMA foreign_keys=ON` to enforce the foreign keys the file declares; a full-text index is an
+FTS5 table named `<table>_<index>_fts`.
 
 ## The consoles
 
-`make up` brings the engines and the consoles up as one stack, and `make down` takes it away again. `make down` and `make clean-all` remove each engine's working data with its container: the
-anonymous volume holding its data directory goes too, and the next `make up` starts every engine from
-its image again. Changes made since the last start are lost; a later `up` never reattached that volume
-anyway. For SQLite, the named `megasamples-sqlite` volume stays, so the SQLite files the consoles use survive
-teardown, and the next start replaces the files the image carries and leaves any other file in the volume
-(a database from an earlier selection stays until removed).
 Every port binds to `127.0.0.1`: an unauthenticated database UI should not appear on the network
-because someone opened a laptop in a café. Publishing one more widely is a deliberate edit. Only
-CloudBeaver and DbGate browse all three engines; the index page lists the consoles by how much
-they cover and marks the one that is MySQL only.
+because someone opened a laptop in a café. Only CloudBeaver and DbGate browse all three engines.
 
 | | address | browses | notes |
 |---|---|---|---|
-| **console index** | **<http://127.0.0.1:8080/>** | every engine | **start here**: how to connect your own tool, then every database on every engine with its size, licence and what a port left out, generated from the running stack |
-| CloudBeaver | <http://127.0.0.1:8084/> | MySQL, PostgreSQL, SQLite | opens as a guest; both accounts on each server engine and one connection per SQLite file in the sidebar |
-| DbGate | <http://127.0.0.1:8083/> | MySQL, PostgreSQL, SQLite | every connection preconfigured in the sidebar, one per SQLite file |
-| Adminer | <http://127.0.0.1:8082/> | MySQL, PostgreSQL | its login form remains; the index page's Adminer card opens a page that says what to type for each engine and opens Adminer filled in |
+| **console index** | **<http://127.0.0.1:8080/>** | every engine | **start here**: how to connect your own tool, then every database on every engine with its size, licence and what a port left out |
+| CloudBeaver | <http://127.0.0.1:8084/> | MySQL, PostgreSQL, SQLite | opens as a guest; both accounts on each server engine and one connection per SQLite file |
+| DbGate | <http://127.0.0.1:8083/> | MySQL, PostgreSQL, SQLite | every connection preconfigured, one per SQLite file |
+| Adminer | <http://127.0.0.1:8082/> | MySQL, PostgreSQL | the index page's Adminer card says what to type for each engine and opens Adminer filled in |
 | phpMyAdmin | <http://127.0.0.1:8081/> | MySQL only | signed in already; the server menu switches account |
 
-Inside the stack an engine is reached by its service name — Adminer's "Server" field takes `mysql`
-or `postgres`, not `127.0.0.1` — and from your machine by `127.0.0.1` and the port above. A console
-starts only when an engine it can browse is in the stack, and is configured for every engine
-present. `compose.yaml` is generated from `megasamples.yaml` by `make up` (or `make compose`)
-so the stack is exactly what you chose; every service carries a memory limit and every image is
-pinned by digest.
+Inside the stack an engine is reached by its service name (Adminer's "Server" field takes `mysql`
+or `postgres`), and from your machine by `127.0.0.1` and the port above. `compose.yaml` is
+generated from `megasamples.yaml` by `make up` (or `make compose`); every service carries a memory
+limit and every image is pinned by digest.
 
 ## The configuration file
 
 ```yaml
 engines:
   mysql: {datasets: core}          # core | quick | all | a tier name | [sakila, chinook, ...]
-  postgres: {datasets: core}
+  postgres: {datasets: core, templates: core}   # templates: core (default) | none | [chinook, ...]
   sqlite: {datasets: quick}
 consoles: [landing, phpmyadmin, adminer, dbgate, cloudbeaver]
 ports: {mysql: 3306, landing: 8080, phpmyadmin: 8081, adminer: 8082, dbgate: 8083, cloudbeaver: 8084}
 build: {threads: 4, keep_build_server: false, scale_factor: 1}
 downloads: {concurrency: 3}
+copies:
+  namespaces: [{prefix: copy, owner: copier, max_copies: 32}]   # the default
+accounts: {readers: [], writers: []}                            # see "The accounts"
 ```
 
 `make run` reads it and, for every engine named, fetches the datasets' artifacts, converts and
 loads them, verifies them and bakes the image; `make up` starts what was built. Naming a dataset
 for any engine also builds it in the MySQL build server, because that is where every port comes
-from. [`megasamples.example.yaml`](megasamples.example.yaml) documents every key.
+from. `templates` chooses which databases get a copy template. Copy namespaces and declared
+accounts are baked into the image, so change them before `make image`.
+[`megasamples.example.yaml`](megasamples.example.yaml) documents the other keys.
 
 ## Downloads: once, verified, watched
 
 `make fetch` (which `make run` and `make <dataset>` call first) downloads each artifact in
 `manifest.yaml`, verifies its SHA-256 against the recorded value, and writes a marker beside it.
-**A verified file is never fetched again**, on this run or the next, so an interrupted build resumes
-where it stopped. While transfers run, a monitor shows each one — bytes, rate, time left, then the
-verification pass — and prints one permanent line per artifact; several run at once. A transfer
-that makes no progress for two minutes is retried over IPv4, which on this project's build machines
-is what a hang usually means, and the fallback is recorded with the file.
+**A verified file is never fetched again**, so an interrupted build resumes where it stopped. A
+transfer that makes no progress for two minutes is retried over IPv4.
 
 There are no release assets: the repository is what is published, and every byte of data comes from
 its upstream to your machine. Two core datasets need a hand from you:
@@ -438,22 +505,18 @@ its upstream to your machine. Two core datasets need a hand from you:
   every other artifact.
 * **`chicago_crimes`** is a live feed: the portal amends past years, so its 2024 extract changes
   from time to time. A build takes whatever the portal serves that day and records what it got; the
-  dataset's tests describe the snapshot of 2026-09-09 and hold a build to floors and structure --
-  at least that many rows, the same tables, indexes, keys and routines -- rather than to those
-  bytes, so your row counts may exceed the documented ones and the content digests are not
-  compared. What a machine fetched once it keeps; `MEGASAMPLES_REFRESH_LIVE=1 make fetch` takes
-  the feed again. For any other artifact whose upstream has moved, and for a file you obtained
-  yourself and placed under `downloads/`, `MEGASAMPLES_ACCEPT_DRIFT=1` accepts the bytes and
-  re-pins the manifest.
+  dataset's tests hold a build to floors and structure rather than to exact bytes, so your row
+  counts may exceed the documented ones. `MEGASAMPLES_REFRESH_LIVE=1 make fetch` takes the feed
+  again. For any other artifact whose upstream has moved, and for a file you placed under
+  `downloads/` yourself, `MEGASAMPLES_ACCEPT_DRIFT=1` accepts the bytes and re-pins the manifest.
 
 A dataset whose download is not in place is left out of every engine's build and image and named
-at the end of `make run`, which then exits 1; leave it out of your dataset list if you would rather
-not see that.
+at the end of `make run`, which then exits 1.
 
 ## Building piece by piece
 
 Every command is a `make` target, and every target is a one-line shim over
-`python3 -m megasamples <command>` — `make -n <target>` shows exactly what will run, and
+`python3 -m megasamples <command>`: `make -n <target>` shows exactly what will run, and
 `python3 -m megasamples --help` lists every command.
 
 ```sh
@@ -466,15 +529,14 @@ make image FROM_DUMPS=1            # re-bake MySQL from the dumps already built,
 make restore                       # reload the MySQL build server from its dumps, in a minute, to port from
 make test-image ENGINE=sqlite      # assert an image: counts, integrity, accounts, overrides
 make test-console                  # assert the consoles are up and the accounts behave on every engine
-make reset R=sqlite:sakila         # put one database back as the image ships it (see "Putting the data back")
+make reset R=sqlite:sakila         # put one database back as the image ships it
 make status                        # the stack, and any transient container
 make clean                         # remove the transient containers; the stack keeps running
 ```
 
 The build servers are reused across a session, because reconverting everything takes hours;
 `make image` removes them when an image is done, and `KEEP_BUILD_RESOURCES=1` (or
-`build.keep_build_server: true`) keeps them, which is what you want while developing a converter
-or a port. `make restore` brings the MySQL build server back from the dumps in about a minute.
+`build.keep_build_server: true`) keeps them.
 
 ## Licensing
 
