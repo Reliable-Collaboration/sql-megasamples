@@ -23,9 +23,12 @@ def probe():
 def test_postgres_healthcheck_requires_the_registered_policy_setting():
     test = probe()
     assert test[0] == "CMD-SHELL"
-    # Opus round 4, P3-2 / Sol round 4, P3-6: the definition, not a value a placeholder could supply.
-    assert "pg_settings" in test[1] and "context = 'internal'" in test[1]
-    assert test[1].rstrip().endswith("| grep -qx on")
+    # Opus round 4, P3-2 / Sol round 4, P3-6: the value, and that it is the registered internal
+    # setting: demo may not read pg_settings (pg_show_all_settings is outside its allow-list), so
+    # the probe shows registration by the server refusing to change it (55P02), which a
+    # placeholder never does.
+    assert "current_setting('read_policy.loaded')" in test[1]
+    assert "SET read_policy.loaded" in test[1] and "55P02" in test[1]
 
 
 @unittest.skipUnless(os.environ.get("DL077_GATE_TARGET") and os.environ.get("DL077_PG_POLICY_IMAGE"),
