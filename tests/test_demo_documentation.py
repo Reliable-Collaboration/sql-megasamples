@@ -153,6 +153,9 @@ def test_strict_read_guide_states_the_grants_the_generator_makes():
     assert {scope for _, scope in demo_read_grants(['working_example'], [('external', True)])
             if scope.endswith('.*')} == {r'`working\_example`.*', r'`external\_%`.*'}
     assert "(each pattern's underscores escaped)" in guide and 'unescaped' not in guide
+    # Opus round 9, 3: the guide describes version 1, which changed the MySQL engine; PR #14 did not.
+    assert 'The MySQL engine and views are unchanged in this PR' not in guide
+    assert 'PR #14 did not change the MySQL engine or views' in guide
     # The report: granted to demo directly, and executable otherwise only by the superuser.
     assert 'granted to `demo` directly' in guide
     assert '`admin` and every other role except the superuser `postgres` are refused it' in guide
