@@ -277,7 +277,9 @@ Otherwise exit 5, and nothing was changed.
 - **What a copy's stored programs keep.** [Build rounds 2 and 3.]
   - **Restored:** each procedure's and event's `sql_mode`, and each event's `time_zone`, recorded at build.
   - **Recorded, not restored, as a stated limit:** `character_set_client` and `collation_connection`. A copy's programs carry the copying session's `utf8mb4` values.
-  - **Withheld:** a database with a program created under `ANSI_QUOTES`, as `not-replayable`, because the schema rewrite does not rename double-quoted identifiers.
+  - **Withheld, as `not-replayable`, before any reservation:**
+    - a database with a program created under `ANSI_QUOTES`, because the schema rewrite does not rename double-quoted identifiers;
+    - a database with a program created under `NO_BACKSLASH_ESCAPES`, because the rewrite tokenizes strings with backslash escapes, so a string ending in a backslash could hide a reference to the source. [Build round 4; `tests/test_v1_server_copy.py`]
   - **Refused:** a template whose objects lack these recorded settings, as `format-unknown`, before any reservation.
 - **A database is offered only for the kinds of definition shown to replay as its owner, under the shipped settings.** [113-2] Shown so far: tables, views, procedures and events [G-13]. **A stored function that declares `DETERMINISTIC`, `NO SQL` or `READS SQL DATA` has not been shown with the log on:** its only successful replay was with the trust setting. So a database with any stored function is withheld until T-11 has tried each declaration on the candidate. **A declaration that replays is then offered; one the engine refuses stays withheld, listed with its reason. Both are correct outcomes.** [115-3]
 - **The build finds the withheld databases from the definitions it records** (step 1), upstream dumps included, and prints each with its reason: a trigger, or a function. From the repository's sources they are at least `adventureworks_lt`, `oracle_oe`, `oracle_hr` and `sakila` (F-35); the build's list is the authority, and the README names it. [112-2]
