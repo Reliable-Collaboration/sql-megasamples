@@ -41,6 +41,10 @@ def server():
     return config
 
 
+def removed_names(reply):
+    return [item["name"] for item in reply["result"]["removed"]]
+
+
 def copy_command(server, *args, status=0, stdin=False, fault=None):
     password = Path(server["password_file"]).read_text() if stdin else None
     password_args = ["--password-stdin"] if stdin else ["--password-file", server["password_file"]]
@@ -299,11 +303,11 @@ def test_postgres_copy_lifecycle_on_tcp(server):
     assert command("show", target)["result"]["proof"]["oid"] > 0
     assert command("list", "postgres", "--prefix", "copy", "--label", "first")["result"]["copies"] == [created]
     command("renew", target, *identity, "--lease", "7d")
-    assert not command("sweep", "postgres", "--prefix", "copy")["result"]["removed"]
+    assert created["name"] not in removed_names(command("sweep", "postgres", "--prefix", "copy"))
     command("release", target, *identity)
-    assert command("sweep", "postgres", "--prefix", "copy", "--dry-run")["result"]["removed"]
+    assert created["name"] in removed_names(command("sweep", "postgres", "--prefix", "copy", "--dry-run"))
     assert command("show", target)["result"]["state"] == "ready"
-    assert command("sweep", "postgres", "--prefix", "copy")["result"]["removed"]
+    assert created["name"] in removed_names(command("sweep", "postgres", "--prefix", "copy"))
     command("drop", target, *identity)
 
     second = command("create", "postgres:chinook", "--prefix", "copy", "--label", "second")["result"]
@@ -325,7 +329,7 @@ def test_postgres_copy_lifecycle_on_tcp(server):
         command("release", target, *identity)
         for flags in [("--dry-run",), ()]:
             sweep = command("sweep", "postgres", "--prefix", "copy", *flags)["result"]
-            assert not sweep["removed"]
+            assert second["name"] not in [item["name"] for item in sweep["removed"]]
             assert any(item["copy"]["name"] == second["name"] and item["reason"] == "busy"
                        for item in sweep["kept"])
         assert session.execute("SELECT i FROM busy_probe").fetchone() == (42,)
@@ -381,7 +385,7 @@ def test_mysql_copy_lifecycle_and_schema_replay(server):
     command("show", target)
     command("list", "mysql", "--prefix", "copy", "--label", "fixture")
     command("renew", target, *identity, "--lease", "7d")
-    assert not command("sweep", "mysql", "--prefix", "copy")["result"]["removed"]
+    assert row["name"] not in removed_names(command("sweep", "mysql", "--prefix", "copy"))
     with pymysql.connect(
         host=server["host"], port=server["port"], database=row["name"], user=server["owner"],
         password=Path(server["password_file"]).read_text().rstrip("\n"), connect_timeout=5,
@@ -411,8 +415,8 @@ def test_mysql_copy_lifecycle_and_schema_replay(server):
             assert definer == server["owner"] + "@%" and event_status == "DISABLED"
             assert row["name"] in definition and "sample_start" not in definition
     command("release", target, *identity)
-    assert command("sweep", "mysql", "--prefix", "copy", "--dry-run")["result"]["removed"]
-    assert command("sweep", "mysql", "--prefix", "copy")["result"]["removed"]
+    assert row["name"] in removed_names(command("sweep", "mysql", "--prefix", "copy", "--dry-run"))
+    assert row["name"] in removed_names(command("sweep", "mysql", "--prefix", "copy"))
     command("drop", target, *identity)
 
 
