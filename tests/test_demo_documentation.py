@@ -123,3 +123,13 @@ def test_env_example_admin_scope_matches_init_sql(engine):
     marker = 'admin (MySQL):' if engine == 'mysql' else 'admin (PostgreSQL):'
     assert marker in comments
     admin_scope(comments.split(marker, 1)[1].split('#   admin ', 1)[0], engine)
+
+
+def test_strict_read_guide_describes_the_current_demo_grants():
+    """Sol round 7, 6: docs/strict-read-account.md states what the image grants today."""
+    guide = (ROOT / 'docs/strict-read-account.md').read_text()
+    assert 'gives `demo` exactly `SELECT, SHOW VIEW ON *.*`' not in guide
+    assert all(term in guide for term in ('working schemas', 'explicitly enabled foreign namespaces',
+                                          '`megasamples.datasets`', '`megasamples.copy_service`'))
+    assert '`pg_catalog, pg_temp`' in guide and 'installed in `pg_catalog`' in guide
+    assert '`megasamples_policy_loaded()`' in guide and 'STRICT_READ_OWNER' in guide
