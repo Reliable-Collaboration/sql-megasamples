@@ -116,7 +116,9 @@ def test_postgres_demo_cannot_create_large_objects(database):
         denied('postgres', database, 'BEGIN; SELECT ' + expression + '; ROLLBACK')
 
 
-@pytest.mark.parametrize('database', PG_DATABASES)
+# template1 keeps PostgreSQL's initdb ACL, CONNECT alone for PUBLIC, so no one but the superuser makes
+# temporary tables there; the writers' rights are checked where they work.
+@pytest.mark.parametrize('database', [d for d in PG_DATABASES if d != 'template1'])
 @pytest.mark.parametrize('user', ['admin', 'postgres'])
 def test_postgres_writers_retain_temporary_large_object_and_ddl_rights(database, user):
     accepted('postgres', database, 'BEGIN; CREATE TEMP TABLE strict_writer_temp(i int); '
