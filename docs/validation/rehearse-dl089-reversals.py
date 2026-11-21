@@ -14,7 +14,7 @@ ROOT=Path(__file__).resolve().parents[2]
 def main():
     out=Path(tempfile.mkdtemp(prefix='reversals-',dir=ROOT/'build/dl089'))
     source=(ROOT/'docs/validation/quiescence.py').read_text()
-    book=(ROOT/'docs/live-upgrade-runbook.md').read_text()
+    book=(ROOT/'docs/history/live-upgrade-runbook.md').read_text()
     controls=[
         ('W1 earlier captures',source,"if applicable:","if False:",'tests/test_quiescence_capture.py::test_clean_stop_verifies_first_capture_other_engine_survivor','DL088_GATE_SOURCE'),
         ('W3 selected console',book,'--allow-running-project sql-megasamples "$@"','--allow-running-project sql-megasamples','tests/test_rollback_preparation.py::test_bootstrap_occupied_unselected_console_port[False]','DL089_RUNBOOK_SOURCE'),

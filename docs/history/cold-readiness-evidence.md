@@ -5,7 +5,7 @@ The pre-dataset main is `d97445d2c9d9d4b0c81697f5acb7408b7ae6364e`. No engine, c
 dataset input, expected count or fingerprint is changed by this follow-up.
 
 The same startup policy now applies to MySQL, PostgreSQL and SQLite in
-[image_startup.py](../megasamples/engines/image_startup.py). Cold copy/run means elapsed
+[image_startup.py](../../megasamples/engines/image_startup.py). Cold copy/run means elapsed
 time until detached run returns, including fresh-volume materialization and runtime launch
 overhead. Its limit is `ceil(2 * observed maximum / 10) * 10`, considering both compared
 images where available. This is the earlier PostgreSQL rule, unchanged. The server clock
@@ -24,8 +24,8 @@ the retained main MySQL and SQLite images: **30 starts**. Runs were sequential a
 engine and main/PR order were reversed on alternate rounds (counterbalanced AB/BA pairs).
 No ports were published and host caches were not dropped. Every sample had a distinct
 volume; each sample container and volume was removed after recording it. The retained main
-image IDs match the [client receipt](validation/client-upgrade-2026-11-17.json) inventory.
-PR image IDs match the [dataset receipt](validation/dataset-upgrade-2026-11-17.json).
+image IDs match the [client receipt](../validation/client-upgrade-2026-11-17.json) inventory.
+PR image IDs match the [dataset receipt](../validation/dataset-upgrade-2026-11-17.json).
 
 | Engine / image | Samples | Copy/run min–max (s) | Copy/run median (s) | Query after run min–max (s) | Reported ready to query min–max (s) |
 |---|---:|---:|---:|---:|---:|
@@ -117,7 +117,7 @@ evidence remains intact. The final full-image startup observations were:
 | postgres | 22.6 | 0.4 | 180 / 30 |
 | sqlite | 26.1 | 0.1 | 150 / 30 |
 
-The [committed receipt](validation/cold-readiness-2026-11-17.json) records commands, raw
+The [committed receipt](../validation/cold-readiness-2026-11-17.json) records commands, raw
 measurements, image IDs, implementation/log hashes, initial infrastructure failures and
 final results. Only this run's recorded test volumes and API process were cleaned up.
 Default-store inspection was read only; no forwarding service was operated. Merge is

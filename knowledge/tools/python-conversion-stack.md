@@ -35,7 +35,7 @@ sources:
 
 # Facts
 
-This dated package table is historical. The current project pins are in repository-root `pyproject.toml`, `uv.lock` and `clients.lock.yaml`; current validation is in `docs/client-upgrade-evidence.md`. `pyarrow` and `mwxml` are knowledge-only references, not current project dependencies. Architecture claims below are historical; current execution coverage is recorded in that receipt.
+This dated package table is historical. The current project pins are in repository-root `pyproject.toml`, `uv.lock` and `clients.lock.yaml`; current validation is in `docs/history/client-upgrade-evidence.md`. `pyarrow` and `mwxml` are knowledge-only references, not current project dependencies. Architecture claims below are historical; current execution coverage is recorded in that receipt.
 
 | Package | Version (2026-09-02) | License | Role |
 |---|---|---|---|

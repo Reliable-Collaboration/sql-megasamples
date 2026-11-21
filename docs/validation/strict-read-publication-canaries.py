@@ -39,7 +39,7 @@ if '--preflight' in sys.argv:
     print('Passed: both existing canary sets parsed privately using repository code')
     raise SystemExit(0)
 paths={ROOT/p for p in subprocess.check_output(['git','diff','--name-only','main'],text=True).splitlines()}
-paths.update(ROOT/p for p in ['docs/strict-read-evidence.md','docs/validation/strict-read-2026-11-18.json','build/strict-read/pr-body.md'])
+paths.update(ROOT/p for p in ['docs/history/strict-read-evidence.md','docs/validation/strict-read-2026-11-18.json','build/strict-read/pr-body.md'])
 paths.discard(OUTPUT)
 assert paths and all(p.is_file() for p in paths)
 findings=[];records=[]

@@ -81,7 +81,7 @@ The attempted PostgreSQL and SQLite builds are **Unsupported** by the repository
 `megasamples/port/ddl.py:column_def` rule: generated clock columns require untranslated expressions
 (`cast`, `left`, `maketime`, `right`); the porter raises `UnportableColumn` before loading them.
 This is the repository's present capability boundary, not a claim that either engine could never
-represent the data. See `docs/dataset-upgrade-evidence.md` for the command evidence.
+represent the data. See `docs/history/dataset-upgrade-evidence.md` for the command evidence.
 
 # Built and measured (2026-09-03, task X-03)
 Every URL in `# Source artifact` works exactly as recorded — the `PREZIP` path with a non-padded

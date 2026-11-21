@@ -200,7 +200,7 @@ def test_metadata_includes_hub_observations_for_live_counts(tmp_path, monkeypatc
 
 
 def test_runbook_ms_tool_executes_heredoc(tmp_path):
-    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
+    text = (Path(__file__).parents[1] / 'docs/history/live-upgrade-runbook.md').read_text()
     function = re.search(r'^ms_tool\(\) \{\n.*?^\}', text, re.M | re.S)[0]
     # Emulate exec's documented stdin behavior without requiring a container daemon.
     fake = tmp_path / 'podman'
@@ -215,7 +215,7 @@ def test_runbook_ms_tool_executes_heredoc(tmp_path):
 
 @pytest.mark.parametrize('action,log', [('stop', 'stop.log'), ('stop', 'rollback-stop.log'), ('down', 'rollback-down.log')])
 def test_runbook_teardown_preserves_compose_status(tmp_path, action, log):
-    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
+    text = (Path(__file__).parents[1] / 'docs/history/live-upgrade-runbook.md').read_text()
     guard = next(g for g in re.findall(r'if (?:docker compose[^\n]* ' + action + r'(?: --timeout 300)?|stop_project) >> .*?^fi', text, re.M | re.S) if '$EVIDENCE_DIR/' + log + '"' in g)
     env = dict(os.environ, BACKUP_DIR=str(tmp_path), EVIDENCE_DIR=str(tmp_path))
     from test_runbook_fragments import functions
@@ -227,7 +227,7 @@ def test_runbook_teardown_preserves_compose_status(tmp_path, action, log):
 
 
 def test_runbook_context_restores_fresh_maintenance_shell(tmp_path):
-    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
+    text = (Path(__file__).parents[1] / 'docs/history/live-upgrade-runbook.md').read_text()
     from test_runbook_fragments import context
     server = context(tmp_path, 'rollback-stop')
     try:
@@ -370,7 +370,7 @@ def test_original_stop_refuses_running_crash_and_oom(tmp_path, monkeypatch):
 
 @pytest.mark.parametrize('failed_gate', ['save-images', 'check-images', 'check-metadata', 'ports'])
 def test_preparation_failure_blocks_teardown(tmp_path, failed_gate):
-    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
+    text = (Path(__file__).parents[1] / 'docs/history/live-upgrade-runbook.md').read_text()
     archive_gates = re.search(r'# BEGIN archive gates\n(.*?)# END archive gates', text, re.S)
     assert archive_gates, 'archive commands must be executable gates'
     cutover = text.split('# Repeat the preparation gates immediately before downtime;', 1)[1].split('\n', 1)[1]
@@ -390,7 +390,7 @@ docker() { printf 'TEARDOWN\\n' >> "$CALLS"; }
 
 
 def test_preparation_refuses_already_upgraded_head(tmp_path):
-    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
+    text = (Path(__file__).parents[1] / 'docs/history/live-upgrade-runbook.md').read_text()
     guard = re.search(r'# BEGIN original-head guard\n(.*?)# END original-head guard', text, re.S)
     assert guard, 'preparation must refuse overwriting original rollback inputs'
     result = subprocess.run(['bash', '-ec', 'git() { return 0; }\n' + guard[1] + '\necho UNSAFE'],
@@ -401,7 +401,7 @@ def test_preparation_refuses_already_upgraded_head(tmp_path):
 
 
 def test_plain_ms_tool_call_preserves_next_piped_command(tmp_path):
-    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
+    text = (Path(__file__).parents[1] / 'docs/history/live-upgrade-runbook.md').read_text()
     line = next(line for line in text.splitlines() if line.startswith('ms_tool /opt/venv/bin/uv sync'))
     script = 'ms_tool() { cat >/dev/null; }; ' + line + '\nIFS= read -r next; test "$next" = next-command\n'
     result = subprocess.run(['bash', '-c', script], input='next-command\n', capture_output=True, text=True)
@@ -409,7 +409,7 @@ def test_plain_ms_tool_call_preserves_next_piped_command(tmp_path):
 
 
 def test_rollback_opens_with_fresh_shell_and_checks_ports():
-    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text().split('## Roll back\n', 1)[1]
+    text = (Path(__file__).parents[1] / 'docs/history/live-upgrade-runbook.md').read_text().split('## Roll back\n', 1)[1]
     first_block = re.search(r'```sh\n(.*?)```', text, re.S)[1]
     assert first_block.lstrip().startswith('# Fresh Bash maintenance shell')
     assert '. "$CONTEXT_FILE"' in first_block
@@ -475,7 +475,7 @@ def test_rollback_ports_select_only_services_being_started(tmp_path, monkeypatch
 
 
 def test_rollback_down_retry_appends_original_log_and_status(tmp_path):
-    text = (Path(__file__).parents[1] / 'docs/live-upgrade-runbook.md').read_text()
+    text = (Path(__file__).parents[1] / 'docs/history/live-upgrade-runbook.md').read_text()
     guard = re.search(r'if docker compose[^\n]* down >>? .*?^fi', text, re.M | re.S)[0]
     for _ in range(2):
         result = subprocess.run(['bash','-c','docker() { echo attempt-failed; return 37; }\n' + guard],

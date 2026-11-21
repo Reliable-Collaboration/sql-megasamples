@@ -14,8 +14,8 @@ ROOT = Path(__file__).resolve().parents[2]
 def main():
     out = Path(tempfile.mkdtemp(prefix='reversals-', dir=ROOT/'build/dl086-review-r1'))
     scanner = (ROOT/'docs/validation/quiescence.py').read_text()
-    runbook = (ROOT/'docs/live-upgrade-runbook.md').read_text()
-    evidence = (ROOT/'docs/live-upgrade-evidence.md').read_text()
+    runbook = (ROOT/'docs/history/live-upgrade-runbook.md').read_text()
+    evidence = (ROOT/'docs/history/live-upgrade-evidence.md').read_text()
     upgrade = (ROOT/'docs/validation/live-upgrade.py').read_text()
     controls = []
     def change(source, before, after):

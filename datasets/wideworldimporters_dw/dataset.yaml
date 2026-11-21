@@ -14,7 +14,7 @@ build_license: microsoft-sql-server-developer-eula
 # Measured dispositions; see the dated receipt for phases and capability limits.
 validation:
   date: '2026-11-17'
-  evidence: docs/dataset-upgrade-evidence.md
+  evidence: docs/history/dataset-upgrade-evidence.md
   engines:
     mysql:
       status: Passed

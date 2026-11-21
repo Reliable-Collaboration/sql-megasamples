@@ -7,26 +7,26 @@ backups and two small console-image archives, never end to end on the live store
 or with engine-size image archives. The historical round-three discovery scanner
 ran read-only on this host; its policy was superseded by DL-088/DL-089's capture
 and verification gate. Its results remain in the round-three receipt as history.
-The subsequent [DL-088 native proof](validation/live-upgrade-review-r4-part3-2026-11-18.json)
+The subsequent [DL-088 native proof](../validation/live-upgrade-review-r4-part3-2026-11-18.json)
 ran a separate published-bridge Compose project in the isolated store: stop,
 partial removal and fresh-shell verification Passed, as did a dedicated-helper
 survivor refusal and release. The shared helper with remaining consumers Passed;
 the zero-consumer native case remains Unsupported because the isolated stack
 must stay running. Neither stack was stopped for that proof.
 
-The [DL-089 correction receipt](validation/live-upgrade-review-r5-2026-11-18.json)
+The [DL-089 correction receipt](../validation/live-upgrade-review-r5-2026-11-18.json)
 records the later same-boot down-state and exact-original restart rehearsals,
 including verification after full `down`, and distinguishes Unsupported native
 subcases. Its live-store exercise was a **read-only capture while running**, not
 a live stop, verification of quiescence, rollback or acceptance.
 
-The [populated-backup correction receipt](validation/live-upgrade-review-r6-2026-11-19.json)
+The [populated-backup correction receipt](../validation/live-upgrade-review-r6-2026-11-19.json)
 records fresh-shell restore, populate and pre-up gates on a structure-faithful
 scratch replica: real subordinate-owned cold data, retained top-level names and
 nested attempts. Those gates and four-tree population Passed; their old empty-data
 composition is superseded. Full live restoration remains unproved.
 
-The [round-seven correction receipt](validation/live-upgrade-review-r7-2026-11-19.json)
+The [round-seven correction receipt](../validation/live-upgrade-review-r7-2026-11-19.json)
 records the ordinary route with the scratch project running at capture, through
 dispatch, policy pause, stop, state gate, `down`, restore, population and pre-up
 verification. Each continuation used its saved context in a fresh shell. Both
@@ -1452,7 +1452,7 @@ SQLite's additional shared-console copy, cold backups, fingerprint verification,
 checks and rollback. Keep the separately observed 269.27-second replacement-stack startup and
 200.15-second five-pair verification in view; no complete live maintenance window is verified.
 The [cold-readiness evidence](cold-readiness-evidence.md) and
-[receipt](validation/cold-readiness-2026-11-17.json) preserve all samples and final validation.
+[receipt](../validation/cold-readiness-2026-11-17.json) preserve all samples and final validation.
 
 The outage lasts from the first stop through readiness and verification, plus any rollback.
 Reserve those additional components separately. Rebuilding before cutover avoids putting
@@ -1584,7 +1584,7 @@ changing any input. No permission bypass or host change is prescribed.
 
 The first-run backup `20261118T133807Z` has neither `original-ports.json` nor an
 earlier rollback attempt. Its route is the reviewed
-[ports receipt](validation/retained-backups/20261118T133807Z-ports.json), transcribed
+[ports receipt](../validation/retained-backups/20261118T133807Z-ports.json), transcribed
 only from the service names and local ports in its digest-checked archived
 `megasamples.yaml`. The bootstrap checks that receipt's backup ID and configuration
 archive digest using only Python's standard library, then checks the ports before
@@ -1595,7 +1595,7 @@ from the candidate configuration. New backups use their retained `original-ports
 
 Retained-input inventory, checked by filenames against that first-run backup on
 2026-11-18 (the names-only fixture is
-[`retained-root-names.json`](../tests/fixtures/live-upgrade/retained-root-names.json)):
+[`retained-root-names.json`](../../tests/fixtures/live-upgrade/retained-root-names.json)):
 
 | Bootstrap or Roll back input under `BACKUP_DIR` | First-run layout and use |
 |---|---|
@@ -1691,7 +1691,7 @@ chmod 600 "$UPGRADE_HELPER" "$ATTEMPT_DIR/quiescence.py"
 if test "$BOOTSTRAP_ROUTE" != original-restart; then
   python3 "$UPGRADE_HELPER" check-images "$BACKUP_DIR"
 fi
-python3 - "$REVIEWED_CHECKOUT/docs/live-upgrade-runbook.md" "$ATTEMPT_DIR/recovery-functions.bash" <<'PY_RECOVERY_FUNCTIONS'
+python3 - "$REVIEWED_CHECKOUT/docs/history/live-upgrade-runbook.md" "$ATTEMPT_DIR/recovery-functions.bash" <<'PY_RECOVERY_FUNCTIONS'
 import pathlib, re, sys
 text = pathlib.Path(sys.argv[1]).read_text()
 functions = [re.search(r'^' + name + r'\(\) \{\n.*?^\}$(?=\n)', text, re.M | re.S)[0]
@@ -2334,7 +2334,7 @@ explicit limit; no copy/restore refusal is its prerequisite.
 
 The MySQL runtime now uses a 2 GiB container limit and an explicit 1 GiB TempTable allowance, retaining its 256 MiB InnoDB pool. The former 1 GiB limit OOM-killed the full Contoso aggregate during isolated validation. The limit follows the observed allocation budget; account for the additional 1 GiB maximum in maintenance planning. Original runtime settings are retained with the rollback source/configuration.
 
-The release changes include the engine-supplied command-line clients; the Oracle MySQL clients and Connector/C in the loader; exact Python dependencies and `uv.lock`; CloudBeaver's MySQL/SQLite JDBC jars; DbGate's locked native SQLite driver; Adminer's current libpq and the separately pinned libpq used by pure Psycopg endpoint tests; and the digest-pinned phpMyAdmin, Adminer and nginx consoles; and independent pinned SQL*Plus/SQL*Loader archives for the optional Oracle verifier. The Oracle Free database still requires its explicit license gate before any native check. The new optional Oracle client recipe is Linux x86-64; other architectures are Unsupported by that recipe. Exact before/after versions, URLs, read times and compatibility evidence are in `docs/client-upgrade-evidence.md` and `clients.lock.yaml`. PostgreSQL uses matching server/client majors; the MySQL paths retain `caching_sha2_password` authentication. The TPC-C loader shares only its disposable build server's network namespace and uses loopback for Connector/C's local TLS behavior. No global certificate-verification bypass is set.
+The release changes include the engine-supplied command-line clients; the Oracle MySQL clients and Connector/C in the loader; exact Python dependencies and `uv.lock`; CloudBeaver's MySQL/SQLite JDBC jars; DbGate's locked native SQLite driver; Adminer's current libpq and the separately pinned libpq used by pure Psycopg endpoint tests; and the digest-pinned phpMyAdmin, Adminer and nginx consoles; and independent pinned SQL*Plus/SQL*Loader archives for the optional Oracle verifier. The Oracle Free database still requires its explicit license gate before any native check. The new optional Oracle client recipe is Linux x86-64; other architectures are Unsupported by that recipe. Exact before/after versions, URLs, read times and compatibility evidence are in `docs/history/client-upgrade-evidence.md` and `clients.lock.yaml`. PostgreSQL uses matching server/client majors; the MySQL paths retain `caching_sha2_password` authentication. The TPC-C loader shares only its disposable build server's network namespace and uses loopback for Connector/C's local TLS behavior. No global certificate-verification bypass is set.
 
 Before cutover, check the loader CLI dump/restore, TPC-C cardinalities, the DuckDB CSV conversions, the Python gate, every configured reset selector and complete dataset fingerprints in isolation. Reset commands are destructive data-restoration tests and belong only in the isolated rehearsal. Do not use `make reset` as a live verification command.
 

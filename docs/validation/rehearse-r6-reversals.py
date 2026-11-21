@@ -13,7 +13,7 @@ ROOT=Path(__file__).resolve().parents[2]
 def main():
     out=Path(tempfile.mkdtemp(prefix='reversals-',dir=ROOT/'build/dl090'))
     code=(ROOT/'docs/validation/quiescence.py').read_text()
-    book=(ROOT/'docs/live-upgrade-runbook.md').read_text()
+    book=(ROOT/'docs/history/live-upgrade-runbook.md').read_text()
     controls=[
         ('X1 cold data traversal',code,"directories = [history_dir] + [p for p in entries if p.name.startswith('rollback-')\n            and not p.name.startswith(('rollback-abort-', 'rollback-load-rehearsal-')) and stat.S_ISDIR(p.stat().st_mode)]", "directories = [Path(d) for d,_,_ in os.walk(history_dir, onerror=lambda e: (_ for _ in ()).throw(e))]",'tests/test_quiescence_gate.py::test_history_ignores_unreadable_cold_data_but_keeps_earlier_survivor','DL088_GATE_SOURCE'),
         ('X2 workspace',book,'    podman cp "$CB_WORKSPACE_BACKUP/." megasamples-cloudbeaver:/opt/cloudbeaver/workspace/',': # workspace copy removed','tests/test_quiescence_runbook.py::test_unchanged_recovery_restores_saved_consoles_and_workspace_before_start','DL089_RUNBOOK_SOURCE'),

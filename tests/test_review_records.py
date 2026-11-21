@@ -11,7 +11,7 @@ def test_committed_follow_up_files_do_not_name_reviewers():
     # Split aliases so the check itself contains no named attribution.
     pattern = re.compile(r'\b(?:' + '|'.join(('As'+'tra', 'Fa'+'ble')) + r')\b', re.I)
     # The attribution rule governs review/validation records, not dataset provenance.
-    files = ['docs/live-upgrade-evidence.md', *(
+    files = ['docs/history/live-upgrade-evidence.md', *(
         str(path.relative_to(ROOT)) for path in
         sorted((ROOT/'docs/validation').glob('live-upgrade*.json')))]
     override = os.environ.get('DL086_FOLLOW_UP_RECEIPT_SOURCE')
@@ -24,8 +24,8 @@ def test_committed_follow_up_files_do_not_name_reviewers():
 
 
 def test_follow_up_wording_and_listing_record_match_behavior():
-    evidence = Path(os.environ.get('DL086_EVIDENCE_SOURCE', ROOT/'docs/live-upgrade-evidence.md')).read_text()
-    runbook = Path(os.environ.get('DL089_RUNBOOK_SOURCE', ROOT/'docs/live-upgrade-runbook.md')).read_text()
+    evidence = Path(os.environ.get('DL086_EVIDENCE_SOURCE', ROOT/'docs/history/live-upgrade-evidence.md')).read_text()
+    runbook = Path(os.environ.get('DL089_RUNBOOK_SOURCE', ROOT/'docs/history/live-upgrade-runbook.md')).read_text()
     assert 'containers, conmon-named and unrelated occupants' in evidence
     assert 'retains a dead-at-capture conmon PID with an absence marker and\nignores' in evidence
     assert 'B-3 also stops before cleanup on a failed or non-empty container listing' in evidence
@@ -40,7 +40,8 @@ def test_attribution_check_uses_only_record_paths_without_git(tmp_path, monkeypa
     records = tmp_path/'docs/validation'
     records.mkdir(parents=True)
     (records/'live-upgrade-follow-up-2026-11-19.json').write_text('{}')
-    (tmp_path/'docs/live-upgrade-evidence.md').write_text('Source round and note')
+    (tmp_path/'docs/history').mkdir(parents=True)
+    (tmp_path/'docs/history/live-upgrade-evidence.md').write_text('Source round and note')
     knowledge = tmp_path/'knowledge/example.md'
     knowledge.parent.mkdir()
     knowledge.write_text('by: claude-code/claude-' + 'fa' + 'ble-example')
@@ -52,8 +53,8 @@ def test_attribution_check_uses_only_record_paths_without_git(tmp_path, monkeypa
 
 
 def test_manual_cleanup_entry_and_zero_image_metadata_wording():
-    evidence = Path(os.environ.get('DL086_EVIDENCE_SOURCE', ROOT/'docs/live-upgrade-evidence.md')).read_text()
-    runbook = Path(os.environ.get('DL089_RUNBOOK_SOURCE', ROOT/'docs/live-upgrade-runbook.md')).read_text()
+    evidence = Path(os.environ.get('DL086_EVIDENCE_SOURCE', ROOT/'docs/history/live-upgrade-evidence.md')).read_text()
+    runbook = Path(os.environ.get('DL089_RUNBOOK_SOURCE', ROOT/'docs/history/live-upgrade-runbook.md')).read_text()
     cleanup = runbook.split('### Failed rehearsal store: manual cleanup', 1)[1].split('```sh', 1)[0]
     assert 'Use a fresh Bash shell' in cleanup
     assert 'fresh strict Bash shell' not in cleanup

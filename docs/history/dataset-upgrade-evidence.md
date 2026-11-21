@@ -14,7 +14,7 @@ No Oracle database was started or terms accepted. The merged PR description reco
 
 The dataset follow-up is [PR #11](https://github.com/Reliable-Collaboration/sql-megasamples/pull/11).
 Its original head `c854f399` remained draft because the MySQL and SQLite cold-readiness gates
-Failed. The [follow-up receipt](validation/cold-readiness-2026-11-17.json) records the class-wide
+Failed. The [follow-up receipt](../validation/cold-readiness-2026-11-17.json) records the class-wide
 gate correction, measurements and passing rerun required before marking it ready and merging
 with a merge commit matching the validated head. The supported data remains loaded in isolation.
 
@@ -212,7 +212,7 @@ readiness failures block merging and live cutover; neither budget was increased.
 
 ## Live preparation, cost, verification and rollback
 
-Loading these datasets is now part of `docs/live-upgrade-runbook.md`: MySQL receives all three;
+Loading these datasets is now part of `docs/history/live-upgrade-runbook.md`: MySQL receives all three;
 PostgreSQL and SQLite receive WWI DW. The runbook checks the merged engine, client and dataset PRs,
 reuses a hashed sample-input/export archive, adds only Passed pairs to each configured engine,
 builds before the outage, then verifies actual loaded fingerprints and BTS joins. It includes

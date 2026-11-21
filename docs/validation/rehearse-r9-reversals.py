@@ -14,7 +14,7 @@ def main():
     parent = ROOT/'build/dl093'
     parent.mkdir(parents=True, exist_ok=True)
     out = Path(tempfile.mkdtemp(prefix='reversals-', dir=parent))
-    book = (ROOT/'docs/live-upgrade-runbook.md').read_text()
+    book = (ROOT/'docs/history/live-upgrade-runbook.md').read_text()
     controls = []
 
     def add(name, before, after, test):

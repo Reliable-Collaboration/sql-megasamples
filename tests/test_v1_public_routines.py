@@ -28,8 +28,10 @@ IA01_SHA256 = "be570f392de66be45d868cee27a2a5d71570c7bf87b5db93ce47179e2cd08076"
 PR14_HEAD = "2879fc472ad1ebc2d0bf808a7d7bd4a5206f52c4"
 # The one path the receipt hashed that was never tracked: build/ is ignored.
 UNTRACKED = "build/strict-read/pr-body.md"
+# Receipt paths whose files later moved, unchanged, to the history folder.
+MOVED = {"docs/strict-read-evidence.md": "docs/history/strict-read-evidence.md"}
 # Files the receipt hashed that later v1 work changed on purpose: current documentation, engine policy
-# code and tests. Their receipt hashes describe PR14_HEAD (recorded in tests/dl077-v1-read-profile.md).
+# code and tests. Their receipt hashes describe PR14_HEAD (recorded in docs/history/dl077-v1-read-profile.md).
 CHANGED_SINCE_PR14 = {
     ".dockerignore", "docs/strict-read-account.md", "engines/postgres/Dockerfile",
     "engines/postgres/init/10-read-profile.sql", "engines/postgres/init/read-routine-names.sql",
@@ -37,11 +39,13 @@ CHANGED_SINCE_PR14 = {
     "engines/postgres/read-policy/read_policy.control", "megasamples/engines/mysql/image_test.py",
     "megasamples/engines/postgres/image_test.py", "tests/test_mysql_image_startup.py",
     "tests/test_strict_read_native.py",
+    # Moved to the history folder: its relative links and its own path were repointed.
+    "docs/strict-read-evidence.md", "docs/validation/strict-read-publication-canaries.py",
 }
 
 
 def sha256(path):
-    return hashlib.sha256((ROOT / path).read_bytes()).hexdigest()
+    return hashlib.sha256((ROOT / MOVED.get(path, path)).read_bytes()).hexdigest()
 
 
 def v1():
@@ -54,19 +58,20 @@ def test_pr14_evidence_files_still_match_their_receipt():
     tracked = set(subprocess.check_output(["git", "-C", str(ROOT), "ls-files"], text=True).split())
     # Round 9 (Opus 2, Sol 2): one path the receipt hashed was never tracked, the generated PR body. Every
     # other path is compared, so a deleted or untracked evidence file fails as an overwritten one does.
-    assert {entry["path"] for entry in receipt["files"] if entry["path"] not in tracked} == {UNTRACKED}
+    assert {entry["path"] for entry in receipt["files"]
+            if MOVED.get(entry["path"], entry["path"]) not in tracked} == {UNTRACKED}
     # Sol round 10, 4: every tracked path exists, so a working-tree deletion of a file changed on purpose
     # is not taken for its expected change.
     missing = [entry["path"] for entry in receipt["files"]
-               if entry["path"] != UNTRACKED and not (ROOT / entry["path"]).is_file()]
+               if entry["path"] != UNTRACKED and not (ROOT / MOVED.get(entry["path"], entry["path"])).is_file()]
     assert missing == [], missing
     changed = {entry["path"] for entry in receipt["files"] if entry["path"] != UNTRACKED and (
-        not (ROOT / entry["path"]).is_file() or sha256(entry["path"]) != entry["sha256"])}
+        not (ROOT / MOVED.get(entry["path"], entry["path"])).is_file() or sha256(entry["path"]) != entry["sha256"])}
     assert changed == CHANGED_SINCE_PR14, sorted(changed ^ CHANGED_SINCE_PR14)
     inventory = json.loads((VALIDATION / "strict-read-executable-routines.json").read_text())
     assert sha256("docs/validation/strict-read-executable-routines.json") == IA01_SHA256
     assert inventory["count"] == len(inventory["routines"]) == 1663 and len(inventory["databases"]) == 31
-    evidence = (ROOT / "docs/strict-read-evidence.md").read_text()
+    evidence = (ROOT / "docs/history/strict-read-evidence.md").read_text()
     assert "Every one of the 1,663 routines" in evidence
     exported = json.loads((VALIDATION / "strict-read-2026-11-18.json").read_text())
     assert exported["executable_routines"] == inventory
@@ -119,13 +124,13 @@ def test_v1_generator_gives_every_named_exception_its_reason():
 
 
 def test_ia01_reconciliation_record_lists_every_difference():
-    """tests/dl077-v1-read-profile.md's table is the v1 inventory's difference from IA-01."""
+    """docs/history/dl077-v1-read-profile.md's table is the v1 inventory's difference from IA-01."""
     inventory, _ = v1()
     ia01 = json.loads((VALIDATION / "strict-read-executable-routines.json").read_text())
     assert sha256("docs/validation/strict-read-executable-routines.json") == IA01_SHA256
     current = {item["signature"] for item in inventory["routines"]}
     before = {item["signature"] for item in ia01["routines"]}
-    record = (ROOT / "tests/dl077-v1-read-profile.md").read_text()
+    record = (ROOT / "docs/history/dl077-v1-read-profile.md").read_text()
     rows = re.findall(r"^\| (Added|Removed) \| `(.+?)` \| .+ \|$", record, re.M)
     assert len(rows) == len(set(rows))
     assert {s for change, s in rows if change == "Added"} == current - before

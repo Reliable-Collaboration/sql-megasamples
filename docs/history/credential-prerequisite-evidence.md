@@ -7,7 +7,7 @@ As of **2026-11-18**, the deployment used its private mode-0600 `.env` and accep
 was held; the acceptance record is DataIntent’s. Historical Not run statements below describe this prerequisite's scope.
 
 The configured-credential reset, password propagation and full corrected-build rehearsal
-**Passed** in the isolated stack. The [machine-readable receipt](validation/credential-prerequisite-2026-11-18.json)
+**Passed** in the isolated stack. The [machine-readable receipt](../validation/credential-prerequisite-2026-11-18.json)
 records commands, outcomes, timings, counts, canonical fingerprints, image IDs and evidence digests.
 The live deployment and socket forwarders were not operated. DL-077 templates/copies and their
 CLI remain a later task and second rollout.

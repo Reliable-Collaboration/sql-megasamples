@@ -186,7 +186,7 @@ for engine in ('postgres','mysql'):
             result=run(['python3',str(helper),'ports','--port-config',str(attempt/'original-ports.json')],check=False)
             assert result.returncode!=0 and 'occupied or unavailable port' in result.stderr
             receipt['results']['rotation-port-refusal']=dict(status='Passed',ports=1)
-            text=(ROOT/'docs/live-upgrade-runbook.md').read_text()
+            text=(ROOT/'docs/history/live-upgrade-runbook.md').read_text()
             functions='\n'.join(re.search(r'^'+name+r'\(\) \{\n.*?^\}$(?=\n)',text,re.M|re.S)[0] for name in ('ms_tool','save_context','stop_project'))
             functions=functions.replace('sql-megasamples',project)
             functions=functions.replace("'unset CONTAINERS_STORAGE_CONF CONTAINERS_CONF CONTAINERS_CONF_OVERRIDE'",shlex.quote('. '+str(ENV/'env.sh')))

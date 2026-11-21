@@ -9,7 +9,7 @@ Independent approval of this revised procedure remained pending as of that date.
 The private maintenance record is `build/live-upgrade-backups/20261118T133807Z/` in
 the deployment checkout. Only its defect records and receipts were read for this
 change. No private `.env`, `containers.json`, dump or data file from that backup
-was inspected or copied. The public [correction receipt](validation/live-upgrade-corrections-2026-11-18.json)
+was inspected or copied. The public [correction receipt](../validation/live-upgrade-corrections-2026-11-18.json)
 records source-receipt hashes and the isolated validation results. Private backup
 contents and credential values are not published.
 
@@ -156,7 +156,7 @@ large-object creation or routine execution. This change documents those limits;
 it does not claim account hardening has been deployed.
 
 MySQL's `demo` scope was checked against
-[`engines/mysql/init/00-users.sql`](../engines/mysql/init/00-users.sql):
+[`engines/mysql/init/00-users.sql`](../../engines/mysql/init/00-users.sql):
 `GRANT SELECT, SHOW VIEW ON *.*` permits reads on every database on the server,
 system schemas included. This includes `mysql`, where account rows live, and
 any database added later. The README now states that scope and the absence of
@@ -166,7 +166,7 @@ security-posture decision. The documentation regression derives both engines'
 
 ## Correction follow-up on 2026-11-18
 
-The [follow-up receipt](validation/live-upgrade-review-r1-2026-11-18.json) records
+The [follow-up receipt](../validation/live-upgrade-review-r1-2026-11-18.json) records
 regressions for retained service-named archives, actual restored ID/tag pairs, complete-set
 corruption refusal, host socket fixtures, executable preparation gates and recovery context.
 A disabled preparation command and an ID-based loader against the service-named layout each
@@ -219,7 +219,7 @@ There is no receipt-only helper exemption. On a shared host this strict gate may
 remain refused even for an unrelated, attributed store; that is a readiness limit,
 not evidence of a clean teardown.
 
-The [second correction receipt](validation/live-upgrade-review-r2-2026-11-18.json)
+The [second correction receipt](../validation/live-upgrade-review-r2-2026-11-18.json)
 records the actual host scan counts/classifications, red/green logs, commits,
 suite/image outcomes and isolation proof. The scanner was run read-only on this
 host against running isolated-stack mount records. Its execution Passed and its
@@ -271,7 +271,7 @@ inspection still encounters denied operations; its receipt records these by
 process name, operation and error class, and status 0 certifies only inspectable
 evidence. The original netns teardown cause remains unknown.
 
-The [round-three correction receipt](validation/live-upgrade-review-r3-2026-11-18.json)
+The [round-three correction receipt](../validation/live-upgrade-review-r3-2026-11-18.json)
 records S1–S8, T1–T5, reason-specific reds/greens and commits, the native scratch
 proof, all-engine image checks, the repository gate and exact container isolation
 comparison. The full original restoration and forwarded live sign-ins remain
@@ -294,7 +294,7 @@ As of 2026-11-18, DataIntent acceptance remains held; no independent blessing or
 live restoration is claimed by this correction.
 
 
-The [DL-088 receipt](validation/live-upgrade-review-r4-part2-2026-11-18.json)
+The [DL-088 receipt](../validation/live-upgrade-review-r4-part2-2026-11-18.json)
 records this session's tests, decision-rule removal controls and native outcomes.
 The running isolated deployment's capture identified its shared helper and seven
 dedicated helpers without process arguments. Scratch network-independent checks
@@ -311,7 +311,7 @@ denied); the earlier slirp attempt timed out. That rehearsal did not establish
 the published-port lifecycle or the dedicated/shared helper-survivor cases.
 This startup failure does not reproduce or explain the live teardown failure.
 
-The [part-three native receipt](validation/live-upgrade-review-r4-part3-2026-11-18.json)
+The [part-three native receipt](../validation/live-upgrade-review-r4-part3-2026-11-18.json)
 records the subsequent proof in the working isolated store, with a separate
 scratch Compose project: two containers, a bridge network, one checked loopback
 publication, a scratch named volume and a scratch bind source. Capture, stop,
@@ -345,7 +345,7 @@ remains held; this authoring session supplies no independent reviewer blessing.
 
 ## DL-089 down-state evidence and recovery, 2026-11-18/19 UTC
 
-The [round-five receipt](validation/live-upgrade-review-r5-2026-11-18.json)
+The [round-five receipt](../validation/live-upgrade-review-r5-2026-11-18.json)
 records authoring-session tests and native rehearsals, not independent approval.
 DL-089 amends DL-088 for a project already stopped when rollback begins. The
 [runbook route table](live-upgrade-runbook.md#rollback-routes-when-the-project-is-already-down-dl-089)
@@ -397,7 +397,7 @@ native OOM kill (exit 137). Candidate-teardown state, evidenced down capture and
 verification all Passed. Its container and volume were removed. This supplements
 the primary rehearsal's earlier OOM Unsupported row; that original record is kept.
 The replayable driver is
-[`rehearse-quiescence-oom.py`](validation/rehearse-quiescence-oom.py).
+[`rehearse-quiescence-oom.py`](../validation/rehearse-quiescence-oom.py).
 
 **Unsupported natively:** a live task retained in an exited container's cgroup;
 a reboot, which needs a separately approved
@@ -419,7 +419,7 @@ live authentication/TLS and DataIntent acceptance remain unproved. As of
 
 ## Populated backup and recovery corrections (2026-11-19 UTC)
 
-The [round-six receipt](validation/live-upgrade-review-r6-2026-11-19.json)
+The [round-six receipt](../validation/live-upgrade-review-r6-2026-11-19.json)
 records X1–X4 and their focused red/green checks. Capture discovery now lists
 only the retained root and direct `rollback-*` attempt directories. It never
 walks cold-data payloads. Unreadable capture inventories still HOLD. Identifier
@@ -441,8 +441,8 @@ payload compatibility. Round seven asserts the root metadata and PostgreSQL
 path explicitly, while retaining the other stated limits.
 No live cold-data contents were read or copied. The earlier empty-directory
 rollback-gate composition is superseded by
-[`rehearse-original-restart.py`](validation/rehearse-original-restart.py) and
-[`rehearse-rollback-replica.py`](validation/rehearse-rollback-replica.py).
+[`rehearse-original-restart.py`](../validation/rehearse-original-restart.py) and
+[`rehearse-rollback-replica.py`](../validation/rehearse-rollback-replica.py).
 
 **Round-six native results:** the exact-original restart; both guarded restart-policy
 blocks on scratch IDs; fresh-shell rollback stop/down and restore gate; population
@@ -487,7 +487,7 @@ As of 2026-11-19 UTC, no new DataIntent acceptance decision was supplied.
 
 ## Ordinary route and history corrections (2026-11-19 UTC)
 
-The [round-seven receipt](validation/live-upgrade-review-r7-2026-11-19.json)
+The [round-seven receipt](../validation/live-upgrade-review-r7-2026-11-19.json)
 records reason-specific reds, greens and rule-removal controls. Required cgroup
 traversal now propagates enumeration errors even when membership files remain
 readable. Historical mixed captures retain their process/data obligations, but
@@ -574,7 +574,7 @@ These checks do not establish full bootstrap, input verification,
 configuration/image restoration, restored-stack startup, forwarded sign-ins or
 live restoration. DataIntent acceptance remains separate.
 
-The [round-eight receipt](validation/live-upgrade-review-r8-2026-11-19.json)
+The [round-eight receipt](../validation/live-upgrade-review-r8-2026-11-19.json)
 records the actual results, failed attempts, removal controls, source/evidence
 hashes and complete isolation inventories. The kernel netns error's cause remains
 unknown; a successful scratch stop/down does not explain the live failures.
@@ -595,7 +595,7 @@ Its table describes exact IDs and consistent running/PID state; the eligibility
 gate does not compare mounts. The duplicate clean-stop identity test was removed;
 the separate clean-stop start-failure case remains.
 
-The [round-nine receipt](validation/live-upgrade-review-r9-2026-11-19.json)
+The [round-nine receipt](../validation/live-upgrade-review-r9-2026-11-19.json)
 records reds, greens, removal/order controls and isolation. These checks do not
 establish DataIntent acceptance or independent approval of the new head.
 
@@ -625,7 +625,7 @@ B-2 and B-3 were subsequently fixed in the follow-up:
   cleanup with one small image; engine-size archives and restored-stack startup
   remain unproved. No default-store or isolated-stack images or pause processes
   were removed. The replay driver is
-  [rehearse-follow-up-scratch.py](validation/rehearse-follow-up-scratch.py).
+  [rehearse-follow-up-scratch.py](../validation/rehearse-follow-up-scratch.py).
 
 ### Round-eleven address attribution and account guidance
 
@@ -651,7 +651,7 @@ SQL; the earlier wording fails those checks. No privilege changes are made.
 The preparation abort now refuses `candidate-starting` before its first effect
 and points to **Roll back**; a pre-rotation phase still enters preparation recovery.
 
-The [round-eleven receipt](validation/live-upgrade-review-r11-2026-11-19.json)
+The [round-eleven receipt](../validation/live-upgrade-review-r11-2026-11-19.json)
 records each test-only/fix commit, red, green and planted-defect reversal, plus the
 suite, image checks, cleanup and complete nine-object live isolation inventory.
 These are authoring-session checks. Independent same-head review and DataIntent
@@ -673,14 +673,14 @@ is never rewritten. This is fixture proof, not a new native rollback rehearsal.
 
 The README and environment-example comments now include PostgreSQL `demo` reads
 of tables `admin` later creates in a sample database's `public` schema, as granted
-by [the default-privileges SQL](../engines/postgres/init/20-grants.sql).
+by [the default-privileges SQL](../../engines/postgres/init/20-grants.sql).
 The reset guidance and environment example describe `admin` separately per
 engine. Checks derive PostgreSQL's `CREATEDB`, `CREATEROLE`, registry-table grant
 without grant option and lack of superuser status from
-[its role SQL](../engines/postgres/init/00-users.sql), and sample-database
-ownership from [its Dockerfile](../engines/postgres/Dockerfile). MySQL's
+[its role SQL](../../engines/postgres/init/00-users.sql), and sample-database
+ownership from [its Dockerfile](../../engines/postgres/Dockerfile). MySQL's
 `ALL PRIVILEGES WITH GRANT OPTION` on `*.*` comes from
-[its grant SQL](../engines/mysql/init/00-users.sql). These committed inputs were
+[its grant SQL](../../engines/mysql/init/00-users.sql). These committed inputs were
 read **2026-11-19 UTC**; no account privileges changed and no live privilege query
 was run. The documentation also distinguishes fixture-tested wildcard cases
 from native proof and corrects the unchanged-data recovery's pointer upward.
@@ -691,7 +691,7 @@ formula. These remain fixture checks; native wildcard publication is unproved.
 Account self-password changes are a separate posture
 item, outside this documentation correction.
 
-The [round-twelve receipt](validation/live-upgrade-review-r12-2026-11-19.json)
+The [round-twelve receipt](../validation/live-upgrade-review-r12-2026-11-19.json)
 retains reds, greens, reversals, suite/image results and all nine live-object
 inventory rows. These are authoring-session checks. DataIntent's dated
 acceptance hold remains separate; the netns error's root cause remains unknown.
@@ -721,7 +721,7 @@ B-3 also stops before cleanup on a failed or non-empty container listing; the
 rehearsal fixtures cover both outcomes. The resume instructions now link manual cleanup and explain the additional
 image copy a failed-store rerun can retain beyond the two-copy space budget.
 
-The [follow-up receipt](validation/live-upgrade-follow-up-2026-11-19.json)
+The [follow-up receipt](../validation/live-upgrade-follow-up-2026-11-19.json)
 records each item's test and fix commits, red and green runs, defect controls,
 native scratch proof, source and evidence hashes, and remaining limits. B-13 is
 a comment/local-name change: restoring it also passes the same checks. The
@@ -782,7 +782,7 @@ later CloudBeaver port gate prevents its recreation/start, preserving earlier
 successful starts.
 
 C2 removes named attribution from the follow-up receipt. Round-two D1 limits the
-whole-file attribution check to `docs/live-upgrade-evidence.md` and
+whole-file attribution check to `docs/history/live-upgrade-evidence.md` and
 `docs/validation/live-upgrade*.json`. It requires neither Git nor a base commit
 object, and dataset provenance under `knowledge/` stays outside its scope. A
 fixture runs it in a directory without Git metadata, with matching dataset
@@ -818,7 +818,7 @@ cleanup checks but mislabeled each failure-state field with the final process
 state; that local-variable error was corrected and the proof rerun in new stores.
 Its earlier artifacts are retained without rewriting them.
 
-The [round-one receipt](validation/live-upgrade-follow-up-review-r1-2026-11-19.json)
+The [round-one receipt](../validation/live-upgrade-follow-up-review-r1-2026-11-19.json)
 records the reds, greens, controls, native evidence,
 validation and isolation results. The first C1 guard fixture misclassified
 read-only `image inspect`; a separate test-only correction preceded the fix.
@@ -847,7 +847,7 @@ zero-image store had no metadata file. No Podman call followed final migrate.
 This remains small-image scratch proof, without an engine-size restore or
 restored-stack-startup claim.
 
-The [round-two receipt](validation/live-upgrade-follow-up-review-r2-2026-11-19.json)
+The [round-two receipt](../validation/live-upgrade-follow-up-review-r2-2026-11-19.json)
 retains each red, green, test/fix commit, reversal, source/evidence hash and final
 validation/isolation result. These are authoring-session checks. No independent
 approval, DataIntent acceptance or merge is claimed, and no software version or

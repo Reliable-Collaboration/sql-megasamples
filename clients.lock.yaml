@@ -1,4 +1,4 @@
-# Reviewed client release inventory. See docs/lts-upgrade-evidence.md for policy audit.
+# Reviewed client release inventory. See docs/history/lts-upgrade-evidence.md for policy audit.
 baseline:
   commit: 7b3d5a35966d82abd69598ed795b9610ddf27c35
   source: https://github.com/Reliable-Collaboration/sql-megasamples/tree/7b3d5a35966d82abd69598ed795b9610ddf27c35
