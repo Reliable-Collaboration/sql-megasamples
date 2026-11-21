@@ -20,6 +20,8 @@ def run(monkeypatch, writable):
 
     def q(sql, user="postgres", pw="root", database="postgres", container=image_test.NAME):
         statements.append(sql)
+        # Sol round 13, 2: every probe goes to the dataset's database, as demo.
+        assert (database, user, pw) == ("chinook", "demo", "demo"), (database, user, sql)
         if sql.startswith("SELECT column_name"):
             return subprocess.CompletedProcess([], 0, "albumid\n", "")
         kind = sql.split()[0]
@@ -39,7 +41,7 @@ def test_refused_writes_pass(monkeypatch):
     assert checks.failures == []
 
 
-@pytest.mark.parametrize("kind", ["CREATE", "DELETE", "UPDATE", "DROP"])
+@pytest.mark.parametrize("kind", ["CREATE", "INSERT", "DELETE", "UPDATE", "DROP"])
 def test_a_write_demo_can_make_fails(monkeypatch, kind):
     checks, _ = run(monkeypatch, writable={kind})
     assert checks.failures == [f"demo cannot {kind}"]
@@ -59,4 +61,5 @@ def test_a_refusal_for_another_reason_is_not_a_denial(monkeypatch):
     monkeypatch.setattr(image_test, "q", q)
     checks = image_test.Checks()
     image_test.demo_write_checks(checks, "chinook", "album")
-    assert checks.failures == ["demo cannot CREATE", "demo cannot DELETE", "demo cannot UPDATE", "demo cannot DROP"]
+    assert checks.failures == ["demo cannot CREATE", "demo cannot INSERT", "demo cannot DELETE", "demo cannot UPDATE",
+                               "demo cannot DROP"]
