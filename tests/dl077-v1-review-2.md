@@ -84,3 +84,22 @@ They are now narrowed in design 8.3 as not claimed for this build.
 - MySQL trigger and stored-function copies (DL-112, DL-113);
 - a session-aware PostgreSQL dry run (round 1, A9);
 - a bundled libpq.
+
+## Restoration and isolation
+
+- **Retained isolated stack.** The eight `dl077-feasibility` containers are untouched. The fingerprint ledgers were re-taken with `build/dl077-v1-work/fingerprints.py` (phase `r2-final`), and `cmp` with build 1's `after` ledgers returned 0:
+  - PostgreSQL `ee0f1a8b…711e`;
+  - MySQL `a5c0466a…a72f`;
+  - SQLite `5b0c2768…da98`.
+- **Removed:**
+  - **Containers:** every task container this round started. None remains, and none is a `megasamples-reset-*` pristine container.
+  - **Volumes:** the 19 anonymous volumes this round's image tests and reset runs left, each checked unused.
+  - **Images:** the superseded round-1 candidates and this round's reversal images.
+- **Kept for review:**
+  - the round 2 candidates `localhost/dl114-r2-pg:candidate`, `:candidate-full`, `localhost/dl114-r2-mysql:candidate-true`, `:candidate-false`;
+  - the fault images `localhost/dl114-r2-pg:fault-fallback`, `localhost/dl114-r1c-pg:fault-close`;
+  - the runner.
+- **The isolated socket service** was started for `docker` clients and stopped at the end.
+- **Isolation** (`build/dl114-r1-work/isolation-check.sh`, read-only):
+  - **Live deployment:** the nine live `megasamples-*` entries match the session's start by name, ID, state and health. The three live engines' IDs, start times and images are unchanged.
+  - **Isolated store:** the same 20 containers with the same IDs, states, images and start times. Its volumes are the starting set less the previous session's three.
