@@ -33,8 +33,8 @@ data. [`CATALOGUE.md`](CATALOGUE.md) lists all 38 datasets with what each licenc
 </p>
 <p align="center"><sub>The console index at <code>http://127.0.0.1:8080/</code>, then CloudBeaver and DbGate on Sakila's <code>film</code> table — all three engines, every database, one <code>make up</code>. Retake them with <code>make screenshots</code>.</sub></p>
 
-**Status: not published as images.** There is no image to `docker pull`; you build them locally.
-What changed in this version is in the [release notes](docs/release-notes.md).
+**Status: release 2.0.0, not published as images.** There is no image to `docker pull`; you build
+them locally. What changed in this release is in the [release notes](docs/release-notes.md).
 [`ARCHITECTURE.md`](ARCHITECTURE.md) describes how the pieces fit, and
 [`knowledge/`](knowledge/index.md) is the evidence behind the data.
 
@@ -54,9 +54,10 @@ command reads. You can also copy [`megasamples.example.yaml`](megasamples.exampl
 it, or run with no file at all: the built-in default is MySQL with the 21 core databases and the
 four consoles.
 
-You need **Docker** (Desktop or Engine), **Python 3.14+** with [`uv`](https://docs.astral.sh/uv/),
+You need **Docker** (Desktop or Engine), **Python 3.11+** with [`uv`](https://docs.astral.sh/uv/),
 and room: the core tier is 1.4 GB of downloads, two build servers holding a copy of the data, and
-up to 8.7 GB of images for the three engines. A full core build converts and loads nine million rows
+roughly 8.7 GB of images for the three engines (approximate: measured before copy templates were
+added, which store each templated database a second time). A full core build converts and loads nine million rows
 and is not a five-minute job; the 15-dataset **quick** subset (196 MB of downloads) builds in
 minutes, and the PostgreSQL and SQLite ports of an already-built MySQL corpus take minutes too.
 
@@ -118,7 +119,10 @@ server. Two accounts are offered from every console, and both work from any clie
 | `demo` | `demo` | `SELECT` and `SHOW VIEW` on working schemas and explicitly enabled foreign namespaces. `SELECT` on the `megasamples.datasets` and `megasamples.copy_service` registry tables. Holds no write privilege. |
 | `admin` | `admin` | `ALL PRIVILEGES WITH GRANT OPTION` |
 
-The working schemas are the sample databases themselves (`sakila`, `chinook`, …). Each console
+The working schemas are the sample databases themselves (`sakila`, `chinook`, …). A foreign
+namespace is a database-name prefix reserved for databases another tool creates; `demo` reads it
+only when enabled with `copies.foreign: [{prefix: NAME, demo_reads: true}]` in `megasamples.yaml`
+(none by default). Each console
 opens on `demo`, so the read-only account is the one you get without choosing.
 
 ```sh
@@ -181,8 +185,9 @@ docker run --rm -it sql-megasamples-sqlite:dev sqlite3 /data/chinook.sqlite
 ```
 
 The consoles read the SQLite files from a shared volume, `megasamples-sqlite`. Every time the SQLite
-container starts, it copies the image's files into that volume again, so changes made there through
-a console last only until the next start.
+container starts, it copies the image's files into that volume again. The consoles read the
+files read-only; a change made with `docker exec megasamples-sqlite sqlite3 …` lasts only until
+the next start.
 
 ### How the ports are made, and why you can trust them
 
@@ -248,10 +253,19 @@ accounts:
 ## Copies: a database to test on, then throw away
 
 A copy is a private, writable database made from a pristine snapshot of a sample database (its
-**template**, baked into the image). Make one, run your tests against it, change anything, and
-throw it away; the sample databases and other copies are untouched. Copies are made with the
-`megasamples copy` command, which prints one JSON document and exits with a code a script can act
-on.
+**template**, baked into the image). Make one, run your tests against it, and throw it away; the
+sample databases and other copies are untouched. What you may change in a copy depends on the
+engine:
+- **MySQL:** anything in the copy (`copier` has all privileges on its copies);
+- **PostgreSQL:** rows (insert, update, delete), and objects of your own (`CREATE TABLE`, …). The
+  sample tables in a copy still belong to `admin`, so `ALTER TABLE`, `TRUNCATE` and `CREATE INDEX`
+  on them are refused; dropping them is allowed. (Checked on PostgreSQL 18.7 in this image.)
+- **SQLite:** anything; the copy is a file of your own.
+
+Copies are made with the `megasamples copy` command, which prints one JSON document and exits with
+a code a script can act on. Run it, like every `megasamples` command, from the checkout with
+`uv run python3 -m megasamples …` (or after activating `.venv`): it needs the project's Python
+packages, and a plain `python3` does not have them.
 
 **The words used:**
 - **target:** `ENGINE:DATABASE` to create, `ENGINE:COPYNAME` to look at or change one copy, and
@@ -278,70 +292,94 @@ on.
 | `drop ENGINE:COPYNAME --identity ID [--wait SECONDS]` | removes the copy now; `--wait` waits that long for its sessions to end |
 | `sweep ENGINE --prefix copy [--dry-run]` | removes every copy in the namespace whose lease has ended, and lists what it kept and why; `--dry-run` only reports |
 
-**Exit codes:** `0` done; `2` the command line or password source was wrong; `3` the server could
-not be reached and nothing changed; `4` that database has no template; `5` refused and nothing
-changed (the JSON's `error.code` says why, for example `label-in-use` or `limit`); `6` busy, try
-again; `8` something may have changed and did not finish: the reply carries the copy's identity,
-so run `show` and then `drop` or `sweep`.
+**Exit codes:**
+- `0` done;
+- `1` an unexpected failure (`error.code` is `internal`);
+- `2` the command line or the password source was wrong;
+- `3` it could not connect or sign in, and nothing changed: the server is not running, the password
+  is wrong, `copier` is still locked or has no password, or (PostgreSQL) libpq is missing;
+- `4` that database has no template;
+- `5` refused, and nothing changed: the JSON's `error.code` says why, for example `label-in-use` or
+  `limit`;
+- `6` busy, try again;
+- `8` something may have changed and did not finish. The reply carries the copy's identity: run
+  `show`, then `drop` or `sweep`. If `show` reports the state `interrupted`, see
+  [Limits](#limits).
 
 ### PostgreSQL, step by step
 
 Copies are made from the database's template, `<database>_start`, with PostgreSQL's own
 `CREATE DATABASE … TEMPLATE`, so a copy of a large database takes seconds. PostgreSQL offers a
-template for each sample database in the image's core selection.
+template for each sample database in the image's core selection. Two setup steps come first, once,
+and again whenever the engine is recreated from its image:
 
 ```sh
-# once, and again whenever the engine is recreated: give copier a password (you type it twice)
+# 1. give copier a password (you type it twice)
 docker exec -it megasamples-postgres psql -U postgres -c '\password copier'
-umask 077; printf '%s\n' 'the-same-password' > ~/.copier-pg; chmod 600 ~/.copier-pg
-
-C="--host 127.0.0.1 --user copier --password-file $HOME/.copier-pg"
-python3 -m megasamples copy create postgres:chinook --prefix copy --label mytest $C
-python3 -m megasamples copy list   postgres --prefix copy $C
-psql -h 127.0.0.1 -U copier copy_chinook_5cbcc8902b8a              # use the name create printed
-python3 -m megasamples copy drop   postgres:copy_chinook_5cbcc8902b8a --identity <identity> $C
+# 2. record this server's copy service; until this row exists, copy commands exit 5 unidentified-volume
+docker exec megasamples-postgres psql -U postgres -d megasamples -c \
+  "INSERT INTO copy_service VALUES (true, 'megasamples-service/1', gen_random_uuid()::text)"
+# keep the password in a file only you can read
+umask 077; printf '%s\n' 'the-same-password' > ~/.copier-pg
 ```
 
-The password file must belong to you and be readable by nobody else; `--password-stdin` reads it
-from standard input instead.
+Then:
+
+```sh
+uv run python3 -m megasamples copy create postgres:chinook --prefix copy --label mytest \
+    --host 127.0.0.1 --user copier --password-file ~/.copier-pg
+uv run python3 -m megasamples copy list postgres --prefix copy \
+    --host 127.0.0.1 --user copier --password-file ~/.copier-pg
+psql -h 127.0.0.1 -U copier copy_chinook_5cbcc8902b8a        # use the name create printed
+uv run python3 -m megasamples copy drop postgres:copy_chinook_5cbcc8902b8a --identity <identity> \
+    --host 127.0.0.1 --user copier --password-file ~/.copier-pg
+```
+
+The password file must belong to you and be readable by nobody else; `--password-stdin` reads the
+password from standard input instead.
 
 ### MySQL, step by step
 
-MySQL has no database templates, so `create` rebuilds the copy from `<database>_start`: the
-tables, views and data, inside the namespace that `copier` controls. On MySQL a database with
-triggers or stored functions cannot be copied this way, and neither can `oracle_hr` or `oracle_oe`
-(they depend on each other) or a database over 512 MB: `create` exits 4 and names the reason.
-`chinook` is a good one to start with.
+MySQL has no database templates, so `create` rebuilds the copy from `<database>_start`: its tables,
+views, stored procedures, events and data, inside the namespace that `copier` controls. On MySQL a
+database with triggers or stored functions cannot be copied this way, and neither can `oracle_hr`
+or `oracle_oe` (they depend on each other) or a database over 512 MB: `create` exits 4 and names
+the reason. `chinook` is a good one to start with.
 
 ```sh
 # once, and again whenever the engine is recreated: unlock copier and give it a password, as root
 docker exec -it megasamples-mysql mysql -uroot -p
 #   mysql> ALTER USER 'copier'@'%' IDENTIFIED BY 'a-password' ACCOUNT UNLOCK;
-umask 077; printf '%s\n' 'a-password' > ~/.copier-my; chmod 600 ~/.copier-my
+umask 077; printf '%s\n' 'a-password' > ~/.copier-my
 
-C="--host 127.0.0.1 --user copier --password-file $HOME/.copier-my"
-python3 -m megasamples copy create  mysql:chinook --prefix copy --label mytest --lease 1h $C
-python3 -m megasamples copy renew   mysql:copy_chinook_5cbcc8902b8a --identity <identity> --lease 2h $C
-python3 -m megasamples copy release mysql:copy_chinook_5cbcc8902b8a --identity <identity> $C
-python3 -m megasamples copy sweep   mysql --prefix copy $C          # removes it: its lease has ended
+uv run python3 -m megasamples copy create mysql:chinook --prefix copy --label mytest --lease 1h \
+    --host 127.0.0.1 --user copier --password-file ~/.copier-my
+uv run python3 -m megasamples copy renew mysql:copy_chinook_5cbcc8902b8a --identity <identity> --lease 2h \
+    --host 127.0.0.1 --user copier --password-file ~/.copier-my
+uv run python3 -m megasamples copy release mysql:copy_chinook_5cbcc8902b8a --identity <identity> \
+    --host 127.0.0.1 --user copier --password-file ~/.copier-my
+uv run python3 -m megasamples copy sweep mysql --prefix copy \
+    --host 127.0.0.1 --user copier --password-file ~/.copier-my      # removes it: its lease has ended
 ```
 
 ### SQLite, step by step
 
-A SQLite copy is a file. The templates are in the image under `/templates`; take them out once,
-then make copies into a directory of your own:
+A SQLite copy is a file in a directory of your own. The templates are in the image under
+`/templates`; take them out once, then make copies:
 
 ```sh
 docker cp megasamples-sqlite:/templates ./sqlite-templates
 mkdir -m 700 copies
-T="--templates ./sqlite-templates --dir ./copies"
-python3 -m megasamples copy create sqlite:sakila --prefix copy --label mytest $T
+uv run python3 -m megasamples copy create sqlite:sakila --prefix copy --label mytest \
+    --templates ./sqlite-templates --dir ./copies
 sqlite3 copies/copy_sakila_5cbcc8902b8a.sqlite                    # use the name create printed
-python3 -m megasamples copy drop sqlite:copy_sakila_5cbcc8902b8a --identity <identity> $T
+uv run python3 -m megasamples copy drop sqlite:copy_sakila_5cbcc8902b8a --identity <identity> \
+    --templates ./sqlite-templates --dir ./copies
 ```
 
 SQLite copies need no account or password. The command keeps its records in `copies/.megasamples`,
-which must stay private to you.
+which must stay private to you. SQLite copies are not touched by `make down` or a reset: they stay
+in your directory until you `drop` or `sweep` them, or delete them yourself.
 
 ## Putting the data back
 
@@ -359,37 +397,41 @@ make reset R=all                                 # every engine in the stack
 make reset R=postgres                            # one engine, every database it has
 make reset R="postgres:northwind mysql:sakila"   # single databases; the rest are not touched
 make reset ENGINE=postgres D=quick               # configure's selectors: core | quick | all | a tier | a list
-python3 -m megasamples reset --help              # the same, without make
+uv run python3 -m megasamples reset --help       # the same, without make
 ```
 
 * **A whole engine** is recreated with a fresh copy of its image's data directory, in seconds.
-  Everything made since goes: rows, tables, databases, **copies**, accounts, roles, privileges and
-  the passwords you set for `copier` and declared accounts.
+  Everything made since goes: rows, tables, databases, **every MySQL and PostgreSQL copy**,
+  accounts, roles, privileges, the passwords you set for `copier` and declared accounts, and the
+  PostgreSQL copy-service row. SQLite copies in your own directory are not touched.
 * **A single database** is restored from a disposable container running the same image: MySQL and
   PostgreSQL dump it there and load it over the running one, then check each table's row count
   against the image; SQLite restores both `/data` and the shared console copy from the pristine
-  file and checks their SHA-256 hashes. Copies, accounts and privileges stay as they are.
+  file and checks their SHA-256 hashes. On PostgreSQL the grants inside that database come back as
+  the image ships them. Accounts, MySQL privileges (kept in MySQL's account tables) and copies stay
+  as they are.
 
 Datasets sharing a database reset together. Both SQLite reset paths briefly stop and restart the
 running SQLite consoles, closing their connections. Close any SQLite shell you opened by hand first.
 Resets use the private `.env` passwords. Two resets of the same engine at once are refused; retry
 after the first finishes.
 
-`python3 -m megasamples reset --status postgres` prints, as JSON, any PostgreSQL data directory left
-without a database (see [Limits](#limits)); `make up` warns about them too.
+`uv run python3 -m megasamples reset --status postgres` prints, as JSON, any PostgreSQL data
+directory left without a database (see [Limits](#limits)); `make up` warns about them too.
 
 ## Stopping, and what is kept
 
 `make up` brings the engines and the consoles up as one stack, and `make down` takes it away again.
 `make down` and `make clean-all` remove each engine's working data with its container: the
-volume holding its data directory goes too, so **every change and every copy is lost**, and the
-next `make up` starts every engine from its image again. `make down` prints a line saying so before
-it starts. For SQLite, the named `megasamples-sqlite` volume stays, and the next start
+volume holding its data directory goes too, so **every change and every MySQL and PostgreSQL copy
+is lost**, and the next `make up` starts every engine from its image again. `make down` prints a
+line saying so before it starts. SQLite copies in your own directory are not touched. For SQLite,
+the named `megasamples-sqlite` volume stays, and the next start
 replaces the files the image carries and leaves any other file in the volume (a database from an earlier
 selection stays until removed).
 
 `make up` after you rebuild an image recreates that engine from the new image, which also
-discards its working data and copies. Save anything you want to keep first, with `mysqldump`,
+discards its working data and its copies. Save anything you want to keep first, with `mysqldump`,
 `pg_dump` or by copying a SQLite file out.
 
 ## Upgrading from an earlier build
@@ -398,7 +440,7 @@ discards its working data and copies. Save anything you want to keep first, with
 2. Update the checkout, then `uv sync --locked`.
 3. Rebuild: `make run` (or `make image ENGINE=...` for one engine).
 4. `make up`. Each engine whose image changed is recreated from the new image. Your `.env`
-   passwords are reapplied; set the `copier` passwords again before making copies.
+   passwords are reapplied; repeat the copy setup steps before making copies.
 
 The new PostgreSQL image will not start on a data directory made by an earlier image: it stops with
 a message instead of serving it. `make up` gives it a fresh one. If you start it by hand on an old
@@ -407,18 +449,22 @@ image and a load into the new one.
 
 ## Limits
 
-- `make down`, and `make up` after a rebuild, discard each engine's working data and every copy.
-- SQLite samples are copied into the console volume again at every start, so console edits to them
-  do not survive a restart.
+- `make down`, and `make up` after a rebuild, discard each engine's working data and every MySQL
+  and PostgreSQL copy.
+- SQLite samples are copied into the shared volume again at every start. The consoles read them
+  read-only; a change made with `docker exec megasamples-sqlite sqlite3 …` lasts until the next start.
 - MySQL copies are rebuilt with the image's default character set (`utf8mb4`); a database whose
   objects were made under another character set may not copy exactly.
 - On MySQL, databases with triggers or stored functions, the Oracle HR/OE pair and databases over
   512 MB have no template.
+- On PostgreSQL, the copy service must be recorded by hand once per engine volume (the setup step
+  above).
 - Interrupted commands and full disks are not certified. A `copy create` cut off part way can leave
-  a copy that `drop` and `sweep` keep (state `interrupted`); a whole-engine reset clears it. On
-  PostgreSQL, a crash or cancel at the wrong moment of a copy can leave a data directory with no
-  database: it only takes disk, `make up` and `reset --status` report it, and the next whole-engine
-  reset or `make down` removes it.
+  a copy that `drop` and `sweep` keep (state `interrupted`). On MySQL and PostgreSQL a whole-engine
+  reset clears it; on SQLite, delete `copies/<name>.sqlite` and its records in `copies/.megasamples/`
+  yourself. On PostgreSQL, a crash or cancel at the wrong moment of a copy can leave a data directory
+  with no database: it only takes disk, `make up` and `reset --status` report it, and the next
+  whole-engine reset or `make down` removes it.
 - PostgreSQL's read-only `demo` is a convenience for a samples server, not a security boundary.
 - The console ports and the database ports listen on `127.0.0.1` only; publishing them wider is a
   deliberate edit of your own.
@@ -463,7 +509,7 @@ because someone opened a laptop in a café. Only CloudBeaver and DbGate browse a
 Inside the stack an engine is reached by its service name (Adminer's "Server" field takes `mysql`
 or `postgres`), and from your machine by `127.0.0.1` and the port above. `compose.yaml` is
 generated from `megasamples.yaml` by `make up` (or `make compose`); every service carries a memory
-limit and every image is pinned by digest.
+limit and every third-party image is pinned by digest; the engine images are the ones you built.
 
 ## The configuration file
 
@@ -484,9 +530,9 @@ accounts: {readers: [], writers: []}                            # see "The accou
 `make run` reads it and, for every engine named, fetches the datasets' artifacts, converts and
 loads them, verifies them and bakes the image; `make up` starts what was built. Naming a dataset
 for any engine also builds it in the MySQL build server, because that is where every port comes
-from. `templates` chooses which databases get a copy template. Copy namespaces and declared
-accounts are baked into the image, so change them before `make image`.
-[`megasamples.example.yaml`](megasamples.example.yaml) documents the other keys.
+from. `templates` chooses which databases get a copy template. Copy namespaces, foreign namespaces and
+declared accounts are baked into the image, so change them before `make image`.
+[`megasamples.example.yaml`](megasamples.example.yaml) documents every key.
 
 ## Downloads: once, verified, watched
 
@@ -516,8 +562,8 @@ at the end of `make run`, which then exits 1.
 ## Building piece by piece
 
 Every command is a `make` target, and every target is a one-line shim over
-`python3 -m megasamples <command>`: `make -n <target>` shows exactly what will run, and
-`python3 -m megasamples --help` lists every command.
+`python3 -m megasamples <command>` run with the checkout's `.venv`: `make -n <target>` shows exactly
+what will run, and `uv run python3 -m megasamples --help` lists every command.
 
 ```sh
 make sakila                        # fetch, convert, load and verify one dataset on MySQL
@@ -661,7 +707,7 @@ redistribution, are a better basis for a storage comparison than any one dataset
 | Path | What it holds |
 |---|---|
 | `ARCHITECTURE.md` | how it works: layout, the dataset contract, the MySQL hub, engines, verification, the stack, gates, licensing and publishing |
-| `PLAN.md` | what is being built next |
+| `PLAN.md` | ideas for later |
 | `CATALOGUE.md` | every dataset: tier, shape, licence, and what that licence asks of a redistributor (generated) |
 | `megasamples/` | the package: the pipeline, one subpackage per engine, the upstream-format translators |
 | `engines/<engine>/` | each engine's Dockerfile, server configuration and init SQL |
@@ -672,7 +718,7 @@ redistribution, are a better basis for a storage comparison than any one dataset
 | `megasamples.example.yaml` | the stack configuration, documented |
 | `downloads/`, `build/` | gitignored: verified upstream artifacts; everything a build produces |
 
-Every factual claim in `ARCHITECTURE.md` and `PLAN.md` traces to a record in `knowledge/`, and
+Every factual claim in `ARCHITECTURE.md` traces to a record in `knowledge/`, and
 `make check` enforces that the bundle stays internally consistent. If you want to know *why* a
 dataset was converted the way it was, that is where the answer is.
 
@@ -687,21 +733,15 @@ make screenshots                 # retake the README's pictures from the running
 
 If a `docker pull` or a download hangs with no error, suspect IPv6 first — see
 [`knowledge/runbooks/ipv6-and-privileges.md`](knowledge/runbooks/ipv6-and-privileges.md), which also
-covers the `make pull-image` workaround this project uses to fetch images over IPv4.
+covers `uv run python3 -m megasamples pull-image <image>`, the workaround this project uses to fetch
+images over IPv4.
 
 The reviewed client inputs and vendor-source read times are in `clients.lock.yaml`.
 `make up` builds CloudBeaver, DbGate, Adminer and phpMyAdmin extensions from pinned vendor images,
 with the selected JDBC jars, native SQLite module, PostgreSQL library and PHP/Node runtimes. The loader
 uses Oracle's matching MySQL command-line clients and C API, with sysbench built against that library.
-The complete [LTS audit](docs/history/lts-upgrade-evidence.md) records policies, source read times and compatible targets. `make oracle-client-image` builds the optional current SQL*Plus and
-SQL*Loader binaries; `make verify-oracle` retains its explicit database license gate.
+`make oracle-client-image` builds the optional current SQL*Plus and SQL*Loader binaries;
+`make verify-oracle` retains its explicit database licence gate.
 
 For a deliberate Python refresh, update the exact requirements in `pyproject.toml`,
-run `uv lock --upgrade`, then `uv sync --locked` and the repository gate. The client
-upgrade evidence and the live procedure are in `docs/history/client-upgrade-evidence.md` and
-`docs/history/live-upgrade-runbook.md`. The upgrade rehearsal installs and runs tooling only
-inside its isolated containers.
-
-The published-endpoint probe uses Psycopg with a current system libpq. The container-only
-setup recipe is `docs/validation/install-probe-libpq.py`; the validated rehearsal tools
-archive already includes that pinned library. No host installation is required for the rehearsal.
+run `uv lock --upgrade`, then `uv sync --locked` and `make check`.
