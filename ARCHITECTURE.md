@@ -138,7 +138,8 @@ is the registry the configuration names.
   shipped initialised rather than loaded at first start (`knowledge/decisions/bake-data-vs-initdb.md`):
   first start answers a real query in under two seconds. Tag: `sql-megasamples-mysql:dev`.
 * **Accounts.** `root` (password `root`), `admin` (`ALL PRIVILEGES WITH GRANT OPTION`), `demo`
-  (`SELECT, SHOW VIEW` only). `MYSQL_ROOT_PASSWORD`, `ADMIN_PASSWORD` and `DEMO_PASSWORD` override
+  (`SELECT, SHOW VIEW` on the working schemas and enabled foreign namespaces, `SELECT` on
+  `megasamples.datasets` and `megasamples.copy_service`, from `demo_read_grants`). `MYSQL_ROOT_PASSWORD`, `ADMIN_PASSWORD` and `DEMO_PASSWORD` override
   the passwords at container start.
 * **Registry.** The `megasamples.datasets` table inside the image: one row per dataset with tier,
   knowledge record, licence ids, source artifacts with digests, pinned row counts and the build id.

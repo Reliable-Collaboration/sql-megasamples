@@ -14,7 +14,8 @@ GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
 CREATE USER IF NOT EXISTS 'admin'@'%' IDENTIFIED BY 'admin';
 GRANT ALL PRIVILEGES ON *.* TO 'admin'@'%' WITH GRANT OPTION;
 
--- read-only demo account: SELECT and SHOW VIEW everywhere, no write privilege anywhere.
+-- read-only demo account: its grants are made per schema at build time (megasamples/mysql_templates.py,
+-- demo_read_grants); no write privilege anywhere.
 CREATE USER IF NOT EXISTS 'demo'@'%'  IDENTIFIED BY 'demo';
 
 -- provenance registry; megasamples/registry.py regenerates 10-registry.sql with the real rows.
