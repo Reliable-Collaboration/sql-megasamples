@@ -5,12 +5,14 @@
 
 Asserts: the container answers a real query within the time budget; the registry lists exactly the
 built datasets; every table's row count matches the pinned expectation; `demo` can read and cannot
-write; `admin` can write; no login role is passwordless; the password overrides take effect. Password
+write; `admin` can write; unkeyed accounts cannot authenticate; the password overrides take effect. Password
 checks go over TCP, because the image's socket connections are trusted for local maintenance.
 """
 import os, subprocess, sys, time
 import yaml
 
+from megasamples import config
+from megasamples.copy_config import CopySettings
 from megasamples.paths import ROOT
 from megasamples.credentials import client, environment_file, session
 from megasamples.engines import unique_databases
@@ -113,8 +115,16 @@ def main(argv=None):
         w = q(f'BEGIN; ALTER TABLE "{table}" ADD COLUMN t_probe int; ALTER TABLE "{table}" DROP COLUMN t_probe; ROLLBACK',
               user="admin", pw="admin", database=schema)
         c.expect(w.returncode == 0, "admin owns the baked tables and can alter them" + ("" if w.returncode == 0 else f" -- {w.stderr.strip()[:120]}"))
-        empty = q("SELECT count(*) FROM pg_authid WHERE rolcanlogin AND rolpassword IS NULL").stdout.strip()
-        c.expect(empty == "0", "no login role is passwordless")
+        settings = CopySettings(config.load(), "postgres", datasets)
+        declared = {item.owner for item in settings.namespaces} | settings.readers.keys() | settings.writers.keys()
+        empty = q("SELECT rolname FROM pg_authid WHERE rolcanlogin AND rolpassword IS NULL")
+        unkeyed = set(empty.stdout.split())
+        c.expect(empty.returncode == 0 and unkeyed <= declared,
+                 "only declared accounts may be unkeyed")
+        for role in sorted(unkeyed):
+            authentication = q("SELECT 1", user=role, pw="image-test-invalid-key", database="megasamples")
+            c.expect(authentication.returncode != 0 and "password authentication failed" in authentication.stderr,
+                     f"{role}: an unkeyed login cannot authenticate over TCP")
         size = sh("docker", "exec", NAME, "sh", "-c", "du -sm /var/lib/postgresql/18/docker | cut -f1").stdout.strip()
         n = q("SELECT count(*) FROM pg_database WHERE NOT datistemplate").stdout.strip()
         print(f"  . data directory: {size} MB across {n} databases")
