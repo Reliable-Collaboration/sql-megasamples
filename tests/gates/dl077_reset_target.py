@@ -9,12 +9,12 @@ test passwords apply, and only against the isolated store.
 
 import sys
 
-from megasamples.engines import registry
+from megasamples import engines
 
 
 def run():
     container, *args = sys.argv[1:]
-    registry.get("postgres").__class__.container = container
+    type(engines.get("postgres")).container = container
     from megasamples.reset import main
     return main(args)
 
