@@ -213,6 +213,20 @@ def test_postgres_demo_exact_routine_allowlist():
 
 
 @pytest.mark.parametrize('database', PG_DATABASES)
+def test_postgres_published_v1_inventory_is_demos_executable_set(database):
+    """Opus round 8, P3-1: the published inventory is the image's, row for row, in every database."""
+    import json
+    from pathlib import Path
+    published = json.loads(Path('docs/validation/dl-077-v1-public-routines.json').read_text())
+    expected = sorted((r['signature'], r['namespace'], r['kind'], r['volatility']) for r in published['routines'])
+    rows = accepted('postgres', database, "SELECT concat_ws('|', p.oid::regprocedure::text, n.nspname, p.prokind::text, "
+                    "p.provolatile::text) FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace "
+                    "WHERE has_function_privilege('demo', p.oid, 'EXECUTE')", 'postgres')
+    actual = sorted(tuple(line.rsplit('|', 3)) for line in rows.splitlines())
+    assert actual == expected, database + ': demo can execute a set other than the published inventory'
+
+
+@pytest.mark.parametrize('database', PG_DATABASES)
 def test_postgres_demo_reads_column_and_constraint_metadata(database):
     accepted('postgres', database, "SELECT column_name,data_type FROM information_schema.columns WHERE table_schema='public'")
     accepted('postgres', database, "SELECT constraint_name,column_name FROM information_schema.key_column_usage WHERE table_schema='public'")
