@@ -644,7 +644,7 @@ They run one at a time, in the coordinator's order: WS1, WS4, WS2, WS3, WS5. Eac
 
 | # | Workstream | State |
 |---|---|---|
-| 1 | Start certification | **Design written**, `docs/design/dl077-ws1-start-certification-design.md`, waiting for its design review. No build has started. |
+| 1 | Start certification | **Design revision 2**, `docs/design/dl077-ws1-start-certification-design.md`, answering the design review of `2ab72c25` (Sol 1 P1, 8 P2, 3 P3; Opus 4 P2, 15 P3), each finding traced in its section 11; waiting for the re-review. No build has started. |
 | 4 | Native suite binding | waiting for WS1 |
 | 2 | Orphan scan | waiting |
 | 3 | Removal outcomes | waiting |
