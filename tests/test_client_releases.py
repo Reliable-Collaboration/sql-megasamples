@@ -14,7 +14,9 @@ RELEASES = {'pyyaml': '6.0.3', 'pymysql': '1.2.4', 'duckdb': '2.0.0',
 @pytest.mark.parametrize('name,version', RELEASES.items())
 def test_direct_python_client_pin_and_lock(name, version):
     project = tomllib.loads((ROOT / 'pyproject.toml').read_text())
-    requirements = project['project']['dependencies'] + project['dependency-groups']['dev']
+    requirements = project['project']['dependencies'] + [
+        requirement for group in project['dependency-groups'].values() for requirement in group
+    ]
     normalized = [r.lower().replace('_', '-').replace('.', '-') for r in requirements]
     assert any(re.match(re.escape(name) + r'(?:\[(?:rsa|binary)\])?==' + re.escape(version).replace(r'\.', '-') + r'(?:;|$)', r)
                for r in normalized), f'{name} needs an exact reviewed release in pyproject.toml'
@@ -61,6 +63,6 @@ def test_loader_build_does_not_send_baked_engine_data():
 
 def test_postgres_probe_does_not_bundle_an_older_libpq():
     project = tomllib.loads((ROOT / 'pyproject.toml').read_text())
-    assert 'psycopg==3.3.9' in project['dependency-groups']['dev']
+    assert 'psycopg==3.3.9' in project['project']['dependencies']
     packages = tomllib.loads((ROOT / 'uv.lock').read_text())['package']
     assert all(p['name'] != 'psycopg-binary' for p in packages)
