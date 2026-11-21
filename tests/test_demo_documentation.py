@@ -5,6 +5,8 @@ import re
 
 import pytest
 
+from megasamples.mysql_templates import demo_read_grants
+
 ROOT = Path(__file__).parents[1]
 
 
@@ -13,7 +15,7 @@ def role_grants(engine, role):
     for path in sorted((ROOT/'engines'/engine/'init').glob('*.sql')):
         # Read SQL for grant extraction only; never include its source in a failure.
         sql = re.sub(r'--[^\n]*', '', path.read_text())
-        for privileges, scope, roles in re.findall(r'GRANT\s+(.+?)\s+ON\s+(.+?)\s+TO\s+([^;]+);', sql, re.I):
+        for privileges, scope, roles in re.findall(r'^[ \t]*GRANT[ \t]+(.+?)\s+ON\s+(.+?)\s+TO\s+([^;]+);', sql, re.I | re.M):
             if re.search(r"(?:^|[,\s])'?"+re.escape(role)+r"'?(?:@|[,\s]|$)", roles, re.I):
                 grants.append((tuple(p.strip().upper() for p in privileges.split(',')), scope.strip()))
     return grants
@@ -28,28 +30,37 @@ def text(name, variable):
 
 
 def mysql_scope(document):
-    grants = demo_grants('mysql')
-    # Derive the documentation rule from the actual demo target and privileges.
-    assert grants == [(('SELECT', 'SHOW VIEW'), '*.*')], 'Review changed MySQL demo grants'
-    assert 'every database' in document and '`*.*`' in document
-    assert 'system schemas included' in document and '`mysql`' in document
-    assert 'account rows' in document and 'no write privilege' in document
+    assert demo_grants('mysql') == [], 'Review additional MySQL bootstrap grants'
+    grants = set(demo_read_grants(['working_example'], [('external', True), ('private', False)]))
+    assert grants == {
+        ('SELECT, SHOW VIEW', r'`working\_example`.*'),
+        ('SELECT, SHOW VIEW', r'`external\_%`.*'),
+        ('SELECT', 'megasamples.datasets'),
+        ('SELECT', 'megasamples.copy_service'),
+    }, 'Review changed MySQL demo grants'
+    assert all(term in document for term in ('working schemas', 'explicitly enabled foreign namespaces',
+                                              'registry tables', 'no write privilege'))
+    assert 'every database' not in document and 'system schemas included' not in document
 
 
 def postgres_scope(document):
-    grants = demo_grants('postgres')
+    users = (ROOT/'engines/postgres/init/00-users.sql').read_text()
+    assert 'GRANT megasamples_read TO megasamples_working_read WITH INHERIT TRUE' in users
+    assert 'GRANT megasamples_working_read TO demo WITH INHERIT TRUE' in users
+    grants = role_grants('postgres', 'megasamples_read')
     assert (('SELECT',), 'ALL TABLES IN SCHEMA public') in grants
-    assert (('SELECT',), 'datasets') in grants
-    assert (('SELECT',), 'TABLES') in grants
+    assert (('SELECT',), 'datasets') in role_grants('postgres', 'PUBLIC')
     grant_sql = (ROOT/'engines/postgres/init/20-grants.sql').read_text()
-    assert re.search(r'ALTER DEFAULT PRIVILEGES FOR ROLE admin IN SCHEMA public GRANT SELECT ON TABLES TO demo;', grant_sql)
+    assert re.search(r'ALTER DEFAULT PRIVILEGES FOR ROLE admin IN SCHEMA public GRANT SELECT ON TABLES TO megasamples_read;', grant_sql)
     assert 'tables `admin` later creates' in document and 'public' in document
     assert 'sample database' in document
-    # Init SQL grants demo reads; it does not revoke these inherited capabilities.
-    assert all(set(privileges) <= {'SELECT', 'USAGE', 'CONNECT'} for privileges, _ in grants)
+    assert all(not set(privileges) & {'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'TEMPORARY'}
+               for privileges, _ in grants)
     assert re.search(r'\breads (?:persistent )?sample tables\b', document)
     for capability in ('TEMPORARY', 'large objects', 'routines'):
         assert capability in document
+    assert 'cannot create large objects' in document and 'allowlisted routines' in document
+    assert 'no `TEMPORARY` privilege' in document
 
 
 @pytest.mark.parametrize('engine', ['mysql', 'postgres'])
