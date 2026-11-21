@@ -136,11 +136,13 @@ def reset_engines(names):
         if cleaned.returncode:
             sys.exit(f"could not remove stale SQLite journals or database files: {cleaned.stderr.strip()[:300]}")
     print(f"  . recreating {', '.join(names)} from the image (fresh data directory)")
-    if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--force-recreate", "--renew-anon-volumes",
-                       "--no-deps", "--wait", *names], cwd=ROOT).returncode != 0:
-        return 1
-    volumes.remove_replaced(replaced, attached=lambda container: data_volumes(container))
-    return 0
+    try:
+        return 1 if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--force-recreate",
+                                    "--renew-anon-volumes", "--no-deps", "--wait", *names],
+                                   cwd=ROOT).returncode != 0 else 0
+    finally:
+        # On every exit, as data_volumes.recreate does (Opus and Sol round 11).
+        volumes.remove_replaced(replaced, attached=lambda container: data_volumes(container))
 
 
 # --- single databases ------------------------------------------------------------------------------

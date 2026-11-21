@@ -35,11 +35,14 @@ def remove_replaced(replaced, attached=attached, report=print):
 def recreate(services, containers, attached=attached, report=print):
     """Recreate services from their images with fresh data directories, then remove the volumes replaced."""
     replaced = {container: attached(container) for container in containers}
-    if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--force-recreate", "--renew-anon-volumes",
-                       "--no-deps", "--wait", *services], cwd=ROOT).returncode != 0:
-        return 1
-    remove_replaced(replaced, attached, report)
-    return 0
+    try:
+        return 1 if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--force-recreate",
+                                    "--renew-anon-volumes", "--no-deps", "--wait", *services],
+                                   cwd=ROOT).returncode != 0 else 0
+    finally:
+        # On every exit (Opus and Sol round 11): Compose may have renewed the volumes before --wait gave up.
+        # A volume its container still mounts is skipped, so a recreate that failed earlier keeps its data.
+        remove_replaced(replaced, attached, report)
 
 
 def down(capture=False):
