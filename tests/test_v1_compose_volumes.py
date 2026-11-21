@@ -22,7 +22,8 @@ NAMED = "megasamples-sqlite"
 
 
 class Daemon:
-    def __init__(self, image="current"):
+    def __init__(self, image="current", recreate_fails=None):
+        self.recreate_fails = recreate_fails   # None, "after" the renewal (--wait gives up), or "before" it
         self.serial = 0
         self.containers = {}            # name -> {"image", "anonymous"}
         self.volumes = {NAMED}
@@ -77,7 +78,11 @@ class Daemon:
                 self.containers.clear()
             elif "up" in words:
                 services = [w for w in words if w in SERVICES]
-                if "--force-recreate" in words:
+                if "--force-recreate" in words and self.recreate_fails == "before":
+                    code = 1
+                elif "--force-recreate" in words:
+                    if self.recreate_fails == "after":
+                        code = 1                            # created with fresh volumes, then unhealthy
                     for service in services:
                         old = self.containers[SERVICES[service]]
                         renewed = "--renew-anon-volumes" in words
@@ -98,8 +103,8 @@ class Daemon:
 
 @pytest.fixture
 def daemon(monkeypatch):
-    def install(image="current"):
-        d = Daemon(image)
+    def install(image="current", recreate_fails=None):
+        d = Daemon(image, recreate_fails)
         monkeypatch.setattr(subprocess, "run", d.run)
         monkeypatch.setattr(job.os.path, "exists", lambda path: True)
         engines = {name: SimpleNamespace(name=name, container=SERVICES[name], image=f"img-{name}", title=name,
@@ -145,3 +150,27 @@ def test_up_recreating_a_stale_engine_removes_the_volume_it_replaced(daemon):
     assert all(d.containers[name]["anonymous"] != volume for name, volume in before.items())
     assert d.leftovers() == set(), "up kept the data volume it replaced"
     assert NAMED in d.volumes
+
+
+# Round 11 (Opus 1, Sol 1): a recreate that fails after Compose renewed the volume still removes the one it
+# replaced; one that fails before keeps the volume its container still mounts. The failure is returned.
+@pytest.mark.parametrize("when", ["after", "before"])
+def test_up_whose_recreate_fails_removes_only_what_it_replaced(daemon, when):
+    d = daemon(image="stale", recreate_fails=when)
+    before = {name: c["anonymous"] for name, c in d.containers.items()}
+    assert job.up([]) == 1
+    assert d.leftovers() == set(), "the failed recreate stranded the volume it replaced"
+    if when == "before":
+        assert {name: c["anonymous"] for name, c in d.containers.items()} == before
+
+
+@pytest.mark.parametrize("when", ["after", "before"])
+def test_reset_whose_recreate_fails_removes_only_what_it_replaced(daemon, monkeypatch, when):
+    from megasamples import reset
+    d = daemon(recreate_fails=when)
+    monkeypatch.setattr(reset.engine_registry, "get", job.engine_registry.get)
+    before = d.containers["megasamples-mysql"]["anonymous"]
+    assert reset.reset_engines(["mysql"]) == 1
+    assert d.leftovers() == set(), "the failed reset stranded the volume it replaced"
+    if when == "before":
+        assert d.containers["megasamples-mysql"]["anonymous"] == before
