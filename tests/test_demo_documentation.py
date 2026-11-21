@@ -194,9 +194,11 @@ def test_rendered_help_says_what_teardown_discards_and_keeps():
     import sys
 
     def rendered(*args):
+        # Sol round 14, 4: the help a person sees is stdout of a command that succeeded.
         result = subprocess.run([sys.executable, '-m', 'megasamples', *args], capture_output=True, text=True,
                                 cwd=ROOT)
-        return result.stdout + result.stderr
+        assert result.returncode == 0, (args, result.stderr[-300:])
+        return result.stdout
     listing = rendered('--help')
     for command in ('down', 'clean'):
         line = re.search(rf'^\s+{command}\s+(.+)$', listing, re.M)
@@ -204,6 +206,8 @@ def test_rendered_help_says_what_teardown_discards_and_keeps():
     for command in ('down', 'clean'):
         text = ' '.join(rendered(command, '--help').split())
         assert "each engine's working data" in text and 'the named SQLite volume stays' in text, (command, text)
+    clean_all = ' '.join(rendered('clean', '--help').split('--all', 2)[-1].split())
+    assert "each engine's working data" in clean_all and 'the named SQLite volume stays' in clean_all, clean_all
 
 
 def test_readme_describes_the_catalogue_and_the_databases_as_they_are():
@@ -213,3 +217,8 @@ def test_readme_describes_the_catalogue_and_the_databases_as_they_are():
     assert 'The catalogue, the landing page and the image tests all read it' not in readme
     assert "`make catalogue` is generated from the repository's dataset definitions and pinned counts" in readme
     assert 'one per dataset' not in readme and 'one database per dataset' not in readme
+    # Sol round 14, 5: the explanations themselves, not only the absence of the old phrase.
+    assert readme.count("shares its base's") >= 2
+    page = (ROOT / 'megasamples/console_page.py').read_text()
+    assert 'one database per dataset' not in page and "an append dataset shares its base's" in page
+    assert 'for live datasets' in readme.split('provenance registry', 1)[1].split('\n\n', 1)[0]

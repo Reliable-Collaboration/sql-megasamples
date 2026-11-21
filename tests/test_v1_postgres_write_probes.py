@@ -5,6 +5,7 @@ The UPDATE probe assigned to a column named like its table, which Chinook's `alb
 and be refused by permission, as a fake server here answers.
 """
 
+import re
 import subprocess
 
 import pytest
@@ -25,8 +26,12 @@ def run(monkeypatch, writable):
         if sql.startswith("SELECT column_name"):
             return subprocess.CompletedProcess([], 0, "albumid\n", "")
         kind = sql.split()[0]
-        if kind == "UPDATE" and '"album" = ' in sql:
-            return subprocess.CompletedProcess([], 1, "", 'ERROR:  column "album" of relation "album" does not exist\n')
+        # Sol round 14, 2: SQL naming a column the table lacks is what a real image refuses for that reason.
+        named = set(re.findall(r'"([a-z_]+)"', sql)) - {"album"}
+        if kind in ("INSERT", "UPDATE") and named != {"albumid"}:
+            return subprocess.CompletedProcess([], 1, "", 'ERROR:  column of relation "album" does not exist\n')
+        if kind in ("INSERT", "UPDATE", "DELETE", "DROP") and '"album"' not in sql:
+            return subprocess.CompletedProcess([], 1, "", 'ERROR:  relation does not exist\n')
         if kind in writable:
             return subprocess.CompletedProcess([], 0, "", "")
         return subprocess.CompletedProcess([], 1, "", DENIED)
@@ -63,3 +68,22 @@ def test_a_refusal_for_another_reason_is_not_a_denial(monkeypatch):
     image_test.demo_write_checks(checks, "chinook", "album")
     assert checks.failures == ["demo cannot CREATE", "demo cannot INSERT", "demo cannot DELETE", "demo cannot UPDATE",
                                "demo cannot DROP"]
+
+
+@pytest.mark.parametrize("wrong", ["album", "title"])
+def test_a_probe_naming_a_column_the_table_lacks_fails(monkeypatch, wrong):
+    """The INSERT and UPDATE must name the column the lookup returned; another name is not a denial."""
+    original = image_test.demo_write_checks
+
+    def lookup_returns(column):
+        def q(sql, user="postgres", pw="root", database="postgres", container=image_test.NAME):
+            if sql.startswith("SELECT column_name"):
+                return subprocess.CompletedProcess([], 0, column + "\n", "")
+            if '"albumid"' not in sql and sql.split()[0] in ("INSERT", "UPDATE"):
+                return subprocess.CompletedProcess([], 1, "", 'ERROR:  column does not exist\n')
+            return subprocess.CompletedProcess([], 1, "", DENIED)
+        return q
+    monkeypatch.setattr(image_test, "q", lookup_returns(wrong))
+    checks = image_test.Checks()
+    original(checks, "chinook", "album")
+    assert {"demo cannot INSERT", "demo cannot UPDATE"} <= set(checks.failures)
