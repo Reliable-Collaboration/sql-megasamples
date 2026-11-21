@@ -310,17 +310,12 @@ packages, and a plain `python3` does not have them.
 
 Copies are made from the database's template, `<database>_start`, with PostgreSQL's own
 `CREATE DATABASE … TEMPLATE`, so a copy of a large database takes seconds. PostgreSQL offers a
-template for each sample database in the image's core selection. Two setup steps come first, once,
-and again whenever the engine is recreated from its image:
+template for each sample database in the image's core selection. First, once, and again whenever
+the engine is recreated from its image, give `copier` a password:
 
 ```sh
-# 1. give copier a password (you type it twice)
-docker exec -it megasamples-postgres psql -U postgres -c '\password copier'
-# 2. record this server's copy service; until this row exists, copy commands exit 5 unidentified-volume
-docker exec megasamples-postgres psql -U postgres -d megasamples -c \
-  "INSERT INTO copy_service VALUES (true, 'megasamples-service/1', gen_random_uuid()::text)"
-# keep the password in a file only you can read
-umask 077; printf '%s\n' 'the-same-password' > ~/.copier-pg
+docker exec -it megasamples-postgres psql -U postgres -c '\password copier'   # you type it twice
+umask 077; printf '%s\n' 'the-same-password' > ~/.copier-pg              # keep it in a file only you can read
 ```
 
 Then:
@@ -402,8 +397,7 @@ uv run python3 -m megasamples reset --help       # the same, without make
 
 * **A whole engine** is recreated with a fresh copy of its image's data directory, in seconds.
   Everything made since goes: rows, tables, databases, **every MySQL and PostgreSQL copy**,
-  accounts, roles, privileges, the passwords you set for `copier` and declared accounts, and the
-  PostgreSQL copy-service row. SQLite copies in your own directory are not touched.
+  accounts, roles, privileges and the passwords you set for `copier` and declared accounts. SQLite copies in your own directory are not touched.
 * **A single database** is restored from a disposable container running the same image: MySQL and
   PostgreSQL dump it there and load it over the running one, then check each table's row count
   against the image; SQLite restores both `/data` and the shared console copy from the pristine
@@ -440,7 +434,7 @@ discards its working data and its copies. Save anything you want to keep first, 
 2. Update the checkout, then `uv sync --locked`.
 3. Rebuild: `make run` (or `make image ENGINE=...` for one engine).
 4. `make up`. Each engine whose image changed is recreated from the new image. Your `.env`
-   passwords are reapplied; repeat the copy setup steps before making copies.
+   passwords are reapplied; set the `copier` password again before making copies.
 
 The new PostgreSQL image will not start on a data directory made by an earlier image: it stops with
 a message instead of serving it. `make up` gives it a fresh one. If you start it by hand on an old
@@ -457,8 +451,6 @@ image and a load into the new one.
   objects were made under another character set may not copy exactly.
 - On MySQL, databases with triggers or stored functions, the Oracle HR/OE pair and databases over
   512 MB have no template.
-- On PostgreSQL, the copy service must be recorded by hand once per engine volume (the setup step
-  above).
 - Interrupted commands and full disks are not certified. A `copy create` cut off part way can leave
   a copy that `drop` and `sweep` keep (state `interrupted`). On MySQL and PostgreSQL a whole-engine
   reset clears it; on SQLite, delete `copies/<name>.sqlite` and its records in `copies/.megasamples/`

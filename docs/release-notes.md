@@ -32,9 +32,8 @@
   schemas included).
 - **`make down` and `make clean-all` now remove each engine's data volume** with its container, so
   nothing is left behind; the next `make up` starts from the images. The SQLite console volume stays.
-- **Copy setup.** Set the `copier` password (and any declared account's) before using copies, and
-  on PostgreSQL record the copy service once; the README shows both steps. They are needed again
-  whenever the engine is recreated from its image.
+- **Set the `copier` password** (and any declared account's) before using copies; the README shows
+  how. It is needed again whenever the engine is recreated from its image.
 - **The SQLite start copy removes stale journals.** A `-journal`, `-wal` or `-shm` file left beside
   a shared SQLite file is removed before the fresh copy replaces it, so it cannot be applied to the
   fresh sample.
@@ -48,8 +47,7 @@
 - MySQL copies assume the image's default character set (`utf8mb4`).
 - On MySQL, databases with triggers or stored functions, the Oracle HR/OE pair and databases over
   512 MB have no template.
-- On PostgreSQL, the copy service is recorded by hand once per engine volume, and the sample tables
-  in a copy stay owned by `admin`: `copier` changes rows and adds its own objects, but cannot
+- On PostgreSQL, the sample tables in a copy stay owned by `admin`: `copier` changes rows and adds its own objects, but cannot
   `ALTER`, `TRUNCATE` or index the sample tables.
 - Interrupted commands and full disks are not certified: an interrupted `copy create` can leave a
   copy that `drop` and `sweep` keep, which a whole-engine reset clears on MySQL and PostgreSQL and
