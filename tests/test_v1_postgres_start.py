@@ -158,9 +158,9 @@ class PolicyStartupTests(unittest.TestCase):
             return subprocess.run(target.podman_args(*args), capture_output=True, text=True, timeout=90,
                                   check=check, env=env)
 
-        def start(probe, *command, options=()):
+        def start(probe, *command, options=(), volume=None):
             capacity()
-            podman("run", "-d", "--name", probe, "--memory", "1g", "-v", mount, *options, image, *command)
+            podman("run", "-d", "--name", probe, "--memory", "1g", "-v", volume or mount, *options, image, *command)
             for _ in range(150):
                 if podman("inspect", "--format", "{{.State.Status}}", probe).stdout.strip() == "exited":
                     return False
@@ -176,22 +176,30 @@ class PolicyStartupTests(unittest.TestCase):
         def psql(probe, sql, user="postgres", database="postgres"):
             return podman("exec", probe, "psql", "-XqAt", "-U", user, "-d", database, "-c", sql, check=False)
 
-        def tcp_key_accepted(probe):
-            # The key reaches psql through the environment of the podman call, never an argument.
-            return podman("exec", "-e", "PGPASSWORD", probe, "psql", "-XqAt", "-h", "127.0.0.1", "-U", "postgres",
-                          "-d", "postgres", "-c", "SELECT 1", check=False,
-                          env={**os.environ, "PGPASSWORD": "r4-synthetic-key"}).returncode == 0
+        def tcp_key_accepted(probe, key="r4-synthetic-key"):
+            # Password-authenticated TCP. The image trusts its own loopback, so the probe connects to the
+            # container's network address, where pg_hba requires scram-sha-256; the key reaches psql
+            # through the podman call's environment.
+            result = podman("exec", "-e", "PGPASSWORD", probe, "sh", "-c",
+                            'psql -XqAt -w -h "$(hostname -i | cut -d" " -f1)" -U postgres -d postgres -c "SELECT 1"',
+                            check=False, env={**os.environ, "PGPASSWORD": key})
+            return result.returncode == 0
 
-        podman("volume", "create", name)
+        # Round 6 (Sol P2-6, Opus 1): a case whose outcome is a credential gets a volume of its own, so
+        # an earlier case's password change cannot satisfy it.
+        volumes = [name, name + "-nonroot", name + "-path"]
+        for volume in volumes:
+            podman("volume", "create", volume)
         probes = []
         try:
             # Opus P3-1, reconciled by test: as a non-root user the image fails closed before any start
             # (its health passfile is root's to write), so no override is silently skipped there.
             # The private password start can answer on its local socket for a moment first (Sol round 5,
             # P3-7, a workstream 1 input), so the outcome asserted is the container's exit, not readiness.
+            nonroot = name + "-nonroot:/var/lib/postgresql"
             probes.append(name + "-nonroot")
             capacity()
-            podman("run", "-d", "--name", probes[-1], "--memory", "1g", "-v", mount, "--user", "postgres",
+            podman("run", "-d", "--name", probes[-1], "--memory", "1g", "-v", nonroot, "--user", "postgres",
                    "--env-file", str(secret), image, "/usr/lib/postgresql/18/bin/postgres")
             for _ in range(150):
                 if podman("inspect", "--format", "{{.State.Status}}", probes[-1]).stdout.strip() == "exited":
@@ -199,11 +207,21 @@ class PolicyStartupTests(unittest.TestCase):
                 time.sleep(0.2)
             self.assertEqual(podman("inspect", "--format", "{{.State.Status}}", probes[-1]).stdout.strip(), "exited")
             self.assertNotEqual(podman("inspect", "--format", "{{.State.ExitCode}}", probes[-1]).stdout.strip(), "0")
-            # The path form as root is the server named by its path: it starts with the override applied.
+            # What it leaves behind, pinned until workstream 1 decides: nothing listened on TCP, and the
+            # private start had already applied the override before the exit.
+            self.assertNotIn("listening on IPv4", logs(probes[-1]))
+            probes.append(name + "-nonroot-after")
+            self.assertTrue(start(probes[-1], "postgres", volume=nonroot))
+            self.assertTrue(tcp_key_accepted(probes[-1]), "the non-root start's key state changed")
+            self.assertFalse(tcp_key_accepted(probes[-1], "root"))
+            # The path form as root is the server named by its path: on a volume of its own, it starts with
+            # the override applied and the image's default key refused.
             probes.append(name + "-path")
             self.assertTrue(start(probes[-1], "/usr/lib/postgresql/18/bin/postgres",
-                                  options=("--env-file", str(secret))), logs(probes[-1])[-300:])
+                                  options=("--env-file", str(secret)), volume=name + "-path:/var/lib/postgresql"),
+                            logs(probes[-1])[-300:])
             self.assertTrue(tcp_key_accepted(probes[-1]), "the path form skipped the password override")
+            self.assertFalse(tcp_key_accepted(probes[-1], "root"), "the path form left the default key working")
             # Sol P3-7: a quoted preload entry is refused rather than split on its commas.
             probes.append(name + "-quoted")
             podman("stop", probes[-2])
@@ -233,5 +251,5 @@ class PolicyStartupTests(unittest.TestCase):
             self.assertTrue(start(probes[-1], "postgres"), logs(probes[-1])[-400:])
         finally:
             podman("rm", "-f", *probes, check=False)
-            podman("volume", "rm", name, check=False)
+            podman("volume", "rm", *volumes, check=False)
             secret.unlink()
