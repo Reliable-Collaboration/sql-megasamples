@@ -138,9 +138,10 @@ class ServerCopies:
                     if reason == "not-exclusive" and not self.args.dry_run:
                         raise CopyError(8 if removed else 5, "not-exclusive",
                                         "another account can replace the copy", row["identity"])
-                    if reason == "ready" and not self.expired(row):
+                    # A proven `dropping` copy whose lease has ended is the sweep's to finish (2.2).
+                    if reason in ("ready", "dropping") and not self.expired(row):
                         reason = "leased"
-                    if reason in ("ready", "stale", "gone"):
+                    if reason in ("ready", "dropping", "stale", "gone"):
                         if self.args.dry_run:
                             removed.append(selected)
                         else:
