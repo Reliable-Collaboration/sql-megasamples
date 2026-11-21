@@ -175,8 +175,8 @@ is the registry the configuration names.
   database a second time). Details: `knowledge/decisions/postgres-image-shape.md`.
 * **Accounts.** `postgres` (superuser, `root`), `admin` (owns the sample databases; `CREATEDB`,
   `CREATEROLE`; not a superuser), `demo` (PostgreSQL's built-in
-  `pg_read_all_data` role and no write privilege; large-object creation closed by
-  `engines/postgres/init/10-large-objects.sql`; see `docs/strict-read-account.md`), and `copier`
+  `pg_read_all_data` role and no write privilege; otherwise PostgreSQL's defaults; see
+  `docs/strict-read-account.md`), and `copier`
   (section 4.5). `POSTGRES_PASSWORD`, `ADMIN_PASSWORD`, `DEMO_PASSWORD` override them
   at start through the wrapper entrypoint. Tag: `sql-megasamples-postgres:dev`.
 * **Registry.** Database `megasamples`, table `datasets`: MySQL's columns plus `engine` and

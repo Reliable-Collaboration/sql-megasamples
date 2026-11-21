@@ -157,9 +157,8 @@ psql -W -h 127.0.0.1 -p 5432 -U demo sakila
 holds PostgreSQL's built-in read role, `pg_read_all_data`, and no write privilege, directly or through
 any role. So it reads sample tables, including tables `admin` later creates in a sample database's
 `public` schema, and every insert, update, delete, truncate, `CREATE` or `DROP` is refused with
-PostgreSQL's own permission error. It also cannot create large objects, the one write PostgreSQL's
-defaults would give every role. Otherwise PostgreSQL's defaults stand: it may use temporary tables
-and call built-in functions. On MySQL, `demo` reads through `SELECT` and `SHOW VIEW` grants (above).
+PostgreSQL's own permission error. Otherwise PostgreSQL's defaults stand: it may use temporary
+tables, call built-in functions and create large objects of its own, none of which changes a sample. On MySQL, `demo` reads through `SELECT` and `SHOW VIEW` grants (above).
 
 **The PostgreSQL `copy` client needs libpq.** The package installs the pure Psycopg distribution,
 which loads the system's libpq (for example Debian's `libpq5`). Without it,

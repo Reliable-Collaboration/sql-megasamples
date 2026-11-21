@@ -18,8 +18,8 @@
   copy. `reset --status postgres` reports leftover PostgreSQL data directories, and `make up` warns
   about them.
 - **`demo` is read-only by each engine's own model.** On PostgreSQL it holds the built-in
-  `pg_read_all_data` role and no write privilege, and cannot create large objects; otherwise
-  PostgreSQL's defaults stand (temporary tables, built-in functions). On MySQL it reads through
+  `pg_read_all_data` role and no write privilege; otherwise PostgreSQL's defaults stand (temporary
+  tables, built-in functions, large objects of its own). On MySQL it reads through
   `SELECT` and `SHOW VIEW` grants.
 - **`make down` says what it discards** before it does it.
 

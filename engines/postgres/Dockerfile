@@ -56,19 +56,11 @@ done
 psql -v ON_ERROR_STOP=1 -q -f /build/databases/registry.sql megasamples
 pg_ctl -w -m fast stop >/dev/null
 SH
-# Accounts after loading, so changing them reuses the bulk-load layer.
-COPY engines/postgres/init/10-large-objects.sql /build/init/
+# The copy accounts after loading, so changing them reuses the bulk-load layer.
 RUN <<'SH'
 #!/bin/bash
 set -euo pipefail
 pg_ctl -w -o "-c listen_addresses=''" start >/dev/null
-# Large-object creation closed in every database and both templates. template0 is opened
-# privately for this pass, then returned to its original nonconnectable state.
-psql -v ON_ERROR_STOP=1 -q -c 'ALTER DATABASE template0 ALLOW_CONNECTIONS true' postgres
-while IFS= read -r db; do
-  psql -v ON_ERROR_STOP=1 -q -f /build/init/10-large-objects.sql "$db"
-done < <(psql -At -c 'SELECT datname FROM pg_database ORDER BY datname' postgres)
-psql -v ON_ERROR_STOP=1 -q -c 'ALTER DATABASE template0 ALLOW_CONNECTIONS false' postgres
 if [ -f /build/databases/copy-roles.sql ]; then
     psql -v ON_ERROR_STOP=1 -q -f /build/databases/copy-roles.sql megasamples
 fi
