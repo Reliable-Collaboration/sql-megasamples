@@ -13,7 +13,7 @@ there (ARCHITECTURE.md section 3).
 """
 import argparse, os, subprocess, sys
 
-from megasamples import workspace, compose, config as stack, console_page, fetch as fetcher, engines as engine_registry
+from megasamples import data_volumes, workspace, compose, config as stack, console_page, fetch as fetcher, engines as engine_registry
 from megasamples.paths import COMPOSE, ROOT
 
 
@@ -172,8 +172,8 @@ def up(argv=None):
             stale.append(name)
     if stale:
         print(f"  . recreating {', '.join(stale)}: the image was rebuilt since the container started")
-        if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--force-recreate", "--renew-anon-volumes",
-                           "--no-deps", "--wait", *stale], cwd=ROOT).returncode != 0:
+        # The volumes it replaces are removed by name, as reset's are (Opus round 10, P2-1).
+        if data_volumes.recreate(stale, [engine_registry.get(name).container for name in stale]):
             return 1
     if "landing" in cfg.consoles:
         # the bind mount's source; Docker would otherwise create it owned by root
@@ -205,7 +205,7 @@ def down(argv=None):
     ap.parse_args(argv)
     if not os.path.exists(COMPOSE):
         compose.main([])
-    return subprocess.run(["docker", "compose", "-f", COMPOSE, "down"], cwd=ROOT).returncode
+    return data_volumes.down().returncode
 
 
 def check(argv=None):

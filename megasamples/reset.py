@@ -30,6 +30,7 @@ import argparse, fcntl, json, os, re, subprocess, sys, time, tempfile, uuid
 from contextlib import ExitStack, contextmanager, nullcontext
 
 from megasamples import compose, config as stack, consoles, datasets as inventory, engines as engine_registry
+from megasamples import data_volumes as volumes
 from megasamples.credentials import client, session
 from megasamples.engines import unique_databases
 from megasamples.paths import COMPOSE, ROOT
@@ -120,12 +121,8 @@ def reset_locks(names):
 def data_volumes(container):
     """The anonymous volumes a container's data lives in (the images declare one for their data directory). An
     anonymous volume is named by a 64-digit hex id; a named one (the SQLite files the consoles share) is never
-    one of them."""
-    mounts = sh("docker", "inspect", "-f", "{{json .Mounts}}", container)
-    if mounts.returncode != 0:
-        return []
-    return [m["Name"] for m in json.loads(mounts.stdout or "[]")
-            if m.get("Type") == "volume" and re.fullmatch(r"[0-9a-f]{64}", m.get("Name") or "")]
+    one of them. The shared helper, so `up` removes what it replaces the same way."""
+    return volumes.attached(container)
 
 
 def reset_engines(names):
@@ -142,13 +139,7 @@ def reset_engines(names):
     if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--force-recreate", "--renew-anon-volumes",
                        "--no-deps", "--wait", *names], cwd=ROOT).returncode != 0:
         return 1
-    for container, volumes in replaced.items():
-        for volume in volumes:
-            if volume in data_volumes(container):
-                continue
-            removed = sh("docker", "volume", "rm", volume)
-            print(f"  . removed the replaced data volume {volume[:12]}" if removed.returncode == 0
-                  else f"  ! could not remove the replaced data volume {volume}: {removed.stderr.strip()[:200]}")
+    volumes.remove_replaced(replaced, attached=lambda container: data_volumes(container))
     return 0
 
 

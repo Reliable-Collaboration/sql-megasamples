@@ -96,7 +96,8 @@ def clean(also_stack=False):
             print(f"  removed {n}")
 
     if also_stack:
-        p = subprocess.run(["docker", "compose", "down"], capture_output=True, text=True)
+        from megasamples import data_volumes
+        p = data_volumes.down(capture=True)
         print("  stack down" if p.returncode == 0
               else f"  could not bring the stack down: {p.stderr.strip()[:200]}")
     return 0
