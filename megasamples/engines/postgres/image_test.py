@@ -48,6 +48,16 @@ class Checks:
     def expect(self, cond, label): (self.ok if cond else self.fail)(label)
 
 
+def demo_write_checks(c, schema, table):
+    """demo is refused each write to a baked table."""
+    for statement, label in [
+            ("CREATE TABLE nope (i int)", "CREATE"),
+            (f'DELETE FROM "{table}"', "DELETE"),
+            (f'UPDATE "{table}" SET "{table}" = NULL', "UPDATE"),
+            (f'DROP TABLE "{table}"', "DROP")]:
+        c.expect(q(statement, user="demo", pw="demo", database=schema).returncode != 0, f"demo cannot {label}")
+
+
 def override_checks(c):
     """The password overrides, on a container of their own: only the one this run starts (Sol round 10,
     P2-1). A leftover from an interrupted run goes first, with its volumes; a failed launch is a failure,
@@ -134,12 +144,7 @@ def main(argv=None):
         table = next(iter(yaml.safe_load(open(os.path.join(ROOT, "datasets", first, "tests", "expected_counts.yaml"), encoding="utf-8"))))
         c.expect(q("SELECT 1", user="demo", pw="demo", database=schema).returncode == 0, "demo can connect")
         c.expect(q(f'SELECT count(*) FROM "{table}"', user="demo", pw="demo", database=schema).returncode == 0, "demo can read")
-        for statement, label in [
-                ("CREATE TABLE nope (i int)", "CREATE"),
-                (f'DELETE FROM "{table}"', "DELETE"),
-                (f'UPDATE "{table}" SET "{table}" = NULL', "UPDATE"),
-                (f'DROP TABLE "{table}"', "DROP")]:
-            c.expect(q(statement, user="demo", pw="demo", database=schema).returncode != 0, f"demo cannot {label}")
+        demo_write_checks(c, schema, table)
         w = q("CREATE TABLE t_probe (i int); DROP TABLE t_probe", user="admin", pw="admin", database=schema)
         c.expect(w.returncode == 0, "admin can write" + ("" if w.returncode == 0 else f" -- {w.stderr.strip()[:120]}"))
         # the baked tables are admin's own: the "full access" account can change and remove them
