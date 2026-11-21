@@ -261,6 +261,7 @@ INSERT INTO read_routine_names (name,reason) VALUES
 ('current_schema','Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings'),
 ('current_schemas','Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings'),
 ('current_setting','Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings'),
+('pg_current_snapshot','Returns the current snapshot without assigning an XID'),
 ('current_user','Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings'),
 ('session_user','Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings'),
 ('system_user','Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings'),

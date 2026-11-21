@@ -58,7 +58,6 @@ for d in /build/databases/*/; do
   psql -U admin -v ON_ERROR_STOP=1 -q -f "$d/views.sql" "$name"
   psql -U admin -v ON_ERROR_STOP=1 -q -f "$d/triggers.sql" "$name"
   psql -U admin -v ON_ERROR_STOP=1 -q -c "ANALYZE" "$name"
-  psql -v ON_ERROR_STOP=1 -q -c "GRANT CONNECT ON DATABASE \"$name\" TO demo, admin" postgres
   psql -v ON_ERROR_STOP=1 -q -f /build/init/20-grants.sql "$name"
 done
 psql -v ON_ERROR_STOP=1 -q -f /build/databases/registry.sql megasamples

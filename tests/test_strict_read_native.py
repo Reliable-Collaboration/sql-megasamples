@@ -77,7 +77,8 @@ def test_postgres_demo_has_no_unapproved_routines(database):
     # User promises of volatility never qualify a user routine for this profile.
     unsafe = accepted('postgres', database, """SELECT p.oid::regprocedure::text FROM pg_proc p
         WHERE has_function_privilege(current_user,p.oid,'EXECUTE') AND
-        ((p.pronamespace NOT IN ('pg_catalog'::regnamespace,'information_schema'::regnamespace)) OR p.provolatile='v' OR
+        ((p.pronamespace NOT IN ('pg_catalog'::regnamespace,'information_schema'::regnamespace)) OR
+         (p.provolatile='v' AND p.oid <> 'pg_catalog.pg_export_snapshot()'::regprocedure) OR
          p.proname IN ('txid_current','pg_current_xact_id') OR p.prosecdef) ORDER BY 1""")
     assert unsafe == '', 'demo can execute unapproved routines: ' + unsafe
 
@@ -105,6 +106,8 @@ def test_postgres_future_databases_schemas_and_owners():
         db = 'strict_future_' + creator
         accepted('postgres', 'postgres', f'CREATE DATABASE {db} OWNER admin TEMPLATE {template}', creator)
         try:
+            assert query('postgres', db, 'SELECT 1').returncode != 0
+            accepted('postgres', 'postgres', f'GRANT CONNECT ON DATABASE {db} TO demo', 'admin')
             test_postgres_demo_cannot_make_temporary_objects(db)
             test_postgres_demo_cannot_create_large_objects(db)
             test_postgres_demo_has_no_unapproved_routines(db)
@@ -118,8 +121,8 @@ def test_postgres_future_databases_schemas_and_owners():
             accepted('postgres', db, 'CREATE ROLE strict_later_owner; CREATE SCHEMA later_owner AUTHORIZATION strict_later_owner; '
                      "SET ROLE strict_later_owner; CREATE FUNCTION later_owner.f() RETURNS int LANGUAGE sql AS 'SELECT 1'; RESET ROLE", 'postgres')
             test_postgres_demo_has_no_unapproved_routines(db)
-            accepted('postgres', db, "SET ROLE strict_later_owner; ALTER DEFAULT PRIVILEGES REVOKE EXECUTE ON ROUTINES FROM PUBLIC; "
-                     "CREATE FUNCTION later_owner.private_f() RETURNS int LANGUAGE sql AS 'SELECT 1'; RESET ROLE", 'postgres')
+            accepted('postgres', db, "ALTER DEFAULT PRIVILEGES FOR ROLE strict_later_owner REVOKE EXECUTE ON ROUTINES FROM PUBLIC; "
+                     "SET ROLE strict_later_owner; CREATE FUNCTION later_owner.private_f() RETURNS int LANGUAGE sql AS 'SELECT 1'; RESET ROLE", 'postgres')
             assert accepted('postgres', db,
                 "SELECT has_function_privilege('admin','later_owner.private_f()','EXECUTE')", 'postgres') == 'f'
         finally:
@@ -168,12 +171,14 @@ def test_postgres_demo_exact_routine_allowlist():
     sql_helpers = ','.join("'" + name + "'" for name in helpers)
     for database in PG_DATABASES:
         expected = accepted('postgres', database, "SELECT p.oid::regprocedure::text FROM pg_proc p "
-            "WHERE p.provolatile IN ('i','s') AND NOT p.prosecdef AND "
+            "WHERE (p.provolatile IN ('i','s') AND NOT p.prosecdef AND "
             f"((p.pronamespace='information_schema'::regnamespace AND p.proname IN ({sql_helpers}) AND p.proowner='postgres'::regrole) OR "
             "(p.pronamespace='pg_catalog'::regnamespace AND p.oid<16384 AND "
             f"(p.proname IN ({sql_names}) OR "
             "EXISTS(SELECT 1 FROM pg_operator o WHERE o.oid<16384 AND o.oprcode=p.oid) OR "
-            "EXISTS(SELECT 1 FROM pg_cast c WHERE c.oid<16384 AND c.castfunc=p.oid)))) ORDER BY 1", 'postgres')
+            "EXISTS(SELECT 1 FROM pg_cast c WHERE c.oid<16384 AND c.castfunc=p.oid))))) OR "
+            "p.oid IN ('pg_catalog.pg_export_snapshot()'::regprocedure, "
+            "'pg_catalog.pg_database_size(oid)'::regprocedure) ORDER BY 1", 'postgres')
         actual = accepted('postgres', database, "SELECT oid::regprocedure::text FROM pg_proc "
             "WHERE has_function_privilege('demo',oid,'EXECUTE') ORDER BY 1", 'postgres')
         assert actual == expected, database + ': executable routines differ from the explicit policy'

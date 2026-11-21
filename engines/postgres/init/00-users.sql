@@ -10,10 +10,16 @@
 ALTER USER postgres WITH PASSWORD 'root';
 CREATE ROLE admin WITH LOGIN PASSWORD 'admin' CREATEDB CREATEROLE;
 CREATE ROLE demo WITH LOGIN PASSWORD 'demo';
+CREATE ROLE megasamples_read;
+CREATE ROLE megasamples_write_routines;
+CREATE ROLE megasamples_working_read;
+CREATE ROLE megasamples_working_write;
+GRANT megasamples_read TO megasamples_working_read WITH INHERIT TRUE, SET FALSE;
+GRANT megasamples_read, megasamples_write_routines TO megasamples_working_write WITH INHERIT TRUE, SET FALSE;
+GRANT megasamples_working_read TO demo WITH INHERIT TRUE, SET FALSE;
 
 -- the provenance registry: one row per dataset, the same columns as MySQL's megasamples.datasets
 CREATE DATABASE megasamples TEMPLATE template0 ENCODING 'UTF8';
-GRANT CONNECT ON DATABASE megasamples TO demo, admin;
 \connect megasamples
 CREATE TABLE datasets (
   name              varchar(64)  NOT NULL PRIMARY KEY,
@@ -27,8 +33,8 @@ CREATE TABLE datasets (
   engine            varchar(16)  NOT NULL DEFAULT 'postgres',
   not_ported        json
 );
-GRANT SELECT ON datasets TO demo;
+GRANT SELECT ON datasets TO PUBLIC;
 GRANT ALL ON datasets TO admin;
 -- the same schema rights the dataset databases get, so admin can create here too
-GRANT USAGE ON SCHEMA public TO demo, admin;
+GRANT USAGE ON SCHEMA public TO PUBLIC;
 GRANT CREATE ON SCHEMA public TO admin;

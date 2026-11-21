@@ -674,14 +674,13 @@ Input to **one independent review, of two things: the final compiled hook, and t
 |---|---|---|
 | 1 | Before `CREATE DATABASE` | Refuse, when the creator would not hold the new owner's rights. |
 | 2 | See below | The confinement of a namespace's owner. [108-5] |
-| 3 | After `CREATE DATABASE` | Close `CONNECT` and `TEMPORARY` on the new database to `PUBLIC`, **with the server's own rights, not the creator's;** then confirm it. **If it cannot confirm, it closes the database to every connection.** It raises no error of its own (below). |
+| 3 | After the catalog insert and before the file copy in `CREATE DATABASE` | Close `CONNECT` and `TEMPORARY` to `PUBLIC` through the server's catalog interface, then confirm it. If confirmation fails, mark the database as accepting no connections. |
 | 4 | Before `ALTER ROLE`, `ALTER ROLE … SET` and `ALTER DEFAULT PRIVILEGES` | Refuse, when the caller is neither a superuser nor a holder of `CREATEROLE`. [G-6b] |
 
 **H-3's resolution, and what rule 3 does when it cannot confirm.** [D: required before the merge; review 5's finding 1.] The gate showed the hazard is real: an error after the copy orphans the copied files [G-4b].
-- **Every refusal the hook can decide is made before the copy:** rules 1 and 2, and every check of a name, an owner or a template.
-- **The close does not depend on who created the database.** The hook makes it with the server's own rights. So the one known cause of a close that does nothing, a creator without the owner's rights [G-4a], cannot arise there; rule 1 still refuses that creator before the copy.
-- **After the copy the hook raises nothing of its own.** It works with interrupts held for those few statements.
-- **A database that is not confirmed closed is never left open.** If the confirmation fails, the hook marks the new database as accepting no connections, and warns, naming it, to the caller and in the server's log. **Both outcomes hold on that path: every directory has a catalog row, and a second session cannot enter the database.** That is so for a create by direct SQL and for one through the CLI. Whether that last step can be made inside the hook is the hook review's to confirm [I].
+- **All policy work is complete before the file copy starts.** PostgreSQL calls the object-access hook after inserting the new database's catalog row and before copying any of its files. Rule 1 checks the resolved owner there. Rule 2 checks the source and destination before PostgreSQL handles the statement. [PostgreSQL source, read 2026-11-21 02:35–02:41 UTC](https://github.com/postgres/postgres/blob/REL_18_7/src/backend/commands/dbcommands.c#L1394-L1469)
+- Rule 3 changes and reads back the ACL in that same pre-copy hook. If the ACL does not confirm closure, the hook sets `datallowconn` to false and emits a warning. An error writing the catalog aborts creation before any clone files exist.
+- The utility hook returns directly after PostgreSQL handles the statement. The narrower placement removes the policy's extra error window after file creation and retains PostgreSQL's own crash and commit limits.
 - **The CLI does not trust the hook for its own copies:** before it records `created` it reads the new database's privileges, and a copy that is not closed as rule 3 leaves it is kept, `interrupted`, and reported.
 - **What stays possible goes to the independent hook review** [113-4], which reports what can raise between the copy and the commit, and whether a clean-up in the hook would close it.
   - **Accepted in advance, as a stated limit in the README:** an error PostgreSQL itself raises for want of a resource, or a crash.
@@ -693,7 +692,7 @@ Input to **one independent review, of two things: the final compiled hook, and t
 - **So the built hook reads the catalogs through the server's own catalog interfaces, or by fully qualified names and operators under a search path it fixes itself.** Nothing the caller can create or set is consulted.
 - **T-7 runs all four confinement cases twice:** from the `megasamples` database, and from a database the owner owns, with a relation and a function of the catalog's names planted there and the search path pointing at them. **No PostgreSQL copy is issued, here or from elsewhere, before that passes.**
 
-**Rule 2, exactly.****Rule 2, exactly.**
+**Rule 2, exactly.**
 - **A namespace is known to the hook by its marker role:** `megasamples_copy_<prefix>_owner`. An account is that namespace's owner if it is a member.
 - **A registered template** is a database marked a template, accepting no connections, owned by a superuser, **whose comment carries the service's template tag.** Only its owner can set that comment.
 - **`CREATE DATABASE` by a namespace's owner is refused unless** its source is a registered template `<database>_start` [G-29b], **and** its name is exactly `<prefix>_<database>_` followed by twelve hexadecimal digits, with that `<prefix>` one of the namespaces it owns and that `<database>` its source's [G-29a].
