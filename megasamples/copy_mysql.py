@@ -127,7 +127,9 @@ class MySQLCopies(ServerCopies):
                          "ON COMPLETION PRESERVE DISABLE DO SELECT 1")
             row = self.change(row, phase="created", proof={"event": marker})
             replay(self.execute, self.all, metadata, row["database"] + "_start", name, remove_definer=True)
-            return self.result(name, self.change(row, phase="ready"), "ready")
+            row = self.change(row, phase="ready")
+            # Classified as show would: an outside grant that could replace it is not-exclusive.
+            return self.result(name, row, self.state(name, row))
         except (self.errors.Error, KeyError, TypeError, ValueError):
             raise CopyError(8, "create-unsettled", "schema copy did not verify", identity) from None
 

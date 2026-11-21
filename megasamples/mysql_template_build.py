@@ -79,6 +79,26 @@ def exclusion(database, selected, size, triggers, functions):
     return None, None
 
 
+def allocated_bytes(database):
+    innodb = query("""
+        SELECT COALESCE(SUM(s.ALLOCATED_SIZE),0)
+        FROM information_schema.INNODB_TABLESPACES s
+        WHERE s.SPACE IN (
+            SELECT t.SPACE FROM information_schema.INNODB_TABLES t
+            WHERE SUBSTRING_INDEX(t.NAME,'/',1)=?
+        )
+    """, (database,))[0][0]
+    other_engines = query("SELECT 1 FROM information_schema.TABLES "
+                          "WHERE TABLE_SCHEMA=? AND TABLE_TYPE='BASE TABLE' AND ENGINE<>'InnoDB' LIMIT 1",
+                          (database,))
+    if not other_engines:
+        return int(innodb)
+    datadir = Path(query("SELECT @@datadir")[0][0]) / database
+    other_files = sum(path.stat().st_blocks * 512 for path in datadir.iterdir()
+                      if path.is_file() and path.suffix != ".ibd")
+    return int(innodb) + other_files
+
+
 def build_offers(settings):
     run("CREATE TABLE megasamples.template_ddl (name varchar(64) PRIMARY KEY, "
         "reason varchar(32), detail text, metadata json)")
@@ -124,6 +144,38 @@ def account(name):
     return f"'{name}'@'%'"
 
 
+def outside_grants(prefix, owner, readers):
+    namespace = f"LEFT(s.SCHEMA_NAME,{len(prefix) + 1}) = '{prefix}_'"
+    outside = (f"NOT ((g.User IN ('{owner}','admin') AND g.Host='%') "
+               "OR (g.User='root' AND g.Host IN ('%','localhost')))")
+    readers = [name for name, scopes in readers.items() if prefix in scopes]
+    intended = "TRUE"
+    if readers:
+        names = ", ".join(f"'{name}'" for name in readers)
+        pattern = escaped_pattern(prefix) + "\\_%"
+        privileges = [column for (column,) in query(
+            "SELECT COLUMN_NAME FROM information_schema.COLUMNS "
+            "WHERE TABLE_SCHEMA='mysql' AND TABLE_NAME='db' AND RIGHT(COLUMN_NAME,5)='_priv'"
+        ) if column.lower() not in ("select_priv", "show_view_priv")]
+        no_other_privileges = " AND ".join(f"g.{quote(column)}='N'" for column in privileges)
+        intended = (f"NOT (g.Host='%' AND g.User IN ({names}) AND g.Db='{pattern}' "
+                    f"AND g.Select_priv='Y' AND g.Show_view_priv='Y' AND {no_other_privileges})")
+    schema = f"""
+        SELECT s.SCHEMA_NAME AS copy_name, g.User, g.Host, g.Db, g.Create_priv, g.Drop_priv
+        FROM information_schema.SCHEMATA s JOIN mysql.db g ON s.SCHEMA_NAME LIKE g.Db
+        WHERE {namespace} AND {outside} AND {intended}
+    """
+    narrower = [
+        f"""
+        SELECT s.SCHEMA_NAME, g.User, g.Host, g.Db, 'N', 'N'
+        FROM information_schema.SCHEMATA s JOIN mysql.{table} g ON s.SCHEMA_NAME=g.Db
+        WHERE {namespace} AND {outside}
+        """
+        for table in ("tables_priv", "columns_priv", "procs_priv")
+    ]
+    return " UNION ".join([schema, *narrower])
+
+
 def grant_rights(settings):
     run("CREATE TABLE megasamples.copy_service (tag varchar(40) PRIMARY KEY)")
     run("INSERT INTO megasamples.copy_service VALUES ('megasamples-service/1')")
@@ -151,15 +203,7 @@ def grant_rights(settings):
         grant("SELECT", map(escaped_pattern, templates), principal)
         grant("ALL PRIVILEGES", [escaped_pattern(prefix) + "\\_%"], principal)
         lookup = qualify("megasamples", "copy_grants_" + prefix)
-        run(f"""
-            CREATE SQL SECURITY DEFINER VIEW {lookup} AS
-            SELECT s.SCHEMA_NAME AS copy_name, g.User, g.Host, g.Db, g.Create_priv, g.Drop_priv
-            FROM information_schema.SCHEMATA s
-            JOIN mysql.db g ON s.SCHEMA_NAME LIKE g.Db
-            WHERE LEFT(s.SCHEMA_NAME, {len(prefix) + 1}) = '{prefix}_' AND NOT
-                 ((g.User = '{owner}' AND g.Host = '%') OR (g.User = 'admin' AND g.Host = '%') OR
-                  (g.User = 'root' AND g.Host IN ('%', 'localhost')))
-        """)
+        run(f"CREATE SQL SECURITY DEFINER VIEW {lookup} AS " + outside_grants(prefix, owner, settings["readers"]))
         run(f"GRANT SELECT ON {lookup} TO {principal}")
 
     for mode in ("readers", "writers"):
