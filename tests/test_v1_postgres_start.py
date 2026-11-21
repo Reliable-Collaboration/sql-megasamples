@@ -143,3 +143,81 @@ class PolicyStartupTests(unittest.TestCase):
         finally:
             podman("rm", "-f", *probes, check=False)
             podman("volume", "rm", name, check=False)
+
+    def test_round_four_start_routes(self):
+        """Sol round 4, P2-1 and P3-7; Opus round 4, P3-1 and P3-4."""
+        target = Target()
+        name = "dl077-policy-r4-" + uuid4().hex
+        mount = name + ":/var/lib/postgresql"
+        image = os.environ["DL077_PG_POLICY_IMAGE"]
+        secret = Path(os.environ["DL077_GATE_TARGET"]).parent / (name + ".env")
+        secret.write_text("POSTGRES_PASSWORD=r4-synthetic-key\n")
+        secret.chmod(0o600)
+
+        def podman(*args, check=True, env=None):
+            return subprocess.run(target.podman_args(*args), capture_output=True, text=True, timeout=90,
+                                  check=check, env=env)
+
+        def start(probe, *command, options=()):
+            capacity()
+            podman("run", "-d", "--name", probe, "--memory", "1g", "-v", mount, *options, image, *command)
+            for _ in range(150):
+                if podman("inspect", "--format", "{{.State.Status}}", probe).stdout.strip() == "exited":
+                    return False
+                if podman("exec", probe, "pg_isready", "-U", "postgres", check=False).returncode == 0:
+                    return True
+                time.sleep(0.2)
+            self.fail("neither started nor exited")
+
+        def logs(probe):
+            out = podman("logs", probe)
+            return out.stdout + out.stderr
+
+        def psql(probe, sql, user="postgres", database="postgres"):
+            return podman("exec", probe, "psql", "-XqAt", "-U", user, "-d", database, "-c", sql, check=False)
+
+        def tcp_key_accepted(probe):
+            # The key reaches psql through the environment of the podman call, never an argument.
+            return podman("exec", "-e", "PGPASSWORD", probe, "psql", "-XqAt", "-h", "127.0.0.1", "-U", "postgres",
+                          "-d", "postgres", "-c", "SELECT 1", check=False,
+                          env={**os.environ, "PGPASSWORD": "r4-synthetic-key"}).returncode == 0
+
+        podman("volume", "create", name)
+        probes = []
+        try:
+            # Opus P3-1: a path-form command as postgres still applies the password override.
+            probes.append(name + "-path")
+            self.assertTrue(start(probes[-1], "/usr/lib/postgresql/18/bin/postgres",
+                                  options=("--user", "postgres", "--env-file", str(secret))))
+            self.assertTrue(tcp_key_accepted(probes[-1]), "the path form skipped the password override")
+            # Sol P3-7: a quoted preload entry is refused rather than split on its commas.
+            probes.append(name + "-quoted")
+            podman("stop", probes[-2])
+            self.assertFalse(start(probes[-1], "postgres", "-c",
+                                   'shared_preload_libraries="pg_stat_statements,read_policy"'))
+            self.assertIn("refuses a quoted preload entry", logs(probes[-1]))
+            # Sol P2-1: a preload persisted without read_policy, restored only on the command line.
+            probes.append(name + "-base")
+            self.assertTrue(start(probes[-1], "postgres"))
+            self.assertEqual(psql(probes[-1], "ALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements'").returncode, 0)
+            podman("stop", probes[-1])
+            probes.append(name + "-private")
+            self.assertFalse(start(probes[-1], "postgres", "-c", "shared_preload_libraries=read_policy",
+                                   options=("--env-file", str(secret))))
+            self.assertIn("refuses a server without the read_policy library", logs(probes[-1]))
+            # Without password overrides there is no private start, and the public one has the hook.
+            probes.append(name + "-public")
+            self.assertTrue(start(probes[-1], "postgres", "-c", "shared_preload_libraries=read_policy"))
+            outside = psql(probes[-1], "CREATE DATABASE outside_namespace TEMPLATE chinook_start", "copier", "megasamples")
+            self.assertNotEqual(outside.returncode, 0)
+            self.assertEqual(psql(probes[-1], "ALTER SYSTEM RESET shared_preload_libraries").returncode, 0)
+            podman("stop", probes[-1])
+            # Opus P3-4: files the upstream image would repair are repaired before the check.
+            podman("run", "--rm", "--name", name + "-chown", "--user", "root", "--entrypoint", "chown", "-v", mount,
+                   image, "-R", "4321", "/var/lib/postgresql/18/docker")
+            probes.append(name + "-owned")
+            self.assertTrue(start(probes[-1], "postgres"), logs(probes[-1])[-400:])
+        finally:
+            podman("rm", "-f", *probes, check=False)
+            podman("volume", "rm", name, check=False)
+            secret.unlink()
