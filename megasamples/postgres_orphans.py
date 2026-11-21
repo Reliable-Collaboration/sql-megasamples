@@ -4,7 +4,7 @@ A caller's cancel, a resource error or a crash between CREATE DATABASE's file co
 leave a directory under the data directory with no catalog row: no SQL reaches it, and it uses disk
 until an administrator removes it (README) or the volume is next replaced. This reads the directories
 first and the catalog second, inside the running container, and reports what has no row. A create
-still in progress can appear once; a rerun settles it.
+or a drop still in progress can appear once; a rerun settles it.
 """
 import subprocess
 

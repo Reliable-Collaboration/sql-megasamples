@@ -164,6 +164,21 @@ PostgreSQL `demo` cannot modify the persistent sample tables in the tested DML/D
 Its read scope includes tables `admin` later creates in a sample database's `public` schema.
 It has no `TEMPORARY` privilege, cannot create large objects, and can execute only allowlisted routines.
 
+**What the PostgreSQL image refuses to start.** Before the server starts, the image asks
+PostgreSQL itself, with the same arguments and as `postgres`, which data directory and which preload
+libraries it would use. These include every configuration file, `postgresql.auto.conf` (what
+`ALTER SYSTEM` persisted) and every `-c` option, in any case. It then refuses to start:
+- a data directory other than `PGDATA`;
+- a data directory without the image's read-policy marker, which is a volume from before the policy;
+- a preload list without `read_policy`, checked for the server and also for the private start that
+  applies password overrides;
+- a quoted preload entry;
+- a server binary other than its own `postgres`.
+
+As root, it first makes the data directory `postgres`'s own, as the upstream image does. A start as
+a non-root user fails before any server starts. The healthcheck is healthy only while the
+`read_policy` library is loaded.
+
 **The PostgreSQL `copy` client needs libpq.** The package installs the pure Psycopg distribution,
 which loads the system's libpq (for example Debian's `libpq5`). Without it, `megasamples copy … postgres`
 exits 3 with the code `client-library` and contacts no server.
@@ -177,8 +192,8 @@ directory with no database in the catalog. No SQL reaches it; it takes disk, per
 lasts until the volume is next replaced, which clears it. This is accepted, not prevented.
 
 `megasamples up` and `megasamples reset --status postgres` report every such directory as a warning,
-with its tablespace, OID, path and size. They also say when the scan could not complete. A create in
-progress can appear once; run it again. To remove one, as the administrator:
+with its tablespace, OID, path and size. They also say when the scan could not complete. A create or a
+drop in progress can appear once; run it again. To remove one, as the administrator:
 
 1. stop every create and drop on the server (no `copy create`, `copy drop`, `copy sweep` or reset);
 2. run the check again, and confirm the OID is still absent from `pg_database`;

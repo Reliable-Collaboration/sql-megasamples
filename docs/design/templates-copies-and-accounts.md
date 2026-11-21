@@ -585,6 +585,7 @@ Otherwise exit 5, and nothing was changed.
   - a last `orphan-scan-incomplete` when a listing, a measure, the catalog or the tablespace read failed. Then no directory is reported.
 - **Exit:** 0, whether the scan is complete or incomplete. The scan changes nothing, and `orphan_scan` says how far it got.
 - **`megasamples up`** prints the same warnings to standard error after the stack starts.
+- **A create or a drop in progress** can appear once, because the directories are read before the catalog. A rerun settles it, and the README's removal route starts by stopping both.
 
 ### 3.6 Limits
 
