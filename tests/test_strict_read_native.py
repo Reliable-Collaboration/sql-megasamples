@@ -201,7 +201,9 @@ def test_postgres_demo_exact_routine_allowlist():
             "EXISTS(SELECT 1 FROM pg_operator o WHERE o.oid<16384 AND o.oprcode=p.oid) OR "
             "EXISTS(SELECT 1 FROM pg_cast c WHERE c.oid<16384 AND c.castfunc=p.oid))))) OR "
             "p.oid IN ('pg_catalog.pg_export_snapshot()'::regprocedure, "
-            "'pg_catalog.pg_database_size(oid)'::regprocedure) ORDER BY 1", 'postgres')
+            "'pg_catalog.pg_database_size(oid)'::regprocedure) OR "
+            "p.proname = 'megasamples_policy_loaded' AND p.pronamespace = 'pg_catalog'::regnamespace "
+            "AND p.pronargs = 0 ORDER BY 1", 'postgres')
         actual = accepted('postgres', database, "SELECT oid::regprocedure::text FROM pg_proc "
             "WHERE has_function_privilege('demo',oid,'EXECUTE') ORDER BY 1", 'postgres')
         assert actual == expected, database + ': executable routines differ from the explicit policy'
