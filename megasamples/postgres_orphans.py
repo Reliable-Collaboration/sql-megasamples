@@ -12,7 +12,7 @@ LIST = r'''set -eu
 cd "$PGDATA"
 measure() {
   # A directory dropped since the glob is not an orphan; one still there that du cannot read is.
-  if kib=$(du -sk "$3" 2>/dev/null | cut -f1) && [ -n "$kib" ]; then printf '%s %s %s %s\n' "$1" "$2" "$kib" "$3"
+  if out=$(du -sk "$3" 2>/dev/null); then printf '%s %s %s %s\n' "$1" "$2" "${out%%[[:space:]]*}" "$3"
   elif [ -e "$3" ]; then printf 'unreadable %s\n' "$3"
   fi
 }
@@ -22,8 +22,11 @@ for d in base/*; do
   measure pg_default "$o" "$d"
 done
 for t in pg_tblspc/*; do
-  [ -e "$t" ] || continue
+  [ -e "$t" ] || [ -L "$t" ] || continue
   s=${t#pg_tblspc/}
+  # A tablespace whose location cannot be listed is not inspected: say so, never skip it quietly.
+  if ! ls "$t"/ >/dev/null 2>&1 || ! ls "$t"/PG_*/ >/dev/null 2>&1; then printf 'unreadable %s\n' "$t"; continue; fi
+  printf 'space %s\n' "$s"
   for d in "$t"/PG_*/*; do
     [ -d "$d" ] || continue
     o=${d##*/}; case $o in *[!0-9]*) continue;; esac
@@ -56,14 +59,20 @@ def scan(container):
         oid, _, name = line.partition("|") if "|" in line else line.partition(" ")
         names[oid] = name
     warnings = []
+    inspected = {"1663", "1664"}   # pg_default and pg_global are base/ and global/
     for line in listing.stdout.splitlines():
         fields = line.split()
+        if len(fields) == 2 and fields[0] == "space":
+            inspected.add(fields[1])
+            continue
         if len(fields) != 4 or not fields[1].isdigit() or not fields[2].isdigit():
             return [{**incomplete, "reason": "a data directory could not be measured"}]
         space, oid, kib, path = fields
         if oid not in oids:
             warnings.append({"code": "orphan-directory", "engine": "postgres", "tablespace": names.get(space, space),
                              "oid": int(oid), "name": None, "path": path, "kib": int(kib)})
+    if not set(names) - {"pg_default"} <= inspected:
+        return [{**incomplete, "reason": "a tablespace's directories could not be listed"}]
     return warnings
 
 
