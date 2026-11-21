@@ -1,8 +1,8 @@
 # Workstream 1: PostgreSQL start certification, the design
 
-**Status: design, revision 10, for round 10 of the design review. No build yet.**
+**Status: design, revision 11, for round 11 of the design review. No build yet.**
 
-This document stands alone: one ordered check list (section 3), one current row table with an outcome rule per class (section 10.2), and the conformance replay and the brief's inputs inline. Section 13 traces rounds 5 to 9.
+This document stands alone: one ordered check list (section 3), one current row table with an outcome rule per class (section 10.2), and the conformance replay and the brief's inputs inline. Section 13 traces rounds 5 to 10.
 
 **The coordinator's decisions on the upgrade, applying DL-122 Q4:**
 - **Round 6:** the automated, grant-reconstructing restore was removed, in favour of a documented manual route. Round 6's P1 (both reviewers) was a confidentiality regression the restore introduced.
@@ -21,6 +21,7 @@ This document stands alone: one ordered check list (section 3), one current row 
 | 7 | revision 7, `0131bf53` | `sol-ws1-design7.md` (1 P1, 7 P2, 1 P3), `opus-ws1-design7.md` (1 P2, 4 P3) | 13.3 |
 | 8 | revision 8, `ab40130d` | `sol-ws1-design8.md` (8 P2, 1 P3), `opus-ws1-design8.md` (3 P2, 4 P3) | 13.4 |
 | 9 | revision 9, `63c9d1b4` | `sol-ws1-design9.md` (4 P2, 1 P3), `opus-ws1-design9.md` (1 P2, 5 P3) | 13.5 |
+| 10 | revision 10, `7d4abdf3` | `sol-ws1-design10.md` (4 P2, 1 P3), `opus-ws1-design10.md` (4 P3) | 13.6 |
 
 **The decisions applied:**
 - **DL-122, Q1 to Q6,** and the items DL-122 recorded for WS1.
@@ -368,7 +369,7 @@ ALTER ROLE "ROLE" PASSWORD 'SCRAM-SHA-256$4096:…';
 
 **Recorded as it happens, and printed exactly once** (Sol round 8, 6; Opus round 8, 5):
 - **Initialised:** before the private start, every requested role's state is recorded as `unattempted` in this run's state directory. Each state is then updated as soon as it is known.
-- **`in progress`** (Sol round 9, 2): immediately before a role's client is started, the only process that sends its statement, its record becomes `in progress`. When the client ends, the state table above replaces it. An exit that finds a record still `in progress` reports that role as `uncertain`, DL-122 Q6's existing state, never `unattempted`. `in progress` is a record value only, never printed. So a signal between the send and the record's update cannot report a stale `unattempted`, and a signal after a confirmation but before its record is written reports `uncertain`, not `applied`. A start with no override requests no role, and prints no per-role line.
+- **`in progress`** (Sol round 9, 2): immediately before a role's client is started, the only process that sends its statement, its record becomes `in progress`. It stays so until the role's state is decided by the table above, after the confirmation for `applied` (Opus round 10, 2). **The trap**, after reaping a client it ended, applies only the marker-only rules: rule 2 (no `megasamples-sending`: `unattempted`) and rule 4 on a real exit 3. Any other record still `in progress` is reported as `uncertain`, DL-122 Q6's existing state, never `unattempted`. `in progress` is a record value only, never printed. So a signal between the send and the record's update cannot report a stale `unattempted`, and a signal after a confirmation but before its record is written reports `uncertain`, not `applied`. A start with no override requests no role, and prints no per-role line.
 - **One rule for printing:** once the private start has begun, the per-role lines are printed **exactly once per run**, at whichever comes first:
   - **the wrapper's last act before the final `exec`.** A public server that then fails to bind or exits still leaves them in the log (Sol round 7, 4). The sequence is fixed (Opus round 9, 2):
     1. the endpoint written;
@@ -378,7 +379,8 @@ ALTER ROLE "ROLE" PASSWORD 'SCRAM-SHA-256$4096:…';
     5. the lines printed from memory;
     6. `exec`.
 
-    A signal before step 4 is the trap's, which prints from the record; after it, only step 5 prints.
+    A signal before step 4 is the trap's (Sol round 10, 3; Opus round 10, 1). Once step 2 has run, the trap prints from the in-memory copy of the record, and takes the run's refusal flag from memory too, so it writes `interrupted`, not `internal`. It removes the endpoint if step 1 wrote it. After step 4, only step 5 prints.
+    - **A stated limit:** between step 4 (the trap cleared) and step 6 (`exec`), Bash cannot block signals. Outside PID 1, a signal there loses the per-role lines; as PID 1, a signal with the default action is ignored. The window is a few statements wide.
   - **the `EXIT` trap, on a wrapper-owned exit,** directly after the coded refusal line and its `also:` lines. This covers `private-start`, `password-setup`, `private-stop`, `interrupted` and an `internal` after the private start began, the endpoint's write included.
 - **`handover_failed` prints no per-role line:** they were printed just before the `exec`. It writes only the `handover` line, after them.
 
@@ -424,7 +426,7 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
 - **Where it sits:** after R19, the passwords and the private stop; before the endpoint and the handover; on both branches.
 - **What it does now:** nothing. `locked` is reserved for it.
 - **The lock covers it.**
-- **Until slice 3,** `postgres` and `admin` sign in over TCP with published keys unless an earlier run applied an override to that role (Opus round 9, 4).
+- **Until slice 3,** `postgres` and `admin` sign in over TCP with the key in force after this run's rotation: the new key where this run applied an override, and otherwise 10.2's baseline, the published key unless an earlier run applied one (Opus round 9, 4; Sol round 10, 5).
 - **A release condition:** [110-2] holds at P on every route. T-23 checks it with missing, published, wrong and private keys, on both loopback families, with a retained volume `pg_hba.conf` carrying a loopback `trust` rule, which R8 refuses.
 - **Under slice 3's seeding,** `uninitialised` narrows to a non-empty directory.
 
@@ -443,12 +445,12 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
 
 **The line format:** `megasamples-start: refused: CODE: SENTENCE` on stderr.
 
-**The `EXIT` trap** is armed at S0. For any wrapper-owned exit, it makes sure a coded line was written for this run (`internal` with the last step if none was), and that the exit status is 1. It removes this run's directories.
+**The `EXIT` trap** is armed at S0. For any wrapper-owned exit, it makes sure a coded line was written for this run (`internal` with the last step if none was), and that the exit status is 1. It removes this run's directories, and the endpoint if this run wrote it (5.4's step 1).
 
 **The rules for codes:** codes are added, never renamed or removed. An unknown code is a refusal.
 
 **`policy-marker`'s sentence** depends on what was found (DL-122 Q4; Sol round 6, 11; Opus round 7, 4):
-- **marker `1`:** a pre-release volume. The sentence carries 7.4's items in short form: not upgraded in place; kept untouched; export your own work with `pg_dump` using the old image and load it yourself on a fresh volume; copy the volume first, and do not publish the old image's port while exporting; not carried over (sample data, passwords, custom client-authentication rules, which you should inspect first, and grants: export with `pg_dump --no-acl --no-owner`, and review default privileges); how to get the old image back. It names the README section with the full text;
+- **marker `1`:** a pre-release volume. The sentence carries 7.4's items in short form: not upgraded in place; kept untouched; export your own work with `pg_dump` using the old image and load it yourself on a fresh volume; copy the volume first; run the old image socket-only (`listen_addresses=''`, no network) and export from inside its container with `docker exec`; not carried over (sample data, passwords, custom client-authentication rules, which you should inspect first, and grants: export with `pg_dump --no-acl --no-owner`, pass `--no-owner` to `pg_restore` too, and review default privileges); on the new image, tables `admin` creates in `public` are readable by `demo`; how to get the old image back. It names the README section with the full text;
 - **a newer marker** (`3` or more): the volume was made by a newer image. Use that image;
 - **no marker:** not a megasamples format-2 volume. If it is an earlier megasamples volume, the marker-`1` advice applies; otherwise, start this image on a fresh volume;
 - **any other content:** the value found and the image's own, and the same advice as for no marker.
@@ -555,12 +557,13 @@ A recipe megasamples would have to certify buys nothing a deployer of a disposab
 - it is kept untouched. R7 refuses before any write, the ownership repair included;
 - to carry your own work, export it with PostgreSQL's own tools (`pg_dump`) using the old image, then start this image on a fresh volume and load it yourself;
 - **copy the volume first** if you need it unchanged: running the old image on it is an ordinary server start, and writes to it (Opus round 9, 5);
-- **run the old image without publishing its port** while you export: it trusts both loopbacks and serves the published privileged keys;
+- **run the old image socket-only while you export,** with `listen_addresses=''` and no network (`--network none`), and export from inside its container with `docker exec`: it trusts both loopbacks and serves the published privileged keys, and a peer on any network it joins could reach it (Sol round 10, 1);
 - what is not carried over, since the fresh image carries nothing forward:
   - the sample data, which the new volume has fresh;
   - passwords;
   - custom client-authentication rules: inspect the old policy first, on the old image, and put equivalent protection outside the image before exposing the new server (DL-124);
-  - grants. **Export with `pg_dump --no-acl --no-owner`**, so no grant comes back; a default restore replays access lists (Sol round 9, 1). Default privileges need the deployer's own review on the new image;
+  - grants. **Export with `pg_dump --no-acl --no-owner`**, so no grant comes back; a default restore replays access lists (Sol round 9, 1). For an archive dump, pass `--no-owner` to `pg_restore` as well. Default privileges need the deployer's own review on the new image;
+- **on the new image, tables `admin` creates in `public` are readable by `demo`, whose key is published.** Load private work into another schema, or as another owner (Opus round 10, 3);
 - how to get the old image back: `megasamples image` at an earlier revision, or a retained image digest.
 
 The README section holds the full text; the sentence carries each item in short form and names the section.
@@ -599,6 +602,7 @@ The README section holds the full text; the sentence carries each item in short 
 - **The probe socket directory:** `/run/megasamples-probe`, recreated under the lock, owned by `postgres`, mode 0700.
 - **The public socket list** is the certified list plus that directory, with no empty element.
 - **The endpoint file,** `/run/megasamples-health.endpoint`, mode 0644, is written just before the `exec`. It records the PID, the probe directory, the port and `PGDATA`.
+- **The probe's own environment** (Sol round 10, 2): the image's and Compose's healthchecks run outside the wrapper, so the probe clears libpq's environment itself before it connects: `PGHOST`, `PGHOSTADDR`, `PGPORT`, `PGSERVICE`, `PGSERVICEFILE`, `PGPASSFILE`, `PGPASSWORD`, `PGUSER`, `PGDATABASE`, `PGOPTIONS`, `PGSSLMODE`, `PGREQUIRESSL`, `PGCONNECT_TIMEOUT`, `PGTARGETSESSIONATTRS`, `PGSYSCONFDIR` and every other `PG*` libpq reads. It runs `psql -X` and names the recorded socket directory, port, user and database explicitly.
 - **The probe checks:**
   1. `postmaster.pid` names the recorded PID, which is alive, and the recorded port;
   2. the probe socket exists;
@@ -658,9 +662,9 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | **(A) at the cleanup** (C fails, for example a read-only `/run`) | removed if C reached it, otherwise unchanged; the row names which | old | what C completed, named by the row; no state directory left | none; unhealthy |
 | **(A) after the lock** (R7 onwards, before any client) | removed | old | `/run/megasamples-*` recreated; no private or state directory left | none; unhealthy |
 | **(W) before the rotation** (the private server failed before any client: `private-start`) | removed | old; every requested role `unattempted`; the per-role lines once each, after the refusal line and its `also:` lines | no private or state directory left | none; unhealthy |
-| **(W) after the rotation began** | removed | per each role's recorded state; the per-role lines once each, after the refusal line and its `also:` lines | no private or state directory left | none; unhealthy |
+| **(W) after the rotation began** | removed | per each role's recorded state; the per-role lines once each, after the refusal line and its `also:` lines, except for `handover`, where they come before it (5.4) | no private or state directory left | none; unhealthy |
 | **(P) after the handover** (upstream's `exec gosu`, `gosu`'s `exec postgres`, or the public server's own exit) | names a dead PID | as before the handover: per each role's recorded state, every role `applied` or not requested; the per-role lines once each, before the `exec` | no private or state directory left | the child's nonzero exit; no surviving server; unhealthy |
-| **Start** | written | each `applied` role's new key; every other role keeps the key in force before the attempt | no private or state directory left | listening; healthy by `SELECT pg_catalog.megasamples_policy_loaded()` = `t`; for each `applied` role whose new key differs from its key before the attempt, that prior key refused by SCRAM |
+| **Start** | written | each `applied` role's new key; every other role keeps the key in force before the attempt | no private or state directory left | listening; healthy by `SELECT pg_catalog.megasamples_policy_loaded()` = `t`; for each `applied` role whose new key differs from its key before the attempt, that prior key refused by SCRAM; on every native Start, row 36 and 36b included, row 1's out-of-namespace `CREATE DATABASE` refused with `42501` and its in-namespace control succeeding (Sol round 10, 4) |
 
 - **The key baseline** (Sol round 8, 7): "old" and "the key in force before the attempt" mean what each role signed in with immediately before this start. That is the published key on a fresh volume, or whatever an earlier run applied on a retained one. A witness start or an ordinary restart with no overrides is a Start whose baseline is the keys left by the previous run.
 - **Keys** are checked over password-authenticated TCP on a start.
@@ -737,11 +741,12 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 42c | (A) the ownership repair fails (a fault on `chown`) | `internal`, naming the repair; keys old |
 | 42d | (W) the endpoint write fails just before the handover (a read-only endpoint path, by fault) | `internal`, naming the endpoint, then the per-role lines once each; keys as applied; no listener |
 | 42b | an unclean previous stop, a long recovery | start, after waiting |
-| 43 | (W) a signal during the private phase: before the first role's client starts; after its `sending`; between the send and its record's update; after its confirmation, before its record is written; after its record says `applied` | `interrupted`, with that role `unattempted`; `uncertain`; `uncertain`; `uncertain`; `applied`, respectively, and the rest `unattempted`; the per-role lines once each, after the refusal line; the keys match each (an `uncertain` role's key checked on the witness start, whichever it is); stopped and reaped; no listener |
+| 43 | (W) a signal during the private phase: before the first role's client starts, before its record becomes `in progress`; after its `connected`, before `sending`; after its `sending`; between the send and its record's update; after its confirmation, before its record is written; after its record says `applied` | `interrupted`, with that role `unattempted`; `unattempted` (rule 2, applied by the trap); `uncertain`; `uncertain`; `uncertain`; `applied`, respectively, and the rest `unattempted`; the per-role lines once each, after the refusal line; the keys match each (an `uncertain` role's key checked on the witness start, whichever it is); stopped and reaped; no listener |
 | 43b | (W) a signal while a client stalls | as row 43, promptly |
 | 44 | (W) a forced private stop | `private-stop` |
 | 45 | (W) row 37, then a forced stop | `password-setup`, then `also: private-stop` |
 | 46 | (W) overrides; the entrypoint unexecutable just before the handover | the per-role lines once each, all `applied`, then the `handover` line, with no second printing; keys new; endpoint removed; no state or private directory left; no listener |
+| 46c | (W) overrides; a signal after step 3 (the directories removed) and before step 4 (the trap cleared), held there by a fault gate | `interrupted`, from the in-memory record, then the per-role lines once each, all `applied`; the endpoint removed; no state or private directory left; no server survives |
 | 46b | (P) `gosu` removed after the private stop (fault layer); the server binary unexecutable after the private stop | the (P) rule: the child's nonzero exit; a dead PID in the endpoint; no surviving server; unhealthy; the per-role lines once each, before the `exec`; keys as applied (witness start) |
 | 47 | (P) the public server binds, then exits after starting | the (P) rule: its own nonzero exit; the per-role lines once each, before the `exec`; keys as applied; the endpoint names a dead PID; no surviving server; unhealthy |
 | 47b | (P) the public server fails to bind its port before readiness (port in use) | the (P) rule: its own FATAL exit; the per-role lines once each, before the `exec`; keys as applied; the endpoint names a dead PID; no listener; unhealthy |
@@ -751,6 +756,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 49b | (A) `--ipc=none` | `internal: /dev/shm unavailable` |
 | 49c | two containers sharing `/dev/shm` (`--ipc=shareable` / `container:`) on different volumes, starting with overrides at once | both start; neither's private directory touched by the other |
 | 50 | a second listener reachable through each admitted inherited client variable (`PGHOSTADDR`, `PGHOST`, `PGSERVICE`, `PGPASSFILE`, `PGUSER`) and a planted `.psqlrc` (`PGPORT` and `PGOPTIONS` are row 15b's refusals) | start; zero connections at the second listener |
+| 50b | the probe itself, run as the image's and Compose's healthchecks, with an inherited `PGHOSTADDR` (and, in turn, `PGHOST`, `PGSERVICE`, `PGPORT`) aimed at a second listener whose `megasamples_policy_loaded()` answers the opposite of the local server's | the probe judges the local server in both directions; zero connections at the second listener. **Reversal:** with the probe's environment clearing removed, it reaches the second listener |
 | 50b | a second healthy server on a shared socket directory, and on another port | the probe does not report it |
 | 51 | marked, other owner | start after the repair |
 | 52 | a replaced entrypoint; a shell string; an unlisted wrapper | unchecked; always unhealthy |
@@ -762,7 +768,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 58 | the image build | the baked `pg_authid` holds only the image's roles; the stock volume `pg_hba.conf` equals the repository file |
 | 59 | informational and handover `exec`s, repeated in one container | no state or private directory left behind |
 | 60 | the probe's negative control: a fault image whose loaded report returns false, started through the wrapper | a real endpoint, live PID and probe socket; the probe reaches its query, gets `f`, unhealthy. Reversal: the probe without its result check calls it healthy |
-| 61 | the pre-release message: a marker-`1` volume from each earlier build | the `policy-marker` sentence carries each item of 7.4 (not upgraded in place; kept untouched; `pg_dump` with the old image, then load on a fresh volume; copy the volume first; do not publish the old image's port while exporting; not carried over: sample data, passwords, custom client-authentication rules with the inspection first, grants, with `pg_dump --no-acl --no-owner` named and default privileges left to the deployer's review; how to get the old image back) and names the README section; that section holds each item in full; the volume byte for byte unchanged |
+| 61 | the pre-release message: a marker-`1` volume from each earlier build | the `policy-marker` sentence carries each item of 7.4 (not upgraded in place; kept untouched; `pg_dump` with the old image, then load on a fresh volume; copy the volume first; run the old image socket-only (`listen_addresses=''`, no network) and export from inside its container with `docker exec`; not carried over: sample data, passwords, custom client-authentication rules with the inspection first, grants, with `pg_dump --no-acl --no-owner` named, `--no-owner` for `pg_restore` too, and default privileges left to the deployer's review; tables `admin` creates in `public` readable by `demo`; how to get the old image back) and names the README section; that section holds each item in full; the volume byte for byte unchanged |
 
 ### 10.3 Confirmed natively
 - **The `psql` exit mapping,** by the fault relay;
@@ -786,7 +792,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
   - the removed loopback lines;
   - the candidate tag in the build and the `--url` fallback;
   - R9b's place before R10;
-  - the per-role lines printed exactly once on every exit after the private start began (a second printing in `handover_failed`, or none from the trap, fails rows 42, 45, 46 and 47; dropping the print before the `exec` fails rows 46, 46b, 47 and 47b; an `in progress` record printed as `unattempted` fails row 43).
+  - the per-role lines printed exactly once on every exit after the private start began (a second printing in `handover_failed`, or none from the trap, fails rows 42, 45, 46 and 47; dropping the print before the `exec` fails rows 46, 46b, 47 and 47b; an `in progress` record printed as `unattempted` fails row 43; a trap that prints from the removed record, or leaves the endpoint, fails row 46c).
 
 ## 11. The build order
 1. **The harness and the generator,** red against today's wrapper. First, the native lock-inheritance check (5.9).
@@ -905,3 +911,16 @@ The 7.4 commands this round's answers name were removed in revision 9, by the co
 | Opus P3 3: the log count in the class rules; the third reversal | 10.2's (W) and (P) rules; 10.4 |
 | Opus P3 4: the self-test's place; 5.8's wording | section 3's table; 5.8 |
 | Opus P3 5: using the old image | 7.4's two sentences; row 61 |
+
+### 13.6 Design round 10
+
+| Finding | Where answered |
+|---|---|
+| Sol 1: exposure during export | 7.4 and section 6's marker-`1` sentence: run the old image socket-only, with no network, and export with `docker exec`; row 61. Advice, not a recipe |
+| Sol 2: the healthcheck reaching another server | 8.3: the probe clears libpq's environment itself and names its socket; row 50b with its reversal |
+| Sol 3; Opus P3 1: a stop during the handover | 5.4: the trap prints from the in-memory copy once step 2 ran, and removes the endpoint; the step 4 to 6 window stated as a limit; section 6's trap; row 46c |
+| Sol 4: the namespace assertion | 10.2's Start rule, for every native Start |
+| Sol 5: 5.8's key | 5.8: the key in force after this run's rotation |
+| Opus P3 2: the trap and the marker-only rules | 5.4's `in progress` paragraph; row 43's case after `connected`, and its first case's injection point |
+| Opus P3 3: the new image's defaults; `pg_restore --no-owner` | 7.4's two sentences, the marker-`1` sentence, row 61 |
+| Opus P3 4: the `handover` exception | 10.2's (W) rule |
