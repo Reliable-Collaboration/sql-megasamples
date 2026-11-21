@@ -29,6 +29,17 @@ PG_MODULE_MAGIC;
 void _PG_init(void);
 
 static bool policy_loaded = true;
+/* Whether _PG_init ran while shared_preload_libraries was being processed. */
+static bool loaded_at_preload = false;
+
+PG_FUNCTION_INFO_V1(read_policy_loaded);
+
+/* The healthcheck's report: true only in a server that preloaded the library. Raises nothing. */
+Datum
+read_policy_loaded(PG_FUNCTION_ARGS)
+{
+    PG_RETURN_BOOL(loaded_at_preload);
+}
 static ProcessUtility_hook_type previous_utility;
 static object_access_hook_type previous_object_access;
 
@@ -305,6 +316,7 @@ _PG_init(void)
     DefineCustomBoolVariable("read_policy.loaded", "Whether the read policy's hooks are installed.",
                              NULL, &policy_loaded, true, PGC_INTERNAL, 0, NULL, NULL, NULL);
     MarkGUCPrefixReserved("read_policy");
+    loaded_at_preload = process_shared_preload_libraries_in_progress;
     previous_utility = ProcessUtility_hook;
     ProcessUtility_hook = read_policy_utility;
     previous_object_access = object_access_hook;

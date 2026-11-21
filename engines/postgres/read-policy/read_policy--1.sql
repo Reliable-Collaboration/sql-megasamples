@@ -22,3 +22,9 @@ GRANT EXECUTE ON FUNCTION megasamples_policy.close_routine_defaults() TO admin;
 CREATE EVENT TRIGGER megasamples_close_routines ON ddl_command_end
 EXECUTE FUNCTION megasamples_policy.close_routine_defaults();
 ALTER EVENT TRIGGER megasamples_close_routines ENABLE ALWAYS;
+-- The healthcheck's witness. A library loaded on demand by this call, rather than preloaded,
+-- answers false; demo, the probe's account, may call it, and no one else needs to.
+CREATE FUNCTION pg_catalog.megasamples_policy_loaded() RETURNS boolean
+LANGUAGE C STABLE STRICT AS 'MODULE_PATHNAME', 'read_policy_loaded';
+REVOKE ALL ON FUNCTION pg_catalog.megasamples_policy_loaded() FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION pg_catalog.megasamples_policy_loaded() TO demo;

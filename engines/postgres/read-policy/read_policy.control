@@ -3,3 +3,4 @@ default_version = '1'
 relocatable = false
 schema = 'pg_catalog'
 superuser = true
+module_pathname = '$libdir/read_policy'
