@@ -24,16 +24,24 @@ def isolated_clients():
     if os.environ.get('MEGASAMPLES_NATIVE_READ_TESTS') != '1':
         yield
         return
-    assert os.environ['COMPOSE_PROJECT_NAME'] == 'megasamples-upgrade'
-    assert os.environ['CONTAINERS_STORAGE_CONF'] == '/home/rcc-vstudio/working/sql-megasamples-upgrade-env/storage.conf'
+    # The isolated store is named by the caller, and every target container must carry a task's
+    # ownership label: a service container of a real deployment never does.
+    graph = os.environ.get('DL077_ISOLATED_GRAPH')
+    assert graph, 'set DL077_ISOLATED_GRAPH to the isolated store the test containers live in'
     store = subprocess.check_output(['docker', 'info', '--format', '{{.DockerRootDir}}'], text=True).strip()
-    assert store.startswith('/home/rcc-vstudio/working/sql-megasamples-upgrade-env/')
+    assert os.path.realpath(store) == os.path.realpath(graph)
+    for engine in ('postgres', 'mysql'):
+        container = os.environ.get('STRICT_READ_' + engine.upper() + '_CONTAINER')
+        if container:
+            owner = subprocess.run(['docker', 'inspect', '-f', '{{index .Config.Labels "org.sql-megasamples.gates.owner"}}',
+                                    container], capture_output=True, text=True)
+            assert owner.returncode == 0 and owner.stdout.strip().startswith('dl077-'), container
     with session():
         yield
 
 
 def query(engine, database, sql, user='demo'):
-    container = os.environ.get('STRICT_READ_' + engine.upper() + '_CONTAINER', 'megasamples-' + engine)
+    container = os.environ['STRICT_READ_' + engine.upper() + '_CONTAINER']   # never a service default
     if os.environ.get('STRICT_READ_NATIVE_DRIVER') == 'library':
         from docs.validation.strict_read_clients import query as native_query
         return native_query(engine, container, user, database, sql)
@@ -216,7 +224,7 @@ def test_postgres_employee_views_do_not_require_mutating_helpers():
 @pytest.mark.parametrize('engine', ['postgres', 'mysql'])
 def test_native_protocol_matches_cli(engine, monkeypatch):
     from docs.validation.strict_read_clients import query as protocol_query
-    container = os.environ.get('STRICT_READ_' + engine.upper() + '_CONTAINER', 'megasamples-' + engine)
+    container = os.environ['STRICT_READ_' + engine.upper() + '_CONTAINER']
     monkeypatch.delenv('STRICT_READ_NATIVE_DRIVER', raising=False)
     statements = ['SELECT 1, NULL', 'BEGIN; SELECT 1; SELECT 2; ROLLBACK']
     statements += (['SELECT current_user', 'BEGIN; CREATE TEMP TABLE parity_denied(i int); ROLLBACK']
