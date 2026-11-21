@@ -83,7 +83,8 @@ class Postgres(Engine):
             "environment": {"POSTGRES_PASSWORD": "${POSTGRES_PASSWORD:-root}",
                             "DEMO_PASSWORD": "${DEMO_PASSWORD:-demo}",
                             "ADMIN_PASSWORD": "${ADMIN_PASSWORD:-admin}"},
-            "healthcheck": {"test": ["CMD-SHELL", "PGPASSFILE=/run/megasamples-health.pgpass psql -w -h 127.0.0.1 -U demo -d megasamples -tAc 'SELECT 1'"],
+            "healthcheck": {"test": ["CMD-SHELL", "PGPASSFILE=/run/megasamples-health.pgpass psql -w -h 127.0.0.1 -U demo -d megasamples "
+                                     "-tAc \"SELECT current_setting('read_policy.loaded')\" | grep -qx on"],
                             "interval": "5s", "timeout": "5s", "retries": 30},
             "restart": "unless-stopped",
         }

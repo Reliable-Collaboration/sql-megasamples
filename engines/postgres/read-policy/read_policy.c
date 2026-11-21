@@ -22,11 +22,13 @@
 #include "utils/acl.h"
 #include "utils/builtins.h"
 #include "utils/fmgroids.h"
+#include "utils/guc.h"
 #include "utils/syscache.h"
 
 PG_MODULE_MAGIC;
 void _PG_init(void);
 
+static bool policy_loaded = true;
 static ProcessUtility_hook_type previous_utility;
 static object_access_hook_type previous_object_access;
 
@@ -299,6 +301,10 @@ read_policy_utility(PlannedStmt *pstmt, const char *query, bool read_only,
 void
 _PG_init(void)
 {
+    /* Readable by every role, settable by none: the healthcheck's witness that the hooks are in. */
+    DefineCustomBoolVariable("read_policy.loaded", "Whether the read policy's hooks are installed.",
+                             NULL, &policy_loaded, true, PGC_INTERNAL, 0, NULL, NULL, NULL);
+    MarkGUCPrefixReserved("read_policy");
     previous_utility = ProcessUtility_hook;
     ProcessUtility_hook = read_policy_utility;
     previous_object_access = object_access_hook;

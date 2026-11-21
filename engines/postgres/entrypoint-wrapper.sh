@@ -7,37 +7,25 @@ set -euo pipefail
 if [[ ${1:-} == -* ]]; then
     set -- postgres "$@"
 fi
-if [[ ${1:-} == postgres ]]; then
-    # The marker below certifies PGDATA, so the server may open no other directory: refuse every
-    # argument that names a different data directory, and any other configuration file.
-    refuse_directory() {
-        printf '%s\n' 'the megasamples image refuses a data directory other than PGDATA' >&2
-        exit 1
-    }
-    same_directory() { [[ "$(realpath -m -- "$1")" == "$(realpath -m -- "$PGDATA")" ]] || refuse_directory; }
-    arguments=("${@:2}")
-    for ((index = 0; index < ${#arguments[@]}; index++)); do
-        argument=${arguments[index]}
-        next=${arguments[index + 1]:-}
-        case $argument in
-            -D|--pgdata) same_directory "$next" ;;
-            -D*) same_directory "${argument#-D}" ;;
-            --pgdata=*) same_directory "${argument#--pgdata=}" ;;
-            -c)
-                case $next in
-                    data_directory=*|data-directory=*) same_directory "${next#*=}" ;;
-                    config_file=*|config-file=*) refuse_directory ;;
-                esac ;;
-            -cdata_directory=*|-cdata-directory=*|--data_directory=*|--data-directory=*)
-                same_directory "${argument#*=}" ;;
-            -cconfig_file=*|-cconfig-file=*|--config_file=*|--config-file=*) refuse_directory ;;
-        esac
-    done
+if [[ $(basename -- "${1:-}") == postgres ]]; then
+    # The marker below certifies PGDATA, and the hook exists only while read_policy is preloaded.
+    # Ask the server itself what it would use, from every configuration file and option it reads
+    # (setting names are case-insensitive, and postgresql.auto.conf persists ALTER SYSTEM).
+    as_postgres() { if [ "$(id -u)" = "0" ]; then gosu postgres "$@"; else "$@"; fi; }
+    refuse() { printf '%s\n' "$1" >&2; exit 1; }
+    directory=$(as_postgres "$1" "${@:2}" -C data_directory) ||
+        refuse 'the megasamples image could not read the server configuration'
+    [[ "$(realpath -m -- "$directory")" == "$(realpath -m -- "$PGDATA")" ]] ||
+        refuse 'the megasamples image refuses a data directory other than PGDATA'
     marker="$PGDATA/megasamples-read-policy"
     if [[ ! -f "$marker" || -L "$marker" || $(<"$marker") != 1 ]]; then
         printf '%s\n' 'PostgreSQL data has no compatible megasamples read policy' >&2
         exit 1
     fi
+    libraries=$(as_postgres "$1" "${@:2}" -C shared_preload_libraries) ||
+        refuse 'the megasamples image could not read the server configuration'
+    printf '%s\n' "$libraries" | tr ',' '\n' | sed 's/^[[:space:]"]*//; s/[[:space:]"]*$//' | grep -qx read_policy ||
+        refuse 'the megasamples image refuses a server without the read_policy library'
 fi
 
 if [ "${1:-}" = "postgres" ] && [ -n "${POSTGRES_PASSWORD:-}${DEMO_PASSWORD:-}${ADMIN_PASSWORD:-}" ]; then
