@@ -138,12 +138,14 @@ docker compose up -d mysql        # the database alone, no consoles
 
 A `megasamples` database inside the image holds the provenance registry: one row per database (an
 `append: true` dataset joins its base's row) with its tier, knowledge record, licences, source artifacts and digests, and pinned row counts. The
-catalogue, the landing page and the image tests all read it, so none can drift from what was baked.
+landing page and the image tests read it, so neither can drift from what was baked. The catalogue
+`make catalogue` is generated from the repository's dataset definitions and pinned counts, not from
+a running image, so it lists every dataset whatever an image carries.
 
 ### PostgreSQL
 
-`sql-megasamples-postgres:dev` is `postgres:18.7-trixie` with one database per dataset already in
-its cluster, the same `demo` (reads sample tables, including tables `admin` later creates
+`sql-megasamples-postgres:dev` is `postgres:18.7-trixie` with each dataset's database already in its cluster (an `append: true`
+dataset shares its base's), the same `demo` (reads sample tables, including tables `admin` later creates
 in a sample database's `public` schema) and `admin` accounts, the superuser `postgres` with
 factory password `root` (overridden by the private `.env`), and a `megasamples` database holding the registry. `POSTGRES_PASSWORD`,
 `DEMO_PASSWORD` and `ADMIN_PASSWORD` override the passwords at start. Tables, data, primary and
@@ -296,7 +298,7 @@ password through the client's prompt or a private client credential file on an u
 | read only | `demo` / `demo` | `demo` / `demo` | — |
 | full access | `admin` / `admin` (all privileges) | `admin` / `admin` (owns every sample table) | — |
 | superuser | `root` / `root` | `postgres` / `root` | — |
-| database | any of the 21, e.g. `sakila` | one per dataset; connect to it, or to `megasamples` for the registry | one file per database |
+| database | any of the 21, e.g. `sakila` | one per database (an append dataset shares its base's); connect to it, or to `megasamples` for the registry | one file per database |
 | client | `mysql -h 127.0.0.1 -P 3306 -u demo -p sakila` | `psql -W -h 127.0.0.1 -p 5432 -U demo sakila` | `sqlite3 sakila.sqlite` |
 | URL | `mysql://demo:demo@127.0.0.1:3306/sakila` | `postgresql://demo:demo@127.0.0.1:5432/sakila` | the file's path |
 | JDBC | `jdbc:mysql://127.0.0.1:3306/sakila` | `jdbc:postgresql://127.0.0.1:5432/sakila` | `jdbc:sqlite:/path/to/sakila.sqlite` |
