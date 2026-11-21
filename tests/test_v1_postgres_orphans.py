@@ -74,5 +74,26 @@ class OrphanTests(unittest.TestCase):
         self.assertEqual([item for item in self.status()["warnings"] if item["code"] == "orphan-directory"], [])
 
 
+    def test_an_orphan_in_a_tablespace_is_reported_with_its_real_path(self):
+        made = self.run_in("sh", "-ec", "mkdir -p /var/lib/postgresql/v1_space", user="postgres")
+        self.assertEqual(made.returncode, 0, made.stderr)
+        self.accept("CREATE TABLESPACE v1_space LOCATION '/var/lib/postgresql/v1_space'")
+        space = self.accept("SELECT oid FROM pg_tablespace WHERE spcname='v1_space'")
+        try:
+            self.accept("CREATE DATABASE v1_in_space TABLESPACE v1_space")
+            planted = self.run_in("sh", "-ec", 'cd "$PGDATA"/pg_tblspc/"$1"/PG_*; mkdir 4242424; echo x > 4242424/1; '
+                                  'echo "pg_tblspc/$1/${PWD##*/}/4242424"', "plant", space, user="postgres")
+            self.assertEqual(planted.returncode, 0, planted.stderr)
+            warnings = [item for item in self.status()["warnings"] if item["code"] == "orphan-directory"]
+            self.assertEqual([(item["tablespace"], item["oid"], item["path"]) for item in warnings],
+                             [("v1_space", 4242424, planted.stdout.strip())])
+            check = self.run_in("sh", "-ec", 'test -f "$PGDATA/$1/1"', "check", planted.stdout.strip(), user="postgres")
+            self.assertEqual(check.returncode, 0)
+        finally:
+            self.run_in("sh", "-ec", 'rm -rf "$PGDATA"/pg_tblspc/"$1"/PG_*/4242424', "clear", space, user="postgres")
+            self.accept("DROP DATABASE IF EXISTS v1_in_space")
+            self.accept("DROP TABLESPACE IF EXISTS v1_space")
+
+
 if __name__ == "__main__":
     unittest.main()

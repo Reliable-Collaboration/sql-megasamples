@@ -7,8 +7,8 @@ import pytest
 
 from megasamples import postgres_orphans
 
-LISTING = "pg_default 1 7524\npg_default 5 7600\npg_default 16384 9000\npg_default 99999 1200\n" \
-          "16500 16390 64\n"
+LISTING = ("pg_default 1 7524 base/1\npg_default 5 7600 base/5\npg_default 16384 9000 base/16384\n"
+           "pg_default 99999 1200 base/99999\n16500 16390 64 pg_tblspc/16500/PG_18_202506291/16390\n")
 CATALOG = "1\n5\n16384\n"
 SPACES = "1663 pg_default\n1664 pg_global\n16500 archive\n"
 
@@ -32,7 +32,7 @@ def test_reports_each_directory_without_a_database(monkeypatch):
         {"code": "orphan-directory", "engine": "postgres", "tablespace": "pg_default", "oid": 99999,
          "name": None, "path": "base/99999", "kib": 1200},
         {"code": "orphan-directory", "engine": "postgres", "tablespace": "archive", "oid": 16390,
-         "name": None, "path": "pg_tblspc/16500/16390", "kib": 64},
+         "name": None, "path": "pg_tblspc/16500/PG_18_202506291/16390", "kib": 64},
     ]
 
 
@@ -83,3 +83,20 @@ def test_up_reports_the_scan_after_the_stack_starts(monkeypatch, capsys):
     assert order.index("scan") > order.index(["docker", "compose", "-f"])
     err = capsys.readouterr().err
     assert "base/99999" in err and "no database" in err
+
+
+@pytest.mark.parametrize("listing", [
+    LISTING + "pg_default 99998\n",                       # a size that could not be read
+    LISTING + "unreadable base/99997\n",                  # du failed on a directory still there
+    LISTING + "pg_default x 12 base/x\n",                 # not an OID
+])
+def test_a_malformed_or_failed_observation_is_incomplete(monkeypatch, listing):
+    """Sol round 3, P2-2 / Opus round 3, 5: never a traceback, never a partial verdict."""
+    run, _ = fake({"list": (0, listing), "catalog": (0, CATALOG), "spaces": (0, SPACES)})
+    monkeypatch.setattr(postgres_orphans.subprocess, "run", run)
+    assert [item["code"] for item in postgres_orphans.scan("c")] == ["orphan-scan-incomplete"]
+
+
+def test_a_directory_dropped_during_the_scan_is_not_reported():
+    """The listing script skips a directory that is gone by the time it is measured."""
+    assert 'continue' in postgres_orphans.LIST and '[ -e "$d" ]' in postgres_orphans.LIST
