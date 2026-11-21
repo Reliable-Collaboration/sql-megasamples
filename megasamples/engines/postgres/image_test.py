@@ -49,24 +49,33 @@ class Checks:
 
 
 def override_checks(c):
-    """The password overrides, on a container of their own."""
-    with environment_file({"POSTGRES_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:
-        sh("docker", "run", "-d", "--name", NAME + "2",
-           "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
-           "--env-file", path, IMAGE)
-    for _ in range(150):
-        if q("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0:
-            break
-        time.sleep(0.2)
-    c.expect(q_net("SELECT 1", pw="sekret", container=NAME + "2").returncode == 0,
-             "POSTGRES_PASSWORD override applied by the wrapper (checked over the network)")
-    c.expect(q_net("SELECT 1", pw="root", container=NAME + "2").returncode != 0,
-             "the baked default superuser password no longer works after an override")
-    c.expect(q_net("SELECT 1", user="demo", pw="viewer", database="megasamples", container=NAME + "2").returncode == 0,
-             "DEMO_PASSWORD override applied")
-    c.expect(q_net("SELECT 1", user="demo", pw="demo", database="megasamples", container=NAME + "2").returncode != 0,
-             "the baked demo password no longer works after an override")
+    """The password overrides, on a container of their own: only the one this run starts (Sol round 10,
+    P2-1). A leftover from an interrupted run goes first, with its volumes; a failed launch is a failure,
+    and every query names the ID the launch returned."""
     sh("docker", "rm", "-fv", NAME + "2")
+    with environment_file({"POSTGRES_PASSWORD": "sekret", "DEMO_PASSWORD": "viewer"}) as path:
+        started = sh("docker", "run", "-d", "--name", NAME + "2",
+                     "--label", "megasamples.transient=true", "--label", "megasamples.role=test",
+                     "--env-file", path, IMAGE)
+    container = started.stdout.strip()
+    if started.returncode != 0 or not container:
+        c.fail(f"could not start the override container: {started.stderr.strip()[:200]}")
+        return
+    try:
+        for _ in range(150):
+            if q("SELECT 1", pw="sekret", container=container).returncode == 0:
+                break
+            time.sleep(0.2)
+        c.expect(q_net("SELECT 1", pw="sekret", container=container).returncode == 0,
+                 "POSTGRES_PASSWORD override applied by the wrapper (checked over the network)")
+        c.expect(q_net("SELECT 1", pw="root", container=container).returncode != 0,
+                 "the baked default superuser password no longer works after an override")
+        c.expect(q_net("SELECT 1", user="demo", pw="viewer", database="megasamples", container=container).returncode == 0,
+                 "DEMO_PASSWORD override applied")
+        c.expect(q_net("SELECT 1", user="demo", pw="demo", database="megasamples", container=container).returncode != 0,
+                 "the baked demo password no longer works after an override")
+    finally:
+        sh("docker", "rm", "-fv", container)
 
 
 @session()
