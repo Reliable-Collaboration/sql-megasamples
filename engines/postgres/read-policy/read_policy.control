@@ -1,0 +1,4 @@
+comment = 'Close public routine defaults in sample databases'
+default_version = '1'
+relocatable = false
+superuser = true

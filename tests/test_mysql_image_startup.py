@@ -39,6 +39,10 @@ def test_copy_and_server_limits_and_data_checks(monkeypatch, capsys, copy_second
             answer = ''
         else:
             answer = answers.get(sql, '1')
+        if sql == 'SHOW GRANTS':
+            answer = "GRANT SELECT, SHOW VIEW ON *.* TO `demo`@`%`"
+        if sql.startswith('CREATE TEMPORARY TABLE') and kwargs.get('user') == 'demo':
+            return SimpleNamespace(returncode=1, stdout='', stderr='CREATE command denied')
         rejected_override = (kwargs.get('container') == image_test.NAME + '2'
                              and kwargs.get('pw') == baked_password)
         return SimpleNamespace(returncode=int(rejected_override), stdout=answer, stderr='')

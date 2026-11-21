@@ -1,0 +1,1669 @@
+Every routine `demo` can execute in the validated PostgreSQL image is listed below. The observed set is identical in all 31 inventoried databases. User-defined dataset routines are not executable by `demo`.
+
+Observed 2026-11-18T07:40:54.510695+00:00; 1663 signatures. The [machine-readable inventory](strict-read-executable-routines.json) retains namespaces, routine kinds and volatility. Reasons concern stored-state effects, rather than the creation of ordinary query-result values.
+
+| Routine | Why it is read-only |
+| --- | --- |
+| `information_schema._pg_char_max_length(oid,integer)` | Upstream information-schema helper: expands supplied arrays or reads type and index metadata |
+| `information_schema._pg_char_octet_length(oid,integer)` | Upstream information-schema helper: expands supplied arrays or reads type and index metadata |
+| `information_schema._pg_datetime_precision(oid,integer)` | Upstream information-schema helper: expands supplied arrays or reads type and index metadata |
+| `information_schema._pg_expandarray(anyarray)` | Upstream information-schema helper: expands supplied arrays or reads type and index metadata |
+| `information_schema._pg_index_position(oid,smallint)` | Upstream information-schema helper: expands supplied arrays or reads type and index metadata |
+| `information_schema._pg_interval_type(oid,integer)` | Upstream information-schema helper: expands supplied arrays or reads type and index metadata |
+| `information_schema._pg_numeric_precision(oid,integer)` | Upstream information-schema helper: expands supplied arrays or reads type and index metadata |
+| `information_schema._pg_numeric_precision_radix(oid,integer)` | Upstream information-schema helper: expands supplied arrays or reads type and index metadata |
+| `information_schema._pg_numeric_scale(oid,integer)` | Upstream information-schema helper: expands supplied arrays or reads type and index metadata |
+| `information_schema._pg_truetypid(pg_attribute,pg_type)` | Upstream information-schema helper: expands supplied arrays or reads type and index metadata |
+| `information_schema._pg_truetypmod(pg_attribute,pg_type)` | Upstream information-schema helper: expands supplied arrays or reads type and index metadata |
+| `"bit"(bigint,integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"bit"(bit,integer,boolean)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"bit"(integer,integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"char"(integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"char"(text)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"current_schema"()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `"current_user"()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `"extract"(text,date)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"extract"(text,interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"extract"(text,time with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"extract"(text,time without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"extract"(text,timestamp with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"extract"(text,timestamp without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"interval"(interval,integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"interval"(time without time zone)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"json_object"(text[])` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `"json_object"(text[],text[])` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `"left"(text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"numeric"(bigint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"numeric"(double precision)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"numeric"(integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"numeric"(jsonb)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"numeric"(money)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"numeric"(numeric,integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"numeric"(real)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"numeric"(smallint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"overlaps"(time with time zone,time with time zone,time with time zone,time with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlaps"(time without time zone,interval,time without time zone,interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlaps"(time without time zone,interval,time without time zone,time without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlaps"(time without time zone,time without time zone,time without time zone,interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlaps"(time without time zone,time without time zone,time without time zone,time without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlaps"(timestamp with time zone,interval,timestamp with time zone,interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlaps"(timestamp with time zone,interval,timestamp with time zone,timestamp with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlaps"(timestamp with time zone,timestamp with time zone,timestamp with time zone,interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlaps"(timestamp with time zone,timestamp with time zone,timestamp with time zone,timestamp with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlaps"(timestamp without time zone,interval,timestamp without time zone,interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlaps"(timestamp without time zone,interval,timestamp without time zone,timestamp without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlaps"(timestamp without time zone,timestamp without time zone,timestamp without time zone,interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlaps"(timestamp without time zone,timestamp without time zone,timestamp without time zone,timestamp without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlay"(bit,bit,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlay"(bit,bit,integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlay"(bytea,bytea,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlay"(bytea,bytea,integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlay"(text,text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"overlay"(text,text,integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"position"(bit,bit)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"position"(bytea,bytea)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"position"(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"right"(text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"session_user"()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `"substring"(bit,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"substring"(bit,integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"substring"(bytea,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"substring"(bytea,integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"substring"(text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"substring"(text,integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"substring"(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"substring"(text,text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"system_user"()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `"time"(interval)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"time"(time with time zone)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"time"(time without time zone,integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"time"(timestamp with time zone)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"time"(timestamp without time zone)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"timestamp"(date)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"timestamp"(date,time without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `"timestamp"(timestamp with time zone)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"timestamp"(timestamp without time zone,integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"varchar"(character varying,integer,boolean)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `"varchar"(name)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `abs(bigint)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `abs(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `abs(integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `abs(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `abs(real)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `abs(smallint)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `aclcontains(aclitem[],aclitem)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `acldefault("char",oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `aclexplode(aclitem[])` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `aclinsert(aclitem[],aclitem)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `aclitemeq(aclitem,aclitem)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `aclremove(aclitem[],aclitem)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `acos(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `acosh(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `age(timestamp with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `age(timestamp with time zone,timestamp with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `age(timestamp without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `age(timestamp without time zone,timestamp without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `age(xid)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `anytextcat(anynonarray,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `array_agg(anyarray)` | Computes aggregates or window results from query input; no database mutation |
+| `array_agg(anynonarray)` | Computes aggregates or window results from query input; no database mutation |
+| `array_append(anycompatiblearray,anycompatible)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `array_cat(anycompatiblearray,anycompatiblearray)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `array_dims(anyarray)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_eq(anyarray,anyarray)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `array_fill(anyelement,integer[])` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_fill(anyelement,integer[],integer[])` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_ge(anyarray,anyarray)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `array_gt(anyarray,anyarray)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `array_le(anyarray,anyarray)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `array_length(anyarray,integer)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_lower(anyarray,integer)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_lt(anyarray,anyarray)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `array_ndims(anyarray)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_ne(anyarray,anyarray)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `array_position(anycompatiblearray,anycompatible)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_position(anycompatiblearray,anycompatible,integer)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_positions(anycompatiblearray,anycompatible)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_prepend(anycompatible,anycompatiblearray)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `array_remove(anycompatiblearray,anycompatible)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_replace(anycompatiblearray,anycompatible,anycompatible)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_to_json(anyarray)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_to_json(anyarray,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_to_string(anyarray,text)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_to_string(anyarray,text,text)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `array_upper(anyarray,integer)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `arraycontained(anyarray,anyarray)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `arraycontains(anyarray,anyarray)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `arrayoverlap(anyarray,anyarray)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `ascii(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `asin(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `asinh(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `atan(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `atan2(double precision,double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `atanh(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `avg(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `avg(double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `avg(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `avg(interval)` | Computes aggregates or window results from query input; no database mutation |
+| `avg(numeric)` | Computes aggregates or window results from query input; no database mutation |
+| `avg(real)` | Computes aggregates or window results from query input; no database mutation |
+| `avg(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `bit_and(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `bit_and(bit)` | Computes aggregates or window results from query input; no database mutation |
+| `bit_and(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `bit_and(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `bit_length(bit)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `bit_length(bytea)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `bit_length(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `bit_or(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `bit_or(bit)` | Computes aggregates or window results from query input; no database mutation |
+| `bit_or(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `bit_or(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `bit_xor(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `bit_xor(bit)` | Computes aggregates or window results from query input; no database mutation |
+| `bit_xor(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `bit_xor(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `bitand(bit,bit)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bitcat(bit varying,bit varying)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `biteq(bit,bit)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bitge(bit,bit)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bitgt(bit,bit)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bitle(bit,bit)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bitlt(bit,bit)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bitne(bit,bit)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bitnot(bit)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bitor(bit,bit)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bitshiftleft(bit,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bitshiftright(bit,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bitxor(bit,bit)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bool(integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `bool(jsonb)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `bool_and(boolean)` | Computes aggregates or window results from query input; no database mutation |
+| `bool_or(boolean)` | Computes aggregates or window results from query input; no database mutation |
+| `booleq(boolean,boolean)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `boolge(boolean,boolean)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `boolgt(boolean,boolean)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `boolle(boolean,boolean)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `boollt(boolean,boolean)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `boolne(boolean,boolean)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box(circle)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `box(point)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `box(polygon)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `box_above(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_above_eq(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_add(box,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_below(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_below_eq(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_center(box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_contain(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_contain_pt(box,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_contained(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_distance(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_div(box,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_eq(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_ge(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_gt(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_intersect(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_le(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_left(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_lt(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_mul(box,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_overabove(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_overbelow(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_overlap(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_overleft(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_overright(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_right(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_same(box,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `box_sub(box,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpchar("char")` | Implements an initdb cast: converts supplied values without changing stored state |
+| `bpchar(character,integer,boolean)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `bpchar(name)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `bpchar_pattern_ge(character,character)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpchar_pattern_gt(character,character)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpchar_pattern_le(character,character)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpchar_pattern_lt(character,character)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpchareq(character,character)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpcharge(character,character)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpchargt(character,character)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpchariclike(character,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpcharicnlike(character,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpcharicregexeq(character,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpcharicregexne(character,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpcharle(character,character)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpcharlike(character,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpcharlt(character,character)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpcharne(character,character)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpcharnlike(character,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpcharregexeq(character,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bpcharregexne(character,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `btrim(bytea,bytea)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `btrim(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `btrim(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `bytea(bigint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `bytea(integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `bytea(smallint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `byteacat(bytea,bytea)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `byteaeq(bytea,bytea)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `byteage(bytea,bytea)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `byteagt(bytea,bytea)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `byteale(bytea,bytea)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bytealike(bytea,bytea)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `bytealt(bytea,bytea)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `byteane(bytea,bytea)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `byteanlike(bytea,bytea)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cardinality(anyarray)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `cash_div_cash(money,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_div_flt4(money,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_div_flt8(money,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_div_int2(money,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_div_int4(money,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_div_int8(money,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_eq(money,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_ge(money,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_gt(money,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_le(money,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_lt(money,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_mi(money,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_mul_flt4(money,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_mul_flt8(money,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_mul_int2(money,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_mul_int4(money,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_mul_int8(money,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_ne(money,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cash_pl(money,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cbrt(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `ceil(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `ceil(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `ceiling(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `ceiling(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `char_length(character)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `char_length(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `character_length(character)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `character_length(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `chareq("char","char")` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `charge("char","char")` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `chargt("char","char")` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `charle("char","char")` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `charlt("char","char")` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `charne("char","char")` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `chr(integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `cideq(cid,cid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `cidr(inet)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `circle(box)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `circle(polygon)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `circle_above(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_add_pt(circle,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_below(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_center(circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_contain(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_contain_pt(circle,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_contained(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_distance(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_div_pt(circle,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_eq(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_ge(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_gt(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_le(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_left(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_lt(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_mul_pt(circle,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_ne(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_overabove(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_overbelow(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_overlap(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_overleft(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_overright(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_right(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_same(circle,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `circle_sub_pt(circle,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `close_ls(line,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `close_lseg(lseg,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `close_pb(point,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `close_pl(point,line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `close_ps(point,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `close_sb(lseg,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `col_description(oid,integer)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `concat("any")` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `concat_ws(text,"any")` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `convert(bytea,name,name)` | Converts supplied bytes between character encodings without changing stored state |
+| `convert_from(bytea,name)` | Decodes supplied bytes as text; required by Wikipedia read views |
+| `convert_to(text,name)` | Encodes supplied text as bytes without changing stored state |
+| `corr(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `cos(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `cosh(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `cot(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `count("any")` | Computes aggregates or window results from query input; no database mutation |
+| `count()` | Computes aggregates or window results from query input; no database mutation |
+| `covar_pop(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `covar_samp(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `cume_dist("any")` | Computes aggregates or window results from query input; no database mutation |
+| `cume_dist()` | Computes aggregates or window results from query input; no database mutation |
+| `current_database()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `current_schemas(boolean)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `current_setting(text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `current_setting(text,boolean)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `date(timestamp with time zone)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `date(timestamp without time zone)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `date_add(timestamp with time zone,interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_add(timestamp with time zone,interval,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_eq(date,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_eq_timestamp(date,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_eq_timestamptz(date,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_ge(date,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_ge_timestamp(date,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_ge_timestamptz(date,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_gt(date,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_gt_timestamp(date,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_gt_timestamptz(date,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_le(date,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_le_timestamp(date,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_le_timestamptz(date,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_lt(date,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_lt_timestamp(date,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_lt_timestamptz(date,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_mi(date,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_mi_interval(date,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_mii(date,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_ne(date,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_ne_timestamp(date,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_ne_timestamptz(date,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_part(text,date)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_part(text,interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_part(text,time with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_part(text,time without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_part(text,timestamp with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_part(text,timestamp without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_pl_interval(date,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_pli(date,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `date_subtract(timestamp with time zone,interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_subtract(timestamp with time zone,interval,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_trunc(text,interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_trunc(text,timestamp with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_trunc(text,timestamp with time zone,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `date_trunc(text,timestamp without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `datemultirange(daterange)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `datetime_pl(date,time without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `datetimetz_pl(date,time with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dcbrt(double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `decode(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `degrees(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `dense_rank("any")` | Computes aggregates or window results from query input; no database mutation |
+| `dense_rank()` | Computes aggregates or window results from query input; no database mutation |
+| `dist_bp(box,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_bs(box,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_cpoint(circle,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_cpoly(circle,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_lp(line,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_ls(line,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_pathp(path,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_pb(point,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_pc(point,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_pl(point,line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_polyc(polygon,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_polyp(polygon,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_ppath(point,path)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_ppoly(point,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_ps(point,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_sb(lseg,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_sl(lseg,line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dist_sp(lseg,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `div(numeric,numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `dpow(double precision,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `dsqrt(double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `elem_contained_by_multirange(anyelement,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `elem_contained_by_range(anyelement,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `encode(bytea,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `enum_eq(anyenum,anyenum)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `enum_ge(anyenum,anyenum)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `enum_gt(anyenum,anyenum)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `enum_le(anyenum,anyenum)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `enum_lt(anyenum,anyenum)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `enum_ne(anyenum,anyenum)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `every(boolean)` | Computes aggregates or window results from query input; no database mutation |
+| `exp(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `exp(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `factorial(bigint)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `first_value(anyelement)` | Computes aggregates or window results from query input; no database mutation |
+| `float4(bigint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `float4(double precision)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `float4(integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `float4(jsonb)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `float4(numeric)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `float4(smallint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `float48div(real,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float48eq(real,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float48ge(real,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float48gt(real,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float48le(real,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float48lt(real,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float48mi(real,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float48mul(real,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float48ne(real,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float48pl(real,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4abs(real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4div(real,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4eq(real,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4ge(real,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4gt(real,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4le(real,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4lt(real,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4mi(real,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4mul(real,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4ne(real,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4pl(real,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4um(real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float4up(real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8(bigint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `float8(integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `float8(jsonb)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `float8(numeric)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `float8(real)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `float8(smallint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `float84div(double precision,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float84eq(double precision,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float84ge(double precision,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float84gt(double precision,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float84le(double precision,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float84lt(double precision,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float84mi(double precision,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float84mul(double precision,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float84ne(double precision,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float84pl(double precision,real)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8abs(double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8div(double precision,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8eq(double precision,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8ge(double precision,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8gt(double precision,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8le(double precision,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8lt(double precision,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8mi(double precision,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8mul(double precision,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8ne(double precision,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8pl(double precision,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8um(double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `float8up(double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `floor(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `floor(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `flt4_mul_cash(real,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `flt8_mul_cash(double precision,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `format(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `format(text,"any")` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `format_type(oid,integer)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `gcd(bigint,bigint)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `gcd(integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `gcd(numeric,numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `generate_series(bigint,bigint)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `generate_series(bigint,bigint,bigint)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `generate_series(integer,integer)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `generate_series(integer,integer,integer)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `generate_series(numeric,numeric)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `generate_series(numeric,numeric,numeric)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `generate_series(timestamp with time zone,timestamp with time zone,interval)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `generate_series(timestamp with time zone,timestamp with time zone,interval,text)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `generate_series(timestamp without time zone,timestamp without time zone,interval)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `generate_subscripts(anyarray,integer)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `generate_subscripts(anyarray,integer,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `get_current_ts_config()` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `getdatabaseencoding()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `getpgusername()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_any_column_privilege(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_any_column_privilege(name,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_any_column_privilege(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_any_column_privilege(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_any_column_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_any_column_privilege(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_column_privilege(name,oid,smallint,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_column_privilege(name,oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_column_privilege(name,text,smallint,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_column_privilege(name,text,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_column_privilege(oid,oid,smallint,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_column_privilege(oid,oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_column_privilege(oid,smallint,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_column_privilege(oid,text,smallint,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_column_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_column_privilege(oid,text,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_column_privilege(text,smallint,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_column_privilege(text,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_database_privilege(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_database_privilege(name,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_database_privilege(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_database_privilege(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_database_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_database_privilege(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_foreign_data_wrapper_privilege(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_foreign_data_wrapper_privilege(name,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_foreign_data_wrapper_privilege(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_foreign_data_wrapper_privilege(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_foreign_data_wrapper_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_foreign_data_wrapper_privilege(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_function_privilege(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_function_privilege(name,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_function_privilege(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_function_privilege(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_function_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_function_privilege(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_language_privilege(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_language_privilege(name,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_language_privilege(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_language_privilege(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_language_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_language_privilege(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_largeobject_privilege(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_largeobject_privilege(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_largeobject_privilege(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_parameter_privilege(name,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_parameter_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_parameter_privilege(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_schema_privilege(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_schema_privilege(name,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_schema_privilege(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_schema_privilege(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_schema_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_schema_privilege(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_sequence_privilege(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_sequence_privilege(name,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_sequence_privilege(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_sequence_privilege(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_sequence_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_sequence_privilege(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_server_privilege(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_server_privilege(name,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_server_privilege(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_server_privilege(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_server_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_server_privilege(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_table_privilege(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_table_privilege(name,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_table_privilege(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_table_privilege(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_table_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_table_privilege(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_tablespace_privilege(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_tablespace_privilege(name,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_tablespace_privilege(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_tablespace_privilege(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_tablespace_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_tablespace_privilege(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_type_privilege(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_type_privilege(name,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_type_privilege(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_type_privilege(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_type_privilege(oid,text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `has_type_privilege(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `inet_client_addr()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `inet_client_port()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `inet_server_addr()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `inet_server_port()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `inetand(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `inetmi(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `inetmi_int8(inet,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `inetnot(inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `inetor(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `inetpl(inet,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `initcap(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `int2(bigint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int2(bytea)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int2(double precision)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int2(integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int2(jsonb)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int2(numeric)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int2(real)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int24div(smallint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int24eq(smallint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int24ge(smallint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int24gt(smallint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int24le(smallint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int24lt(smallint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int24mi(smallint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int24mul(smallint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int24ne(smallint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int24pl(smallint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int28div(smallint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int28eq(smallint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int28ge(smallint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int28gt(smallint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int28le(smallint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int28lt(smallint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int28mi(smallint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int28mul(smallint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int28ne(smallint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int28pl(smallint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2_mul_cash(smallint,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2abs(smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2and(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2div(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2eq(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2ge(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2gt(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2le(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2lt(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2mi(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2mod(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2mul(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2ne(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2not(smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2or(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2pl(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2shl(smallint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2shr(smallint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2um(smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2up(smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int2xor(smallint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4("char")` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int4(bigint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int4(bit)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int4(boolean)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int4(bytea)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int4(double precision)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int4(jsonb)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int4(numeric)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int4(real)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int4(smallint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int42div(integer,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int42eq(integer,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int42ge(integer,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int42gt(integer,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int42le(integer,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int42lt(integer,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int42mi(integer,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int42mul(integer,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int42ne(integer,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int42pl(integer,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int48div(integer,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int48eq(integer,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int48ge(integer,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int48gt(integer,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int48le(integer,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int48lt(integer,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int48mi(integer,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int48mul(integer,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int48ne(integer,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int48pl(integer,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4_mul_cash(integer,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4abs(integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4and(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4div(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4eq(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4ge(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4gt(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4le(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4lt(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4mi(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4mod(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4mul(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4multirange(int4range)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int4ne(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4not(integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4or(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4pl(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4shl(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4shr(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4um(integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4up(integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int4xor(integer,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8(bit)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int8(bytea)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int8(double precision)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int8(integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int8(jsonb)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int8(numeric)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int8(oid)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int8(real)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int8(smallint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int82div(bigint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int82eq(bigint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int82ge(bigint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int82gt(bigint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int82le(bigint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int82lt(bigint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int82mi(bigint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int82mul(bigint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int82ne(bigint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int82pl(bigint,smallint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int84div(bigint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int84eq(bigint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int84ge(bigint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int84gt(bigint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int84le(bigint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int84lt(bigint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int84mi(bigint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int84mul(bigint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int84ne(bigint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int84pl(bigint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8_mul_cash(bigint,money)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8abs(bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8and(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8div(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8eq(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8ge(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8gt(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8le(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8lt(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8mi(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8mod(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8mul(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8multirange(int8range)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `int8ne(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8not(bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8or(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8pl(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8pl_inet(bigint,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8shl(bigint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8shr(bigint,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8um(bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8up(bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `int8xor(bigint,bigint)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `integer_pl_date(integer,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `inter_lb(line,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `inter_sb(lseg,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `inter_sl(lseg,line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_div(interval,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_eq(interval,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_ge(interval,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_gt(interval,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_le(interval,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_lt(interval,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_mi(interval,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_mul(interval,double precision)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_ne(interval,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_pl(interval,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_pl_date(interval,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_pl_time(interval,time without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_pl_timestamp(interval,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_pl_timestamptz(interval,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_pl_timetz(interval,time with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `interval_um(interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `isempty(anymultirange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `isempty(anyrange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `isfinite(date)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `isfinite(interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `isfinite(timestamp with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `isfinite(timestamp without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `json_agg(anyelement)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_agg_strict(anyelement)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_array_element(json,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `json_array_element_text(json,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `json_array_elements(json)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_array_elements_text(json)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_array_length(json)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_build_array("any")` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_build_array()` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_build_object("any")` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_build_object()` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_each(json)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_each_text(json)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_extract_path(json,text[])` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `json_extract_path_text(json,text[])` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `json_object_agg("any","any")` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_object_field(json,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `json_object_field_text(json,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `json_object_keys(json)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_populate_record(anyelement,json,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_populate_recordset(anyelement,json,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_strip_nulls(json,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_to_record(json)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_to_recordset(json)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `json_typeof(json)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_agg(anyelement)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_agg_strict(anyelement)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_array_element(jsonb,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_array_element_text(jsonb,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_array_elements(jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_array_elements_text(jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_array_length(jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_build_array("any")` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_build_array()` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_build_object("any")` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_build_object()` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_concat(jsonb,jsonb)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_contained(jsonb,jsonb)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_contains(jsonb,jsonb)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_delete(jsonb,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_delete(jsonb,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_delete(jsonb,text[])` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_delete_path(jsonb,text[])` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_each(jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_each_text(jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_eq(jsonb,jsonb)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_exists(jsonb,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_exists_all(jsonb,text[])` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_exists_any(jsonb,text[])` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_extract_path(jsonb,text[])` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_extract_path_text(jsonb,text[])` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_ge(jsonb,jsonb)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_gt(jsonb,jsonb)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_insert(jsonb,text[],jsonb,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_le(jsonb,jsonb)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_lt(jsonb,jsonb)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_ne(jsonb,jsonb)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_object(text[])` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_object(text[],text[])` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_object_agg("any","any")` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_object_field(jsonb,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_object_field_text(jsonb,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_object_keys(jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_path_exists(jsonb,jsonpath,jsonb,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_path_exists_opr(jsonb,jsonpath)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_path_match(jsonb,jsonpath,jsonb,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_path_match_opr(jsonb,jsonpath)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `jsonb_path_query(jsonb,jsonpath,jsonb,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_path_query_array(jsonb,jsonpath,jsonb,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_path_query_first(jsonb,jsonpath,jsonb,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_populate_record(anyelement,jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_populate_record_valid(anyelement,jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_populate_recordset(anyelement,jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_pretty(jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_set(jsonb,text[],jsonb,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_set_lax(jsonb,text[],jsonb,boolean,text)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_strip_nulls(jsonb,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_to_record(jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_to_recordset(jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `jsonb_typeof(jsonb)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `justify_days(interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `justify_hours(interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `justify_interval(interval)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `lag(anycompatible,integer,anycompatible)` | Computes aggregates or window results from query input; no database mutation |
+| `lag(anyelement)` | Computes aggregates or window results from query input; no database mutation |
+| `lag(anyelement,integer)` | Computes aggregates or window results from query input; no database mutation |
+| `last_value(anyelement)` | Computes aggregates or window results from query input; no database mutation |
+| `lcm(bigint,bigint)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `lcm(integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `lcm(numeric,numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `lead(anycompatible,integer,anycompatible)` | Computes aggregates or window results from query input; no database mutation |
+| `lead(anyelement)` | Computes aggregates or window results from query input; no database mutation |
+| `lead(anyelement,integer)` | Computes aggregates or window results from query input; no database mutation |
+| `length(bit)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `length(bytea)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `length(bytea,name)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `length(character)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `length(lseg)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `length(path)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `length(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `length(tsvector)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `line_distance(line,line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `line_eq(line,line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `line_horizontal(line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `line_interpt(line,line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `line_intersect(line,line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `line_parallel(line,line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `line_perp(line,line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `line_vertical(line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `ln(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `ln(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `log(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `log(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `log(numeric,numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `log10(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `log10(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `lower(anymultirange)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `lower(anyrange)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `lower(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `lower_inc(anymultirange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `lower_inc(anyrange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `lower_inf(anymultirange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `lower_inf(anyrange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `lpad(text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `lpad(text,integer,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `lseg(box)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `lseg_center(lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_distance(lseg,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_eq(lseg,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_ge(lseg,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_gt(lseg,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_horizontal(lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_interpt(lseg,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_intersect(lseg,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_le(lseg,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_length(lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_lt(lseg,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_ne(lseg,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_parallel(lseg,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_perp(lseg,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `lseg_vertical(lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `ltrim(bytea,bytea)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `ltrim(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `ltrim(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `macaddr(macaddr8)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `macaddr8(macaddr)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `macaddr8_and(macaddr8,macaddr8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr8_eq(macaddr8,macaddr8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr8_ge(macaddr8,macaddr8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr8_gt(macaddr8,macaddr8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr8_le(macaddr8,macaddr8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr8_lt(macaddr8,macaddr8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr8_ne(macaddr8,macaddr8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr8_not(macaddr8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr8_or(macaddr8,macaddr8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr_and(macaddr,macaddr)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr_eq(macaddr,macaddr)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr_ge(macaddr,macaddr)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr_gt(macaddr,macaddr)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr_le(macaddr,macaddr)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr_lt(macaddr,macaddr)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr_ne(macaddr,macaddr)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr_not(macaddr)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `macaddr_or(macaddr,macaddr)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `make_date(integer,integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `make_interval(integer,integer,integer,integer,integer,integer,double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `make_time(integer,integer,double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `make_timestamp(integer,integer,integer,integer,integer,double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `make_timestamptz(integer,integer,integer,integer,integer,double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `make_timestamptz(integer,integer,integer,integer,integer,double precision,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `max(anyarray)` | Computes aggregates or window results from query input; no database mutation |
+| `max(anyenum)` | Computes aggregates or window results from query input; no database mutation |
+| `max(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `max(bytea)` | Computes aggregates or window results from query input; no database mutation |
+| `max(character)` | Computes aggregates or window results from query input; no database mutation |
+| `max(date)` | Computes aggregates or window results from query input; no database mutation |
+| `max(double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `max(inet)` | Computes aggregates or window results from query input; no database mutation |
+| `max(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `max(interval)` | Computes aggregates or window results from query input; no database mutation |
+| `max(money)` | Computes aggregates or window results from query input; no database mutation |
+| `max(numeric)` | Computes aggregates or window results from query input; no database mutation |
+| `max(oid)` | Computes aggregates or window results from query input; no database mutation |
+| `max(pg_lsn)` | Computes aggregates or window results from query input; no database mutation |
+| `max(real)` | Computes aggregates or window results from query input; no database mutation |
+| `max(record)` | Computes aggregates or window results from query input; no database mutation |
+| `max(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `max(text)` | Computes aggregates or window results from query input; no database mutation |
+| `max(tid)` | Computes aggregates or window results from query input; no database mutation |
+| `max(time with time zone)` | Computes aggregates or window results from query input; no database mutation |
+| `max(time without time zone)` | Computes aggregates or window results from query input; no database mutation |
+| `max(timestamp with time zone)` | Computes aggregates or window results from query input; no database mutation |
+| `max(timestamp without time zone)` | Computes aggregates or window results from query input; no database mutation |
+| `max(xid8)` | Computes aggregates or window results from query input; no database mutation |
+| `md5(bytea)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `md5(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `min(anyarray)` | Computes aggregates or window results from query input; no database mutation |
+| `min(anyenum)` | Computes aggregates or window results from query input; no database mutation |
+| `min(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `min(bytea)` | Computes aggregates or window results from query input; no database mutation |
+| `min(character)` | Computes aggregates or window results from query input; no database mutation |
+| `min(date)` | Computes aggregates or window results from query input; no database mutation |
+| `min(double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `min(inet)` | Computes aggregates or window results from query input; no database mutation |
+| `min(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `min(interval)` | Computes aggregates or window results from query input; no database mutation |
+| `min(money)` | Computes aggregates or window results from query input; no database mutation |
+| `min(numeric)` | Computes aggregates or window results from query input; no database mutation |
+| `min(oid)` | Computes aggregates or window results from query input; no database mutation |
+| `min(pg_lsn)` | Computes aggregates or window results from query input; no database mutation |
+| `min(real)` | Computes aggregates or window results from query input; no database mutation |
+| `min(record)` | Computes aggregates or window results from query input; no database mutation |
+| `min(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `min(text)` | Computes aggregates or window results from query input; no database mutation |
+| `min(tid)` | Computes aggregates or window results from query input; no database mutation |
+| `min(time with time zone)` | Computes aggregates or window results from query input; no database mutation |
+| `min(time without time zone)` | Computes aggregates or window results from query input; no database mutation |
+| `min(timestamp with time zone)` | Computes aggregates or window results from query input; no database mutation |
+| `min(timestamp without time zone)` | Computes aggregates or window results from query input; no database mutation |
+| `min(xid8)` | Computes aggregates or window results from query input; no database mutation |
+| `mod(bigint,bigint)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `mod(integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `mod(numeric,numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `mod(smallint,smallint)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `mode(anyelement)` | Computes aggregates or window results from query input; no database mutation |
+| `money(bigint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `money(integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `money(numeric)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `mul_d_interval(double precision,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_adjacent_multirange(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_adjacent_range(anymultirange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_after_multirange(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_after_range(anymultirange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_before_multirange(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_before_range(anymultirange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_contained_by_multirange(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_contained_by_range(anymultirange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_contains_elem(anymultirange,anyelement)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_contains_multirange(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_contains_range(anymultirange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_eq(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_ge(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_gt(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_intersect(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_le(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_lt(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_minus(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_ne(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_overlaps_multirange(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_overlaps_range(anymultirange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_overleft_multirange(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_overleft_range(anymultirange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_overright_multirange(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_overright_range(anymultirange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `multirange_union(anymultirange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `name(character varying)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `name(character)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `name(text)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `nameeq(name,name)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `nameeqtext(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `namege(name,name)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `namegetext(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `namegt(name,name)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `namegttext(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `nameiclike(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `nameicnlike(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `nameicregexeq(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `nameicregexne(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `namele(name,name)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `nameletext(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `namelike(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `namelt(name,name)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `namelttext(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `namene(name,name)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `namenetext(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `namenlike(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `nameregexeq(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `nameregexne(name,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `network_eq(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `network_ge(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `network_gt(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `network_le(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `network_lt(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `network_ne(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `network_overlap(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `network_sub(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `network_subeq(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `network_sup(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `network_supeq(inet,inet)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `now()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `nth_value(anyelement,integer)` | Computes aggregates or window results from query input; no database mutation |
+| `ntile(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `numeric_abs(numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_add(numeric,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_div(numeric,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_eq(numeric,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_ge(numeric,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_gt(numeric,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_le(numeric,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_lt(numeric,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_mod(numeric,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_mul(numeric,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_ne(numeric,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_pl_pg_lsn(numeric,pg_lsn)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_power(numeric,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_sub(numeric,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_uminus(numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `numeric_uplus(numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `nummultirange(numrange)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `obj_description(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `obj_description(oid,name)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `octet_length(bit)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `octet_length(bytea)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `octet_length(character)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `octet_length(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `oid(bigint)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `oideq(oid,oid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `oidge(oid,oid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `oidgt(oid,oid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `oidle(oid,oid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `oidlt(oid,oid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `oidne(oid,oid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `oidvectoreq(oidvector,oidvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `oidvectorge(oidvector,oidvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `oidvectorgt(oidvector,oidvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `oidvectorle(oidvector,oidvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `oidvectorlt(oidvector,oidvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `oidvectorne(oidvector,oidvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `oidvectortypes(oidvector)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `on_pb(point,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `on_pl(point,line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `on_ppath(point,path)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `on_ps(point,lseg)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `on_sb(lseg,box)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `on_sl(lseg,line)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path(polygon)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `path_add(path,path)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_add_pt(path,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_contain_pt(path,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_distance(path,path)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_div_pt(path,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_inter(path,path)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_length(path)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_mul_pt(path,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_n_eq(path,path)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_n_ge(path,path)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_n_gt(path,path)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_n_le(path,path)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_n_lt(path,path)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_npoints(path)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `path_sub_pt(path,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `percent_rank("any")` | Computes aggregates or window results from query input; no database mutation |
+| `percent_rank()` | Computes aggregates or window results from query input; no database mutation |
+| `percentile_cont(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `percentile_cont(double precision,interval)` | Computes aggregates or window results from query input; no database mutation |
+| `percentile_cont(double precision[],double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `percentile_cont(double precision[],interval)` | Computes aggregates or window results from query input; no database mutation |
+| `percentile_disc(double precision,anyelement)` | Computes aggregates or window results from query input; no database mutation |
+| `percentile_disc(double precision[],anyelement)` | Computes aggregates or window results from query input; no database mutation |
+| `pg_backend_pid()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_basetype(regtype)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_char_to_encoding(name)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_client_encoding()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_collation_for("any")` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_collation_is_visible(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_column_size("any")` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_conf_load_time()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_conversion_is_visible(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_describe_object(oid,oid,integer)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_encoding_max_length(integer)` | Reads encoding metadata to describe column lengths |
+| `pg_encoding_to_char(integer)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_function_is_visible(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_constraintdef(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_constraintdef(oid,boolean)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_expr(pg_node_tree,oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_expr(pg_node_tree,oid,boolean)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_function_arguments(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_function_identity_arguments(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_function_result(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_functiondef(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_indexdef(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_indexdef(oid,integer,boolean)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_keywords()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_partkeydef(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_ruledef(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_ruledef(oid,boolean)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_serial_sequence(text,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_triggerdef(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_triggerdef(oid,boolean)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_userbyid(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_viewdef(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_viewdef(oid,boolean)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_viewdef(oid,integer)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_viewdef(text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_get_viewdef(text,boolean)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_has_role(name,name,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_has_role(name,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_has_role(name,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_has_role(oid,name,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_has_role(oid,oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_has_role(oid,text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_identify_object(oid,oid,integer)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_is_other_temp_schema(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_lsn_eq(pg_lsn,pg_lsn)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `pg_lsn_ge(pg_lsn,pg_lsn)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `pg_lsn_gt(pg_lsn,pg_lsn)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `pg_lsn_le(pg_lsn,pg_lsn)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `pg_lsn_lt(pg_lsn,pg_lsn)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `pg_lsn_mi(pg_lsn,pg_lsn)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `pg_lsn_mii(pg_lsn,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `pg_lsn_ne(pg_lsn,pg_lsn)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `pg_lsn_pli(pg_lsn,numeric)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `pg_my_temp_schema()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_opclass_is_visible(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_operator_is_visible(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_opfamily_is_visible(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_options_to_table(text[])` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_postmaster_start_time()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_relation_is_updatable(regclass,boolean)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_table_is_visible(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_tablespace_location(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_trigger_depth()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_ts_config_is_visible(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_ts_dict_is_visible(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_ts_parser_is_visible(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_ts_template_is_visible(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_type_is_visible(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `pg_typeof("any")` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `phraseto_tsquery(regconfig,text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `phraseto_tsquery(text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `pi()` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `plainto_tsquery(regconfig,text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `plainto_tsquery(text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `point(box)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `point(circle)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `point(lseg)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `point(polygon)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `point_above(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `point_add(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `point_below(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `point_distance(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `point_div(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `point_eq(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `point_horiz(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `point_left(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `point_mul(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `point_ne(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `point_right(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `point_sub(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `point_vert(point,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_above(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_below(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_center(polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_contain(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_contain_pt(polygon,point)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_contained(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_distance(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_left(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_npoints(polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_overabove(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_overbelow(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_overlap(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_overleft(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_overright(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_right(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `poly_same(polygon,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `polygon(box)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `polygon(circle)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `polygon(path)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `power(double precision,double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `power(numeric,numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `pt_contained_circle(point,circle)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `pt_contained_poly(point,polygon)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `quote_ident(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `quote_literal(anyelement)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `quote_literal(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `quote_nullable(anyelement)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `quote_nullable(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `radians(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `range_adjacent(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_adjacent_multirange(anyrange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_after(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_after_multirange(anyrange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_before(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_before_multirange(anyrange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_contained_by(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_contained_by_multirange(anyrange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_contains(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_contains_elem(anyrange,anyelement)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_contains_multirange(anyrange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_eq(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_ge(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_gt(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_intersect(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_le(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_lt(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_merge(anymultirange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `range_merge(anyrange,anyrange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `range_minus(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_ne(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_overlaps(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_overlaps_multirange(anyrange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_overleft(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_overleft_multirange(anyrange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_overright(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_overright_multirange(anyrange,anymultirange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `range_union(anyrange,anyrange)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `rank("any")` | Computes aggregates or window results from query input; no database mutation |
+| `rank()` | Computes aggregates or window results from query input; no database mutation |
+| `record_eq(record,record)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `record_ge(record,record)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `record_gt(record,record)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `record_image_eq(record,record)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `record_image_ge(record,record)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `record_image_gt(record,record)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `record_image_le(record,record)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `record_image_lt(record,record)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `record_image_ne(record,record)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `record_le(record,record)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `record_lt(record,record)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `record_ne(record,record)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `regclass(text)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `regexp_count(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_count(text,text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_count(text,text,integer,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_instr(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_instr(text,text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_instr(text,text,integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_instr(text,text,integer,integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_instr(text,text,integer,integer,integer,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_instr(text,text,integer,integer,integer,text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_like(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_like(text,text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_match(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_match(text,text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_matches(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_matches(text,text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_replace(text,text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_replace(text,text,text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_replace(text,text,text,integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_replace(text,text,text,integer,integer,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_replace(text,text,text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_split_to_array(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_split_to_array(text,text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_split_to_table(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regexp_split_to_table(text,text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `regr_avgx(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `regr_avgy(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `regr_count(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `regr_intercept(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `regr_r2(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `regr_slope(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `regr_sxx(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `regr_sxy(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `regr_syy(double precision,double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `repeat(text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `replace(text,text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `reverse(bytea)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `reverse(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `round(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `round(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `round(numeric,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `row_number()` | Computes aggregates or window results from query input; no database mutation |
+| `row_security_active(oid)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `row_security_active(text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `row_to_json(record)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `row_to_json(record,boolean)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `rpad(text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `rpad(text,integer,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `rtrim(bytea,bytea)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `rtrim(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `rtrim(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `scale(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `shobj_description(oid,name)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `sign(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `sign(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `similar_to_escape(text)` | Transforms a supplied SQL pattern into a regular expression |
+| `similar_to_escape(text,text)` | Transforms a supplied SQL pattern into a regular expression |
+| `sin(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `sinh(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `split_part(text,text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `sqrt(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `sqrt(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `starts_with(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `statement_timestamp()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `stddev(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev(double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev(numeric)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev(real)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev_pop(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev_pop(double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev_pop(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev_pop(numeric)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev_pop(real)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev_pop(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev_samp(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev_samp(double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev_samp(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev_samp(numeric)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev_samp(real)` | Computes aggregates or window results from query input; no database mutation |
+| `stddev_samp(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `string_agg(bytea,bytea)` | Computes aggregates or window results from query input; no database mutation |
+| `string_agg(text,text)` | Computes aggregates or window results from query input; no database mutation |
+| `string_to_array(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `string_to_array(text,text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `string_to_table(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `string_to_table(text,text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `strpos(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `substr(bytea,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `substr(bytea,integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `substr(text,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `substr(text,integer,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `sum(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `sum(double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `sum(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `sum(interval)` | Computes aggregates or window results from query input; no database mutation |
+| `sum(money)` | Computes aggregates or window results from query input; no database mutation |
+| `sum(numeric)` | Computes aggregates or window results from query input; no database mutation |
+| `sum(real)` | Computes aggregates or window results from query input; no database mutation |
+| `sum(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `tan(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `tanh(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `text("char")` | Implements an initdb cast: converts supplied values without changing stored state |
+| `text(boolean)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `text(character)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `text(inet)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `text(name)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `text(xml)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `text_ge(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `text_gt(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `text_le(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `text_lt(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `text_pattern_ge(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `text_pattern_gt(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `text_pattern_le(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `text_pattern_lt(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `textanycat(text,anynonarray)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `textcat(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `texteq(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `texteqname(text,name)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `textgename(text,name)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `textgtname(text,name)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `texticlike(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `texticnlike(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `texticregexeq(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `texticregexne(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `textlename(text,name)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `textlike(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `textltname(text,name)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `textne(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `textnename(text,name)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `textnlike(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `textregexeq(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `textregexne(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tideq(tid,tid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tidge(tid,tid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tidgt(tid,tid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tidle(tid,tid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tidlt(tid,tid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tidne(tid,tid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `time_eq(time without time zone,time without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `time_ge(time without time zone,time without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `time_gt(time without time zone,time without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `time_le(time without time zone,time without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `time_lt(time without time zone,time without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `time_mi_interval(time without time zone,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `time_mi_time(time without time zone,time without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `time_ne(time without time zone,time without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `time_pl_interval(time without time zone,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timedate_pl(time without time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_eq(timestamp without time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_eq_date(timestamp without time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_eq_timestamptz(timestamp without time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_ge(timestamp without time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_ge_date(timestamp without time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_ge_timestamptz(timestamp without time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_gt(timestamp without time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_gt_date(timestamp without time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_gt_timestamptz(timestamp without time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_le(timestamp without time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_le_date(timestamp without time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_le_timestamptz(timestamp without time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_lt(timestamp without time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_lt_date(timestamp without time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_lt_timestamptz(timestamp without time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_mi(timestamp without time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_mi_interval(timestamp without time zone,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_ne(timestamp without time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_ne_date(timestamp without time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_ne_timestamptz(timestamp without time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamp_pl_interval(timestamp without time zone,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz(date)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `timestamptz(date,time with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `timestamptz(date,time without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `timestamptz(timestamp with time zone,integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `timestamptz(timestamp without time zone)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `timestamptz_eq(timestamp with time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_eq_date(timestamp with time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_eq_timestamp(timestamp with time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_ge(timestamp with time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_ge_date(timestamp with time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_ge_timestamp(timestamp with time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_gt(timestamp with time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_gt_date(timestamp with time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_gt_timestamp(timestamp with time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_le(timestamp with time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_le_date(timestamp with time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_le_timestamp(timestamp with time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_lt(timestamp with time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_lt_date(timestamp with time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_lt_timestamp(timestamp with time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_mi(timestamp with time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_mi_interval(timestamp with time zone,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_ne(timestamp with time zone,timestamp with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_ne_date(timestamp with time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_ne_timestamp(timestamp with time zone,timestamp without time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timestamptz_pl_interval(timestamp with time zone,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timetz(time with time zone,integer)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `timetz(time without time zone)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `timetz(timestamp with time zone)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `timetz_eq(time with time zone,time with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timetz_ge(time with time zone,time with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timetz_gt(time with time zone,time with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timetz_le(time with time zone,time with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timetz_lt(time with time zone,time with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timetz_mi_interval(time with time zone,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timetz_ne(time with time zone,time with time zone)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timetz_pl_interval(time with time zone,interval)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timetzdate_pl(time with time zone,date)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `timezone(interval,time with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `timezone(interval,timestamp with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `timezone(interval,timestamp without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `timezone(text,time with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `timezone(text,timestamp with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `timezone(text,timestamp without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `timezone(time with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `timezone(timestamp with time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `timezone(timestamp without time zone)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_char(bigint,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_char(double precision,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_char(integer,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_char(interval,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_char(numeric,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_char(real,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_char(timestamp with time zone,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_char(timestamp without time zone,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_date(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_json(anyelement)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `to_jsonb(anyelement)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `to_number(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_regclass(text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `to_regcollation(text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `to_regnamespace(text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `to_regoper(text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `to_regoperator(text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `to_regproc(text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `to_regprocedure(text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `to_regrole(text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `to_regtype(text)` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `to_timestamp(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_timestamp(text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `to_tsquery(regconfig,text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `to_tsquery(text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `to_tsvector(json)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `to_tsvector(jsonb)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `to_tsvector(regconfig,json)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `to_tsvector(regconfig,jsonb)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `to_tsvector(regconfig,text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `to_tsvector(text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `transaction_timestamp()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `translate(text,text,text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `trim_scale(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `trunc(double precision)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `trunc(macaddr)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `trunc(macaddr8)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `trunc(numeric)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `trunc(numeric,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `ts_headline(json,tsquery)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_headline(json,tsquery,text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_headline(jsonb,tsquery)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_headline(jsonb,tsquery,text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_headline(regconfig,json,tsquery)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_headline(regconfig,json,tsquery,text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_headline(regconfig,jsonb,tsquery)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_headline(regconfig,jsonb,tsquery,text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_headline(regconfig,text,tsquery)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_headline(regconfig,text,tsquery,text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_headline(text,tsquery)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_headline(text,tsquery,text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_match_qv(tsquery,tsvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `ts_match_tq(text,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `ts_match_tt(text,text)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `ts_match_vq(tsvector,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `ts_rank(real[],tsvector,tsquery)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_rank(real[],tsvector,tsquery,integer)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_rank(tsvector,tsquery)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_rank(tsvector,tsquery,integer)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_rank_cd(real[],tsvector,tsquery)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_rank_cd(real[],tsvector,tsquery,integer)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_rank_cd(tsvector,tsquery)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `ts_rank_cd(tsvector,tsquery,integer)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `tsmultirange(tsrange)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `tsq_mcontained(tsquery,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsq_mcontains(tsquery,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsquery_and(tsquery,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsquery_eq(tsquery,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsquery_ge(tsquery,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsquery_gt(tsquery,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsquery_le(tsquery,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsquery_lt(tsquery,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsquery_ne(tsquery,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsquery_not(tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsquery_or(tsquery,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsquery_phrase(tsquery,tsquery)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tstzmultirange(tstzrange)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `tsvector_concat(tsvector,tsvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsvector_eq(tsvector,tsvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsvector_ge(tsvector,tsvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsvector_gt(tsvector,tsvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsvector_le(tsvector,tsvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsvector_lt(tsvector,tsvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `tsvector_ne(tsvector,tsvector)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `unnest(anyarray)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `unnest(anymultirange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `unnest(tsvector)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `upper(anymultirange)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `upper(anyrange)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `upper(text)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `upper_inc(anymultirange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `upper_inc(anyrange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `upper_inf(anymultirange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `upper_inf(anyrange)` | Constructs, inspects or expands array, JSON and range values supplied by the query |
+| `uuid_eq(uuid,uuid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `uuid_ge(uuid,uuid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `uuid_gt(uuid,uuid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `uuid_le(uuid,uuid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `uuid_lt(uuid,uuid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `uuid_ne(uuid,uuid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `var_pop(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `var_pop(double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `var_pop(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `var_pop(numeric)` | Computes aggregates or window results from query input; no database mutation |
+| `var_pop(real)` | Computes aggregates or window results from query input; no database mutation |
+| `var_pop(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `var_samp(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `var_samp(double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `var_samp(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `var_samp(numeric)` | Computes aggregates or window results from query input; no database mutation |
+| `var_samp(real)` | Computes aggregates or window results from query input; no database mutation |
+| `var_samp(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `varbit(bit varying,integer,boolean)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `varbiteq(bit varying,bit varying)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `varbitge(bit varying,bit varying)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `varbitgt(bit varying,bit varying)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `varbitle(bit varying,bit varying)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `varbitlt(bit varying,bit varying)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `varbitne(bit varying,bit varying)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `variance(bigint)` | Computes aggregates or window results from query input; no database mutation |
+| `variance(double precision)` | Computes aggregates or window results from query input; no database mutation |
+| `variance(integer)` | Computes aggregates or window results from query input; no database mutation |
+| `variance(numeric)` | Computes aggregates or window results from query input; no database mutation |
+| `variance(real)` | Computes aggregates or window results from query input; no database mutation |
+| `variance(smallint)` | Computes aggregates or window results from query input; no database mutation |
+| `version()` | Reads catalog metadata, privilege decisions or existing session/time values without assigning an XID or changing settings |
+| `websearch_to_tsquery(regconfig,text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `websearch_to_tsquery(text)` | Parses or searches supplied text using existing text-search configuration; no stored-state mutation |
+| `width_bucket(anycompatible,anycompatiblearray)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `width_bucket(double precision,double precision,double precision,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `width_bucket(numeric,numeric,numeric,integer)` | Computes scalar text, bytes, numeric, boolean or date values without changing stored state |
+| `xid(xid8)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `xid8eq(xid8,xid8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `xid8ge(xid8,xid8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `xid8gt(xid8,xid8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `xid8le(xid8,xid8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `xid8lt(xid8,xid8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `xid8ne(xid8,xid8)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `xideq(xid,xid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `xideqint4(xid,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `xidneq(xid,xid)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `xidneqint4(xid,integer)` | Implements an initdb operator: compares or computes supplied values without changing stored state |
+| `xml(text)` | Implements an initdb cast: converts supplied values without changing stored state |
+| `xpath(text,xml)` | Reads a supplied XML value with an XPath expression; required by AdventureWorks read views |
+| `xpath(text,xml,text[])` | Reads a supplied XML value with an XPath expression; required by AdventureWorks read views |
+| `xpath_exists(text,xml)` | Tests an XPath expression against a supplied XML value without changing stored state |
+| `xpath_exists(text,xml,text[])` | Tests an XPath expression against a supplied XML value without changing stored state |
