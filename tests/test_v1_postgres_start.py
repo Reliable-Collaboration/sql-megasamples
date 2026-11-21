@@ -187,9 +187,18 @@ class PolicyStartupTests(unittest.TestCase):
         try:
             # Opus P3-1, reconciled by test: as a non-root user the image fails closed before any start
             # (its health passfile is root's to write), so no override is silently skipped there.
+            # The private password start can answer on its local socket for a moment first (Sol round 5,
+            # P3-7, a workstream 1 input), so the outcome asserted is the container's exit, not readiness.
             probes.append(name + "-nonroot")
-            self.assertFalse(start(probes[-1], "/usr/lib/postgresql/18/bin/postgres",
-                                   options=("--user", "postgres", "--env-file", str(secret))))
+            capacity()
+            podman("run", "-d", "--name", probes[-1], "--memory", "1g", "-v", mount, "--user", "postgres",
+                   "--env-file", str(secret), image, "/usr/lib/postgresql/18/bin/postgres")
+            for _ in range(150):
+                if podman("inspect", "--format", "{{.State.Status}}", probes[-1]).stdout.strip() == "exited":
+                    break
+                time.sleep(0.2)
+            self.assertEqual(podman("inspect", "--format", "{{.State.Status}}", probes[-1]).stdout.strip(), "exited")
+            self.assertNotEqual(podman("inspect", "--format", "{{.State.ExitCode}}", probes[-1]).stdout.strip(), "0")
             # The path form as root is the server named by its path: it starts with the override applied.
             probes.append(name + "-path")
             self.assertTrue(start(probes[-1], "/usr/lib/postgresql/18/bin/postgres",

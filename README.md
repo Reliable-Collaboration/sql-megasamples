@@ -176,7 +176,8 @@ libraries it would use. These include every configuration file, `postgresql.auto
 - a server binary other than its own `postgres`.
 
 As root, it first makes the data directory `postgres`'s own, as the upstream image does. A start as
-a non-root user fails before the server accepts any connection. The healthcheck is healthy only
+a non-root user exits before the public server starts; with password overrides, the private
+password start may run first, listening only on its local socket. The healthcheck is healthy only
 while the `read_policy` library is loaded. **What is not checked:** a replaced entrypoint, or a
 command that wraps the server (for example `gosu postgres postgres …`), bypasses these checks, and
 the healthcheck is then the only signal that the policy is missing.

@@ -36,7 +36,7 @@ These are the reviews of `c95ee833`: Sol (`S5-*`) and Opus (`O5-*`). A hot-area 
 | S5-8 | P3 | — | **Fixed now** | — Design 2.4 lists `NO_BACKSLASH_ESCAPES` (`93a26c6`). |
 | O5-1 | P3 | 3 | Workstream input (same class as S5-2) | **None**, as S5-2. |
 | O5-2 | P3 | — | **Fixed now** (same as S5-6) | — |
-| O5-3 | P3 | 1 | Workstream input | **A documentation stopgap.** The README sentence was inaccurate. It now says a non-root start fails before the server accepts any connection (`93a26c6`). |
+| O5-3 | P3 | 1 | Workstream input | **A documentation stopgap.** The README sentence was inaccurate. It now says a non-root start exits before the public server starts, and that the private password start may run first on its local socket (`93a26c6`, corrected in the next commit after a run showed that start answering). |
 | O5-4 | P3 | 1 | Workstream input | **A documentation stopgap.** The README now states that a replaced entrypoint or a wrapping command is unchecked, and that the healthcheck is then the only signal (`93a26c6`). |
 | O5-5 | P3 | 3 | Workstream input | **None.** The exit code is right; only one copy's reason misleads. |
 
