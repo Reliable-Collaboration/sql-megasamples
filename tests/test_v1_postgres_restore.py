@@ -42,13 +42,15 @@ class RestoreTests(unittest.TestCase):
                                      "WHERE extname = 'read_policy'", database), "read_policy pg_catalog")
         self.assertEqual(self.accept("SELECT evtenabled FROM pg_event_trigger "
                                      "WHERE evtname = 'megasamples_close_routines'", database), "A")
+        # The superuser creates the probe: a restored database's public schema is not admin's to
+        # create in, and the trigger closes routines from every creator.
         self.accept("CREATE FUNCTION public.v1_restored_probe() RETURNS int LANGUAGE sql AS 'SELECT 1'",
-                    database, "admin")
+                    database)
         try:
             self.assertEqual(self.accept("SELECT has_function_privilege('demo', 'public.v1_restored_probe()', "
                                          "'EXECUTE')", database), "f")
         finally:
-            self.accept("DROP FUNCTION public.v1_restored_probe()", database, "admin")
+            self.accept("DROP FUNCTION public.v1_restored_probe()", database)
 
     def counts(self, database):
         return self.accept("""SELECT format('SELECT %L || '':'' || count(*) FROM %I.%I', n.nspname || '.' || c.relname,
