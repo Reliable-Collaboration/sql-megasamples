@@ -218,7 +218,15 @@ def published_v1_inventory():
     return json.loads(Path('docs/validation/dl-077-v1-public-routines.json').read_text())
 
 
-@pytest.mark.parametrize('database', PG_DATABASES)
+# Sol round 10, 3: qualifying the publication is its own, explicit run against the candidate it was published
+# from, and then every published database's rows are compared. Otherwise the privilege checks stay usable with
+# whatever datasets the image carries: the rows are compared in the selected databases, and the publication's
+# database list is not required.
+QUALIFY_V1_PUBLICATION = os.environ.get('STRICT_READ_V1_PUBLICATION') == '1'
+V1_ROW_DATABASES = published_v1_inventory()['databases'] if QUALIFY_V1_PUBLICATION else PG_DATABASES
+
+
+@pytest.mark.parametrize('database', V1_ROW_DATABASES)
 def test_postgres_published_v1_inventory_is_demos_executable_set(database):
     """Opus round 8, P3-1 and Sol round 9, 3: the published inventory is the image's, row for row and field
     for field (signature, name, namespace, kind, volatility, and the initdb operator or cast it implements),
@@ -238,6 +246,8 @@ def test_postgres_published_v1_inventory_is_demos_executable_set(database):
     assert actual == expected, database + ': demo can execute a set other than the published inventory'
 
 
+@pytest.mark.skipif(not QUALIFY_V1_PUBLICATION, reason='set STRICT_READ_V1_PUBLICATION=1 to qualify the '
+                    'publication against the candidate it was published from')
 def test_postgres_published_v1_inventory_names_the_candidates_databases():
     """Sol round 9, 3: the publication's databases are the candidate's connectable ones, and its count is
     its rows'. Run against the candidate it was published from."""
