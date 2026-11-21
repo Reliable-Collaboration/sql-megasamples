@@ -117,7 +117,8 @@ def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("action", choices=["status", "clean"], nargs="?", default="status")
     ap.add_argument("--all", action="store_true",
-                    help="with `clean`: also remove the compose stack, with each engine's working data")
+                    help="with `clean`: also remove the compose stack, with each engine's working data; "
+                         "the named SQLite volume stays")
     a = ap.parse_args(argv)
     return status() if a.action == "status" else clean(a.all)
 
