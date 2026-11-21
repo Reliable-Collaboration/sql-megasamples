@@ -45,4 +45,6 @@ GRANT EXECUTE ON FUNCTION pg_catalog.nextval(regclass) TO megasamples_write_rout
 -- Packaging as an extension keeps template-resident policy objects out of
 -- pg_dump's object list. CREATE EXTENSION IF NOT EXISTS on restore is safe even
 -- though the freshly cloned template already contains the policy.
-CREATE EXTENSION read_policy;
+CREATE SCHEMA megasamples_policy AUTHORIZATION postgres;
+REVOKE ALL ON SCHEMA megasamples_policy FROM PUBLIC;
+CREATE EXTENSION read_policy WITH SCHEMA megasamples_policy;

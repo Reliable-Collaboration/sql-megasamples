@@ -84,9 +84,13 @@ class PostgresPolicyTests(unittest.TestCase):
                             "v1_another_123456789abc"):
                     with self.subTest(destination=bad):
                         self.refuse_create(bad, "TEMPLATE v1seed_start", database, search_path)
-                for source in ("template0", "template1", "v1unregistered_start"):
+                for source, destination in (
+                    ("template0", "v1_v1seed_123456789abc"),
+                    ("template1", "v1_v1seed_123456789abc"),
+                    ("v1unregistered_start", "v1_v1unregistered_123456789abc"),
+                ):
                     with self.subTest(source=source):
-                        self.refuse_create("v1_v1seed_123456789abc", f"TEMPLATE {source}", database, search_path)
+                        self.refuse_create(destination, f"TEMPLATE {source}", database, search_path)
                 self.accept(command("CREATE DATABASE v1_v1seed_123456789abc TEMPLATE v1seed_start"),
                             "v1_copier", database)
                 try:
@@ -188,6 +192,29 @@ class PostgresPolicyTests(unittest.TestCase):
             self.refuse("ALTER ROLE CURRENT_USER PASSWORD NULL", user, "di_native")
             result = self.sql("SELECT 42", user, "chinook")
             self.assertIn("permission denied for database", result.stderr)
+
+    def test_copy_owner_cannot_shadow_the_event_trigger_catalog(self):
+        self.accept("GRANT CONNECT ON DATABASE v1_owned TO v1_readonly")
+        self.accept("""
+            CREATE TEMP TABLE pg_proc (id int);
+            CREATE FUNCTION public.v1_shadowed() RETURNS int LANGUAGE sql AS 'SELECT 42';
+        """, "v1_copier", "v1_owned")
+        self.refuse("SELECT public.v1_shadowed()", "v1_readonly", "v1_owned")
+
+    def test_copy_owner_cannot_drop_the_event_trigger_with_public(self):
+        name = "v1_v1seed_000000000001"
+        self.accept(f"CREATE DATABASE {name} TEMPLATE v1seed_start", "v1_copier")
+        try:
+            self.accept(f"GRANT CONNECT ON DATABASE {name} TO v1_readonly", "v1_copier")
+            self.accept("""
+                DROP SCHEMA public CASCADE;
+                CREATE SCHEMA copy_objects;
+                GRANT USAGE ON SCHEMA copy_objects TO v1_readonly;
+                CREATE FUNCTION copy_objects.v1_after_drop() RETURNS int LANGUAGE sql AS 'SELECT 42';
+            """, "v1_copier", name)
+            self.refuse("SELECT copy_objects.v1_after_drop()", "v1_readonly", name)
+        finally:
+            self.accept(f"DROP DATABASE {name}")
 
     def test_event_trigger_closes_routines_without_a_role_named_admin(self):
         self.accept("ALTER ROLE admin RENAME TO v1_saved_admin")

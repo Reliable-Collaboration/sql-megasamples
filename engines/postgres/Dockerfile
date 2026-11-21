@@ -105,6 +105,7 @@ if [ -f /build/databases/templates.list ]; then
 fi
 psql -v ON_ERROR_STOP=1 -q -f /build/init/99-trim-wal.sql postgres
 pg_ctl -w -m fast stop >/dev/null
+printf '1\n' > "$PGDATA/megasamples-read-policy"
 SH
 USER root
 RUN rm -rf /build

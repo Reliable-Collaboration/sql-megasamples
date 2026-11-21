@@ -1,15 +1,13 @@
-CREATE SCHEMA megasamples_policy AUTHORIZATION postgres;
-REVOKE ALL ON SCHEMA megasamples_policy FROM PUBLIC;
-CREATE FUNCTION megasamples_policy.close_routine_defaults() RETURNS event_trigger
-LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog AS $$
-DECLARE command record;
+CREATE FUNCTION megasamples_policy.close_routine_defaults() RETURNS pg_catalog.event_trigger
+LANGUAGE plpgsql SECURITY DEFINER SET search_path = pg_catalog, pg_temp AS $$
+DECLARE command pg_catalog.record;
 BEGIN
-  FOR command IN SELECT * FROM pg_event_trigger_ddl_commands() LOOP
-    IF command.classid = 'pg_proc'::regclass THEN
-      IF has_function_privilege(to_regrole('admin')::oid, command.objid, 'EXECUTE') THEN
-        EXECUTE format('GRANT EXECUTE ON ROUTINE %s TO admin', command.objid::regprocedure);
+  FOR command IN SELECT * FROM pg_catalog.pg_event_trigger_ddl_commands() LOOP
+    IF command.classid OPERATOR(pg_catalog.=) 'pg_catalog.pg_proc'::pg_catalog.regclass THEN
+      IF pg_catalog.has_function_privilege(pg_catalog.to_regrole('admin')::pg_catalog.oid, command.objid, 'EXECUTE') THEN
+        EXECUTE pg_catalog.format('GRANT EXECUTE ON ROUTINE %s TO admin', command.objid::pg_catalog.regprocedure);
       END IF;
-      EXECUTE format('REVOKE EXECUTE ON ROUTINE %s FROM PUBLIC', command.objid::regprocedure);
+      EXECUTE pg_catalog.format('REVOKE EXECUTE ON ROUTINE %s FROM PUBLIC', command.objid::pg_catalog.regprocedure);
     END IF;
   END LOOP;
 END

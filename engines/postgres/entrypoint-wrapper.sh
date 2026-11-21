@@ -4,6 +4,17 @@
 # server privately, altering the roles, stopping it, and then handing over to the official entrypoint.
 set -euo pipefail
 
+if [[ ${1:-} == -* ]]; then
+    set -- postgres "$@"
+fi
+if [[ ${1:-} == postgres ]]; then
+    marker="$PGDATA/megasamples-read-policy"
+    if [[ ! -f "$marker" || -L "$marker" || $(<"$marker") != 1 ]]; then
+        printf '%s\n' 'PostgreSQL data has no compatible megasamples read policy' >&2
+        exit 1
+    fi
+fi
+
 if [ "${1:-}" = "postgres" ] && [ -n "${POSTGRES_PASSWORD:-}${DEMO_PASSWORD:-}${ADMIN_PASSWORD:-}" ]; then
     # the official entrypoint chowns PGDATA when it runs as root; do the same before the private start
     if [ "$(id -u)" = "0" ]; then
