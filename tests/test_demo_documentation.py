@@ -180,5 +180,6 @@ def test_help_says_what_teardown_discards():
     assert any('make up | down' in line and phrase in line for line in makefile.splitlines())
     assert any('clean-all' in line and phrase in line for line in makefile.splitlines())
     assert phrase in cli.COMMANDS['down'][2]
-    assert phrase in (ROOT / 'megasamples/job.py').read_text().split('def down', 1)[1].split('\n', 3)[2]
+    down = (ROOT / 'megasamples/job.py').read_text().split('def down', 1)[1].split('ap.parse_args', 1)[0]
+    assert phrase in down
     assert phrase in workspace.__doc__.split('clean --all', 1)[1].splitlines()[0]
