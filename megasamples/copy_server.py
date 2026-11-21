@@ -160,9 +160,14 @@ class ServerCopies:
                 self.sweep_one(selected, removed, kept)
             except (CopyError, self.errors.Error) as failure:
                 # A dry run changes nothing; a sweep changes something only once it removed or rolled back.
-                if self.args.dry_run or not (removed or self.wrote):
+                if self.args.dry_run or not (removed or self.wrote or
+                                             (isinstance(failure, CopyError) and failure.result)):
                     raise
                 # Something already changed: the reply must say what (3.3, exit 8).
+                if isinstance(failure, CopyError) and isinstance(failure.result, dict) \
+                        and failure.result.get("ledger") == "unsettled":
+                    # The engine confirmed the removal; only the ledger row's deletion is uncertain.
+                    removed.append(failure.result)
                 if isinstance(failure, CopyError):
                     code, message = failure.code, str(failure)
                 else:

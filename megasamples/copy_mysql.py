@@ -82,6 +82,10 @@ class MySQLCopies(ServerCopies):
         return self.one(f"SELECT count(CASE WHEN JSON_UNQUOTE(JSON_EXTRACT(record,'$.label'))=%s "
                         f"THEN 1 END), count(*) FROM {self.ledger}", (label,))
 
+    def forget(self, name):
+        self.wrote = True
+        self.execute(f"DELETE FROM {self.ledger} WHERE name=%s", (name,))
+
     def insert(self, row):
         self.wrote = True
         self.execute(f"INSERT INTO {self.ledger} (name,record) VALUES (%s,%s)",
@@ -173,6 +177,7 @@ class MySQLCopies(ServerCopies):
 
     def remove(self, row, state, deadline):
         name, identity = row["name"], row["identity"]
+        dropped = False
         try:
             if state in ("ready", "dropping"):
                 current = self.state(name, row)
@@ -182,6 +187,8 @@ class MySQLCopies(ServerCopies):
                     row = self.change(row, phase="dropping")
                 seconds = max(1, min(31_536_000, math.ceil(deadline - time.monotonic())))
                 self.execute("SET SESSION lock_wait_timeout=%s", (seconds,))
+                # The drop itself is a write, also when resuming a dropping record.
+                self.wrote = True
                 try:
                     self.execute(f"DROP DATABASE {quote(name)}")
                 except self.errors.Error as failure:
@@ -190,10 +197,14 @@ class MySQLCopies(ServerCopies):
                             self.change(row, phase="ready")
                         raise CopyError(6, "busy", "schema is locked", identity) from None
                     raise
-            self.wrote = True
-            self.execute(f"DELETE FROM {self.ledger} WHERE name=%s", (name,))
-        except self.errors.Error:
-            raise CopyError(8, "drop-unsettled", "schema removal did not finish", identity) from None
+            dropped = True
+            self.forget(name)
+        except self.errors.Error as failure:
+            if not self.wrote and self.connection_lost(failure):
+                # Only reads have run: the copy is as it was (3.3, exit 3).
+                raise CopyError(3, "connection", "server connection closed before any change", identity) from None
+            gone = {**self.result(name, row, "gone"), "ledger": "unsettled"} if dropped else None
+            raise CopyError(8, "drop-unsettled", "schema removal did not finish", identity, result=gone) from None
         return self.result(name, row, "gone")
 
 

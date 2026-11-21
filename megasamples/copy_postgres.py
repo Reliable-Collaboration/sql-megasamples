@@ -136,6 +136,10 @@ class PostgresCopies(ServerCopies):
         return self.one(f"SELECT count(*) FILTER (WHERE record->>'label'=%s), count(*) FROM {self.ledger}",
                         (label,))
 
+    def forget(self, name):
+        self.wrote = True
+        self.connection.execute(f"DELETE FROM {self.ledger} WHERE name=%s", (name,))
+
     def insert(self, row):
         self.wrote = True
         self.connection.execute(f"INSERT INTO {self.ledger} (name, record) VALUES (%s,%s::jsonb)",
@@ -162,6 +166,7 @@ class PostgresCopies(ServerCopies):
 
     def remove(self, row, state, deadline):
         name, identity = row["name"], row["identity"]
+        dropped = False
         try:
             if state in ("ready", "dropping"):
                 if self.state(name, row) != state:
@@ -171,6 +176,8 @@ class PostgresCopies(ServerCopies):
                 while True:
                     if self.state(name, row) != "dropping":
                         raise CopyError(8, "inconsistent", "database identity changed during drop", identity)
+                    # The drop itself is a write, also when resuming a dropping record.
+                    self.wrote = True
                     try:
                         self.connection.execute(f'DROP DATABASE "{name}"')
                     except self.errors.Error as error:
@@ -183,10 +190,14 @@ class PostgresCopies(ServerCopies):
                         time.sleep(min(0.1, max(0, deadline - time.monotonic())))
                     else:
                         break
-            self.wrote = True
-            self.connection.execute(f"DELETE FROM {self.ledger} WHERE name=%s", (name,))
-        except self.errors.Error:
-            raise CopyError(8, "drop-unsettled", "database removal did not finish", identity) from None
+            dropped = True
+            self.forget(name)
+        except self.errors.Error as failure:
+            if not self.wrote and self.connection_lost(failure):
+                # Only reads have run: the copy is as it was (3.3, exit 3).
+                raise CopyError(3, "connection", "server connection closed before any change", identity) from None
+            gone = {**self.result(name, row, "gone"), "ledger": "unsettled"} if dropped else None
+            raise CopyError(8, "drop-unsettled", "database removal did not finish", identity, result=gone) from None
         return self.result(name, row, "gone")
 
 
