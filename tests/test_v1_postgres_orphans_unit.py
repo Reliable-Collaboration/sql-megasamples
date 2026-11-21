@@ -69,7 +69,7 @@ def test_up_reports_the_scan_after_the_stack_starts(monkeypatch, capsys):
     planted = [{"code": "orphan-directory", "engine": "postgres", "tablespace": "pg_default", "oid": 99999,
                 "name": None, "path": "base/99999", "kib": 1200}]
     order = []
-    monkeypatch.setattr(job.stack, "load", lambda: SimpleNamespace(engines=["postgres"], consoles=[], ports={}))
+    monkeypatch.setattr(job.stack, "load", lambda: SimpleNamespace(engines=["postgres"], consoles=[], ports={}, datasets=lambda engine=None: []))
     monkeypatch.setattr(console_config, "main", lambda argv: 0)
     monkeypatch.setattr(compose, "main", lambda argv: 0)
     monkeypatch.setattr(console_images, "build", lambda cfg: 0)
