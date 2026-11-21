@@ -131,14 +131,19 @@ def test_drop_wait_is_one_deadline_across_the_lock_and_the_removal(server):
     target, proof = engine + ":" + row["name"], ("--identity", row["identity"])
     take, give, key = change_lock(server, row["name"])
     holder, busy = session(server, "megasamples"), hold_busy(server, row["name"])
+    # PostgreSQL's DROP DATABASE itself waits up to five seconds for sessions to leave before it
+    # refuses, so each of its attempts costs five seconds: a lock held 5 s within a 12 s wait ends at
+    # the attempt that passes 12 s (about 15 s), not at a fresh 12 s budget (about 20 s). MySQL's
+    # engine wait is the session's lock_wait_timeout, so 2 s within 4 s ends at about 4 s, not 6 s.
+    held, wait, low, high = (5, 12, 12, 17.5) if engine == "postgres" else (2, 4, 3.5, 5.5)
     try:
         assert run_sql(holder, take, (key,))[0][0] in (1, True)
-        threading.Timer(2, run_sql, (holder, give, (key,))).start()
+        threading.Timer(held, run_sql, (holder, give, (key,))).start()
         started = time.monotonic()
-        reply = copy_command(server, "drop", target, *proof, "--wait", "4", status=6)
+        reply = copy_command(server, "drop", target, *proof, "--wait", str(wait), status=6)
         elapsed = time.monotonic() - started
         assert reply["error"]["code"] == "busy"
-        assert 3.5 <= elapsed < 5.5, elapsed
+        assert low <= elapsed < high, elapsed
         assert copy_command(server, "show", target)["result"]["state"] == "ready"
     finally:
         busy.close()
@@ -327,11 +332,15 @@ def test_postgres_copy_lifecycle_on_tcp(server):
         restored = command("show", target)["result"]
         assert restored["state"] == "ready" and restored["revision"] == second["revision"] + 2
         command("release", target, *identity)
-        for flags in [("--dry-run",), ()]:
-            sweep = command("sweep", "postgres", "--prefix", "copy", *flags)["result"]
-            assert second["name"] not in [item["name"] for item in sweep["removed"]]
-            assert any(item["copy"]["name"] == second["name"] and item["reason"] == "busy"
-                       for item in sweep["kept"])
+        # The dry run reports the sweep's selection; only the removal learns that the engine
+        # refuses it while a session is connected (design 2.2 and 3.1, as narrowed).
+        preview = command("sweep", "postgres", "--prefix", "copy", "--dry-run")["result"]
+        assert second["name"] in [item["name"] for item in preview["removed"]]
+        sweep = command("sweep", "postgres", "--prefix", "copy")["result"]
+        assert second["name"] not in [item["name"] for item in sweep["removed"]]
+        assert any(item["copy"]["name"] == second["name"] and item["reason"] == "busy"
+                   for item in sweep["kept"])
+        assert command("show", target)["result"]["state"] == "ready"
         assert session.execute("SELECT i FROM busy_probe").fetchone() == (42,)
     assert command("drop", target, *identity)["result"]["state"] == "gone"
 
