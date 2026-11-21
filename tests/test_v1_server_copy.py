@@ -83,7 +83,9 @@ def change_lock(server, name):
     if server["engine"] == "postgres":
         key = int.from_bytes(hashlib.sha256(("megasamples/copy/" + name).encode()).digest()[:8],
                              "big", signed=True)
-        return "SELECT pg_catalog.pg_advisory_lock(%s::bigint)", "SELECT pg_catalog.pg_advisory_unlock(%s::bigint)", key
+        # The owner may only try the lock, as the CLI does; nothing else holds it here.
+        return ("SELECT pg_catalog.pg_try_advisory_lock(%s::bigint)",
+                "SELECT pg_catalog.pg_advisory_unlock(%s::bigint)", key)
     key = "megasamples:" + hashlib.sha256(name.encode()).hexdigest()[:48]
     return "SELECT GET_LOCK(%s, 10)", "SELECT RELEASE_LOCK(%s)", key
 
@@ -126,7 +128,7 @@ def test_drop_wait_is_one_deadline_across_the_lock_and_the_removal(server):
     take, give, key = change_lock(server, row["name"])
     holder, busy = session(server, "megasamples"), hold_busy(server, row["name"])
     try:
-        run_sql(holder, take, (key,))
+        assert run_sql(holder, take, (key,))[0][0] in (1, True)
         threading.Timer(2, run_sql, (holder, give, (key,))).start()
         started = time.monotonic()
         reply = copy_command(server, "drop", target, *proof, "--wait", "4", status=6)
@@ -161,8 +163,9 @@ def test_drop_refuses_a_copy_whose_proof_changed(server):
     name, proof = row["name"], ("--identity", row["identity"])
     target = engine + ":" + name
     if engine == "postgres":
-        native(server, f'''COMMENT ON DATABASE "{name}" IS 'megasamples-copy/1 {"0" * 32}''', **admin)
-        restore = f'''COMMENT ON DATABASE "{name}" IS 'megasamples-copy/1 {row["identity"]}'''
+        comment = 'COMMENT ON DATABASE "{}" IS \'megasamples-copy/1 {}\''
+        native(server, comment.format(name, "0" * 32), **admin)
+        restore = comment.format(name, row["identity"])
         exists = ("SELECT count(*) FROM pg_database WHERE datname=%s", "postgres")
     else:
         native(server, f"DROP EVENT `{name}`.`megasamples_copy_{row['identity']}`", **admin)
