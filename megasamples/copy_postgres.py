@@ -149,6 +149,9 @@ class PostgresCopies(ServerCopies):
         name, identity = row["name"], row["identity"]
         row = self.change(row, phase="issuing")
         self.connection.execute(f'CREATE DATABASE "{name}" TEMPLATE "{row["database"]}_start" STRATEGY {strategy}')
+        # A new database is open to PUBLIC by PostgreSQL's default: the owner closes its own copy at once, so only
+        # it and the namespace's readers (granted below) can connect. The check that follows confirms it.
+        self.connection.execute(f'REVOKE CONNECT, TEMPORARY ON DATABASE "{name}" FROM PUBLIC')
         secure = self.one("""
             SELECT oid, pg_get_userbyid(datdba), datallowconn,
                 NOT EXISTS (
