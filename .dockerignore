@@ -7,6 +7,10 @@
 !engines/mysql/init/
 !engines/mysql/entrypoint-wrapper.sh
 !build/mysql/image/
+!megasamples/
+megasamples/*
+!megasamples/mysql_templates.py
+!megasamples/mysql_template_build.py
 !engines/postgres/read-policy/
 !engines/postgres/init/
 !engines/postgres/entrypoint-wrapper.sh

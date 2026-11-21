@@ -11,6 +11,7 @@ FROM ${MYSQL_IMAGE} AS builder
 COPY engines/mysql/my.cnf /etc/mysql/conf.d/megasamples.cnf
 COPY engines/mysql/init/ /build/init/
 COPY build/mysql/image/registry.sql /build/init/10-registry.sql
+COPY megasamples/mysql_templates.py megasamples/mysql_template_build.py build/mysql/image/copy-settings.json /build/init/
 COPY build/mysql/image/dumps/ /build/mysql/dumps/
 # The attribution has to travel with the data: several licences here require it inside any
 # redistribution, and an image is a redistribution (ARCHITECTURE.md section 8).
@@ -27,7 +28,7 @@ RUN set -eu; \
         true; \
     done
 RUN <<'SH'
-set -eux
+set -eu
 S=/var/run/mysqld/mysqld.sock
 mysqld --initialize-insecure --user=mysql
 # util.loadDump uses LOAD DATA LOCAL INFILE, so local_infile must be ON for the import.
@@ -49,8 +50,14 @@ mysql_tzinfo_to_sql /usr/share/zoneinfo 2>/dev/null | mysql -S $S -uroot mysql
 # Accounts LAST: 00-users.sql gives root@localhost a password, so everything after it must
 # authenticate. Running it earlier fails the rest of the stage (found at P-03).
 mysql -S $S -uroot < /build/init/00-users.sql
-mysql -S $S -uroot -proot < /build/init/10-registry.sql
-mysqladmin -S $S -uroot -proot shutdown
+umask 077
+printf '[client]\nuser=root\npassword=root\n' > /build/local.cnf
+mysql --defaults-extra-file=/build/local.cnf -S $S < /build/init/10-registry.sql
+cd /build/init
+printf 'root\n' | mysqlsh --no-defaults -S $S -uroot --passwords-from-stdin --py \
+    --file mysql_template_build.py copy-settings.json
+mysqladmin --defaults-extra-file=/build/local.cnf -S $S shutdown
+rm /var/lib/mysql/auto.cnf
 rm -rf /build
 SH
 
@@ -59,6 +66,7 @@ LABEL org.opencontainers.image.title="sql-megasamples-mysql" \
       org.opencontainers.image.description="MySQL 9.7 LTS preloaded with well-known sample databases (sql-megasamples)" \
       org.opencontainers.image.licenses="MIT AND BSD-3-Clause AND CC-BY-SA-3.0"
 COPY engines/mysql/my.cnf /etc/mysql/conf.d/megasamples.cnf
+COPY build/mysql/image/copy-mode.cnf /etc/mysql/conf.d/megasamples-copy-mode.cnf
 COPY engines/mysql/entrypoint-wrapper.sh /usr/local/bin/entrypoint-wrapper.sh
 COPY --from=builder --chown=mysql:mysql /var/lib/mysql /var/lib/mysql
 COPY --from=builder /docs /usr/share/doc/megasamples

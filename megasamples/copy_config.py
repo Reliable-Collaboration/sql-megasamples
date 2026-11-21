@@ -64,7 +64,7 @@ class CopySettings:
         names = set(SERVICE_NAMES)
 
         def reserve_prefix(prefix):
-            if (not prefix_is_valid(prefix) or prefix == "megasamples" or prefix.endswith("_start")
+            if (not prefix_is_valid(prefix)
                     or any(name == prefix or name.startswith(prefix + "_") for name in registered)
                     or any(overlaps(prior, prefix) for prior in prefixes)):
                 raise ValueError(f"invalid or overlapping copy prefix {prefix!r}")

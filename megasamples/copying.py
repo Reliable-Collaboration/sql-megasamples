@@ -12,7 +12,7 @@ import sys
 PREFIX = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*", re.ASCII)
 LABEL = re.compile(r"[a-z0-9]{1,24}", re.ASCII)
 IDENTITY = re.compile(r"[0-9a-f]{32}", re.ASCII)
-NAME = re.compile(r"[a-z][a-z0-9]*(?:_[a-z0-9]+)*_[0-9a-f]{12}", re.ASCII)
+TOKEN = re.compile(r"[0-9a-f]{12}", re.ASCII)
 ENGINES = ("postgres", "mysql", "sqlite")
 
 
@@ -37,7 +37,8 @@ class Parser(argparse.ArgumentParser):
 
 
 def prefix_is_valid(value):
-    return isinstance(value, str) and len(value) <= 16 and bool(PREFIX.fullmatch(value)) and value != "working"
+    return (isinstance(value, str) and len(value) <= 16 and bool(PREFIX.fullmatch(value))
+            and value not in ("megasamples", "working") and not value.endswith("_start"))
 
 
 def database_is_valid(value):
@@ -46,7 +47,13 @@ def database_is_valid(value):
 
 
 def copy_name_is_valid(value):
-    return isinstance(value, str) and len(value) <= 63 and bool(NAME.fullmatch(value))
+    if not isinstance(value, str) or len(value) > 63:
+        return False
+    stem, _, token = value.rpartition("_")
+    return bool(TOKEN.fullmatch(token)) and any(
+        character == "_" and prefix_is_valid(stem[:index]) and database_is_valid(stem[index + 1:])
+        for index, character in enumerate(stem)
+    )
 
 
 def now():
@@ -172,15 +179,17 @@ def main(argv):
             copies = SQLiteCopies(args)
             reply["result"] = getattr(copies, args.action)()
             reply["warnings"] = copies.warnings
-        elif args.engine == "postgres":
-            from megasamples.copy_postgres import open_postgres
-
-            with open_postgres(args, read_password(args)) as copies:
-                reply["volume"] = copies.volume
-                reply["result"] = getattr(copies, args.action)()
-                reply["warnings"] = copies.warnings
         else:
-            raise CopyError(4, "no-template", "this build offers SQLite copy commands")
+            if args.engine == "postgres":
+                from megasamples.copy_postgres import open_postgres as open_server
+            else:
+                from megasamples.copy_mysql import open_mysql as open_server
+            with open_server(args, read_password(args)) as copies:
+                reply["volume"] = copies.volume
+                try:
+                    reply["result"] = getattr(copies, args.action)()
+                finally:
+                    reply["warnings"] = copies.warnings
     except Help as help_message:
         reply["result"] = {"usage": str(help_message)}
     except CopyError as error:

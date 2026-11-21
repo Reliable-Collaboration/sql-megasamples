@@ -93,8 +93,10 @@ def test_postgres_writers_retain_temporary_large_object_and_ddl_rights(database,
 @pytest.mark.parametrize('database', MY_DATABASES)
 def test_mysql_demo_only_reads(database):
     denied('mysql', database, 'CREATE TEMPORARY TABLE strict_read_temp(i int)')
-    grants = accepted('mysql', database, 'SHOW GRANTS')
-    assert grants == "GRANT SELECT, SHOW VIEW ON *.* TO `demo`@`%`", grants
+    grants = accepted('mysql', database, 'SHOW GRANTS').splitlines()
+    assert any('GRANT USAGE ON *.*' in grant for grant in grants)
+    assert all(' ON *.*' not in grant or 'GRANT USAGE' in grant for grant in grants)
+    denied('mysql', database, 'SELECT COUNT(*) FROM mysql.user')
     for user in ['admin', 'root']:
         accepted('mysql', database, 'CREATE TEMPORARY TABLE strict_writer_temp(i int); '
                  'INSERT INTO strict_writer_temp VALUES (1); DROP TEMPORARY TABLE strict_writer_temp', user)

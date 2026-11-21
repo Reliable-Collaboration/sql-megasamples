@@ -35,12 +35,15 @@ def copying(tmp_path):
              "--templates", str(templates), "--dir", str(copies)],
             capture_output=True, text=True, timeout=30,
         )
-        assert completed.returncode == exit, completed.stdout + completed.stderr
+        allowed = exit if isinstance(exit, tuple) else (exit,)
+        assert completed.returncode in allowed, completed.stdout + completed.stderr
         assert len(completed.stdout.splitlines()) == 1
         reply = json.loads(completed.stdout)
         assert set(reply) == {"schema", "interface", "command", "ok", "exit",
                               "volume", "result", "error", "warnings"}
-        assert (reply["interface"], reply["ok"], reply["exit"], reply["volume"]) == (1, exit == 0, exit, None)
+        assert (reply["interface"], reply["ok"], reply["exit"], reply["volume"]) == (
+            1, completed.returncode == 0, completed.returncode, None,
+        )
         return reply
 
     return run, source, copies
@@ -124,12 +127,15 @@ def test_template_verification_and_adjacent_file_preservation(copying):
     ("create", "sqlite:sample", "--prefix", "", "--label", "test"),
     ("create", "sqlite:sample", "--prefix", "copy", "--label", ""),
     ("create", "sqlite:sample", "--prefix", "cöpy", "--label", "test"),
+    ("create", "sqlite:sample", "--prefix", "megasamples", "--label", "test"),
+    ("create", "sqlite:sample", "--prefix", "high_start", "--label", "test"),
     ("create", "sqlite:sample", "--prefix", "copy", "--label", "tést"),
     ("create", "sqlite:sample", "--prefix", "a" * 17, "--label", "test"),
     ("create", "sqlite:sample", "--prefix", "copy", "--label", "a" * 25),
     ("create", "sqlite:sample", "--prefix", "copy", "--label", "ok", "--lease", "59s"),
     ("create", "sqlite:sample", "--prefix", "copy", "--label", "ok", "--lease", "8d"),
     ("show", "sqlite:../sample"),
+    ("show", "sqlite:copy_000000000000"),
     ("show", "sqlite:" + "a" * 64),
     ("drop", "sqlite:copy_sample_000000000000", "--identity", "z" * 32),
 ])
@@ -144,9 +150,15 @@ def test_duplicate_labels_and_limit_under_concurrent_creation(copying):
     assert create(run, "a" * 24)["label"] == "a" * 24
     assert run("create", "sqlite:sample", "--prefix", "copy", "--label", "a" * 24,
                exit=5)["error"]["code"] == "label-in-use"
+    def attempt(index):
+        return run("create", "sqlite:sample", "--prefix", "copy", "--label", f"trial{index}", exit=(0, 5))
+
     with ThreadPoolExecutor(max_workers=8) as pool:
-        rows = list(pool.map(lambda index: create(run, f"trial{index}"), range(31)))
-    assert len({row["identity"] for row in rows}) == len(rows)
+        results = list(pool.map(attempt, range(39)))
+    ready = [reply["result"] for reply in results if reply["ok"]]
+    refusals = [reply["error"]["code"] for reply in results if not reply["ok"]]
+    assert len({row["identity"] for row in ready}) == len(ready) == 31
+    assert refusals == ["limit"] * 8
     assert len(list(copies.glob("*.sqlite"))) == 32
     assert run("create", "sqlite:sample", "--prefix", "copy", "--label", "overflow",
                exit=5)["error"]["code"] == "limit"
