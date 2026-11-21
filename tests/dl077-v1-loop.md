@@ -243,3 +243,22 @@ No large container batch was run: DataIntent's gateway `--all` comes first, and 
 
 **Not run**
 - The MySQL suites and images, and the TCP copy suite. Round 7 changed no MySQL or copy code.
+
+## Round 7: restoration and isolation
+
+- **Retained isolated stack.** The fingerprint ledgers (phase `r7-final`) are byte-identical to build 1's `after` ledgers:
+  - PostgreSQL `ee0f1a8b…711e`;
+  - MySQL `a5c0466a…a72f`;
+  - SQLite `5b0c2768…da98`.
+- **Removed:**
+  - every task container this round started;
+  - 16 anonymous volumes, each checked unused. They came from the start suite's override probes, whose removal now takes their volume (the class of S7-9). A later start run left the count unchanged.
+- **Kept:**
+  - the ACL images;
+  - the round 5 candidates;
+  - the fault images;
+  - the runner.
+- **The isolated socket service** is stopped.
+- **Isolation** (`build/dl114-r1-work/isolation-check.sh`, read-only):
+  - **Live deployment:** the nine live `megasamples-*` entries are unchanged.
+  - **Isolated store:** the same 20 containers.
