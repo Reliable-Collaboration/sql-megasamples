@@ -23,12 +23,10 @@ def probe():
 def test_postgres_healthcheck_requires_the_registered_policy_setting():
     test = probe()
     assert test[0] == "CMD-SHELL"
-    # Opus round 4, P3-2 / Sol round 4, P3-6: the value, and that it is the registered internal
-    # setting: demo may not read pg_settings (pg_show_all_settings is outside its allow-list), so
-    # the probe shows registration by the server refusing to change it (55P02), which a
-    # placeholder never does.
-    assert "current_setting('read_policy.loaded')" in test[1]
-    assert "SET read_policy.loaded" in test[1] and "55P02" in test[1]
+    # Round 5 (Sol P2-6, Opus P3-2): the probe raises no server error. It calls the library's own
+    # report of whether it was loaded during preload, which a placeholder setting cannot answer.
+    assert "megasamples_policy_loaded()" in test[1] and "SET " not in test[1]
+    assert test[1].rstrip().endswith("| grep -qx t")
 
 
 @unittest.skipUnless(os.environ.get("DL077_GATE_TARGET") and os.environ.get("DL077_PG_POLICY_IMAGE"),
@@ -58,5 +56,36 @@ class HealthPlaceholderTests(unittest.TestCase):
             podman("exec", "-i", name, "sh", "-c", "umask 077; cat > /run/megasamples-health.pgpass",
                    stdin="*:*:*:demo:demo\n")
             self.assertNotEqual(podman("exec", name, "sh", "-c", probe()[1], check=False).returncode, 0)
+        finally:
+            podman("rm", "-f", name, check=False)
+
+    def test_a_healthy_probe_raises_no_server_error(self):
+        """Round 5: the probe on a healthy server leaves no ERROR in the server's log."""
+        from native import Target, capacity
+        target = Target()
+        name = "dl077-health-quiet-" + uuid4().hex
+
+        def podman(*args, check=True):
+            return subprocess.run(target.podman_args(*args), capture_output=True, text=True, timeout=90, check=check)
+
+        capacity()
+        podman("run", "-d", "--name", name, "--network", "none", "--memory", "1g",
+               os.environ["DL077_PG_POLICY_IMAGE"], "postgres")
+        try:
+            for _ in range(150):
+                if podman("exec", name, "pg_isready", "-U", "postgres", check=False).returncode == 0:
+                    break
+                time.sleep(0.2)
+            before = podman("logs", name)
+            for _ in range(5):
+                self.assertEqual(podman("exec", name, "sh", "-c", probe()[1], check=False).returncode, 0)
+            after = podman("logs", name)
+            new = (after.stdout + after.stderr)[len(before.stdout + before.stderr):]
+            self.assertNotIn("ERROR", new)
+            # The probe's own account may call the report, and only through its grant.
+            rights = podman("exec", name, "psql", "-XqAt", "-U", "postgres", "-d", "megasamples", "-c",
+                            "SELECT has_function_privilege('demo', 'pg_catalog.megasamples_policy_loaded()', 'EXECUTE'), "
+                            "has_function_privilege('copier', 'pg_catalog.megasamples_policy_loaded()', 'EXECUTE')")
+            self.assertEqual(rights.stdout.strip(), "t|f")
         finally:
             podman("rm", "-f", name, check=False)
