@@ -51,8 +51,9 @@ def isolated_clients():
 
 
 def batch_text(engine, text):
-    """A library client's text in the mysql CLI's --batch form, which writes each backslash as two (Sol round
-    12, 2): so grants on schemas with escaped underscores compare as the same grant on both paths."""
+    """A library client's text with the mysql CLI's --batch backslash doubling (Sol round 12, 2), so grants on
+    schemas with escaped underscores compare as the same grant on both paths. Only that escape: --batch also
+    writes a tab, newline or NUL inside a value as \\t, \\n or \\0, which no statement here returns."""
     return text.replace('\\', '\\\\') if engine == 'mysql' else text
 
 
@@ -318,7 +319,9 @@ def test_native_protocol_matches_cli(engine, monkeypatch):
     monkeypatch.delenv('STRICT_READ_NATIVE_DRIVER', raising=False)
     statements = ['SELECT 1, NULL', 'BEGIN; SELECT 1; SELECT 2; ROLLBACK']
     statements += (['SELECT current_user', 'BEGIN; CREATE TEMP TABLE parity_denied(i int); ROLLBACK']
-                   if engine == 'postgres' else ['SHOW GRANTS', 'CREATE TEMPORARY TABLE parity_denied(i int)'])
+                   if engine == 'postgres' else ['SHOW GRANTS', 'CREATE TEMPORARY TABLE parity_denied(i int)',
+                                                 # Sol round 13, 5: an escaped underscore on every selection
+                                                 "SELECT 'GRANT SELECT ON `copy\\\\_x`.*'"])
     database = (PG_SELECTED if engine == 'postgres' else MY_SELECTED)[0]   # one the selection carries
     for sql in statements:
         cli = query(engine, database, sql)
