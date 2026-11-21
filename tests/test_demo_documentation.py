@@ -204,3 +204,12 @@ def test_rendered_help_says_what_teardown_discards_and_keeps():
     for command in ('down', 'clean'):
         text = ' '.join(rendered(command, '--help').split())
         assert "each engine's working data" in text and 'the named SQLite volume stays' in text, (command, text)
+
+
+def test_readme_describes_the_catalogue_and_the_databases_as_they_are():
+    """Sol round 13, 6: the catalogue is generated from the repository, not read from a running image, and a
+    PostgreSQL image has one database per physical database, which an append dataset shares with its base."""
+    readme = (ROOT / 'README.md').read_text()
+    assert 'The catalogue, the landing page and the image tests all read it' not in readme
+    assert "`make catalogue` is generated from the repository's dataset definitions and pinned counts" in readme
+    assert 'one per dataset' not in readme and 'one database per dataset' not in readme
