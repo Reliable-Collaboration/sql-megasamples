@@ -446,3 +446,9 @@ Focused runs, one at a time, each with the 15 GiB check, while DataIntent's `tes
 - A real `make up` of the product stack. It would address the isolated store's own `megasamples-*` containers, which this task keeps unchanged. The cycle above runs the same helpers on a project of its own.
 - The other routes the class test covers: `clean --all`, SQLite's `test-image`, the verifiers and the build servers.
 - The MySQL batch. No MySQL code changed this round outside the image test's override function, which the fakes cover. A `test-image` run would exercise it natively; it is queued for the coordinator's next batch.
+
+## Round 10: restoration and isolation
+
+- **Isolation** (`isolation-check.sh`, read-only): the nine live `megasamples-*` entries and the three live engines are unchanged. The isolated store holds the same 20 containers as at the session's start, and the same 37 volumes as at round 7's end. The cycle's project left no container, network or volume.
+- **The retained stack** was not addressed this round, so it was not fingerprinted again. Its last proof is round 9's, 13:20 to 13:26 UTC.
+- **The socket service** is stopped.
