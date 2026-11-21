@@ -211,6 +211,24 @@ def test_mysql_declared_reader_is_not_an_outside_grant(server):
         copy_command(server, "drop", target, *proof)
 
 
+def test_sweep_keeps_a_copy_renewed_after_its_selection(server):
+    """T-15's invariant across the selection and the removal: identity and revision, and the lease read again."""
+    engine = server["engine"]
+    row = copy_command(server, "create", engine + ":chinook", "--prefix", "copy", "--label", "renewed")["result"]
+    target, proof = engine + ":" + row["name"], ("--identity", row["identity"])
+    try:
+        copy_command(server, "release", target, *proof)
+        swept = copy_command(server, "sweep", engine, "--prefix", "copy",
+                             fault=("renew-first", row["name"] + ":" + row["identity"]))["result"]
+        assert row["name"] not in removed_names({"result": swept})
+        assert any(item["copy"]["name"] == row["name"] and item["reason"] in ("changed", "leased")
+                   for item in swept["kept"])
+        shown = copy_command(server, "show", target)["result"]
+        assert shown["state"] == "ready" and shown["revision"] == row["revision"] + 2
+    finally:
+        copy_command(server, "drop", target, *proof)
+
+
 def test_server_inventory_reports_unmanaged_names(server):
     engine = server["engine"]
     admin = {"user": "dl077_fixture_admin"}
