@@ -585,14 +585,15 @@ def test_mysql_copy_lifecycle_and_schema_replay(server):
             assert definer == server["owner"] + "@%" and event_status == "DISABLED"
             assert row["name"] in definition and "sample_start" not in definition
             # Astra round 2, 5: each stored program keeps the SQL mode its source was created with.
+            # Read as the fixture's administrator: the owner holds no routine privilege on the template.
             for source in ("sample_start", row["name"]):
-                cursor.execute("SELECT SQL_MODE FROM information_schema.ROUTINES "
-                               "WHERE ROUTINE_SCHEMA=%s AND ROUTINE_NAME='read_value'", (source,))
-                routine_mode = cursor.fetchone()
-                cursor.execute("SELECT SQL_MODE FROM information_schema.EVENTS "
-                               "WHERE EVENT_SCHEMA=%s AND EVENT_NAME='read_event'", (source,))
-                event_mode = cursor.fetchone()
-                assert routine_mode == event_mode == ("ONLY_FULL_GROUP_BY,STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION",), source
+                modes = native(server, """
+                    SELECT (SELECT SQL_MODE FROM information_schema.ROUTINES
+                            WHERE ROUTINE_SCHEMA=%s AND ROUTINE_NAME='read_value'),
+                           (SELECT SQL_MODE FROM information_schema.EVENTS
+                            WHERE EVENT_SCHEMA=%s AND EVENT_NAME='read_event')
+                """, user="dl077_fixture_admin", parameters=(source, source))[0]
+                assert tuple(modes) == ("ONLY_FULL_GROUP_BY,STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION",) * 2, source
     command("release", target, *identity)
     assert row["name"] in removed_names(command("sweep", "mysql", "--prefix", "copy", "--dry-run"))
     assert row["name"] in removed_names(command("sweep", "mysql", "--prefix", "copy"))
