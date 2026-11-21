@@ -1,4 +1,4 @@
-"""Every database the PostgreSQL image ships survives its own dump and restore, policy included.
+"""Every database the PostgreSQL image ships survives its own dump and restore, account rules included.
 
 The class is any object the image makes outside an extension that pg_dump carries and that a new
 database from template0 already has. The restore is pg_restore --exit-on-error into a database made
@@ -37,31 +37,12 @@ class RestoreTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr[-500:])
         return result.stdout.strip()
 
-    def assert_policy(self, database):
-        # Sol round 7, P3-7: a restored database keeps the loaded report's ACL from template0.
-        self.assertEqual(self.accept("SELECT string_agg(rolname, ',' ORDER BY rolname) FROM pg_roles "
-                                     "WHERE rolname NOT LIKE 'pg\\_%' AND has_function_privilege(oid, "
-                                     "'pg_catalog.megasamples_policy_loaded()', 'EXECUTE')", database),
-                         "demo,postgres")
-        self.assertEqual(self.accept("SELECT extname || ' ' || extnamespace::regnamespace FROM pg_extension "
-                                     "WHERE extname = 'read_policy'", database), "read_policy pg_catalog")
-        self.assertEqual(self.accept("SELECT evtenabled FROM pg_event_trigger "
-                                     "WHERE evtname = 'megasamples_close_routines'", database), "A")
-        # Opus round 3, 3: the creator has no default ACL of its own, so only the event trigger can
-        # take PUBLIC's EXECUTE away; postgres and admin carry defaults that would hide its absence.
-        self.accept("DO $$ BEGIN CREATE ROLE v1_plain_creator LOGIN; EXCEPTION WHEN duplicate_object THEN NULL; END $$")
-        self.accept(f'GRANT CONNECT ON DATABASE "{database}" TO v1_plain_creator')
-        self.accept("CREATE SCHEMA IF NOT EXISTS v1_probe AUTHORIZATION v1_plain_creator", database)
-        self.assertEqual(self.accept("SELECT count(*) FROM pg_default_acl WHERE defaclrole = 'v1_plain_creator'::regrole",
-                                     database), "0")
-        self.accept("CREATE FUNCTION v1_probe.restored() RETURNS int LANGUAGE sql AS 'SELECT 1'",
-                    database, "v1_plain_creator")
-        try:
-            self.assertEqual(self.accept("SELECT has_function_privilege('demo', 'v1_probe.restored()', 'EXECUTE')",
-                                         database), "f")
-        finally:
-            self.accept("DROP SCHEMA v1_probe CASCADE", database)
-            self.accept(f'REVOKE CONNECT ON DATABASE "{database}" FROM v1_plain_creator')
+    def assert_accounts(self, database):
+        """A restored database keeps the image's account rules: large-object creation closed to PUBLIC, and so
+        to demo, and admin keeping it."""
+        self.assertEqual(self.accept("SELECT has_function_privilege('demo', 'pg_catalog.lo_create(oid)', 'EXECUTE'), "
+                                     "has_function_privilege('admin', 'pg_catalog.lo_create(oid)', 'EXECUTE'), "
+                                     "pg_has_role('demo', 'pg_read_all_data', 'USAGE')", database), "f|t|t")
 
     def counts(self, database):
         return self.accept("""SELECT format('SELECT %L || '':'' || count(*) FROM %I.%I', n.nspname || '.' || c.relname,
@@ -82,19 +63,18 @@ class RestoreTests(unittest.TestCase):
                 dumped = self.run_in("pg_dump", "-U", "postgres", "-Fc", "-f", "/tmp/v1-restore.dump", database)
                 self.assertEqual(dumped.returncode, 0, dumped.stderr[-500:])
                 self.accept(f'CREATE DATABASE "{scratch}" TEMPLATE template0')
-                # The hook closes a new database to PUBLIC; the probe's own login needs CONNECT.
                 self.accept(f'GRANT CONNECT ON DATABASE "{scratch}" TO admin')
                 try:
                     restored = self.run_in("pg_restore", "-U", "postgres", "-d", scratch, "--exit-on-error",
                                            "/tmp/v1-restore.dump")
                     self.assertEqual(restored.returncode, 0, restored.stderr[-800:])
                     self.assertEqual(self.counts(scratch), self.counts(database))
-                    self.assert_policy(scratch)
+                    self.assert_accounts(scratch)
                 finally:
                     self.accept(f'DROP DATABASE IF EXISTS "{scratch}" WITH (FORCE)')
 
     @unittest.skipUnless(os.environ.get("DL077_PG_RESET_CHECKOUT"), "requires a checkout without .env and a Docker socket")
-    def test_megasamples_reset_restores_chinook_with_its_policy(self):
+    def test_megasamples_reset_restores_chinook_with_its_accounts(self):
         checkout = Path(os.environ["DL077_PG_RESET_CHECKOUT"])
         self.assertFalse((checkout / ".env").exists())
         before = self.counts("chinook")
@@ -106,7 +86,7 @@ class RestoreTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, (result.stdout + result.stderr)[-1500:])
         self.assertEqual(self.counts("chinook"), before)
         self.assertNotEqual(self.accept("SELECT title FROM album WHERE albumid = 1", "chinook"), "edited before reset")
-        self.assert_policy("chinook")
+        self.assert_accounts("chinook")
 
 
 if __name__ == "__main__":

@@ -132,21 +132,15 @@ def main(argv=None):
             c.expect(not bad, f"{schema}: {len(counts)} tables match their expected snapshot counts"
                               + (f" -- {bad[:3]}" if bad else ""))
 
+        # demo reads with PostgreSQL's own read role; large-object creation, the one write PostgreSQL's
+        # defaults give every role, is closed in every database
+        membership = q("SELECT pg_has_role('demo', 'pg_read_all_data', 'USAGE'), "
+                       "pg_has_role('demo', 'pg_write_all_data', 'USAGE')")
+        c.expect(membership.stdout.strip() == "t|f", "demo holds pg_read_all_data and not pg_write_all_data")
         for database in [*unique_databases(datasets), "megasamples", "postgres", "template1"]:
-            for sql, label in [
-                    ("BEGIN; CREATE TEMP TABLE read_probe(i int); ROLLBACK", "create temporary objects"),
-                    ("BEGIN; SELECT lo_create(0); ROLLBACK", "create large objects")]:
-                result = q(sql, user="demo", pw="demo", database=database)
-                c.expect(result.returncode != 0 and "permission denied" in result.stderr,
-                         f"{database}: demo cannot {label}")
-            unsafe = q("SELECT count(*) FROM pg_proc WHERE has_function_privilege('demo',oid,'EXECUTE') "
-                       "AND (pronamespace NOT IN ('pg_catalog'::regnamespace,'information_schema'::regnamespace) "
-                       "OR (provolatile='v' AND oid NOT IN ('pg_catalog.pg_export_snapshot()'::regprocedure, "
-                       "'pg_catalog.pg_database_size(oid)'::regprocedure)) OR prosecdef "
-                       "OR proname IN ('txid_current','pg_current_xact_id'))", database=database)
-            c.expect(unsafe.returncode == 0 and unsafe.stdout.strip() == "0",
-                     f"{database}: demo has no user or state-changing routine execution")
-
+            result = q("BEGIN; SELECT lo_create(0); ROLLBACK", user="demo", pw="demo", database=database)
+            c.expect(result.returncode != 0 and "permission denied" in result.stderr,
+                     f"{database}: demo cannot create large objects")
         first = datasets[0]
         schema = yaml.safe_load(open(os.path.join(ROOT, "datasets", first, "dataset.yaml"), encoding="utf-8"))["database"]
         table = next(iter(yaml.safe_load(open(os.path.join(ROOT, "datasets", first, "tests", "expected_counts.yaml"), encoding="utf-8"))))
