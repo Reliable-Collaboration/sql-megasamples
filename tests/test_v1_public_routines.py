@@ -26,6 +26,8 @@ NAMED = ("pg_export_snapshot()", "pg_current_snapshot()", "pg_database_size(oid)
 IA01_SHA256 = "be570f392de66be45d868cee27a2a5d71570c7bf87b5db93ce47179e2cd08076"
 # PR #14's head, whose files the publication canary receipt hashed.
 PR14_HEAD = "2879fc472ad1ebc2d0bf808a7d7bd4a5206f52c4"
+# The one path the receipt hashed that was never tracked: build/ is ignored.
+UNTRACKED = "build/strict-read/pr-body.md"
 # Files the receipt hashed that later v1 work changed on purpose: current documentation, engine policy
 # code and tests. Their receipt hashes describe PR14_HEAD (recorded in tests/dl077-v1-read-profile.md).
 CHANGED_SINCE_PR14 = {
@@ -50,8 +52,11 @@ def v1():
 def test_pr14_evidence_files_still_match_their_receipt():
     receipt = json.loads((VALIDATION / "strict-read-publication-canaries.json").read_text())
     tracked = set(subprocess.check_output(["git", "-C", str(ROOT), "ls-files"], text=True).split())
-    changed = {entry["path"] for entry in receipt["files"]
-               if entry["path"] in tracked and sha256(entry["path"]) != entry["sha256"]}
+    # Round 9 (Opus 2, Sol 2): one path the receipt hashed was never tracked, the generated PR body. Every
+    # other path is compared, so a deleted or untracked evidence file fails as an overwritten one does.
+    assert {entry["path"] for entry in receipt["files"] if entry["path"] not in tracked} == {UNTRACKED}
+    changed = {entry["path"] for entry in receipt["files"] if entry["path"] != UNTRACKED and (
+        not (ROOT / entry["path"]).is_file() or sha256(entry["path"]) != entry["sha256"])}
     assert changed == CHANGED_SINCE_PR14, sorted(changed ^ CHANGED_SINCE_PR14)
     inventory = json.loads((VALIDATION / "strict-read-executable-routines.json").read_text())
     assert sha256("docs/validation/strict-read-executable-routines.json") == IA01_SHA256
