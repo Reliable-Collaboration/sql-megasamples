@@ -646,7 +646,7 @@ They run one at a time, in the coordinator's order: WS1, WS4, WS2, WS3, WS5. Eac
 
 | # | Workstream | State |
 |---|---|---|
-| 1 | Start certification | **Design revision 6**, `docs/design/dl077-ws1-start-certification-design.md`, consolidated (one check list, one row table), answering design round 5 at `398a9c42` (Sol 7 P2, 2 P3; Opus 2 P2, 6 P3), each finding traced in its section 13; waiting for design round 6. No build has started. |
+| 1 | Start certification | **Design revision 7**, `docs/design/dl077-ws1-start-certification-design.md`, standing alone, answering design round 6 at `5fc84471` (Sol 1 P1, 9 P2, 1 P3; Opus 2 P2, 7 P3), traced in its section 13.2. **The coordinator's decision in round 6, applying DL-122 Q4:** the upgrade route for a pre-release (marker-1) volume is documented and manual (dump your own work, load it as a deployer role on a fresh volume), not an automated grant-reconstructing restore, which had findings in rounds 3 to 6 and a confidentiality P1 in round 6. Waiting for design round 7. No build has started. |
 | 4 | Native suite binding | waiting for WS1 |
 | 2 | Orphan scan | waiting |
 | 3 | Removal outcomes | waiting |

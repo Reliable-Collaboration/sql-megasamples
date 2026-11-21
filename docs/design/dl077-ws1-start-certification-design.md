@@ -1,8 +1,10 @@
 # Workstream 1: PostgreSQL start certification, the design
 
-**Status: design, revision 6, for round 6 of the design review. No build yet.**
+**Status: design, revision 7, for round 7 of the design review. No build yet.**
 
-This revision is consolidated: one ordered check list (section 3) and **one current row table** (section 10.2), replacing the inherited tables and change lists of revisions 3 to 5 (Opus round 5, 8; Sol round 5, 6). Section 13 traces round 5's findings.
+This document stands alone: one ordered check list (section 3), one current row table with an outcome rule per class (section 10.2), and the conformance replay and the brief's inputs inline. Section 13 traces rounds 5 and 6.
+
+**The coordinator's decision in round 6, applying DL-122 Q4:** version 1's upgrade route for a pre-release volume is **a documented manual one** (7.4), not an automated, grant-reconstructing restore. The upgrade recipe had findings in rounds 3 to 6, and round 6's P1 (both reviewers) was a confidentiality regression it introduced. DL-122 Q4's reasoning: no release has shipped, so only disposable pre-release volumes carry marker 1.
 
 **Design rounds so far:**
 
@@ -12,7 +14,8 @@ This revision is consolidated: one ordered check list (section 3) and **one curr
 | 2 | revision 2, `bd9c5f26` | `sol-ws1-design2.md`, `opus-ws1-design2.md` | revision 3's section 12 |
 | 3 | revision 3, `32664450` | `sol-ws1-design3.md`, `opus-ws1-design3.md` | revision 4's section 13 |
 | 4 | revision 4, `4c69e81b` | `sol-ws1-design4.md`, `opus-ws1-design4.md` | revision 5's section 14 |
-| 5 | revision 5, `398a9c42` | `sol-ws1-design5.md` (7 P2, 2 P3), `opus-ws1-design5.md` (2 P2, 6 P3) | section 13 here |
+| 5 | revision 5, `398a9c42` | `sol-ws1-design5.md` (7 P2, 2 P3), `opus-ws1-design5.md` (2 P2, 6 P3) | revision 6's section 13, kept in 13.1 |
+| 6 | revision 6, `5fc84471` | `sol-ws1-design6.md` (1 P1, 9 P2, 1 P3), `opus-ws1-design6.md` (2 P2, 7 P3) | 13.2 |
 
 **The decisions applied:**
 - **DL-122, Q1 to Q6,** and the items DL-122 recorded for WS1.
@@ -45,7 +48,7 @@ The MySQL image appears only in 8.4.
 | DL-122 Q1: the private start, made exact | 5.3; R17 |
 | DL-122 Q2: non-root refused first | R0 |
 | DL-122 Q3: stable codes | section 6 |
-| DL-122 Q4: format 2, exact marker, digest guard | section 7 |
+| DL-122 Q4: format 2, exact marker, digest guard; the upgrade route for pre-release volumes (the coordinator's round 6 decision) | section 7; 7.4 |
 | DL-122 Q5: an image `HEALTHCHECK`, one source | section 8 |
 | DL-122 Q6: per-role states; nothing stale | 5.4; 5.6 |
 | DL-122 recorded: one message per cause | 7.3 |
@@ -83,8 +86,8 @@ The first failure decides. **Before the lock (R0 to R6), nothing on the volume o
 
 | Step | Check | Fact | Refused with |
 |---|---|---|---|
+| R0 | The wrapper runs as root (`id -u`), before anything else; it writes its own refusal line, needing no state directory (DL-122 Q2; Sol round 6, 11) | A | `non-root` |
 | S0 | The `EXIT` trap is armed. This run's state directory is made with `mktemp -d /dev/shm/megasamples-run.XXXXXX`. Without `/dev/shm` (`--ipc=none`), the wrapper writes `internal: /dev/shm unavailable` itself and exits 1. | — | `internal` |
-| R0 | The wrapper runs as root | A | `non-root` |
 | R1 | The route is a start or informational | B | `wrapped-server`, `server-mode`, `argument-ambiguous` |
 | R2 | `argv[1]` is the image's `postgres` | B | `foreign-binary` |
 | R3 | No loader variable; no environment name that is not an identifier (read from `/proc/self/environ`); no server-read variable the design does not honour (`PGPORT`, `PGOPTIONS`, `PGDATESTYLE`, `PGTZ`, `PGCLIENTENCODING`) | J | `loader-environment`, `server-environment` |
@@ -98,6 +101,7 @@ The first failure decides. **Before the lock (R0 to R6), nothing on the volume o
 | — | slice 3's build-identity check (7.3) | — | slice 3's code |
 | R8 | The volume's `pg_hba.conf` is the build's stock file (4.3) | H | `hba-volume` |
 | R9 | No `hba_file` or `ident_file` argument, in any spelling, on any start (Sol round 5, 3; Opus round 5, 4) | B | `hba-argument` |
+| R9b | No data-directory argument (`-D`, `--pgdata`, `-c data_directory`, any spelling) naming anything but `PGDATA` itself (Sol round 6, 3). It comes before R10, because a `-D` naming another cluster also moves the default HBA paths. | C | `data-directory` |
 | — | The ownership repair | H | — |
 | R10 | The server reports its configuration with the public arguments (`-C`, as `postgres`, in the pinned environment). The `hba_file` and `ident_file` it reports must be the stock `PGDATA` paths, which also catches a `config_file` or an include that sets them (4.3) | C, D | `config-unreadable`; `hba-config` |
 | R11 | `data_directory` is `PGDATA`, and `PGDATA` is the locked directory (`stat -L /proc/self/fd/9`) | C | `data-directory` |
@@ -106,14 +110,17 @@ The first failure decides. **Before the lock (R0 to R6), nothing on the volume o
 | R14 | `dynamic_library_path` is `$libdir` | E2 | `library-path` |
 | R15 | No session or local preload | E | `preload-session` |
 | R16 | `unix_socket_directories` parses as a list | G | `socket-settings` |
-| R17 | With overrides set: no argument names `unix_socket_directories`, `port`, `data_directory` or `config_file` (3.1). The HBA names are already R9's. | F, C, G | `override-argument` |
+| R17 | With overrides set: no argument names `unix_socket_directories`, `port`, `data_directory` or `config_file` (3.1), even when it names the default (`-D "$PGDATA"`, `-p 5432`). The HBA names are R9's, and another directory is R9b's. | F, C, G | `override-argument` |
 | R18 | With overrides set: no `standby.signal` or `recovery.signal` | H | `recovery-mode` |
 | R19 | With overrides set: the private launch's values discovered, validated and rechecked (5.3) | F, C, D | R10 to R16's codes, "the private launch" |
 | — | The private phase (5.3 to 5.5), step P (5.8), the endpoint (8.3), the handover (5.7) | — | section 6 |
 
-**The order between R8, R9 and R10:**
+**The order between R8, R9, R9b, R10, R11 and R17** (Sol round 6, 3):
 - R9 comes before R10, so `-c hba_file=/x` is always `hba-argument`.
-- R10's query then carries only arguments that set no HBA name, so a `hba_file` it reports came from the files or from a `config_file` the arguments selected. That is `hba-config`, with its own remedy (4.3).
+- R9b comes before R10, so a `-D` naming another cluster is always `data-directory`, never `hba-config` through that cluster's default HBA paths.
+- R10's query then carries only arguments that set no HBA name and move no directory. So a `hba_file` it reports came from the files or from a `config_file` the arguments selected. That is `hba-config`, with its own remedy (4.3).
+- R11 still checks the resolved `data_directory`, which an include or a `config_file` can move.
+- R17 refuses a socket, port, data or `config_file` argument with overrides, including one that names the default.
 
 ### 3.1 The parser and R17's backstop
 - **The parser** reads `getopt` with attached values, `-c name=value` and `--name=value`, with `-` read as `_` and names case-folded.
@@ -149,17 +156,21 @@ host   all          all  all  scram-sha-256
 **The private launch pins its own `hba_file`.** It does not pin `ident_file`: no rule of its own uses a map, and PostgreSQL treats an unreadable ident file as a non-fatal error (Opus round 5, 8).
 
 ### 4.2 R4: the image's files are sound
-R4 reads each image file with the same safe routine as R8. That is Perl opening it with `O_RDONLY|O_NOFOLLOW|O_NONBLOCK`, an `fstat` check that it is a regular file, and a 64 KiB bound (Opus round 5, 6). It then requires:
+R4 reads each image file with the same safe routine as R8. That is Perl opening it with `O_RDONLY|O_NOFOLLOW|O_NONBLOCK`, an `fstat` check that it is a regular file, and a 64 KiB bound. The files are `/etc/megasamples/pg_hba.conf`, `/etc/megasamples/pg_ident.conf` and `/usr/share/megasamples/pg_hba.volume.conf`, the restore command's source. R4 then requires:
 - **the bytes** to equal the build's constants, baked into the wrapper;
-- **root ownership,** with no group or other write, on each file and on `/etc/megasamples`;
-- **the same filesystem:** each file's `st_dev` must equal that of `/usr/share/megasamples`, which is in the image's layers. So a file bind-mounted over the path, even with stock bytes, is refused (Sol round 5, 9).
+- **root ownership,** with no group or other write, on each file and on its directory;
+- **no mount:** each opened file's mount ID, from `/proc/self/fdinfo/FD`'s `mnt_id`, and that of its directory, must equal the mount ID of `/`, the image's root mount (Sol round 6, 5; Opus round 6, 3).
+  - So a bind mount over a file or over `/etc/megasamples` is refused, even one from the same device, and even with stock bytes.
+  - Comparing mount IDs, not devices, also stays correct on overlayfs with `xino=off`, where a file reports its lower layer's device.
 
 Any failure is `hba-image`.
 
-**What remains:** a bind mount over the whole of `/etc/megasamples` with stock, root-owned files, edited after R4. **Certification of the image's HBA ends at R4**, and the README says so, beside DL-124's "an edit to a bind mount after start followed by a reload".
+**A derived image** that copies the same bytes, owner and mode into a layer of its own is the image, as far as R4 can tell. It is not a mount, so R4 does not refuse it. A derived layer with different bytes or permissions is refused.
+
+**What remains, stated:** root in the container, which can remount or edit anything (DL-124). The README says so, beside DL-124's "an edit to a bind mount after start followed by a reload".
 
 ### 4.3 R8, R9, R10: a customised volume
-**R8** reads `$PGDATA/pg_hba.conf` with the safe routine and compares it with `/usr/share/megasamples/pg_hba.volume.conf`. Any of these is `hba-volume`:
+**R8** reads `$PGDATA/pg_hba.conf` with the safe routine and compares it with **the build's constant** baked into the wrapper (Opus round 6, 4), not with a runtime file. Any of these is `hba-volume`:
 - a symlink;
 - a FIFO;
 - a directory;
@@ -185,11 +196,13 @@ docker run --rm --entrypoint /bin/sh -v VOLUME:/var/lib/postgresql IMAGE -c \
 
   ```
   docker run --rm --entrypoint /bin/sh -v VOLUME:/var/lib/postgresql IMAGE -c \
-    'sed -i -E "/^[[:space:]]*(hba_file|ident_file)[[:space:]]*=/d" -- "$1"/postgresql.conf "$1"/postgresql.auto.conf' \
+    'sed -i -E "/^[[:space:]]*(hba_file|ident_file)([[:space:]]*=|[[:space:]]+)/Id" -- "$1"/postgresql.conf "$1"/postgresql.auto.conf' \
     sh /var/lib/postgresql/18/docker
   ```
 
-- **A setting in an include or another `config_file`** is the deployer's to remove, and the sentence says so.
+  The pattern matches what PostgreSQL accepts: any case, and the `=` optional (Sol round 6, 4; Opus round 6, 8).
+
+- **A setting in an include or another `config_file`:** the sentence gives the same `sed`, applied to that file, named by the deployer. Rows 23 and 23b run it on an include and on a selected `config_file` too.
 
 **Rows 47 to 47f** run each documented remedy against every case it applies to.
 
@@ -216,7 +229,7 @@ docker run --rm --entrypoint /bin/sh -v VOLUME:/var/lib/postgresql IMAGE -c \
 
 **Two lists** (Sol round 4, 4; Opus round 4, 1; Sol round 5, 4):
 - **the input list:** the names the wrapper reads;
-- **the handover list:** exactly the variables the pinned upstream `docker-entrypoint.sh` references, plus the image's `ENV` (`PATH`, `PGDATA`, `PG_MAJOR`, `PG_VERSION`, `GOSU_VERSION`, `LANG`), plus `LC_*` and `TZ`, minus the denylist:
+- **the handover list, one derivation** used both here and by the guard (Opus round 6, 5): (the variables the pinned upstream `docker-entrypoint.sh` references ∪ the image's `ENV`, that is `PATH`, `PGDATA`, `PG_MAJOR`, `PG_VERSION`, `GOSU_VERSION` and `LANG` ∪ `LC_*` ∪ `TZ`) minus the denylist:
   - the six key names;
   - `PGPASSWORD`, `PGPASSFILE`;
   - `POSTGRES_HOST_AUTH_METHOD`;
@@ -225,18 +238,29 @@ docker run --rm --entrypoint /bin/sh -v VOLUME:/var/lib/postgresql IMAGE -c \
 **How the handover's environment is built:** the wrapper unsets every exported variable not on the handover list, skipping Bash's read-only names (`SHELLOPTS`, `BASHOPTS`, `BASH_VERSINFO`, `EUID`, `PPID`, `UID`), and then `exec`s directly.
 
 **The guards:**
-- **The handover list equals** the derivation exactly: upstream's references and the image's `ENV`, minus the denylist. That is equality, not coverage, so an unrelated addition fails.
+- **The handover list equals** that one derivation exactly. That is equality, not coverage, so an unrelated addition fails.
 - **No denylisted name** is on it.
 - **The wrapper reads no name outside** the input list and the handover list.
 
 **Checked twice:**
-- **At the `exec` (shim):** the fake upstream entrypoint records its environment, and it must hold exactly the handover-list variables that were set, with no key and no source path.
+- **At the `exec` (shim):** the fake upstream entrypoint records its environment. **The execution-level contract** (Sol round 6, 8) is exactly:
+  - the handover-list variables that were set;
+  - `_`, which Bash adds for the executed command;
+  - any of Bash's read-only names that arrived exported and that the unset loop therefore skipped.
+
+  It holds no key and no source path. The shim exercises inherited exported `SHELLOPTS` and `BASHOPTS`.
 - **In the postmaster (native, row 39b):** its `/proc/PID/environ` holds no key value and no `*_FILE` path. For each key route, direct and file:
   - upstream's `file_env`, as read from the pinned script, may export `POSTGRES_PASSWORD` with an empty default;
   - so the assertion is that any such variable present is empty;
   - a test of the pinned script pins that behaviour.
 
 **The private files** (secrets, client stderr, the private server's log, the private HBA file) live in this run's `mktemp -d` directory under `/dev/shm`, owned by `postgres`, mode 0700 (Opus round 5, 5). The unique name means a second container sharing `/dev/shm` (`--ipc=host`, `shareable`, `container:`) cannot remove or recreate it.
+
+**Shared-IPC limits, stated** (Opus round 6, 7):
+- under `--ipc=host`, the private directory (owned by `postgres`, uid 999, mode 0700) and `pgpass` sit briefly in the host's `/dev/shm`, where a host account with uid 999 could read them;
+- a run killed by `SIGKILL` or the OOM killer leaves its directory in a shared `/dev/shm`, and nothing sweeps it.
+
+The README lists both with the `/dev/shm` requirement.
 
 **Before every `exec`, on success and on failure**, the wrapper removes:
 - this run's private directory;
@@ -313,17 +337,17 @@ ALTER ROLE "ROLE" PASSWORD 'SCRAM-SHA-256$4096:…';
 
 **The confirmation.** A libpq sign-in as ROLE to `megasamples` on the private socket, with `require_auth=scram-sha-256`. The key comes from `pgpass` in the private directory: owned by `postgres`, mode 0600, the line `*:*:megasamples:ROLE:KEY` escaped as `credentials.pgpass()` does. It is removed at once.
 
-**The state:**
+**The state:** the first matching rule decides, so the rules cannot overlap (Sol round 6, 7).
 
-| Observed | State |
-|---|---|
-| no `connected` | `unattempted` |
-| `connected`, no `sending`, exit not by signal | `unattempted` |
-| `applied`, confirmation succeeded | `applied` |
-| `sending`, no `applied`, exit 3 | `refused` |
-| `applied`, confirmation failed | `uncertain` |
-| `sending` without `applied` and any other exit; any death by signal without `applied`; `applied`, then interrupted before the confirmation | `uncertain` |
-| not run after an earlier failure | `unattempted` |
+| # | Observed for the role | State |
+|---|---|---|
+| 1 | the session was never started (an earlier role failed, or the wrapper stopped first) | `unattempted` |
+| 2 | no `megasamples-sending` (no `connected`, or `connected` only), however the client ended: exit, signal or shutdown | `unattempted`, because the `ALTER` was not sent |
+| 3 | `applied`, and the confirmation succeeded | `applied` |
+| 4 | `sending`, no `applied`, exit 3 | `refused` |
+| 5 | anything else after `sending`: `applied` with a failed or interrupted confirmation, or `sending` without `applied` and any other exit or a signal | `uncertain` |
+
+**Recorded as it happens:** each role's state is written to this run's state directory as soon as it is known, and the per-role lines are printed from that record on **every** exit after the rotation began: `password-setup`, `private-stop`, `interrupted`, an `internal` after the rotation, and `handover`. So a failure after a confirmed rotation still reports `applied` for each role.
 
 **After a failure:**
 - the first non-`applied` result stops the sequence;
@@ -358,7 +382,7 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
   - the socket list (8.3);
   - the certified port;
   - `hba_file` and `ident_file` (4.1).
-- **`handover_failed`** removes the endpoint, writes the `handover` line itself and exits 1. The trap has already been cleared and the run's directories removed.
+- **`handover_failed`** removes the endpoint, writes the `handover` line and the per-role lines recorded before the handover itself, and exits 1. The trap has already been cleared and the run's directories removed, so the per-role record is held in the wrapper's memory from the last write until then.
 - **Failures after the `exec`** (upstream's `exec gosu`, or `gosu`'s `exec postgres`) leave a dead PID in the endpoint, so the probe is unhealthy.
 
 ### 5.8 Slice 3's step P
@@ -387,6 +411,8 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
 **The `EXIT` trap** is armed at S0. For any wrapper-owned exit, it makes sure a coded line was written for this run (`internal` with the last step if none was), and that the exit status is 1. It removes this run's directories.
 
 **The rules for codes:** codes are added, never renamed or removed. An unknown code is a refusal.
+
+**`policy-marker`'s sentence** names the marker found and the image's own, and the upgrade route of 7.4, with the README section that has its commands (DL-122 Q4; Sol round 6, 11).
 
 | Code | Step |
 |---|---|
@@ -433,21 +459,25 @@ exec /usr/local/bin/docker-entrypoint.sh postgres ARGS PINS || handover_failed
 - the init SQL: `00-users.sql`, `10-read-profile.sql`, `15-read-views.sql`, `read-routine-names.sql`, `20-grants.sql`, `30-template-grants.sql` and `40-register-template.sql`;
 - `megasamples/postgres_templates.py`;
 - the three HBA files of 4.1;
-- `engines/postgres/apply-database-policy.sh` (7.4);
 - the Dockerfile's policy and HBA steps.
 
 **The current-digest check:** the current files' digest must equal the current pair's recorded digest.
 
 **Released, one definition** (Sol round 5, 5; Opus round 5, 7): a pair is released from the first revision on `main`'s first-parent history whose `policy-format.json` marks it `released: true`. That flag is set in the merge to `main`.
 - **The guard walks** that history with `--first-parent`. From the first released revision on, the pair's digest must not change, and it must stay present and released.
-- **Release tags:** every release tag must point at a commit on `main`'s first-parent history. The guard lists the tags and fails on any that does not. So a release cut elsewhere cannot freeze a format the walk never sees.
+- **The candidate is compared with released history** (Sol round 6, 9): for every pair released anywhere in that history, the working tree's manifest must hold the same digest, and the current files' digest is checked against the manifest. So a feature branch that edits a released policy file and refreshes its digest fails.
+- **A new format bumps both members** (DL-122 Q4): a pair added to the manifest must differ from every earlier pair in its marker and in its version.
+- **Release tags** match `v[0-9]*` (Opus round 6, 6). Each must point at a commit on `main`'s first-parent history where every pair in that commit's manifest is `released: true`. The guard lists the tags and fails otherwise. So a tag cannot precede the flag, and a release cut elsewhere cannot freeze a format the walk never sees.
 - **The test needs full history and fails on a shallow clone.**
 - **Tested:**
   - an unreleased pair's digest edited: passes;
   - a released pair edited, deleted, or changed and changed back: fails;
   - a feature branch's intermediate digests merged: passes;
   - a tag off `main`'s first-parent history: fails;
-  - a tagged release followed by an edit of the same pair: fails.
+  - a tagged release followed by an edit of the same pair: fails;
+  - a tag at a commit where a pair is still `released: false`: fails;
+  - a branch editing a released policy file with its manifest digest refreshed: fails;
+  - a new pair that bumps only the marker or only the version: fails.
 
 **Also checked:**
 - the pair matches the control file, the Dockerfile's marker and the wrapper's constants;
@@ -467,37 +497,35 @@ So a volume from another build is reported as a marker or identity mismatch, nev
 
 **`up`'s U-3 preflight** reports `stale-image` without invoking the image.
 
-### 7.4 The upgrade route (Sol round 5, 1; Opus round 5, 2)
-**One script for both users.** `engines/postgres/apply-database-policy.sh DB [template]` applies the image's per-database policy in the build's order: `20-grants.sql`, `10-read-profile.sql`, `15-read-views.sql`, and, for a template, `30-template-grants.sql` and `20-grants.sql` again. The Dockerfile calls it, and so does the upgrade, so they cannot diverge. It is in the digest.
+### 7.4 The upgrade route: documented and manual (the coordinator's decision, applying DL-122 Q4)
+**The decision.** Version 1's route for a pre-release volume (marker 1) is a documented manual one. DL-122 Q4's reasoning holds: no release has shipped, so only disposable pre-release volumes carry marker 1. The automated, grant-reconstructing restore of revisions 4 to 6 is **removed**, together with `apply-database-policy.sh` and the rehearsal's grant reconstruction. That removes round 6's P1 (deployer tables made readable by `demo`) and its class.
 
-**The steps:**
-1. **Keep the volume.**
-2. **Start the image that made it,** with no TCP published.
-3. **Dump each sample database as `postgres`** with `pg_dump -Fc`.
-4. **Dump the roles** with `pg_dumpall --roles-only --no-role-passwords`, and keep the roles the current image lacks.
-5. **Inspect the old policy** (DL-124): read `SELECT * FROM pg_hba_file_rules` on the old image. Custom rules are not carried over. Confirm equivalent protection outside the image (4.4) before exposing the new server.
-6. **Start the current image on a fresh volume,** with overrides for every privileged key.
-7. **Create the deployer roles** from step 4, as `postgres`. They have no passwords, and their memberships come as dumped.
-8. **For each database, as `postgres`:**
-   1. **List the archive** with `pg_restore -l`. The list keeps table definitions and data, and every object owned by `admin` or a deployer role. It drops:
-      - **every `ACL` and `DEFAULT ACL` entry,** because an entry holds all of an object's grants and cannot be split;
-      - the `read_policy` extension and its schema;
-      - the event trigger;
-      - `15-read-views.sql`'s views.
-   2. **For the employees database,** drop `15-read-views.sql`'s two dependent views first.
-   3. **Restore:** `pg_restore -L list --clean --if-exists --exit-on-error` into the baked database, so the archive's owners are kept.
-   4. **Re-run** `apply-database-policy.sh DB`, in the build's order. It reapplies format 2's grants to every table, recreated ones included, and recreates the views.
-   5. **Apply the deployer grants:** render the archive's `ACL` entries with `pg_restore -f - -L acl.list`, keep only the `GRANT` statements whose grantee is a step-4 role, and run them.
-   6. **A database the image lacks** is created first, owned as dumped, and gets the same three steps.
-9. **Verify, before TCP is opened:**
-   - healthy;
-   - the extension at version 2, and the report's exact ACL;
-   - the retained edit present;
-   - `demo`'s rights equal the image's, **including on a recreated, edited sample table**;
-   - a table owned by a deployer role keeps its owner, and its grant to a second deployer role;
-   - no privileged key from before the dump signs in.
+**The route,** named by `policy-marker`'s sentence, with exact commands in the README:
+1. **Keep the volume.** R7 has not touched it.
+2. **With the old image** on that volume, no TCP published, **dump your own work only:**
+   - each database you created, with `pg_dump -Fc DB`;
+   - or your own schemas inside a sample database, with `pg_dump -Fc -n SCHEMA DB`;
+   - your own roles, with `pg_dumpall --roles-only --no-role-passwords`, keeping the lines for your roles.
 
-**The README gives the steps.** The rehearsal runs on both marker-1 variants. Each has an edited sample table, a deployer-owned table granted to a second deployer role, and the employees database.
+   The image's sample objects are not dumped.
+3. **Start the current image on a fresh volume,** with overrides for every privileged key.
+4. **Recreate your roles** from the filtered dump, as `postgres`. They come back **without passwords**: set them.
+5. **Create the target database,** owned by the role that will load it: `CREATE DATABASE DB OWNER ROLE`. For a schema in a sample database instead, `postgres` grants that role `CONNECT` on the database and creates the schema owned by it.
+6. **Load your dump as that deployer role:** `pg_restore --no-owner --role=ROLE -d DB FILE`.
+
+**Not carried over, as the README says:**
+- **the image's sample data,** which comes fresh with the new image;
+- **passwords;**
+- **custom HBA rules** (DL-124). Before exposing the new server, inspect the old policy (`SELECT * FROM pg_hba_file_rules` on the old image) and put equivalent protection in place outside the image (4.4);
+- **grants to the image's roles.** Your objects are not readable by `demo` unless you grant it.
+
+**One rehearsal, natively, on a marker-1 volume made by `ce3b539fb522`:**
+- the volume has a deployer role with a table of its own, holding a retained row;
+- the documented commands are run exactly as the README gives them;
+- at the end:
+  - the table is present with its row;
+  - it is owned by the loading role;
+  - `demo` gets a permission error reading it.
 
 ## 8. Health
 
@@ -513,7 +541,7 @@ So a volume from another build is reported as a marker or identity mismatch, nev
 | Client | Server | Build |
 |---|---|---|
 | Docker's CLI | Docker | no flag |
-| Docker's CLI | Podman's socket | through the compatible API. If the inspect finds no `HEALTHCHECK`, the fallback `podman build --format docker` is used only when `podman info`'s graph root equals the socket's (`docker info`'s root directory). Otherwise the build is refused. |
+| Docker's CLI | Podman's socket | through the compatible API. If the inspect finds no `HEALTHCHECK`, the fallback is `podman --url <the same socket> build --format docker`. Podman's remote client builds on the service behind the selected endpoint, so the store is the same by construction, not by a matching path (Sol round 6, 10). Without a Podman client that can use the socket, the build is refused. |
 | `podman` or the podman-docker shim | Podman | `--format docker` |
 
 **Detection:** `docker --version` naming Podman is the shim. Otherwise `docker version -f '{{.Client.Platform.Name}}'`; a template error or an empty name means "not Podman's client".
@@ -523,7 +551,7 @@ So a volume from another build is reported as a marker or identity mismatch, nev
 **Tested on each route:**
 - with an existing good tag;
 - a forced failure;
-- with distinct stores for `podman` and the socket.
+- with a local `podman` whose store reports the same graph-root path as the socket's but is a different store: the fallback builds only through `--url`, and nothing lands in the local store.
 
 ### 8.3 The endpoint
 - **The probe socket directory:** `/run/megasamples-probe`, recreated under the lock, owned by `postgres`, mode 0700.
@@ -532,7 +560,8 @@ So a volume from another build is reported as a marker or identity mismatch, nev
 - **The probe checks:**
   1. `postmaster.pid` names the recorded PID, which is alive, and the recorded port;
   2. the probe socket exists;
-  3. a connection there answers `t`.
+  3. a connection there, as `demo` to `megasamples`, runs `SELECT pg_catalog.megasamples_policy_loaded()` and gets exactly `t` (Opus round 6, 2; Sol round 6, 6).
+- **The negative control:** a server started from the same image with `read_policy` removed from the preload, by a fault layer bypassing the wrapper, answers `f`, and the probe is unhealthy.
 - **A server that bound its ordinary socket but not the probe socket** is unhealthy: "probe socket missing".
 
 ### 8.4 The MySQL image
@@ -566,14 +595,30 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 
 **Where they run:**
 - **The shim harness,** in a task-owned container of the image in the isolated store, with `SYS_ADMIN` and real root, and the fakes bind-mounted over the absolute paths. A preflight fails loudly.
-- **The conformance replay of the fake `-C`,** by construction (revision 4's 9.4).
+- **The conformance replay of the fake `-C`,** by construction:
+  - the fake `postgres -C` records every query it answered, with the fixture's whole tree: working directory, absolute paths outside `PGDATA` (includes, `config_file`), owners and modes;
+  - each query is replayed, as `postgres`, against the real `postgres -C` in a throwaway container of the image, with the fixture tree reproduced exactly;
+  - status and value must agree.
+
+**Left out of the product, with the reason:**
+- **J's admitted client variables** (`PGHOSTADDR`, `PGHOST`, `PGSERVICE`, `PGPASSFILE`, `PGUSER`, a `.psqlrc`): `env -i` and `-X` make every client independent of them. Row 50 shows each once.
+- **The passing argument forms** (`-k`, `-c work_mem`, the absolute path, other libraries): they reach only the public launch. Each is one row against the base.
 - **Real containers:** every row of 10.2.
 
 ### 10.2 The current row table
-- **(A)** marks a refusal before any client runs.
-- **(W)** marks a failure after work began.
-- **"Unchanged"** means the endpoint, the `/run` and `/dev/shm` directories and the volume are as before, with stale ones present in the fixture.
-- **Keys** are checked over password-authenticated TCP. For a row with no listener, they are checked on a separate start of the same fixture.
+**Each row asserts** (restored; Opus round 6, 2; Sol round 6, 6): the code or the start; the fakes' calls (shim); the per-role states; the keys; the endpoint; the `/run` and `/dev/shm` directories; the listener; health; and that no process of the run is left. **Each row runs on its own fixture.**
+
+**The outcome rule per class,** which every row of its class asserts unless the row says otherwise:
+
+| Class | Endpoint | Keys | `/run` and `/dev/shm` | Listener and health |
+|---|---|---|---|---|
+| **(A) before the lock** (R0 to R6) | unchanged (a stale one stays) | old | unchanged; no state directory left | none; a stale endpoint's dead PID keeps the probe unhealthy |
+| **(A) after the lock** (R7 onwards, before any client) | removed | old | `/run/megasamples-*` recreated; no private or state directory left | none; unhealthy |
+| **(W)** (after a client ran) | removed | per each role's recorded state | no private or state directory left | none; unhealthy |
+| **Start** | written | new for each `applied` role, published for the rest | no private or state directory left | listening; healthy by `SELECT pg_catalog.megasamples_policy_loaded()` = `t`; old keys refused by SCRAM where an override applied |
+
+- **Keys** are checked over password-authenticated TCP. For a row with no listener, they are checked on a separate start of the same fixture, after proving the failed launch left no listener.
+- **"Unchanged"** means byte for byte, with stale files present in the fixture.
 
 | Row | Facts | Outcome |
 |---|---|---|
@@ -581,7 +626,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 2 | overrides all, direct | start; each key confirmed |
 | 3 | overrides all, as `*_FILE`; and `POSTGRES_PASSWORD_FILE` with direct `DEMO_PASSWORD` | start; confirmed |
 | 4 | `demo` only | start; `demo` new, others published |
-| 5 | `argv[1]` the absolute path | start |
+| 5 | `argv[1]` the absolute path, with overrides, on a fresh volume | start; the new key works and the old one is refused by SCRAM (the existing control, `tests/test_v1_postgres_start.py`) |
 | 6 | options only (`-c work_mem=8MB`) | start |
 | 7 | `postgres -k /run/postgres` | start; the probe uses `/run/megasamples-probe` |
 | 8 | `psql -U postgres -h db`; `pg_dump -d postgres` | other command |
@@ -596,21 +641,26 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 15 | (A) `LD_PRELOAD`, `LD_LIBRARY_PATH`, `LD_AUDIT`; an entry named `BASH_FUNC_exec%%` | R3 `loader-environment`; unchanged |
 | 15b | (A) `PGPORT`, `PGOPTIONS` | R3 `server-environment`; unchanged |
 | 15c | an imported read-only `SHELLOPTS` or `BASHOPTS` | start (skipped by the unset loop) |
-| 16 | (A) the image's HBA file replaced by a layer or bind mount (with stock bytes too), writable by `postgres`, or a FIFO there | R4 `hba-image`; unchanged |
+| 16 | (A) a derived layer with different bytes in `/etc/megasamples/pg_hba.conf` | R4 `hba-image`; unchanged |
+| 16b | (A) a bind mount over the file with stock bytes, from the same device; and from another device | R4 `hba-image` (mount ID); unchanged |
+| 16c | (A) a bind mount over `/etc/megasamples` | R4 `hba-image`; unchanged |
+| 16d | (A) the file writable by `postgres`; a FIFO at the path; a mount over `/usr/share/megasamples/pg_hba.volume.conf` | R4 `hba-image`; unchanged |
+| 16e | a correct start under rootless Podman's overlay storage (`xino=off` layers) | start; R4 passes by mount ID |
 | 17 | (A) a key both ways; an unreadable file; an empty key; a NUL in a file; a non-ASCII key; an overlong key; a CRLF file | R5 `key-conflict`, `key-file`, `key-value`; unchanged |
 | 18 | (A) `PG_VERSION` missing | R6 `uninitialised`; unchanged |
 | 18b | (A) `--cap-drop ALL` | R6 `internal`, naming the `PG_VERSION` lookup's `EACCES`; unchanged |
 | 19 | (A) a second container on the same volume, held at each boundary, including the first's public run; and `docker exec … entrypoint-wrapper.sh postgres` inside a running container | `volume-busy`; the first start's keys in force; one postmaster; the first stays healthy |
-| 19b | (A) an NFS-like `flock` failure (`EBADF`) | `internal`, naming the lock |
-| 20 | (A) unmarked; marker `1` (both earlier builds); `3`; empty; a symlink; on a read-only mount; owned by another uid | R7 `policy-marker`; nothing written; ownership unchanged |
+| 19b | (A) an NFS-like `flock` failure (`EBADF`), and `ENOLCK` | `internal`, naming the lock and the error, never `volume-busy` |
+| 20 | (A) unmarked; marker `1` (both earlier builds); `3`; empty; a symlink; on a read-only mount; and an invalid marker on a volume owned by another uid | R7 `policy-marker`, naming the upgrade route; nothing written; ownership unchanged (no repair before R7) |
 | 21 | (A) a volume `pg_hba.conf`: customised (a `local` rule requiring a key; a `hostssl` rule; a loopback `trust` rule); a symlink; a FIFO; a directory; over 64 KiB | R8 `hba-volume`, before either launch |
 | 21b | the `hba-volume` restore command, run on each case of row 21 | each next start succeeds; a symlink's target is not written |
 | 22 | (A) `-c hba_file=/x`, `--hba-file=/x`, `-c ident_file=/x`, with and without overrides | R9 `hba-argument` |
-| 23 | (A) `hba_file` or `ident_file` in `postgresql.conf`, in `postgresql.auto.conf`, in an include, and in a file selected by `-c config_file=` | R10 `hba-config` |
-| 23b | the `hba-config` command, run on the `postgresql.conf` and `postgresql.auto.conf` cases | each next start succeeds |
+| 23 | (A) `hba_file` or `ident_file` in `postgresql.conf`, in `postgresql.auto.conf`, in an include, and in a file selected by `-c config_file=`; spelled `HBA_FILE = 'x'` and `hba_file 'x'` (no `=`) | R10 `hba-config` |
+| 23b | the `hba-config` command, run on every case of row 23, on the named file for an include or a `config_file` | each next start succeeds |
 | 24 | a file mounted at `/etc/megasamples/pg_hba.local.conf` with a `trust` rule | start; no effect: `pg_hba_file_rules` shows only the image's three rules; loopback still needs a key |
 | 25 | (A) `config_file` unreadable; a non-numeric `port` | R10 `config-unreadable` |
-| 26 | (A) every data-directory spelling; a moving `config_file` or include | R11 `data-directory` |
+| 26 | (A) a `-D`, `--pgdata` or `-c data_directory` naming another valid cluster, in every spelling | R9b `data-directory`, never `hba-config` |
+| 26b | (A) a `config_file` or include that moves `data_directory` | R11 `data-directory` |
 | 27 | (A) a quoted preload | R12 `preload-quoted` |
 | 28 | (A) `read_policy` missing from the file, `auto.conf`, `-c` or an include | R13 `preload-missing` |
 | 29 | other libraries with `read_policy` | start |
@@ -620,30 +670,32 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 32b | an empty certified socket list | start; the list is just the probe directory; healthy |
 | 32c | a stale probe directory with the wrong owner | recreated; healthy |
 | 32d | the probe directory made unwritable by a fault | serves; probe unhealthy: "probe socket missing" |
-| 33 | (A) overrides with any socket, port, data or `config_file` argument | R17 `override-argument` |
+| 33 | (A) overrides with `-k /run/postgres`, `-p 5432`, `-D "$PGDATA"`, `-c config_file=$PGDATA/postgresql.conf`: arguments that pass every earlier check | R17 `override-argument` |
 | 34 | (A) overrides with `standby.signal` or `recovery.signal` | R18 `recovery-mode` |
 | 35 | (A) overrides, with a preload fixed by `-c` but missing from the files | R19 `preload-missing`, "the private launch" |
 | 36 | overrides, and a persisted custom socket, port or `listen_addresses` | start; the rotation reached `/run/megasamples-private` port 5432; no other listener during it |
 | 37 | (W) the first role refused | `password-setup`; `refused`, then `unattempted` |
 | 37b | (W) a retry where the key already works and the `ALTER` is refused (fault) | `refused` |
-| 38 | (W) a lost reply: the fault relay forwards the `ALTER`, waits for `CommandComplete`, then closes before forwarding it | `uncertain`; the new key signs in on a separate start |
+| 38 | (W) overrides for all three roles; the second role's reply lost: the fault relay forwards its `ALTER`, waits for `CommandComplete`, then closes before forwarding it | `password-setup`; `postgres` `applied`, `admin` `uncertain`, `demo` `unattempted`; keys: first new, second new (witnessed by signing in on a separate start), third old |
 | 39 | (W) the connection never opens (the relay refuses) | `unattempted` for all |
 | 39b | overrides, direct and as `*_FILE` | the recorded handover environment holds exactly the handover list's set variables, with no key or path; the postmaster's `/proc/PID/environ` holds no key value or `*_FILE` path, and any `POSTGRES_PASSWORD` present is empty (upstream's default, pinned) |
 | 40 | retry of row 38 | start |
 | 41 | overrides under persisted `log_statement=all`, per-role `log_statement=all` and `debug_print_*=on`; and row 37 under each | no key or verifier in any log, `pg_stat_statements` or the container log |
 | 42 | (W) the private start fails, or no response for 60 seconds | `private-start`; the child reaped |
 | 42b | an unclean previous stop, a long recovery | start, after waiting |
-| 43 | (W) a signal during the private phase, during a stalled client | `interrupted`, with each role's state; stopped and reaped |
+| 43 | (W) a signal during the private phase: before the first role's `connected`; after its `sending`; after its confirmation | `interrupted`, with `unattempted`; `uncertain`; `applied`, respectively for that role, and the rest `unattempted`; the keys match each; stopped and reaped; no listener |
+| 43b | (W) a signal while a client stalls | as row 43, promptly |
 | 44 | (W) a forced private stop | `private-stop` |
 | 45 | (W) row 37, then a forced stop | `password-setup`, then `also: private-stop` |
-| 46 | (W) the entrypoint unexecutable just before the handover | `handover`; the endpoint removed; no state or private directory left |
+| 46 | (W) overrides; the entrypoint unexecutable just before the handover | `handover`, followed by the per-role lines, all `applied`; keys new; endpoint removed; no state or private directory left; no listener |
 | 46b | (W) `gosu` removed after the private stop (fault layer); the server binary unexecutable after the private stop | a dead PID in the endpoint; unhealthy |
-| 47 | the public server exits after starting | its own exit; probe unhealthy |
+| 47 | the public server binds, then exits after starting | its own exit; keys as applied; the endpoint names a dead PID; unhealthy |
+| 47b | the public server fails to bind its port before readiness (port in use) | its own FATAL exit; keys as applied; the endpoint names a dead PID; unhealthy; no listener |
 | 48 | an include replaced between certification and launch | start on the pinned values |
 | 49 | (A) root, `/run` read-only; the self-test failing | `internal`, naming the step |
 | 49b | (A) `--ipc=none` | `internal: /dev/shm unavailable` |
 | 49c | two containers sharing `/dev/shm` (`--ipc=shareable` / `container:`) on different volumes, starting with overrides at once | both start; neither's private directory touched by the other |
-| 50 | a second listener reachable through each inherited `PG*` variable and a planted `.psqlrc` | start; zero connections at the second listener |
+| 50 | a second listener reachable through each admitted inherited client variable (`PGHOSTADDR`, `PGHOST`, `PGSERVICE`, `PGPASSFILE`, `PGUSER`) and a planted `.psqlrc` (`PGPORT` and `PGOPTIONS` are row 15b's refusals) | start; zero connections at the second listener |
 | 50b | a second healthy server on a shared socket directory, and on another port | the probe does not report it |
 | 51 | marked, other owner | start after the repair |
 | 52 | a replaced entrypoint; a shell string; an unlisted wrapper | unchecked; always unhealthy |
@@ -654,6 +706,8 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 57 | the private files read under the real uids | the private server reads `hba.conf`; the client reads `pgpass`, as `postgres` |
 | 58 | the image build | the baked `pg_authid` holds only the image's roles; the stock volume `pg_hba.conf` equals the repository file |
 | 59 | informational and handover `exec`s, repeated in one container | no state or private directory left behind |
+| 60 | the probe's negative control: a server from the image with `read_policy` removed from its preload by a fault layer | the probe query answers `f`; unhealthy |
+| 61 | the upgrade route of 7.4, run once natively on a marker-1 volume with a deployer-owned table | the table present with its row, owned by the loading role; `demo` gets a permission error |
 
 ### 10.3 Confirmed natively
 - **The `psql` exit mapping,** by the fault relay;
@@ -664,7 +718,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 - **the loopback rows** under each network mode;
 - **upstream's `file_env` default,** from the pinned script;
 - **the image's HBA file:** `pg_hba_file_rules` shows exactly its three rules, with no error;
-- **the upgrade rehearsal** on both marker-1 variants.
+- **the upgrade route's one rehearsal** (7.4, row 61).
 
 ### 10.4 Reversals
 - **Each step R0 to R19,** removed in turn, fails at least one row.
@@ -675,27 +729,52 @@ Each item below is recorded with an impact note, a conformance test and its unkn
   - `execfail` with `||`, the directory cleanup before `exec`, the per-run `mktemp` names;
   - the endpoint checks;
   - the removed loopback lines;
-  - the candidate tag in the build.
+  - the candidate tag in the build and the `--url` fallback;
+  - R9b's place before R10;
+  - the per-role record printed on every post-rotation exit.
 
 ## 11. The build order
 1. **The harness and the generator,** red against today's wrapper. First, the native lock-inheritance check (5.9).
-2. **Routes, the parser,** S0 and R0 to R5.
-3. **Format 2:** the marker, the extension, the HBA files, the digest and the release guard, `apply-database-policy.sh`. Then R6, the lock, the cleanup, R7 and R8.
+2. **Routes, the parser,** R0, S0, R1 to R3 and R5.
+3. **Format 2:** the marker, the extension, the HBA files and their constants, the digest and the release guard. Then R4 (which needs the constants), R6, the lock, the cleanup, R7 and R8 (Opus round 6, 8).
 4. **R9 to R19,** and the pins.
 5. **The private phase.**
 6. **Health:** the probe socket, the endpoint, the script, Compose, the timings, the candidate-tag build.
 7. **The handover and step P.**
-8. **Real rows,** faults, network modes, and the upgrade rehearsal.
+8. **Real rows,** faults, network modes, and the upgrade route's one rehearsal.
 
-## 12. The brief's inputs
-As revision 3's section 11 (at `32664450`). Round 6 S6-6's loopback masking is closed by removing the trust lines and by the pinned `hba_file`.
+## 12. The brief's inputs, traced
 
-## 13. Design round 5, traced
+| Input | Where |
+|---|---|
+| Round 1 S3; round 2 S2-2: a pre-policy volume; `-D` elsewhere | R7; R9b, R11; rows 20, 26 |
+| Round 3 S3-1, O3-1: literal parsing bypassed; the preload replaced | R10 to R13 by `-C`; 3.1; rows 26 to 28 |
+| Round 4 S4-1: the private start on files alone | R19; row 35 |
+| Round 4 S4-7: a quoted preload | R12; row 27 |
+| Round 4 O4-1: the path form; non-root | R2, R0; rows 5, 10, 11 |
+| Round 4 O4-4: refusals undocumented; the repair | section 6; the repair after R9; row 51 |
+| Round 4 S4-6/O4-2; round 5 S5-6/Opus P3-2: the healthcheck | 8.1, 8.3; rows 1 and 60 |
+| Round 5 S5-3 (P2-3): the private socket | 5.3; row 36 |
+| Round 5 S5-7 (P3-7): non-root runs the private start first | R0; row 10 |
+| Round 5 O5-3, O5-4: the README stopgaps | section 6's sentences and 3.2, under the README guard |
+| Round 6 S6-5 (P2-5): failures after a password change | 5.4 to 5.7; rows 37 to 47b |
+| Round 6 S6-6, O6-1: a shared volume; the trusted loopback | a fixture per row; keys over SCRAM TCP; loopback trust removed and the HBA pinned (section 4) |
+| Round 6 O6-4, O6-P3-2: another build's volume; the healthcheck's place; `dynamic_library_path`; other libraries; server modes | R7 with format 2; section 8; R14; 3.2; R1 |
+| Round 7 O7-1: the coverage criterion | 10.1 |
+| Round 7 S7-1: a failed public start; informational commands; a lost reply; keys after failure | 5.7; section 2; 5.4; rows 14, 38, 47, 47b |
+| Round 7 S7-8, O7-P3-3; round 8 S8-5: the start suite's assertions | row 1 and 10.2's rule |
+| Round 7 S7-7/O7-P3-7; round 8 S8-6, O8-P3-3: retained volumes; fact H's builds; fact L | row 20; rows 38 and 39 |
+
+**The README also lists** (restored; Opus round 6, 2): the stated limits of 3.2, and the environment variables the handover drops (`KRB5_KTNAME`, LDAP's TLS variables and the rest), as a contract change.
+
+## 13. Design rounds traced
+
+### 13.1 Design round 5
 
 | Finding | Where answered |
 |---|---|
 | Opus 1; Sol 2: DL-124's restore command | 4.3: `rm -rf` then `cp`, `chown` and `chmod`, with the printed path; `hba-config` and its own command; rows 21b and 23b over every case |
-| Opus 2; Sol 1: the upgrade loses the image's grants | 7.4: every `ACL` and `DEFAULT ACL` dropped; `apply-database-policy.sh` re-run in the build's order; deployer grants rendered from the archive; step 9 and the rehearsal |
+| Opus 2; Sol 1: the upgrade loses the image's grants | **superseded in round 6** by the documented manual route (7.4). At the time, 7.4: every `ACL` and `DEFAULT ACL` dropped; `apply-database-policy.sh` re-run in the build's order; deployer grants rendered from the archive; step 9 and the rehearsal |
 | Opus 4; Sol 3: R7, R14 and row 48c's order | R9 before R10; `hba-argument` before any `-C` with arguments; `hba-config` from the files or a selected `config_file`; HBA names removed from R17; row 21 "before either launch" |
 | Opus 7; Sol 5: "released" | 7.2's one definition, the tag rule and its two tests; 7.1's "no pair 1" |
 | Sol 4: the handover test | 5.1's equality guard; the shim's recorded environment; row 39b with upstream's empty default pinned |
@@ -707,3 +786,22 @@ As revision 3's section 11 (at `32664450`). Round 6 S6-6's loopback masking is c
 | Sol 8: the flag directory at `exec` | 5.1's cleanup; 5.7; rows 14, 46 and 59 |
 | Sol 9: the first HBA read under a bind mount | 4.2's same-filesystem check; the stated limit for a mount over the whole directory |
 | Opus 8: wording | the consolidated table; the private launch's `ident_file` (4.1); the typo and the heading, gone with the rewrite |
+
+### 13.2 Design round 6
+
+| Finding | Where answered |
+|---|---|
+| Sol 1 (P1), Opus 1 (P2): the upgrade grants `demo` access to deployer tables | **the coordinator's decision:** the automated restore removed; 7.4's documented manual route and its one rehearsal (row 61) |
+| Sol 2: the shared policy script cannot complete the restore | removed with the automated restore |
+| Opus 2; Sol 6: assertions lost in consolidation | 10.2's "each row asserts" and outcome rule per class; rows 5, 38, 43, 46, 47, 47b; the probe query (8.3) and its negative control (row 60); `ENOLCK` (row 19b); 10.1's replay and "left out" inline; section 12 inline |
+| Sol 3: alternate `-D`; R10, R11 and R17 | R9b before R10; R17's fixtures (row 33); rows 26 and 26b; row 50 split from 15b |
+| Sol 4; Opus 8: the `hba-config` remedy's spellings | 4.3's `sed` with the `I` flag and the optional `=`; rows 23 and 23b |
+| Sol 5; Opus 3: R4 by mount, not device | 4.2's mount IDs, covering the volume copy too; rows 16 to 16e |
+| Sol 7: per-role states | 5.4's ordered rules and the record printed on every post-rotation exit; rows 43 and 46 |
+| Sol 8; Opus 5: the handover's environment and its derivation | 5.1's one derivation and execution-level contract |
+| Sol 9; Opus 6: the format guard and tags | 7.2's candidate-against-history check, the bump-both rule, and the tag rule |
+| Sol 10: the Podman fallback's store | 8.2's `podman --url` |
+| Sol 11: `non-root` first; row 20; `policy-marker`'s route | R0 before S0; row 20; section 6's sentence |
+| Opus 4: R8 against the constant | 4.3 |
+| Opus 7: shared IPC | 5.1's stated limits |
+| Opus 8: buildability | `apply-database-policy.sh` removed; R4 moved to build step 3; rows 16 to 16d listed separately |
