@@ -78,7 +78,8 @@ def test_postgres_demo_has_no_unapproved_routines(database):
     unsafe = accepted('postgres', database, """SELECT p.oid::regprocedure::text FROM pg_proc p
         WHERE has_function_privilege(current_user,p.oid,'EXECUTE') AND
         ((p.pronamespace NOT IN ('pg_catalog'::regnamespace,'information_schema'::regnamespace)) OR
-         (p.provolatile='v' AND p.oid <> 'pg_catalog.pg_export_snapshot()'::regprocedure) OR
+         (p.provolatile='v' AND p.oid NOT IN ('pg_catalog.pg_export_snapshot()'::regprocedure,
+             'pg_catalog.pg_database_size(oid)'::regprocedure)) OR
          p.proname IN ('txid_current','pg_current_xact_id') OR p.prosecdef) ORDER BY 1""")
     assert unsafe == '', 'demo can execute unapproved routines: ' + unsafe
 

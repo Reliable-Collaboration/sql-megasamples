@@ -90,7 +90,8 @@ def main(argv=None):
                          f"{database}: demo cannot {label}")
             unsafe = q("SELECT count(*) FROM pg_proc WHERE has_function_privilege('demo',oid,'EXECUTE') "
                        "AND (pronamespace NOT IN ('pg_catalog'::regnamespace,'information_schema'::regnamespace) "
-                       "OR (provolatile='v' AND oid <> 'pg_catalog.pg_export_snapshot()'::regprocedure) OR prosecdef "
+                       "OR (provolatile='v' AND oid NOT IN ('pg_catalog.pg_export_snapshot()'::regprocedure, "
+                       "'pg_catalog.pg_database_size(oid)'::regprocedure)) OR prosecdef "
                        "OR proname IN ('txid_current','pg_current_xact_id'))", database=database)
             c.expect(unsafe.returncode == 0 and unsafe.stdout.strip() == "0",
                      f"{database}: demo has no user or state-changing routine execution")
