@@ -7,7 +7,7 @@ The [machine-readable evidence](../validation/strict-read-2026-11-18.json) conta
 | PostgreSQL `demo` | TEMP in 30 of 31 connectable inventoried databases; public large-object creation rights; executable user routines in 11 databases | TEMP denied everywhere; all four large-object creation/import families denied; no executable user routine; 1,663 explicit reading signatures |
 | PostgreSQL `admin` | Writer and database-owner rights, including inherited routine execution | Previous effective execution rights preserved exactly on existing routines; explicit TEMP in every database for writer workloads, including temporary-table sample routines |
 | PostgreSQL `postgres` | Superuser | Superuser; existing effective routine rights unchanged |
-| MySQL `demo` | Exactly `SELECT, SHOW VIEW ON *.*` | Identical; no temporary-table, stored-routine EXECUTE, DML, DDL, grant or administrative privilege |
+| MySQL `demo` (as of 2026-11-18; later releases grant less, see [the guide](../strict-read-account.md)) | Exactly `SELECT, SHOW VIEW ON *.*` | Identical; no temporary-table, stored-routine EXECUTE, DML, DDL, grant or administrative privilege |
 | MySQL `admin` and root accounts | Existing writer and administrative grants | Unchanged; root socket and published TCP identities tested separately |
 | SQLite | Files, no server account | Unchanged |
 

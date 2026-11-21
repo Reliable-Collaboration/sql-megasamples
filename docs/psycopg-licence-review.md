@@ -1,4 +1,4 @@
-# T-28 Psycopg dependency licence review
+# Psycopg dependency licence review
 
 Psycopg 3.3.9 is distributed under LGPL-3.0-only. The selected distribution is the pure Python `psycopg` package. It is imported at runtime as a separately installed, replaceable library. It loads the operating system's libpq. The project's own code is Apache-2.0 (`LICENSE`, `LICENSES.md`), and keeps that licence while declaring this dependency: the wheel names Psycopg as a requirement and carries none of its code. [Release metadata](https://pypi.org/project/psycopg/3.3.9/), [installation instructions at 3.3.9](https://raw.githubusercontent.com/psycopg/psycopg/3.3.9/docs/basic/install.rst), both read 2026-11-21 03:53 UTC.
 
