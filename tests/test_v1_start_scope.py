@@ -22,6 +22,7 @@ class FakePodman:
         self.containers, self.volumes, self.calls = {}, {}, []
         self.fail_launch, self.fail_rm, self.keep_anonymous = fail_launch, fail_rm, keep_anonymous
         self.keep_container, self.fail_inventory = keep_container, fail_inventory
+        self.store_listings_ok = 1      # with fail_inventory="store": the opening listing succeeds
         self.anonymous = 0
 
     def __call__(self, *args, check=True):
@@ -55,6 +56,8 @@ class FakePodman:
             wanted = next((a.split("=", 1)[1] for a in args if a.startswith("label=")), None)
             out = "\n".join(v for v, label in self.volumes.items() if wanted is None or label == wanted)
             if wanted and self.fail_inventory == "volumes":
+                code, out = 125, ""
+            if not wanted and self.fail_inventory == "store" and self.calls.count(args) > self.store_listings_ok:
                 code, out = 125, ""
         elif args[0] == "ps":
             wanted = next(a.split("=", 1)[1] for a in args if a.startswith("label="))
@@ -117,6 +120,17 @@ class ScopeTests(unittest.TestCase):
                 result = outcome(lambda scope: scope.run("c", "image"), FakePodman(fail_inventory=which))
                 self.assertFalse(result.wasSuccessful())
                 self.assertIn("inventory", "".join(t for _, t in result.failures + result.errors))
+
+    def test_a_failed_store_listing_fails_the_test(self):
+        # Opus round 10, N4: the store-wide listing, at the close and at the open, is checked too.
+        result = outcome(lambda scope: scope.run("c", "image"), FakePodman(fail_inventory="store"))
+        self.assertFalse(result.wasSuccessful())
+        self.assertIn("inventory query volume ls", "".join(t for _, t in result.failures + result.errors))
+        podman = FakePodman(fail_inventory="store")
+        podman.store_listings_ok = 0
+        result = outcome(lambda scope: None, podman)
+        self.assertFalse(result.wasSuccessful())
+        self.assertIn("inventory query volume ls", "".join(t for _, t in result.failures + result.errors))
 
     def test_a_concurrent_removal_does_not_hide_a_leak(self):
         # Round 9 (Opus N5): the check compares volume sets, so another removal cannot offset a leak.

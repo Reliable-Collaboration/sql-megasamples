@@ -1,7 +1,7 @@
 """The MySQL replay rewrites the source schema in code only, by MySQL's own lexical rules (Sol round 8, P3-8).
 
-Each class: MySQL's `--` comment needs whitespace or a control character after it (or the end of the
-statement); `#` and `/* */` comments run as documented; `/*! */` is an executable comment whose content is
+Each class: MySQL's `--` comment needs one ASCII space or control byte after it ([\x00-\x20\x7f]), or the
+end of the statement; `#` and `/* */` comments run as documented; `/*! */` is an executable comment whose content is
 code; strings and quoted identifiers follow their quoting rules; an unquoted identifier may hold `$` and
 characters from U+0080, so `x$source` is one identifier, not `x$` followed by `source`.
 https://dev.mysql.com/doc/refman/9.7/en/comments.html and /identifiers.html, /string-literals.html.
@@ -13,7 +13,7 @@ from megasamples.mysql_templates import definition
 
 T = "`target`"
 CASES = [
-    # `--` is a comment only before whitespace, a control character or the end.
+    # `--` is a comment only before an ASCII space or control byte, or the end.
     ("SELECT 1--1 FROM source.items", f"SELECT 1--1 FROM {T}.items"),
     ("SELECT 1 --1 FROM source.items", f"SELECT 1 --1 FROM {T}.items"),
     ("SELECT --source.items.id FROM t", f"SELECT --{T}.items.id FROM t"),
