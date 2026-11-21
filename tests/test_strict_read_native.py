@@ -17,6 +17,7 @@ from megasamples.engines.mysql.image_test import expected_demo_grants
 pytestmark = pytest.mark.skipif(os.environ.get('MEGASAMPLES_NATIVE_READ_TESTS') != '1',
                                 reason='requires explicitly enabled isolated native stack')
 CFG = config.load()
+TARGETS = {}   # engine -> the container ID the fixture checked
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -30,20 +31,27 @@ def isolated_clients():
     assert graph, 'set DL077_ISOLATED_GRAPH to the isolated store the test containers live in'
     store = subprocess.check_output(['docker', 'info', '--format', '{{.DockerRootDir}}'], text=True).strip()
     assert os.path.realpath(store) == os.path.realpath(graph)
+    expected = os.environ.get('STRICT_READ_OWNER', '')
+    assert expected, 'set STRICT_READ_OWNER to the owner label of the test containers'
     for engine in ('postgres', 'mysql'):
         container = os.environ.get('STRICT_READ_' + engine.upper() + '_CONTAINER')
         if container:
-            owner = subprocess.run(['docker', 'inspect', '-f', '{{index .Config.Labels "org.sql-megasamples.gates.owner"}}',
-                                    container], capture_output=True, text=True)
+            inspected = subprocess.run(['docker', 'inspect', '-f',
+                                        '{{.Id}} {{index .Config.Labels "org.sql-megasamples.gates.owner"}}',
+                                        container], capture_output=True, text=True)
+            fields = inspected.stdout.split()
             # The exact owner the caller names, as tests/gates/native.py's manifests require:
             # another task's container in the same store is refused.
-            assert owner.returncode == 0 and owner.stdout.strip() == os.environ['STRICT_READ_OWNER'], container
+            assert inspected.returncode == 0 and len(fields) == 2 and fields[1] == expected, container
+            # Sol round 4, P2-2: every later command uses the ID checked here, never the name again,
+            # so a replacement that reuses the name is never reached.
+            TARGETS[engine] = fields[0]
     with session():
         yield
 
 
 def query(engine, database, sql, user='demo'):
-    container = os.environ['STRICT_READ_' + engine.upper() + '_CONTAINER']   # never a service default
+    container = TARGETS[engine]   # the checked ID, never a name
     if os.environ.get('STRICT_READ_NATIVE_DRIVER') == 'library':
         from docs.validation.strict_read_clients import query as native_query
         return native_query(engine, container, user, database, sql)
@@ -226,7 +234,7 @@ def test_postgres_employee_views_do_not_require_mutating_helpers():
 @pytest.mark.parametrize('engine', ['postgres', 'mysql'])
 def test_native_protocol_matches_cli(engine, monkeypatch):
     from docs.validation.strict_read_clients import query as protocol_query
-    container = os.environ['STRICT_READ_' + engine.upper() + '_CONTAINER']
+    container = TARGETS[engine]
     monkeypatch.delenv('STRICT_READ_NATIVE_DRIVER', raising=False)
     statements = ['SELECT 1, NULL', 'BEGIN; SELECT 1; SELECT 2; ROLLBACK']
     statements += (['SELECT current_user', 'BEGIN; CREATE TEMP TABLE parity_denied(i int); ROLLBACK']
