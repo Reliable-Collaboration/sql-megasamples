@@ -89,6 +89,14 @@ class OrphanTests(unittest.TestCase):
                              [("v1_space", 4242424, planted.stdout.strip())])
             check = self.run_in("sh", "-ec", 'test -f "$PGDATA/$1/1"', "check", planted.stdout.strip(), user="postgres")
             self.assertEqual(check.returncode, 0)
+            # Sol round 4, P2-3: a tablespace whose location cannot be read makes the scan incomplete.
+            self.assertEqual(self.run_in("chmod", "000", "/var/lib/postgresql/v1_space", user="root").returncode, 0)
+            try:
+                reply = self.status()
+                self.assertEqual(reply["result"]["orphan_scan"], "incomplete")
+                self.assertEqual([item["code"] for item in reply["warnings"]], ["orphan-scan-incomplete"])
+            finally:
+                self.run_in("chmod", "700", "/var/lib/postgresql/v1_space", user="root")
         finally:
             self.run_in("sh", "-ec", 'rm -rf "$PGDATA"/pg_tblspc/"$1"/PG_*/4242424', "clear", space, user="postgres")
             self.accept("DROP DATABASE IF EXISTS v1_in_space")

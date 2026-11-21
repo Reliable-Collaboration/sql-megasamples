@@ -8,7 +8,7 @@ import pytest
 from megasamples import postgres_orphans
 
 LISTING = ("pg_default 1 7524 base/1\npg_default 5 7600 base/5\npg_default 16384 9000 base/16384\n"
-           "pg_default 99999 1200 base/99999\n16500 16390 64 pg_tblspc/16500/PG_18_202506291/16390\n")
+           "pg_default 99999 1200 base/99999\nspace 16500\n16500 16390 64 pg_tblspc/16500/PG_18_202506291/16390\n")
 CATALOG = "1\n5\n16384\n"
 SPACES = "1663 pg_default\n1664 pg_global\n16500 archive\n"
 
@@ -97,6 +97,51 @@ def test_a_malformed_or_failed_observation_is_incomplete(monkeypatch, listing):
     assert [item["code"] for item in postgres_orphans.scan("c")] == ["orphan-scan-incomplete"]
 
 
-def test_a_directory_dropped_during_the_scan_is_not_reported():
-    """The listing script skips a directory that is gone by the time it is measured."""
-    assert 'continue' in postgres_orphans.LIST and '[ -e "$d" ]' in postgres_orphans.LIST
+def run_listing(tmp_path, du_body):
+    """Run the real listing script under sh against a fake data directory, with a du shim."""
+    import os
+    import stat
+    import subprocess
+    shims = tmp_path / "shims"
+    shims.mkdir()
+    du = shims / "du"
+    du.write_text("#!/bin/sh\n" + du_body)
+    du.chmod(du.stat().st_mode | stat.S_IEXEC)
+    return subprocess.run(["sh", "-c", postgres_orphans.LIST], capture_output=True, text=True,
+                          env={**os.environ, "PGDATA": str(tmp_path / "data"),
+                               "PATH": f"{shims}:{os.environ['PATH']}"})
+
+
+def data_tree(tmp_path, *oids):
+    for oid in oids:
+        (tmp_path / "data" / "base" / str(oid)).mkdir(parents=True)
+    (tmp_path / "data" / "pg_tblspc").mkdir(parents=True, exist_ok=True)
+
+
+def test_a_directory_dropped_during_the_scan_is_skipped(tmp_path):
+    """Opus round 4, P3-3: as behaviour. du finds the directory gone and fails: nothing is printed."""
+    data_tree(tmp_path, 1, 99999)
+    result = run_listing(tmp_path, 'case "$2" in *99999) rm -rf "$2"; exit 1;; esac; echo "8 $2"\n')
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.splitlines() == ["pg_default 1 8 base/1"]
+
+
+def test_a_directory_du_cannot_read_is_reported_unreadable(tmp_path):
+    data_tree(tmp_path, 1, 99999)
+    result = run_listing(tmp_path, 'case "$2" in *99999) echo "4 $2"; exit 1;; esac; echo "8 $2"\n')
+    assert "unreadable base/99999" in result.stdout.splitlines()
+
+
+def test_an_unreadable_or_dangling_tablespace_is_reported(tmp_path):
+    """Sol round 4, P2-3."""
+    data_tree(tmp_path, 1)
+    (tmp_path / "data" / "pg_tblspc" / "16500").symlink_to(tmp_path / "missing-mount")
+    result = run_listing(tmp_path, 'echo "8 $2"\n')
+    assert "unreadable pg_tblspc/16500" in result.stdout.splitlines()
+
+
+def test_a_catalogued_tablespace_the_listing_never_inspected_is_incomplete(monkeypatch):
+    listing = "pg_default 1 7524 base/1\npg_default 5 7600 base/5\npg_default 16384 9000 base/16384\n"
+    run, _ = fake({"list": (0, listing), "catalog": (0, CATALOG), "spaces": (0, SPACES)})
+    monkeypatch.setattr(postgres_orphans.subprocess, "run", run)
+    assert [item["code"] for item in postgres_orphans.scan("c")] == ["orphan-scan-incomplete"]
