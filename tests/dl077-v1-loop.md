@@ -343,3 +343,31 @@ No large container batch was run: DataIntent's gateway `--all` comes first, and 
 - **Removed:** every task container this round started, and the 8 volumes of the planted leak. The isolated socket service is stopped.
 - **Isolation** (`isolation-check.sh`, read-only): the nine live `megasamples-*` entries are unchanged by ID, state and health, and the three live engines by ID, start time and image. The isolated store holds the same 20 containers as at the session's start, and the same 37 volumes as at round 7's end.
 - **Git:** two unpushed commits were amended before the push: one to remove files staged by mistake, one to correct its message. No pushed commit was changed.
+
+## Round 9's runs
+
+Round 9's focused runs, before the batch:
+- **The native inventory checks** on `cf7325f4f9be`: 7 passed (`native-r9-pg-inventory-green.log`). Their planted controls failed: a wrong database, 1 failed; a renamed routine, 6 failed.
+- **The start suite** on `ce3b539fb522`: 3 tests OK, the store's 37 volumes unchanged (`start-r9-start.log`).
+- **MySQL's lexical rules on a server** for round 9's cases (`mysql-lexer-r9.log`).
+- **The host-only full suite** (Failed): 2 failed, 1,141 passed, 345 skipped (`pytest-r9.log`). These are the two baseline failures.
+
+## The MySQL batch, round 9
+
+On the coordinator's go, after DataIntent's gateway `--all` ended at 13:07 UTC. It ran from `4bb6616` with a clean tree, 13:16:23 to 13:19:53 UTC, one run at a time, each waiting for at least 15 GiB available (`build/dl114-r1-work/batch-r9.sh`, `batch-r9.log`).
+
+**Passed**
+- **Both MySQL images rebuilt:** binary log on `58d4b695a90c`, off `b3d6d569ed6d`. The template bake step ran afresh, with the changed tokenizer; the off build reused the on build's fresh builder layers.
+- **`test-image`** (`chinook adventureworks_lt oracle_hr sakila`): 0 failures in each mode.
+- **The native MySQL suite:** 7 passed in each mode.
+- **The TCP copy suite:** 32 passed, 3 skipped in each mode. That includes the replayed procedure with `1--1` and a comment before the dot, read from the copy.
+- **The reversal:** with round 8's tokenizer planted in the working tree, the lifecycle test failed at `CALL read_lexed()` with "SELECT command denied to user 'copier' … for table 'parent'". The copy's program still named `sample_start`, the case the finding describes. The tokenizer was restored (`git status` clean).
+
+**Found by the batch: a finding for round 10's triage, not fixed here.** `megasamples test-image` removes its containers with `docker rm -f`, without `-v`. So each MySQL run left the image's anonymous data volume behind: 4 this batch, checked unused and removed. It is the S7-9 class in product code: `megasamples/engines/mysql/image_test.py` and 17 such calls across `megasamples/`, unchanged since `e61335f`.
+
+## Round 9: restoration and isolation
+
+- **Retained isolated stack.** The fingerprint ledgers (phase `r9-final`, 13:20:45 to 13:26:29) are byte-identical to build 1's `after` ledgers: PostgreSQL `ee0f1a8b…711e`, MySQL `a5c0466a…a72f`, SQLite `5b0c2768…da98`.
+- **Removed:** every task container the batch started, and the 4 anonymous volumes `test-image` left. The socket service is stopped.
+- **Kept for review:** the round 9 MySQL images.
+- **Isolation** (`isolation-check.sh`, read-only): the nine live `megasamples-*` entries are unchanged, and so are the three live engines by ID, start time and image. The isolated store holds the same 20 containers as at the session's start, and the same 37 volumes as at round 7's end.
