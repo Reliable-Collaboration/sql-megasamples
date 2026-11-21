@@ -1,0 +1,90 @@
+# Workstream 1: PostgreSQL start certification
+
+**Status:** brief, not yet built. The area went hot in review rounds 3, 4 and 5 (`tests/dl077-v1-loop.md`). This brief comes before any further patch. It covers what the PostgreSQL image checks before, during and after it lets a server accept connections.
+
+## The rule to be designed whole
+
+A server built from this image that accepts connections does so only:
+- on the data directory the image certified, which is `PGDATA` carrying the read-policy marker;
+- with `read_policy` loaded during preload;
+- with any password overrides applied by a server that was itself certified.
+
+Anything else is refused before any connection is accepted, or named in the README as an unchecked route whose only signal is the healthcheck.
+
+## Invariants
+
+- **I1. Same server.** Every launch the wrapper makes or hands over, whether the private password start or the public start, uses the directory and preload list it certified. Each is read from that launch's own arguments, files and environment.
+- **I2. Certified before accepting.** No launch accepts a connection, on a socket or over TCP, before I1 holds for it.
+- **I3. Private means private.** The password setup reaches the server it started, by a socket only it and `postgres` can use, and stops that server on every exit path.
+- **I4. Refusal is visible.** A refusal exits non-zero, before any password change or catalog write, and logs one line saying which rule refused.
+- **I5. What is unchecked is stated.** A route the wrapper cannot see is named in the README together with its signal:
+  - an entrypoint replaced;
+  - a wrapping command;
+  - a library planted through `dynamic_library_path`.
+- **I6. Health tells the truth without noise.** The healthcheck passes only when the preloaded library is in the serving process, and a healthy probe logs nothing at ERROR. Round 5 built this; the workstream keeps it.
+
+## Decision table
+
+These are the facts behaviour depends on. The design fills in the outcome of every row, and the test plan exercises every row.
+
+| Fact | Values |
+|---|---|
+| A. Who starts | root; postgres (`--user`); another uid |
+| B. Command form | `postgres`; this image's postgres by path; another binary named `postgres`; a wrapping command (`gosu …`, `sh -c …`); `-*` options only |
+| C. Data directory source | `PGDATA` only; `-D` or `--pgdata`; `-c data_directory` (any case or spelling); `config_file` naming another file; `include` directives |
+| D. Preload source | the baked `postgresql.conf`; `postgresql.auto.conf` (`ALTER SYSTEM`); `-c` on the command line; an included file |
+| E. Preload value | contains `read_policy`; lacks it; quoted entries; empty |
+| F. Password overrides | none; some; all |
+| G. Socket settings | default; custom `unix_socket_directories` (persisted or on the command line); `listen_addresses` |
+| H. Volume | marked, owned by postgres; marked, other owner; unmarked (pre-policy); `PG_VERSION` missing |
+| I. Entrypoint | the image's; replaced (`--entrypoint`) |
+
+Required outcomes to decide, row by row:
+- **start** with the hook;
+- **refuse**, naming the rule;
+- **unchecked and stated**.
+
+For example:
+- A=root, B=path to own postgres, C=`PGDATA`, D=auto.conf lacking `read_policy`, F=some, G=custom socket → refuse (I1). If D is corrected on the command line, the private start must still be refused or be made to use the same arguments.
+- A=postgres (non-root), F=some → decide: refuse before any launch (Sol round 5, P3-7), or support non-root starts by moving the health passfile.
+
+## Inputs: every finding so far
+
+| Round | Finding | Gist | Disposition so far |
+|---|---|---|---|
+| 1 | S3 (hook review) | pre-policy volume starts without the policy | fixed: marker |
+| 2 | S2-2 | `-D` points the server at another directory | fixed by literal parsing (superseded) |
+| 3 | S3-1, O3-1 | literal parsing bypassed (case, path form); the preload list replaced (`-c`, `ALTER SYSTEM`) | fixed: ask the server with `-C`, `read_policy.loaded` |
+| 4 | S4-1 | the private password start ran on files alone | fixed: both launches certified |
+| 4 | S4-7 | quoted preload entry split on commas | fixed: refused |
+| 4 | O4-1 | path form, non-root | reconciled; root path form runs by name |
+| 4 | O4-4 | refusals undocumented; ownership repair | fixed: README, repair before check |
+| 4 | S4-6, O4-2 | healthcheck placeholder | fixed; replaced in round 5 |
+| 5 | Sol P2-3 | the private start may listen on a custom socket that `psql` does not reach; it is not stopped on failure | **input** |
+| 5 | Sol P3-7 | a non-root start runs the private start before failing | **input** |
+| 5 | Opus P3-3 | the README's non-root sentence | stopgap: wording corrected |
+| 5 | Opus P3-4 | bypass routes not stated | stopgap: one README sentence |
+| 5 | Sol P2-6, Opus P3-2 | healthcheck ERROR every probe | fixed outside the workstream |
+
+## Questions the design must answer
+
+1. Is the private password start kept at all, or are passwords applied another way (for example by the public server's first boot, before it listens)? **Owner decision:** it changes when a credential takes effect.
+2. Are non-root starts supported (move the health passfile), or refused before any launch? **Owner decision:** it is a supported-deployment question.
+3. Does the private start take the public launch's arguments verbatim, with an image-chosen socket directory, or is any argument that changes sockets or data refused when overrides are set?
+4. Which unchecked routes are stated, and which are refused because they are detectable? A wrapping command whose argv contains this image's postgres could be refused.
+5. Is the `PG_VERSION`-missing path (upstream `initdb`) refused explicitly?
+6. What exactly does the one-line refusal say for each rule, and is it a stable code a supervisor can match?
+
+## Test plan
+
+- **A table test over every row of the decision table:** a real container per row, the outcome asserted. A start must accept connections with `megasamples_policy_loaded()` true and the namespace owner's out-of-namespace `CREATE DATABASE` refused. A refusal must exit before any password change, checked by the old key still working. An unchecked route must be named in the README.
+  - The rows are generated from the facts, so a new fact adds rows, not one case.
+- **Fault planting at each step of the wrapper:**
+  - the `-C` reads failing;
+  - the private start failing to start;
+  - the password SQL failing;
+  - the private stop failing.
+
+  After each, no server remains and the exit is non-zero.
+- **The private socket:** a custom persisted `unix_socket_directories`, with an assertion that the password change landed on the private server and that nothing listened on the custom socket.
+- **Reversals:** each rule removed in turn fails at least one row.
