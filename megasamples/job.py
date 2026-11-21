@@ -168,8 +168,14 @@ def up(argv=None):
     resolved = data_volumes.compose_images()
     for name in cfg.engines:
         e = engine_registry.get(name)
+        if name not in resolved:
+            # Without Compose's answer the only comparison left is with Python's default tag, which can call
+            # a current container stale and discard its working data (Sol round 12, 3): renew nothing.
+            print(f"  ! not recreating {name}: Compose could not resolve its image, so whether it is stale is "
+                  f"unknown; check `docker compose -f {COMPOSE} config`", file=sys.stderr)
+            continue
         running = subprocess.run(["docker", "inspect", "-f", "{{.Image}}", e.container], capture_output=True, text=True)
-        current = subprocess.run(["docker", "image", "inspect", "-f", "{{.Id}}", resolved.get(name, e.image)],
+        current = subprocess.run(["docker", "image", "inspect", "-f", "{{.Id}}", resolved[name]],
                                  capture_output=True, text=True)
         if running.returncode == 0 and current.returncode == 0 and running.stdout.strip() != current.stdout.strip():
             stale.append(name)
