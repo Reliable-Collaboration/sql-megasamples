@@ -131,3 +131,8 @@ def test_ia01_reconciliation_record_lists_every_difference():
     assert {s for change, s in rows if change == "Added"} == current - before
     assert {s for change, s in rows if change == "Removed"} == before - current
     assert "fresh login" not in record
+    # Sol round 10, 6: which login lacks the direct grant: a role relying only on PUBLIC, not demo.
+    inventory_text = (VALIDATION / "dl-077-v1-public-routines.md").read_text()
+    for text in (record, inventory_text):
+        assert "new login" not in text
+        assert "a role that relies only on `PUBLIC`" in text
