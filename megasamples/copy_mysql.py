@@ -6,7 +6,7 @@ import hashlib
 import json
 import math
 
-from megasamples.copying import CopyError, copy_name_is_valid, prefix_is_valid
+from megasamples.copying import CopyError, prefix_is_valid
 from megasamples.copy_server import SERVICE_TAG, ServerCopies
 from megasamples.mysql_templates import create_schema, qualify, quote, replay
 
@@ -93,7 +93,8 @@ class MySQLCopies(ServerCopies):
                   WHERE LEFT(SCHEMA_NAME,%s)=%s
             ORDER BY 1
         """, (len(self.prefix) + 1, self.prefix + "_"))
-        return [name for (name,) in rows if copy_name_is_valid(name)]
+        # Every object under the prefix is listed; one that is not of the copy form is unmanaged.
+        return [name for (name,) in rows]
 
     def source(self):
         row = self.one("SELECT reason,detail,metadata FROM megasamples.template_ddl WHERE name=%s",

@@ -8,7 +8,7 @@ import math
 import os
 import time
 
-from megasamples.copying import CopyError, copy_name_is_valid, prefix_is_valid
+from megasamples.copying import CopyError, prefix_is_valid
 from megasamples.copy_server import COPY_TAG, SERVICE_TAG, ServerCopies
 
 TEMPLATE_TAG = "megasamples-template/1 "
@@ -84,7 +84,8 @@ class PostgresCopies(ServerCopies):
             UNION SELECT datname::text FROM pg_catalog.pg_database WHERE starts_with(datname::text,%s)
             ORDER BY 1
         """, (self.prefix + "_",))
-        return [name for (name,) in rows if copy_name_is_valid(name)]
+        # Every object under the prefix is listed; one that is not of the copy form is unmanaged.
+        return [name for (name,) in rows]
 
     def lease_end(self, seconds):
         return (self.one("SELECT statement_timestamp()")[0] + timedelta(seconds=seconds)).isoformat()

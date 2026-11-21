@@ -39,17 +39,19 @@ class ServerCopies:
                 "endpoint": {"host": self.args.host, "port": self.port}, "owner": self.owner,
                 "template": row.get("template"), "version": self.version, "proof": row.get("proof")}
 
-    def inspect(self, name):
+    def inspect(self, name, *, label=None):
         with self.lock(name) as acquired:
             row = self.load(name)
+            if label is not None and (row is None or row["label"] != label):
+                return None
             return self.result(name, row, self.state(name, row) if acquired else "changing")
 
     def show(self):
         return self.inspect(self.args.name)
 
     def list(self):
-        rows = [self.inspect(name) for name in self.names()]
-        return {"copies": [row for row in rows if self.args.label is None or row["label"] == self.args.label]}
+        rows = [self.inspect(name, label=self.args.label) for name in self.names()]
+        return {"copies": [row for row in rows if row is not None]}
 
     def create(self):
         strategy, template = self.source()
