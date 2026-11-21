@@ -162,3 +162,11 @@ def test_strict_read_guide_states_the_grants_the_generator_makes():
     # The report: granted to demo directly, and executable otherwise only by the superuser.
     assert 'granted to `demo` directly' in guide
     assert '`admin` and every other role except the superuser `postgres` are refused it' in guide
+
+
+def test_readme_says_what_teardown_discards_and_keeps():
+    """Sol round 11, 8: make down and make clean-all remove the engines' working data volumes (a later up
+    starts from the images); the named SQLite volume stays, and the next start copies the image's files over it."""
+    readme = (ROOT / 'README.md').read_text()
+    assert '`make down` and `make clean-all` remove each engine\'s working data with its container' in readme
+    assert 'the named `megasamples-sqlite` volume stays' in readme
