@@ -30,7 +30,7 @@ def test_copy_and_server_limits_and_data_checks(monkeypatch, capsys, copy_second
             'CHECK TABLE `jobs`': 'pubs.jobs\tcheck\tstatus\tOK',
         }
         if 'authentication_string' in sql:
-            answer = '0'
+            answer = 'copier\t%\tY\n'
         elif 'CONVERT_TZ' in sql:
             answer = '2025-12-31 18:00:00'
         elif 'SELECT CONCAT(table_name)' in sql:

@@ -6,7 +6,7 @@
 Asserts: the container answers a real query within the time budget (not `mysqladmin ping`, which
 succeeds on access-denied); every expected database is present and matches the registry; row counts
 match each dataset's pinned expectations; `demo` can read and cannot write, including through a
-routine; no account has an empty password; CHECK TABLE passes; CONVERT_TZ works; and the password
+routine; unkeyed accounts are declared and locked; CHECK TABLE passes; CONVERT_TZ works; the password
 override env vars take effect.
 """
 import json, os, subprocess, sys, time
@@ -167,9 +167,12 @@ def main(argv=None):
         read_table = sorted(first_counts)[0]
         account_checks(c, unique_databases(datasets)[0], read_table, first_counts[read_table])
 
-        empty = q("SELECT COUNT(*) FROM mysql.user WHERE authentication_string='' "
-                  "AND user NOT LIKE 'mysql.%'").stdout.strip()
-        c.expect(empty == "0", "no account has an empty password")
+        empty = q("SELECT user,host,account_locked FROM mysql.user WHERE authentication_string='' "
+                  "AND user NOT LIKE 'mysql.%'")
+        declared = {item.owner for item in settings.namespaces} | settings.readers.keys() | settings.writers.keys()
+        allowed = {f"{account}\t%\tY" for account in declared}
+        c.expect(empty.returncode == 0 and set(empty.stdout.splitlines()) <= allowed,
+                 "every unkeyed account is declared and locked")
         c.expect(q("SELECT CONVERT_TZ('2026-01-01 00:00:00','UTC','America/Chicago')")
                  .stdout.strip() == "2025-12-31 18:00:00", "CONVERT_TZ works (time-zone tables loaded)")
         c.expect(q("SELECT SHA2('a',256)").returncode == 0, "SHA2 available (SSL build)")
