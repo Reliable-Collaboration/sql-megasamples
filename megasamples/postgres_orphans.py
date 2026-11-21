@@ -10,9 +10,16 @@ import subprocess
 
 LIST = r'''set -eu
 cd "$PGDATA"
+measure() {
+  # A directory dropped since the glob is not an orphan; one still there that du cannot read is.
+  if kib=$(du -sk "$3" 2>/dev/null | cut -f1) && [ -n "$kib" ]; then printf '%s %s %s %s\n' "$1" "$2" "$kib" "$3"
+  elif [ -e "$3" ]; then printf 'unreadable %s\n' "$3"
+  fi
+}
 for d in base/*; do
+  [ -e "$d" ] || continue
   o=${d#base/}; case $o in *[!0-9]*) continue;; esac
-  printf 'pg_default %s %s\n' "$o" "$(du -sk "$d" | cut -f1)"
+  measure pg_default "$o" "$d"
 done
 for t in pg_tblspc/*; do
   [ -e "$t" ] || continue
@@ -20,7 +27,7 @@ for t in pg_tblspc/*; do
   for d in "$t"/PG_*/*; do
     [ -d "$d" ] || continue
     o=${d##*/}; case $o in *[!0-9]*) continue;; esac
-    printf '%s %s %s\n' "$s" "$o" "$(du -sk "$d" | cut -f1)"
+    measure "$s" "$o" "$d"
   done
 done
 '''
@@ -50,9 +57,11 @@ def scan(container):
         names[oid] = name
     warnings = []
     for line in listing.stdout.splitlines():
-        space, oid, kib = line.split()
+        fields = line.split()
+        if len(fields) != 4 or not fields[1].isdigit() or not fields[2].isdigit():
+            return [{**incomplete, "reason": "a data directory could not be measured"}]
+        space, oid, kib, path = fields
         if oid not in oids:
-            path = f"base/{oid}" if space == "pg_default" else f"pg_tblspc/{space}/{oid}"
             warnings.append({"code": "orphan-directory", "engine": "postgres", "tablespace": names.get(space, space),
                              "oid": int(oid), "name": None, "path": path, "kib": int(kib)})
     return warnings
