@@ -50,11 +50,19 @@ def isolated_clients():
         yield
 
 
+def batch_text(engine, text):
+    """A library client's text in the mysql CLI's --batch form, which writes each backslash as two (Sol round
+    12, 2): so grants on schemas with escaped underscores compare as the same grant on both paths."""
+    return text.replace('\\', '\\\\') if engine == 'mysql' else text
+
+
 def query(engine, database, sql, user='demo'):
     container = TARGETS[engine]   # the checked ID, never a name
     if os.environ.get('STRICT_READ_NATIVE_DRIVER') == 'library':
         from docs.validation.strict_read_clients import query as native_query
-        return native_query(engine, container, user, database, sql)
+        result = native_query(engine, container, user, database, sql)
+        return subprocess.CompletedProcess(result.args, result.returncode, batch_text(engine, result.stdout),
+                                           result.stderr)
     key = {'postgres': 'POSTGRES_PASSWORD', 'root': 'MYSQL_ROOT_PASSWORD'}.get(user, user.upper() + '_PASSWORD')
     with client(engine, container, user, config.passwords()[key]) as command:
         args = (['-X', '-d', database, '-v', 'ON_ERROR_STOP=1', '-qAt', '-c', sql]
@@ -315,6 +323,8 @@ def test_native_protocol_matches_cli(engine, monkeypatch):
     for sql in statements:
         cli = query(engine, database, sql)
         protocol = protocol_query(engine, container, 'demo', database, sql)
+        protocol = subprocess.CompletedProcess(protocol.args, protocol.returncode,
+                                               batch_text(engine, protocol.stdout), protocol.stderr)
         assert (cli.returncode == 0) == (protocol.returncode == 0), sql
         if cli.returncode == 0:
             assert cli.stdout.strip() == protocol.stdout.strip(), sql
