@@ -185,10 +185,15 @@ class PolicyStartupTests(unittest.TestCase):
         podman("volume", "create", name)
         probes = []
         try:
-            # Opus P3-1: a path-form command as postgres still applies the password override.
+            # Opus P3-1, reconciled by test: as a non-root user the image fails closed before any start
+            # (its health passfile is root's to write), so no override is silently skipped there.
+            probes.append(name + "-nonroot")
+            self.assertFalse(start(probes[-1], "/usr/lib/postgresql/18/bin/postgres",
+                                   options=("--user", "postgres", "--env-file", str(secret))))
+            # The path form as root is the server named by its path: it starts with the override applied.
             probes.append(name + "-path")
             self.assertTrue(start(probes[-1], "/usr/lib/postgresql/18/bin/postgres",
-                                  options=("--user", "postgres", "--env-file", str(secret))))
+                                  options=("--env-file", str(secret))), logs(probes[-1])[-300:])
             self.assertTrue(tcp_key_accepted(probes[-1]), "the path form skipped the password override")
             # Sol P3-7: a quoted preload entry is refused rather than split on its commas.
             probes.append(name + "-quoted")
