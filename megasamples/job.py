@@ -181,6 +181,10 @@ def up(argv=None):
     print("  . docker compose up -d --wait")
     if subprocess.run(["docker", "compose", "-f", COMPOSE, "up", "-d", "--wait"], cwd=ROOT).returncode != 0:
         return 1
+    if "postgres" in cfg.engines:
+        from megasamples import postgres_orphans
+        for warning in postgres_orphans.scan(engine_registry.get("postgres").container):
+            print("  ! " + postgres_orphans.describe(warning), file=sys.stderr)
     if "landing" in cfg.consoles:
         rc = console_page.main([])
         if rc:

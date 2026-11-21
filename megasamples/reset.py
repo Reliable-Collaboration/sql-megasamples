@@ -364,13 +364,28 @@ def main(argv=None):
     ap.add_argument("targets", nargs="*", help="all | an engine | engine:dataset (dataset: a name or a selector)")
     ap.add_argument("--engines", help="comma-separated, as configure takes them (default with --datasets: every engine)")
     ap.add_argument("--datasets", help="selector or comma-separated names, applied to every engine named")
+    ap.add_argument("--status", metavar="ENGINE", choices=["postgres"],
+                    help="report what is left over on an engine, as one JSON document (PostgreSQL's "
+                         "data directories with no database)")
     a = ap.parse_args(argv)
+    if a.status:
+        return status(a.status)
     cfg = stack.load()
     chosen = plan(cfg, a.targets, a.engines, a.datasets)
     with reset_locks(chosen):
         if compose.main([]):
             return 2
         return execute(chosen)
+
+
+def status(engine):
+    from megasamples import postgres_orphans
+    warnings = postgres_orphans.scan(engine_registry.get(engine).container)
+    complete = not any(item["code"] == "orphan-scan-incomplete" for item in warnings)
+    print(json.dumps({"schema": 1, "interface": 1, "command": "reset --status", "ok": True, "exit": 0,
+                      "volume": None, "result": {"engine": engine, "orphan_scan": "complete" if complete else "incomplete"},
+                      "error": None, "warnings": warnings}))
+    return 0
 
 
 def execute(chosen):
