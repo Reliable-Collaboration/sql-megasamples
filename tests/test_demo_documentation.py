@@ -170,3 +170,15 @@ def test_readme_says_what_teardown_discards_and_keeps():
     readme = (ROOT / 'README.md').read_text()
     assert '`make down` and `make clean-all` remove each engine\'s working data with its container' in readme
     assert 'the named `megasamples-sqlite` volume stays' in readme
+
+
+def test_help_says_what_teardown_discards():
+    """Opus round 12, 2: the help nearest the command says it too, under the README's test."""
+    from megasamples import cli, workspace
+    phrase = "each engine's working data"
+    makefile = (ROOT / 'Makefile').read_text()
+    assert any('make up | down' in line and phrase in line for line in makefile.splitlines())
+    assert any('clean-all' in line and phrase in line for line in makefile.splitlines())
+    assert phrase in cli.COMMANDS['down'][2]
+    assert phrase in (ROOT / 'megasamples/job.py').read_text().split('def down', 1)[1].split('\n', 3)[2]
+    assert phrase in workspace.__doc__.split('clean --all', 1)[1].splitlines()[0]
