@@ -22,6 +22,11 @@ CASES = [
     ("SELECT 1 --\x01source.items\nFROM source.t", f"SELECT 1 --\x01source.items\nFROM {T}.t"),
     ("SELECT 1 FROM source.t --", f"SELECT 1 FROM {T}.t --"),
     ("SELECT 1 --\r\nFROM source.t", f"SELECT 1 --\r\nFROM {T}.t"),
+    # The space or control character is one ASCII byte (round 9, Opus 1): a non-ASCII space after `--`
+    # does not open a comment, and the character starts an identifier (U+0080 and above).
+    ("SELECT 1--\u3000x FROM source.t", f"SELECT 1--\u3000x FROM {T}.t"),
+    ("SELECT 1--\xa0x FROM source.t", f"SELECT 1--\xa0x FROM {T}.t"),
+    ("SELECT 1--\u2028x FROM source.t", f"SELECT 1--\u2028x FROM {T}.t"),
     # `#` to the end of the line; `/* */` to its close, across lines.
     ("SELECT 1 # source.items\nFROM source.t", f"SELECT 1 # source.items\nFROM {T}.t"),
     ("SELECT /* source.items\n source.x */ 1 FROM source.t", f"SELECT /* source.items\n source.x */ 1 FROM {T}.t"),
@@ -43,9 +48,20 @@ CASES = [
     ("SELECT source$x.id FROM t", "SELECT source$x.id FROM t"),
     ("SELECT ésource.id FROM t", "SELECT ésource.id FROM t"),
     ("SELECT sourceé.id FROM t", "SELECT sourceé.id FROM t"),
-    # Whitespace before the qualifier's dot, and the name in any case.
+    # Whitespace or a comment before or after the qualifier's dot (round 9, Opus 1 and Sol 1).
     ("SELECT * FROM source . items", f"SELECT * FROM {T} . items"),
-    ("SELECT * FROM SOURCE.items", f"SELECT * FROM {T}.items"),
+    ("SELECT * FROM source/**/.items", f"SELECT * FROM {T}/**/.items"),
+    ("SELECT * FROM source /* c */ .items", f"SELECT * FROM {T} /* c */ .items"),
+    ("SELECT * FROM source -- c\n.items", f"SELECT * FROM {T} -- c\n.items"),
+    ("SELECT * FROM source # c\n.items", f"SELECT * FROM {T} # c\n.items"),
+    ("SELECT * FROM source./* c */items", f"SELECT * FROM {T}./* c */items"),
+    ("SELECT * FROM `source` /* c */ . `items`", f"SELECT * FROM {T} /* c */ . `items`"),
+    # An executable comment is code, not a gap: the dot inside it still follows the name.
+    ("SELECT * FROM source/*!.items*/", f"SELECT * FROM {T}/*!.items*/"),
+    # Schema names are case-sensitive on this image (lower_case_table_names=0, Sol round 9, 1):
+    # `SOURCE` is another schema, and is left alone.
+    ("SELECT * FROM SOURCE.items", "SELECT * FROM SOURCE.items"),
+    ("SELECT * FROM `Source`.items", "SELECT * FROM `Source`.items"),
 ]
 
 
