@@ -1,8 +1,8 @@
 # Workstream 1: PostgreSQL start certification, the design
 
-**Status: design, revision 11, for round 11 of the design review. No build yet.**
+**Status: design, revision 12, for round 12 of the design review. No build yet.**
 
-This document stands alone: one ordered check list (section 3), one current row table with an outcome rule per class (section 10.2), and the conformance replay and the brief's inputs inline. Section 13 traces rounds 5 to 10.
+This document stands alone: one ordered check list (section 3), one current row table with an outcome rule per class (section 10.2), and the conformance replay and the brief's inputs inline. Section 13 traces rounds 5 to 11.
 
 **The coordinator's decisions on the upgrade, applying DL-122 Q4:**
 - **Round 6:** the automated, grant-reconstructing restore was removed, in favour of a documented manual route. Round 6's P1 (both reviewers) was a confidentiality regression the restore introduced.
@@ -22,6 +22,7 @@ This document stands alone: one ordered check list (section 3), one current row 
 | 8 | revision 8, `ab40130d` | `sol-ws1-design8.md` (8 P2, 1 P3), `opus-ws1-design8.md` (3 P2, 4 P3) | 13.4 |
 | 9 | revision 9, `63c9d1b4` | `sol-ws1-design9.md` (4 P2, 1 P3), `opus-ws1-design9.md` (1 P2, 5 P3) | 13.5 |
 | 10 | revision 10, `7d4abdf3` | `sol-ws1-design10.md` (4 P2, 1 P3), `opus-ws1-design10.md` (4 P3) | 13.6 |
+| 11 | revision 11, `08fbe9aa` | `sol-ws1-design11.md` (2 P2, 2 P3), `opus-ws1-design11.md` (4 P3) | 13.7 |
 
 **The decisions applied:**
 - **DL-122, Q1 to Q6,** and the items DL-122 recorded for WS1.
@@ -100,7 +101,7 @@ The first failure decides. **Before the lock (R0 to R6), nothing on the volume o
 | — | Informational routes leave here | B | — |
 | R4 | The image's HBA files are sound (4.2) | — | `hba-image` |
 | R5 | The override keys are well formed (5.2) | F | `key-conflict`, `key-file`, `key-value` |
-| R6 | `PG_VERSION` exists. `ENOENT` means `uninitialised`; any other error (`EACCES` under `--cap-drop ALL`, where root cannot traverse the `postgres`-owned 0700 directory) is `internal`, naming the step (Sol round 5, 6) | H | `uninitialised`; `internal` |
+| R6 | `PG_VERSION` exists and is not empty, as upstream's `-s` test requires (Sol round 11, 3). `ENOENT` or an empty file means `uninitialised`; any other error (`EACCES` under `--cap-drop ALL`, where root cannot traverse the `postgres`-owned 0700 directory) is `internal`, naming the step (Sol round 5, 6) | H | `uninitialised`; `internal` |
 | L | The directory lock (5.9) | — | `volume-busy`; `internal` |
 | C | With the lock held, the cleanup: the endpoint removed; `/run/megasamples-private` and `/run/megasamples-probe` recreated, owned by `postgres`, mode 0700; this run's private directory made by `mktemp -d /dev/shm/megasamples-private.XXXXXX`, owned by `postgres`, mode 0700 | — | `internal` |
 | R7 | The marker is the image's own, exactly | H | `policy-marker` |
@@ -357,34 +358,57 @@ ALTER ROLE "ROLE" PASSWORD 'SCRAM-SHA-256$4096:…';
 
 **The confirmation.** A libpq sign-in as ROLE to `megasamples` on the private socket, with `require_auth=scram-sha-256`. The key comes from `pgpass` in the private directory: owned by `postgres`, mode 0600, the line `*:*:megasamples:ROLE:KEY` escaped as `credentials.pgpass()` does. It is removed at once.
 
-**The state:** the first matching rule decides, so the rules cannot overlap (Sol round 6, 7).
+**The role report: one decision table** (the coordinator's round 11 decision; Sol round 11, 1). This replaces the per-role state rules and their point-by-point additions from rounds 6 to 11. The report has two sources, kept apart:
+- **the rotation client (R):** the `psql` above. Its `\warn` markers go to a per-role marker file in this run's state directory, and its exit status is kept.
+- **the confirmation client (C):** the libpq sign-in. Its exit status is used **only** to decide `applied` against `uncertain`, after R exited 0 with `megasamples-applied`. **C's output never decides the rotation's state.**
 
-| # | Observed for the role | State |
-|---|---|---|
-| 1 | the session was never started (an earlier role failed, or the wrapper stopped first) | `unattempted` |
-| 2 | no `megasamples-sending` (no `connected`, or `connected` only), however the client ended: exit, signal or shutdown | `unattempted`, because the `ALTER` was not sent |
-| 3 | `applied`, and the confirmation succeeded | `applied` |
-| 4 | `sending`, no `applied`, exit 3 | `refused` |
-| 5 | anything else after `sending`: `applied` with a failed or interrupted confirmation, or `sending` without `applied` and any other exit or a signal | `uncertain` |
+**The rule, in one sentence:**
+- a role is **`applied`** only after its confirmation succeeded **and** was recorded;
+- **`refused`** only when R itself exited 3 after `megasamples-sending` with no `megasamples-applied`;
+- **`unattempted`** only where R's marker file holds no `megasamples-sending`, R never having started included;
+- **`uncertain`** in every other case, which means wherever the `ALTER` may have reached the server and no confirmation was recorded.
 
-**Recorded as it happens, and printed exactly once** (Sol round 8, 6; Opus round 8, 5):
-- **Initialised:** before the private start, every requested role's state is recorded as `unattempted` in this run's state directory. Each state is then updated as soon as it is known.
-- **`in progress`** (Sol round 9, 2): immediately before a role's client is started, the only process that sends its statement, its record becomes `in progress`. It stays so until the role's state is decided by the table above, after the confirmation for `applied` (Opus round 10, 2). **The trap**, after reaping a client it ended, applies only the marker-only rules: rule 2 (no `megasamples-sending`: `unattempted`) and rule 4 on a real exit 3. Any other record still `in progress` is reported as `uncertain`, DL-122 Q6's existing state, never `unattempted`. `in progress` is a record value only, never printed. So a signal between the send and the record's update cannot report a stale `unattempted`, and a signal after a confirmation but before its record is written reports `uncertain`, not `applied`. A start with no override requests no role, and prints no per-role line.
-- **One rule for printing:** once the private start has begun, the per-role lines are printed **exactly once per run**, at whichever comes first:
-  - **the wrapper's last act before the final `exec`.** A public server that then fails to bind or exits still leaves them in the log (Sol round 7, 4). The sequence is fixed (Opus round 9, 2):
-    1. the endpoint written;
-    2. the record read into memory;
-    3. the run's directories removed;
-    4. the trap cleared;
-    5. the lines printed from memory;
-    6. `exec`.
+**Records.** Before the private start, every requested role's record is `unattempted`. Immediately before R starts, it becomes `in progress`, a record value only, never printed. It stays `in progress` until the wrapper decides the role on R's normal end and C's result, and records it. A start with no override requests no role and prints no per-role line.
 
-    A signal before step 4 is the trap's (Sol round 10, 3; Opus round 10, 1). Once step 2 has run, the trap prints from the in-memory copy of the record, and takes the run's refusal flag from memory too, so it writes `interrupted`, not `internal`. It removes the endpoint if step 1 wrote it. After step 4, only step 5 prints.
-    - **A stated limit:** between step 4 (the trap cleared) and step 6 (`exec`), Bash cannot block signals. Outside PID 1, a signal there loses the per-role lines; as PID 1, a signal with the default action is ignored. The window is a few statements wide.
-  - **the `EXIT` trap, on a wrapper-owned exit,** directly after the coded refusal line and its `also:` lines. This covers `private-start`, `password-setup`, `private-stop`, `interrupted` and an `internal` after the private start began, the endpoint's write included.
-- **`handover_failed` prints no per-role line:** they were printed just before the `exec`. It writes only the `handover` line, after them.
+**The table.** Each row is a point at which an exit or a signal can land, for the role in turn. The roles after it are still `unattempted` and are reported so. The trap terminates and reaps whatever child is running at that point.
 
-So every exit after the private start began reports each requested role's state once, `applied` included after a confirmed rotation. The rows assert the count (one line per requested role) and the order.
+| # | Where the exit or signal lands | Reaped; output read | Reported for this role | Printed by | Class |
+|---|---|---|---|---|---|
+| T0 | the private start, before any role (`private-start`) | the server; none | `unattempted` | the trap | (W) before the rotation |
+| T1 | before this role's record becomes `in progress` | none; none | `unattempted` | the trap | (W) |
+| T2 | `in progress`, before R starts | none; R's marker file (empty) | `unattempted` | the trap | (W) |
+| T3 | R running, after `megasamples-connected`, before `megasamples-sending` | R; R's marker file | `unattempted` | the trap | (W) |
+| T4 | R running, after `megasamples-sending` | R; R's marker file | `uncertain` | the trap | (W) |
+| T5a | R exited 0 with `megasamples-applied`, before C starts | R; R's marker file and exit status | `uncertain` (not confirmed) | the trap | (W) |
+| T5b | R exited 3 after `megasamples-sending`, with no `megasamples-applied` | R; R's marker file and exit status | `refused` | the trap, or the wrapper's `password-setup` exit | (W) |
+| T5c | R exited with any other code, or by a signal, after `megasamples-sending` (before it: T3's answer) | R; R's marker file and exit status | `uncertain` | the trap, or the wrapper's `password-setup` exit | (W) |
+| T6 | C running | C; **R's** marker file and exit status, never C's output | `uncertain` | the trap | (W) |
+| T6b | C ended in failure | C; C's exit status | `uncertain` | the wrapper's `password-setup` exit | (W) |
+| T7 | C succeeded, before the record says `applied` | C; R's and C's exit statuses | `uncertain` (not recorded) | the trap | (W) |
+| T8 | after the record says `applied` | none; the record | `applied` | the trap | (W) |
+| H1 | handover step 1, the endpoint being written, or before step 2 | the record from the state directory | `applied`, every role | the trap, which removes the endpoint if step 1 wrote it | (W) |
+| H2 | after step 2 (the record read into memory), before step 3 | the in-memory copy | `applied` | the trap, from memory | (W) |
+| H3 | after step 3 (the run's directories removed), before step 4 | the in-memory copy; the refusal flag from memory, so `interrupted`, not `internal` | `applied` | the trap, from memory; it removes the endpoint | (W) |
+| H4 | after step 4, before step 5 | none | as PID 1, the default-action signal is ignored and step 5 prints `applied`; outside PID 1, nothing | the final print, or nobody (the stated limit) | Start, or none |
+| H5 | during step 5 | none | `applied` | the final print; outside PID 1, a signal may cut it short (the stated limit) | Start, or none |
+| H6 | after step 6, the `exec` | the public server, by Docker | `applied`, already printed | the final print, before the `exec` | (P), or Start |
+| H6b | step 6's `exec` fails | none | `applied`, already printed | the final print, then `handover_failed` writes `handover` only | (W) |
+
+**The handover steps:**
+1. the endpoint written;
+2. the record read into memory;
+3. the run's directories removed;
+4. the trap cleared: **`trap - EXIT TERM INT HUP QUIT`**, restoring the default dispositions and never setting any to ignored (Opus round 11, 3);
+5. the lines printed from memory;
+6. `exec`.
+
+**A stated limit:** between step 4 and step 6, Bash cannot block signals. Outside PID 1, a signal there loses or cuts short the per-role lines. As PID 1, a signal with the default action is ignored, and the start proceeds. The window is a few statements wide.
+
+**Printing exactly once.** The lines are printed once per run, by whichever row's printer applies:
+- **the trap** prints directly after the coded refusal line and its `also:` lines;
+- **the final print** prints before the `exec`, and `handover_failed` adds only the `handover` line after it.
+
+The rows assert the count (one line per requested role) and the order.
 
 **After a failure:**
 - the first non-`applied` result stops the sequence;
@@ -700,7 +724,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 16d | (A) the file writable by `postgres`; a FIFO at the path; a mount over `/usr/share/megasamples/pg_hba.volume.conf` | R4 `hba-image`; unchanged |
 | 16e | a correct start under rootless Podman's overlay storage (`xino=off` layers) | start; R4 passes by mount ID |
 | 17 | (A) a key both ways; an unreadable file; an empty key; a NUL in a file; a non-ASCII key; an overlong key; a CRLF file | R5 `key-conflict`, `key-file`, `key-value`; unchanged |
-| 18 | (A) `PG_VERSION` missing | R6 `uninitialised`; unchanged |
+| 18 | (A) `PG_VERSION` missing; `PG_VERSION` empty | R6 `uninitialised`; unchanged |
 | 18b | (A) `--cap-drop ALL` | R6 `internal`, naming the `PG_VERSION` lookup's `EACCES`; unchanged |
 | 19 | (A) a second container on the same volume, held at each boundary, including the first's public run; and `docker exec … entrypoint-wrapper.sh postgres` inside a running container | `volume-busy`; the first start's keys in force; one postmaster; the first stays healthy |
 | 19b | (A) an NFS-like `flock` failure (`EBADF`), and `ENOLCK` | `internal`, naming the lock and the error, never `volume-busy` |
@@ -741,12 +765,12 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 42c | (A) the ownership repair fails (a fault on `chown`) | `internal`, naming the repair; keys old |
 | 42d | (W) the endpoint write fails just before the handover (a read-only endpoint path, by fault) | `internal`, naming the endpoint, then the per-role lines once each; keys as applied; no listener |
 | 42b | an unclean previous stop, a long recovery | start, after waiting |
-| 43 | (W) a signal during the private phase: before the first role's client starts, before its record becomes `in progress`; after its `connected`, before `sending`; after its `sending`; between the send and its record's update; after its confirmation, before its record is written; after its record says `applied` | `interrupted`, with that role `unattempted`; `unattempted` (rule 2, applied by the trap); `uncertain`; `uncertain`; `uncertain`; `applied`, respectively, and the rest `unattempted`; the per-role lines once each, after the refusal line; the keys match each (an `uncertain` role's key checked on the witness start, whichever it is); stopped and reaped; no listener |
+| 43 | (W) one table test over every row of 5.4's decision table, T0 to H6b, with a gated fault holding the run at that point and a signal (or the row's failure) delivered there; H4 and H5 run as PID 1 and outside it | for each point: the reported state and printer in its row; the per-role lines once each, in the row's order; the row's class; the keys on a witness start matching the state (an `uncertain` role's key is whichever the server holds); stopped and reaped; no listener. **One reversal per state boundary:** `unattempted`/`uncertain` (the `sending` marker ignored, fails T4); `uncertain`/`applied` (C's output or exit used before the record, fails T6 and T7); `uncertain`/`refused` (exit 3 ignored, fails T5b); C's output deciding the rotation (fails T6); the trap reading the removed record (fails H3); step 4 clearing only `EXIT` (fails H4 as PID 1) |
 | 43b | (W) a signal while a client stalls | as row 43, promptly |
 | 44 | (W) a forced private stop | `private-stop` |
 | 45 | (W) row 37, then a forced stop | `password-setup`, then `also: private-stop` |
 | 46 | (W) overrides; the entrypoint unexecutable just before the handover | the per-role lines once each, all `applied`, then the `handover` line, with no second printing; keys new; endpoint removed; no state or private directory left; no listener |
-| 46c | (W) overrides; a signal after step 3 (the directories removed) and before step 4 (the trap cleared), held there by a fault gate | `interrupted`, from the in-memory record, then the per-role lines once each, all `applied`; the endpoint removed; no state or private directory left; no server survives |
+| 46c | (W) overrides; a signal after step 3 and before step 4 | row 43's H3 case, kept by number |
 | 46b | (P) `gosu` removed after the private stop (fault layer); the server binary unexecutable after the private stop | the (P) rule: the child's nonzero exit; a dead PID in the endpoint; no surviving server; unhealthy; the per-role lines once each, before the `exec`; keys as applied (witness start) |
 | 47 | (P) the public server binds, then exits after starting | the (P) rule: its own nonzero exit; the per-role lines once each, before the `exec`; keys as applied; the endpoint names a dead PID; no surviving server; unhealthy |
 | 47b | (P) the public server fails to bind its port before readiness (port in use) | the (P) rule: its own FATAL exit; the per-role lines once each, before the `exec`; keys as applied; the endpoint names a dead PID; no listener; unhealthy |
@@ -756,14 +780,14 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | 49b | (A) `--ipc=none` | `internal: /dev/shm unavailable` |
 | 49c | two containers sharing `/dev/shm` (`--ipc=shareable` / `container:`) on different volumes, starting with overrides at once | both start; neither's private directory touched by the other |
 | 50 | a second listener reachable through each admitted inherited client variable (`PGHOSTADDR`, `PGHOST`, `PGSERVICE`, `PGPASSFILE`, `PGUSER`) and a planted `.psqlrc` (`PGPORT` and `PGOPTIONS` are row 15b's refusals) | start; zero connections at the second listener |
-| 50b | the probe itself, run as the image's and Compose's healthchecks, with an inherited `PGHOSTADDR` (and, in turn, `PGHOST`, `PGSERVICE`, `PGPORT`) aimed at a second listener whose `megasamples_policy_loaded()` answers the opposite of the local server's | the probe judges the local server in both directions; zero connections at the second listener. **Reversal:** with the probe's environment clearing removed, it reaches the second listener |
+| 50c | the probe's environment: (a) the image's and Compose's healthchecks in a container started with `PGHOSTADDR` aimed at a second listener whose `megasamples_policy_loaded()` answers the opposite of the local server's; (b) the same healthchecks with an inherited `PGHOST`; (c) the probe run by hand with `docker exec -e PGPORT=…` (a container started with `PGPORT` is refused at R3) | the probe judges the local server in both directions; zero connections at the second listener. **The redirect reversal** is (a)'s: with the environment clearing removed, `PGHOSTADDR` sends the probe to the second listener. (b) and (c) are independence checks: the explicit socket and port already hold (Sol round 11, 2; Opus round 11, 2) |
 | 50b | a second healthy server on a shared socket directory, and on another port | the probe does not report it |
 | 51 | marked, other owner | start after the repair |
 | 52 | a replaced entrypoint; a shell string; an unlisted wrapper | unchecked; always unhealthy |
 | 53 | a hand-run container | the image `HEALTHCHECK` reports |
 | 54 | loopback TCP, both families, as `postgres` and `admin`, no key or a wrong key, under Docker, pasta and rootlesskit | refused by SCRAM; the right key admitted |
 | 55 | keys with `'`, `\`, `:`, `$`, `"`, `;`, leading and trailing spaces, 1024 bytes, and a 1024-byte key of only `:` and `\` | start; each confirmed |
-| 56 | (W) a failed rotation, then a restart of the same container hitting an early lock error | the restart prints its own `internal` line |
+| 56 | (W) a failed rotation, then a restart of the same container hitting an early lock error | **each attempt its own class** (Sol round 11, 4): the first, (W) after the rotation began: its refusal, the per-role lines once each, its cleanup; the restart, (A) at the lock: its own `internal` line, the endpoint and `/run` unchanged from the first attempt's end. The restart's key baseline is the keys the first attempt left, proved on a witness start |
 | 57 | the private files read under the real uids | the private server reads `hba.conf`; the client reads `pgpass`, as `postgres` |
 | 58 | the image build | the baked `pg_authid` holds only the image's roles; the stock volume `pg_hba.conf` equals the repository file |
 | 59 | informational and handover `exec`s, repeated in one container | no state or private directory left behind |
@@ -792,7 +816,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
   - the removed loopback lines;
   - the candidate tag in the build and the `--url` fallback;
   - R9b's place before R10;
-  - the per-role lines printed exactly once on every exit after the private start began (a second printing in `handover_failed`, or none from the trap, fails rows 42, 45, 46 and 47; dropping the print before the `exec` fails rows 46, 46b, 47 and 47b; an `in progress` record printed as `unattempted` fails row 43; a trap that prints from the removed record, or leaves the endpoint, fails row 46c).
+  - the per-role lines printed exactly once on every exit after the private start began: a second printing in `handover_failed`, or none from the trap, fails rows 42, 45, 46 and 47; dropping the final print fails rows 46, 46b, 47 and 47b; row 43's reversals cover each state boundary of 5.4's table.
 
 ## 11. The build order
 1. **The harness and the generator,** red against today's wrapper. First, the native lock-inheritance check (5.9).
@@ -813,7 +837,7 @@ Each item below is recorded with an impact note, a conformance test and its unkn
 | Round 4 S4-1: the private start on files alone | R19; row 35 |
 | Round 4 S4-7: a quoted preload | R12; row 27 |
 | Round 4 O4-1: the path form; non-root | R2, R0; rows 5, 10, 11 |
-| Round 4 O4-4: refusals undocumented; the repair | section 6; the repair after R9; row 51 |
+| Round 4 O4-4: refusals undocumented; the repair | section 6; the repair after R9b; row 51 |
 | Round 4 S4-6/O4-2; round 5 S5-6/Opus P3-2: the healthcheck | 8.1, 8.3; rows 1 and 60 |
 | Round 5 S5-3 (P2-3): the private socket | 5.3; row 36 |
 | Round 5 S5-7 (P3-7): non-root runs the private start first | R0; row 10 |
@@ -917,10 +941,24 @@ The 7.4 commands this round's answers name were removed in revision 9, by the co
 | Finding | Where answered |
 |---|---|
 | Sol 1: exposure during export | 7.4 and section 6's marker-`1` sentence: run the old image socket-only, with no network, and export with `docker exec`; row 61. Advice, not a recipe |
-| Sol 2: the healthcheck reaching another server | 8.3: the probe clears libpq's environment itself and names its socket; row 50b with its reversal |
+| Sol 2: the healthcheck reaching another server | 8.3: the probe clears libpq's environment itself and names its socket; row 50c (numbered 50b in revision 11) with its reversal |
 | Sol 3; Opus P3 1: a stop during the handover | 5.4: the trap prints from the in-memory copy once step 2 ran, and removes the endpoint; the step 4 to 6 window stated as a limit; section 6's trap; row 46c |
 | Sol 4: the namespace assertion | 10.2's Start rule, for every native Start |
 | Sol 5: 5.8's key | 5.8: the key in force after this run's rotation |
-| Opus P3 2: the trap and the marker-only rules | 5.4's `in progress` paragraph; row 43's case after `connected`, and its first case's injection point |
+| Opus P3 2: the trap and the marker-only rules | superseded in revision 12 by 5.4's decision table (13.7). At the time: 5.4's `in progress` paragraph; row 43's case after `connected`, and its first case's injection point |
 | Opus P3 3: the new image's defaults; `pg_restore --no-owner` | 7.4's two sentences, the marker-`1` sentence, row 61 |
 | Opus P3 4: the `handover` exception | 10.2's (W) rule |
+
+### 13.7 Design round 11
+
+**The coordinator's decision:** the role report under interruption is a hot area (rounds 9, 10 and 11 each found the gap at a neighbouring point). The per-role state rules in 5.4 are replaced by one decision table, written once, and row 43 becomes one table test over every row of it.
+
+| Finding | Where answered |
+|---|---|
+| Sol 1: a stop during the confirmation reported `unattempted` | 5.4's decision table: the markers and exit status are R's; C's output never decides the rotation; T6 is `uncertain`; row 43 over every row, with a reversal per boundary |
+| Sol 2; Opus P3 2: the healthcheck reversal | row 50c: `PGHOSTADDR` the redirect reversal; `PGHOST` and `PGPORT` independence checks, `PGPORT` by `docker exec -e` |
+| Sol 3: an empty `PG_VERSION` | R6; row 18 |
+| Sol 4: row 56's two attempts | row 56, each attempt its own class; the first attempt's keys the restart's baseline |
+| Opus P3 1: the duplicate `50b` | the probe-environment row renumbered `50c`; 13.6 updated |
+| Opus P3 3: step 4's traps | 5.4's step 4, `trap - EXIT TERM INT HUP QUIT`; row 43's reversal at H4 |
+| Opus P3 4: "after R9" | section 12 |
