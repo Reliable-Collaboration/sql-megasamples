@@ -10,6 +10,9 @@ def stage_roles(context, settings):
         "CREATE TABLE copy_service (singleton boolean PRIMARY KEY CHECK (singleton), "
         "tag text NOT NULL, volume text NOT NULL);",
         "GRANT SELECT ON copy_namespaces, copy_service TO PUBLIC;",
+        # The image's own copy service: written once at build, so every start of the image, on a fresh
+        # or a recreated volume, has it. The value identifies this build, as MySQL's server_uuid does.
+        "INSERT INTO copy_service VALUES (true, 'megasamples-service/1', gen_random_uuid()::text);",
     ]
     for item in settings.namespaces:
         prefix, owner = item.prefix, item.owner
