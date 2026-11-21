@@ -835,3 +835,57 @@ def test_mysql_template_size_uses_allocated_tablespace_bytes(server):
     rows = native(server, "SELECT JSON_EXTRACT(metadata,'$.bytes') FROM template_ddl WHERE name='chinook'")
     # Copying a sparse data directory into an image can change its block allocation.
     assert abs(int(rows[0][0]) - server["chinook_allocated_bytes"]) <= server["chinook_tablespaces"] * 4096
+
+
+def demo_connects(server, database):
+    """None when demo, with its factory password, may connect to DATABASE; otherwise the refusal's SQLSTATE."""
+    import psycopg
+    try:
+        with psycopg.connect(host=server["host"], port=server["port"], user="demo", password="demo",
+                             dbname=database, connect_timeout=5):
+            return None
+    except psycopg.OperationalError as error:
+        # libpq reports a refused sign-in without its SQLSTATE; the server's message names the privilege.
+        message = str(error)
+        if error.sqlstate:
+            return error.sqlstate
+        return "42501" if "permission denied for database" in message else message.splitlines()[0]
+
+
+def test_postgres_demo_cannot_connect_to_a_fresh_copy(server):
+    """A copy is its owner's: demo, which reads every sample, is refused CONNECT on it (42501)."""
+    if server["engine"] != "postgres":
+        pytest.skip("PostgreSQL's database CONNECT privilege")
+    created = copy_command(server, "create", "postgres:chinook", "--prefix", "copy", "--label", "private")["result"]
+    try:
+        assert demo_connects(server, "chinook") is None
+        assert demo_connects(server, created["name"]) == "42501"
+    finally:
+        copy_command(server, "drop", "postgres:" + created["name"], "--identity", created["identity"])
+
+
+def test_postgres_copy_whose_closure_fails_stays_unreachable(server):
+    """The copy is created closed to every connection and opened only once PUBLIC's rights are gone: when
+    the closure fails, the reply is create-unsettled, the copy is kept as interrupted, and no one connects."""
+    if server["engine"] != "postgres":
+        pytest.skip("PostgreSQL's database closure")
+    admin = {"user": "dl077_fixture_admin"}
+    reply = copy_command(server, "create", "postgres:chinook", "--prefix", "copy", "--label", "unclosed", status=8,
+                         fault=("revoke-fails", "-"))
+    assert reply["error"]["code"] == "create-unsettled"
+    identity = reply["error"]["identity"]
+    rows = copy_command(server, "list", "postgres", "--prefix", "copy", "--label", "unclosed")["result"]["copies"]
+    assert [(row["identity"], row["state"]) for row in rows] == [(identity, "interrupted")]
+    name = rows[0]["name"]
+    try:
+        allowed, = native(server, "SELECT datallowconn FROM pg_database WHERE datname = %s", database="postgres",
+                          parameters=(name,), **admin)[0]
+        assert allowed is False
+        assert demo_connects(server, name) is not None
+        swept = copy_command(server, "sweep", "postgres", "--prefix", "copy")["result"]
+        assert {"name": name, "reason": "interrupted"} in [
+            {"name": item["copy"]["name"], "reason": item["reason"]} for item in swept["kept"]]
+        assert copy_command(server, "drop", "postgres:" + name, "--identity", identity,
+                            status=5)["error"]["code"] == "interrupted"
+    finally:
+        native(server, f'DROP DATABASE IF EXISTS "{name}"', database="postgres", **admin)

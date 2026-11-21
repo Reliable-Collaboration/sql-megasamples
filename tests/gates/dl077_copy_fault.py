@@ -14,7 +14,8 @@ sweep's first removal. POINT `corrupt-before-recheck` (WHEN is a copy's NAME) re
 record just before the sweep takes its change lock the second time. POINT `unlock-fails` makes the
 change-lock release fail after the sweep's first removal. POINT `state-second` closes the connection
 just before the command's second state read (a drop's proof read at the removal). POINT
-`forget-fails` makes the ledger row's deletion fail after the database or schema is dropped.
+`forget-fails` makes the ledger row's deletion fail after the database or schema is dropped. POINT
+`revoke-fails` (PostgreSQL) makes the copy's closure to PUBLIC fail right after CREATE DATABASE.
 """
 
 import subprocess
@@ -137,6 +138,32 @@ def run():
             return state_read(self, *arguments, **keywords)
 
         copies.state = second_read
+        return main(["copy", *args])
+    if point == "revoke-fails":
+        # PostgreSQL: the copy's closure to PUBLIC fails right after CREATE DATABASE, as a server error.
+        import psycopg
+
+        create_reserved = copies.create_reserved
+
+        def failing_revoke(self, row, strategy):
+            connection = self.connection
+
+            class Planted:
+                def __getattr__(self, name):
+                    return getattr(connection, name)
+
+                def execute(self, sql, *rest, **keywords):
+                    if sql.startswith("REVOKE CONNECT, TEMPORARY ON DATABASE"):
+                        raise psycopg.errors.InternalError_("planted closure failure")
+                    return connection.execute(sql, *rest, **keywords)
+
+            self.connection = Planted()
+            try:
+                return create_reserved(self, row, strategy)
+            finally:
+                self.connection = connection
+
+        copies.create_reserved = failing_revoke
         return main(["copy", *args])
     if point == "forget-fails":
         def failing_forget(self, name):
